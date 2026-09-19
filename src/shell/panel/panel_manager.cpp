@@ -2274,6 +2274,12 @@ void PanelManager::applyPanelCompositorBlur(
   if (m_surface == nullptr || m_activePanel == nullptr) {
     return;
   }
+  // An undecorated panel has no card to blur behind; a blur region would show up on its own
+  // (as xray wallpaper on niri) as a bare rectangle.
+  if (!m_activePanel->hasDecoration()) {
+    m_surface->clearBlurRegion();
+    return;
+  }
 
   if (blurTraceEnabled()) {
     kLog.debug(

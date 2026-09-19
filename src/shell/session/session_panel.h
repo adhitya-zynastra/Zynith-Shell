@@ -32,7 +32,8 @@ public:
 
   [[nodiscard]] float preferredWidth() const override;
   [[nodiscard]] float preferredHeight() const override;
-  [[nodiscard]] bool hasDecoration() const override { return true; }
+  // Modal style: the orbs float directly over the full-screen backdrop; no card, border, shadow.
+  [[nodiscard]] bool hasDecoration() const override { return !modalStyle(); }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
   [[nodiscard]] bool wantsModalBackdrop() const override { return modalStyle(); }
