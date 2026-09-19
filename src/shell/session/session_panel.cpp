@@ -13,6 +13,7 @@
 #include "ui/controls/countdown_ring.h"
 #include "ui/controls/flex.h"
 #include "ui/controls/grid_view.h"
+#include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
@@ -84,7 +85,8 @@ PanelPlacement SessionPanel::panelPlacement() const noexcept {
 float SessionPanel::preferredWidth() const {
   const std::size_t n = visibleColumnCount();
   const float gap = Style::spaceMd;
-  const float w = kButtonMinWidth * static_cast<float>(n)
+  const float cellWidth = modalStyle() ? kOrbCellWidth : kButtonMinWidth;
+  const float w = cellWidth * static_cast<float>(n)
       + gap * static_cast<float>(n > 1 ? n - 1 : 0)
       + Style::panelPadding * 2.0F;
   return scaled(w);
@@ -93,7 +95,8 @@ float SessionPanel::preferredWidth() const {
 float SessionPanel::preferredHeight() const {
   const std::size_t rows = visibleRowCount();
   const float gap = Style::spaceMd;
-  const float h = kActionButtonMinHeight * static_cast<float>(rows)
+  const float cellHeight = modalStyle() ? kOrbCellHeight : kActionButtonMinHeight;
+  const float h = cellHeight * static_cast<float>(rows)
       + gap * static_cast<float>(rows > 1 ? rows - 1 : 0)
       + Style::panelPadding * 2.0F;
   return std::ceil(scaled(h));
@@ -107,6 +110,8 @@ std::size_t SessionPanel::entryCountForLayout() const {
 }
 
 bool SessionPanel::gridEnabled() const { return m_config != nullptr && m_config->config().shell.session.grid; }
+
+bool SessionPanel::modalStyle() const { return m_config != nullptr && m_config->config().shell.session.modal; }
 
 std::size_t SessionPanel::visibleColumnCount() const {
   const std::size_t n = std::max<std::size_t>(1, entryCountForLayout());
@@ -137,8 +142,9 @@ void SessionPanel::create() {
   rootLayout->setRowGap(Style::spaceMd * scale);
   rootLayout->setStretchItems(true);
   rootLayout->setUniformCellSize(true);
-  rootLayout->setMinCellWidth(kButtonMinWidth * scale);
-  rootLayout->setMinCellHeight(kActionButtonMinHeight * scale);
+  const bool modal = modalStyle();
+  rootLayout->setMinCellWidth((modal ? kOrbCellWidth : kButtonMinWidth) * scale);
+  rootLayout->setMinCellHeight((modal ? kOrbCellHeight : kActionButtonMinHeight) * scale);
   m_rootLayout = rootLayout.get();
 
   m_visibleButtons.clear();
@@ -159,7 +165,25 @@ void SessionPanel::create() {
       attachCountdownOverlay(*b, overlay, scale);
       m_visibleButtons.push_back(b);
       m_countdownOverlays.push_back(overlay);
-      rootLayout->addChild(std::unique_ptr<Button>(b));
+      if (modal) {
+        // Orb + label column; the Button itself is unchanged in behaviour (selection, countdown, click).
+        auto cell = ui::column({
+            .align = FlexAlign::Center,
+            .justify = FlexJustify::Center,
+            .gap = Style::spaceSm * scale,
+        });
+        cell->addChild(std::unique_ptr<Button>(b));
+        cell->addChild(ui::label({
+            .text = cfg.label.has_value() && !cfg.label->empty() ? *cfg.label
+                                                                   : i18n::tr(session_action::labelKey(cfg.action)),
+            .fontSize = Style::fontSizeBody * scale,
+            .color = colorSpecFromRole(ColorRole::OnSurface),
+            .textAlign = TextAlign::Center,
+        }));
+        rootLayout->addChild(std::move(cell));
+      } else {
+        rootLayout->addChild(std::unique_ptr<Button>(b));
+      }
     }
   }
 
@@ -173,6 +197,41 @@ void SessionPanel::create() {
 }
 
 Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, std::size_t index, float scale) {
+  if (modalStyle()) {
+    // Circular glyph-only button; the label is a sibling underneath (see create()).
+    const std::string glyph =
+        cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : session_action::defaultGlyph(cfg.action);
+    const float d = kOrbSize * scale;
+    // Destructive orbs stay calm at rest (error-tinted glyph + ring on the normal surface) and only
+    // fill with the palette's error role on hover/press, when the user is committing to it.
+    std::optional<Button::ButtonPalette> orbPalette;
+    if (cfg.variant == SessionActionButtonVariant::Destructive) {
+      Button::ButtonPalette p = Button::defaultPalette(ButtonVariant::Default);
+      const Button::ButtonPalette destructive = Button::defaultPalette(ButtonVariant::Destructive);
+      p.borderWidth = Style::borderWidth;
+      p.normal.border = colorSpecFromRole(ColorRole::Error, 0.55F);
+      p.normal.label = colorSpecFromRole(ColorRole::Error);
+      p.hover = destructive.pressed;
+      p.pressed = destructive.pressed;
+      orbPalette = p;
+    }
+    auto orb = ui::button({
+        .glyph = glyph,
+        .glyphSize = 26.0F * scale,
+        .contentAlign = ButtonContentAlign::Center,
+        .variant = buttonVariantFor(cfg.variant),
+        .customPalette = orbPalette,
+        .surfaceOpacity = panelCardOpacity(),
+        .padding = 0.0F,
+        .radius = d * 0.5F,
+        .width = d,
+        .height = d,
+        .onClick = [this, index]() { armEntry(index); },
+        .configure = [](Button& control) { control.setTabStop(false); },
+    });
+    return orb.release();
+  }
+
   const std::string labelText =
       cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(session_action::labelKey(cfg.action));
   const std::string glyph =
@@ -226,7 +285,7 @@ void SessionPanel::attachCountdownOverlay(Button& button, ActionCountdownOverlay
 
   auto scrim = ui::box({
       .out = &overlay.scrim,
-      .radius = Style::scaledRadiusLg(scale),
+      .radius = modalStyle() ? kOrbSize * scale * 0.5F : Style::scaledRadiusLg(scale),
       .participatesInLayout = false,
       .configure = [](Box& box) { box.setZIndex(0); },
   });

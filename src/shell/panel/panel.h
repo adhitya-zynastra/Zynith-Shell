@@ -89,6 +89,9 @@ public:
   [[nodiscard]] virtual float attachedBackgroundOpacityOverride() const noexcept { return 1.0F; }
   [[nodiscard]] virtual bool wantsCloseAnimation() const noexcept { return true; }
   [[nodiscard]] virtual bool dismissOnOutsideClick() const { return true; }
+  // When true, PanelManager fades a dimmed, blurred snapshot of the desktop in behind the panel
+  // (ScreenVeil) for as long as it is open. Only meaningful for floating panels.
+  [[nodiscard]] virtual bool wantsModalBackdrop() const { return false; }
   // True to live in PersistentPanelHost instead of PanelManager's single active
   // slot: opening another panel leaves it on screen, and only an explicit toggle
   // or close dismisses it.

@@ -2732,6 +2732,11 @@ namespace settings {
         tr("settings.schema.power.session-grid.description"), {"shell", "session", "grid"},
         ToggleSetting{.checked = cfg.shell.session.grid}, "session panel grid layout rows columns"
     ));
+    entries.push_back(makeEntry(
+        SettingsSection::Power, "session-panel", tr("settings.schema.power.session-modal.label"),
+        tr("settings.schema.power.session-modal.description"), {"shell", "session", "modal"},
+        ToggleSetting{.checked = cfg.shell.session.modal}, "session panel modal centered circular backdrop blur dim"
+    ));
     {
       auto e = makeEntry(
           SettingsSection::Power, "session-panel", tr("settings.schema.power.session-grid-columns.label"),

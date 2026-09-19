@@ -1,5 +1,9 @@
 #include "shell/panel/panel_manager.h"
 
+#include "capture/screencopy_capture.h"
+#include "capture/screencopy_util.h"
+#include "shell/veil/screen_veil.h"
+
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
@@ -870,6 +874,10 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   const PanelKeyboardPlan attachedKeyboardPlan =
       resolvePanelKeyboardPlan(m_activePanel->keyboardMode(), hasFocusGrab, hasFocusGrab && wantsOutsideDismiss, true);
 
+  if (m_activePanel->wantsModalBackdrop() && activePlacement == PanelPlacement::Floating) {
+    showModalBackdrop(request.output);
+  }
+
   if (wantsOutsideDismiss) {
     activateClickShield(panelLayer);
   }
@@ -1267,6 +1275,55 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   }
 }
 
+void PanelManager::showModalBackdrop(wl_output* output) {
+  if (m_platform == nullptr || m_renderContext == nullptr || output == nullptr) {
+    return;
+  }
+  m_modalBackdrop.reset();
+  m_modalBackdropClosing = false;
+
+  // One synchronous screencopy of the current desktop, then GPU blur. Nothing runs while open.
+  WaylandConnection& wayland = m_platform->wayland();
+  ScreencopyCapture capture(wayland);
+  ScreencopyImage image;
+  std::string error;
+  if (!capture.available() || !screencopy::captureOutputBlocking(capture, wayland, output, image, error)
+      || !screencopy::orientCaptureNative(image, wayland, output)) {
+    kLog.debug("panel manager: modal backdrop capture unavailable ({}); showing panel without it", error);
+    return;
+  }
+
+  auto veil = std::make_unique<ScreenVeil>(wayland, m_renderContext, nullptr);
+  const ScreenVeil::Style style{
+      .nameSpace = "noctalia-modal-backdrop",
+      .layer = LayerShellLayer::Top, // above windows and the bar, below floating (overlay) panels
+      .blurIntensity = 0.30F,
+      .tintIntensity = 0.38F,
+  };
+  if (!veil->showImage(output, std::move(image), style, 0.0F)) {
+    return;
+  }
+  // Same duration/curve as the detached panel reveal, so dim+blur and panel read as one motion.
+  veil->fadeTo(1.0F, Style::animNormal, Easing::EaseOutCubic);
+  m_modalBackdrop = std::move(veil);
+}
+
+void PanelManager::hideModalBackdrop() {
+  if (m_modalBackdrop == nullptr || m_modalBackdropClosing) {
+    return;
+  }
+  m_modalBackdropClosing = true;
+  // Matches the detached panel close (animNormal, ease-in), then the veil is released.
+  m_modalBackdrop->fadeTo(0.0F, Style::animNormal, Easing::EaseInQuad, [this]() {
+    DeferredCall::callLater([this]() {
+      if (m_modalBackdropClosing) {
+        m_modalBackdrop.reset();
+        m_modalBackdropClosing = false;
+      }
+    });
+  });
+}
+
 void PanelManager::activateClickShield(LayerShellLayer layer) {
   if (m_activePanel == nullptr || m_platform == nullptr) {
     return;
@@ -1337,6 +1394,7 @@ void PanelManager::closePanel(bool animateClose) {
   // Drop the outside-click handlers as soon as close starts.
   // During the close animation we want clicks on apps to behave normally.
   deactivateOutsideClickHandlers();
+  hideModalBackdrop(); // fades out in step with the panel's close animation
 
   // Disable input during close animation
   m_inputDispatcher.setSceneRoot(nullptr);
@@ -1387,6 +1445,7 @@ void PanelManager::destroyPanel() {
   // Defensive: closePanel deactivates first, but destroyPanel can also be
   // reached directly when openPanel preempts an open panel.
   deactivateOutsideClickHandlers();
+  hideModalBackdrop(); // no-op if closePanel already started the fade
   m_animations.cancelAll();
   m_closing = false;
   m_pointerInside = false;

@@ -1528,6 +1528,7 @@ namespace noctalia::config::schema {
           ),
           field(&ShellSessionConfig::grid, "grid"),
           field(&ShellSessionConfig::gridColumns, "grid_columns", kSessionGridColumnsRange),
+          field(&ShellSessionConfig::modal, "modal"),
           field(&ShellSessionConfig::showShortcuts, "show_shortcuts"),
           subTable(&ShellSessionConfig::power, "power", shellSessionPowerSchema()),
       };

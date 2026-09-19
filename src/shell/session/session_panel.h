@@ -35,6 +35,7 @@ public:
   [[nodiscard]] bool hasDecoration() const override { return true; }
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
+  [[nodiscard]] bool wantsModalBackdrop() const override { return modalStyle(); }
 
 private:
   struct ActionCountdownOverlay {
@@ -52,6 +53,10 @@ private:
   static constexpr float kActionButtonMinHeight = 112.0F;
   static constexpr float kButtonMinWidth = 152.0F;
   static constexpr std::size_t kMaxColumns = 5;
+  // Modal style: circular action "orbs" with the label underneath.
+  static constexpr float kOrbSize = 76.0F;
+  static constexpr float kOrbCellWidth = 112.0F;
+  static constexpr float kOrbCellHeight = 118.0F;
 
   void doLayout(Renderer& renderer, float width, float height) override;
   void doUpdate(Renderer& renderer) override;
@@ -71,6 +76,7 @@ private:
   [[nodiscard]] Button* createActionButton(const SessionPanelActionConfig& cfg, std::size_t index, float scale);
   [[nodiscard]] std::size_t entryCountForLayout() const;
   [[nodiscard]] bool gridEnabled() const;
+  [[nodiscard]] bool modalStyle() const;
   [[nodiscard]] std::size_t visibleColumnCount() const;
   [[nodiscard]] std::size_t visibleRowCount() const;
 

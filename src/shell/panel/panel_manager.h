@@ -28,6 +28,7 @@ class LayerSurface;
 class Node;
 class Panel;
 class RenderContext;
+class ScreenVeil;
 class Surface;
 class WaylandConnection;
 enum class LayerShellLayer : std::uint32_t;
@@ -183,6 +184,9 @@ private:
   // for its first frame. The panel rect is excluded separately because
   // same-layer stacking order is compositor-defined.
   void activateClickShield(LayerShellLayer layer);
+  // Modal backdrop (session panel "modal" style): one screencopy + blur on open, faded with the panel.
+  void showModalBackdrop(wl_output* output);
+  void hideModalBackdrop();
   // Called AFTER the panel surface is mapped so the panel wl_surface is
   // available for the whitelist. No-op when focus-grab is unavailable.
   void activateFocusGrab();
@@ -217,6 +221,8 @@ private:
   std::function<std::optional<std::string>(wl_output*, std::string_view)> m_attachedPanelLayerProvider;
   std::function<bool(wl_output*, std::string_view)> m_attachedPanelBarSettledCallback;
   PanelClickShield m_clickShield;
+  std::unique_ptr<ScreenVeil> m_modalBackdrop;
+  bool m_modalBackdropClosing = false;
   PersistentPanelHost m_persistentHost;
   std::unique_ptr<FocusGrab> m_focusGrab;
 

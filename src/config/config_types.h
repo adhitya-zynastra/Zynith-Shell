@@ -236,6 +236,9 @@ struct ShellSessionConfig {
   // fitting them on a single row.
   bool grid = false;
   std::int32_t gridColumns = 3;
+  // Centered modal presentation: circular action buttons over a dimmed, blurred snapshot of the
+  // desktop that fades in and out with the panel. Pair with a floating, centered placement.
+  bool modal = false;
   bool showShortcuts = true;
   // Optional overrides for built-in session power commands. Empty = auto-detect at runtime.
   struct ShellSessionPowerConfig {

@@ -2623,6 +2623,10 @@
           "description": "Display session panel actions in a grid layout",
           "label": "Grid Layout"
         },
+        "session-modal": {
+          "description": "Centered power menu with circular buttons over a dimmed, blurred desktop",
+          "label": "Modal Style"
+        },
         "session-grid-columns": {
           "description": "Number of columns for the grid layout",
           "label": "Columns"
