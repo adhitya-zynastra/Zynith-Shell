@@ -1,0 +1,1421 @@
+#include "shell/settings/widget_settings_registry.h"
+
+#include "i18n/i18n.h"
+#include "scripting/plugin_i18n.h"
+#include "scripting/plugin_panel_shell.h"
+#include "scripting/plugin_registry.h"
+#include "shell/bar/widget_gesture_defaults.h"
+#include "shell/bar/widgets/active_window_widget_definition.h"
+#include "shell/bar/widgets/audio_visualizer_widget_definition.h"
+#include "shell/bar/widgets/battery_widget_definition.h"
+#include "shell/bar/widgets/bluetooth_widget_definition.h"
+#include "shell/bar/widgets/brightness_widget_definition.h"
+#include "shell/bar/widgets/caffeine_widget_definition.h"
+#include "shell/bar/widgets/clipboard_widget_definition.h"
+#include "shell/bar/widgets/clock_widget_definition.h"
+#include "shell/bar/widgets/control_center_widget_definition.h"
+#include "shell/bar/widgets/custom_button_widget_definition.h"
+#include "shell/bar/widgets/keyboard_layout_widget_definition.h"
+#include "shell/bar/widgets/launcher_widget_definition.h"
+#include "shell/bar/widgets/lock_keys_widget_definition.h"
+#include "shell/bar/widgets/media_widget_definition.h"
+#include "shell/bar/widgets/network_widget_definition.h"
+#include "shell/bar/widgets/nightlight_widget_definition.h"
+#include "shell/bar/widgets/notification_widget_definition.h"
+#include "shell/bar/widgets/power_profile_widget_definition.h"
+#include "shell/bar/widgets/privacy_widget_definition.h"
+#include "shell/bar/widgets/screenshot_widget_definition.h"
+#include "shell/bar/widgets/session_widget_definition.h"
+#include "shell/bar/widgets/settings_widget_definition.h"
+#include "shell/bar/widgets/spacer_widget_definition.h"
+#include "shell/bar/widgets/sysmon_widget_definition.h"
+#include "shell/bar/widgets/taskbar_widget_definition.h"
+#include "shell/bar/widgets/test_widget_definition.h"
+#include "shell/bar/widgets/text_widget_definition.h"
+#include "shell/bar/widgets/theme_mode_widget_definition.h"
+#include "shell/bar/widgets/tray_widget_definition.h"
+#include "shell/bar/widgets/volume_widget_definition.h"
+#include "shell/bar/widgets/wallpaper_widget_definition.h"
+#include "shell/bar/widgets/weather_widget_definition.h"
+#include "shell/bar/widgets/workspaces_widget_definition.h"
+#include "shell/settings/font_family_catalog.h"
+#include "shell/settings/font_weight_catalog.h"
+#include "shell/settings/font_weight_i18n.h"
+#include "ui/style.h"
+
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <cmath>
+#include <format>
+#include <iterator>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <unordered_set>
+#include <utility>
+
+namespace settings {
+  namespace schema = noctalia::config::schema;
+
+  // File/Folder/Glyph carry a String value; Select an Enum; ColorSpec a Color; the rest map 1:1.
+  schema::WidgetSettingType schemaTypeForControl(WidgetControlKind control) {
+    switch (control) {
+    case WidgetControlKind::Bool:
+      return schema::WidgetSettingType::Bool;
+    case WidgetControlKind::Int:
+      return schema::WidgetSettingType::Int;
+    case WidgetControlKind::Double:
+      return schema::WidgetSettingType::Double;
+    case WidgetControlKind::OptionalDouble:
+      return schema::WidgetSettingType::OptionalDouble;
+    case WidgetControlKind::String:
+    case WidgetControlKind::File:
+    case WidgetControlKind::Folder:
+    case WidgetControlKind::Glyph:
+      return schema::WidgetSettingType::String;
+    case WidgetControlKind::StringList:
+      return schema::WidgetSettingType::StringList;
+    case WidgetControlKind::StringMap:
+      return schema::WidgetSettingType::StringMap;
+    case WidgetControlKind::Select:
+      return schema::WidgetSettingType::Enum;
+    case WidgetControlKind::ColorSpec:
+      return schema::WidgetSettingType::Color;
+    }
+    return schema::WidgetSettingType::String;
+  }
+
+  namespace {
+
+    using i18n::tr;
+
+    std::optional<scripting::ResolvedPluginEntry>
+    resolvePluginWidget(std::string_view type, scripting::PluginRegistry* pluginRegistry = nullptr);
+
+    struct TypedWidgetDefinitionProjection {
+      std::string_view (*type)();
+      schema::WidgetSettingSchema (*schemaFields)();
+      std::vector<WidgetSettingSpec> (*presentedSettingSpecs)();
+      const std::vector<noctalia::bar::WidgetCommonSettingOverride>& (*commonOverrides)();
+      std::string (*glyph)(const WidgetConfig* config);
+      std::optional<std::string> (*validateConfig)(const WidgetConfig* config);
+    };
+
+    template <auto DefinitionAccessor> auto resolveProjectedOptions(const WidgetConfig* config) {
+      const auto& definition = DefinitionAccessor();
+      if constexpr (requires { definition.resolve(config, definition.type); }) {
+        return definition.resolve(config, definition.type);
+      } else {
+        using Definition = std::remove_cvref_t<decltype(definition)>;
+        return definition.resolve(config, definition.type, typename Definition::ContextType{});
+      }
+    }
+
+    template <auto DefinitionAccessor> constexpr TypedWidgetDefinitionProjection projectWidgetDefinition() {
+      return TypedWidgetDefinitionProjection{
+          .type = [] { return DefinitionAccessor().type; },
+          .schemaFields = [] { return DefinitionAccessor().schemaFields(); },
+          .presentedSettingSpecs = [] { return DefinitionAccessor().presentedSettingSpecs(); },
+          .commonOverrides = []() -> const std::vector<noctalia::bar::WidgetCommonSettingOverride>& {
+            return DefinitionAccessor().commonOverrides;
+          },
+          .glyph = [](const WidgetConfig* config) -> std::string {
+            const auto& definition = DefinitionAccessor();
+            return definition.glyph ? definition.glyph(resolveProjectedOptions<DefinitionAccessor>(config))
+                                    : std::string{};
+          },
+          .validateConfig = [](const WidgetConfig* config) -> std::optional<std::string> {
+            const auto& definition = DefinitionAccessor();
+            return definition.validateOptions
+                ? definition.validateOptions(resolveProjectedOptions<DefinitionAccessor>(config))
+                : std::nullopt;
+          },
+      };
+    }
+
+    constexpr std::array kTypedWidgetDefinitions{
+        projectWidgetDefinition<activeWindowWidgetDefinition>(),
+        projectWidgetDefinition<audioVisualizerWidgetDefinition>(),
+        projectWidgetDefinition<batteryWidgetDefinition>(),
+        projectWidgetDefinition<bluetoothWidgetDefinition>(),
+        projectWidgetDefinition<brightnessWidgetDefinition>(),
+        projectWidgetDefinition<caffeineWidgetDefinition>(),
+        projectWidgetDefinition<clipboardWidgetDefinition>(),
+        projectWidgetDefinition<clockWidgetDefinition>(),
+        projectWidgetDefinition<controlCenterWidgetDefinition>(),
+        projectWidgetDefinition<customButtonWidgetDefinition>(),
+        projectWidgetDefinition<keyboardLayoutWidgetDefinition>(),
+        projectWidgetDefinition<launcherWidgetDefinition>(),
+        projectWidgetDefinition<lockKeysWidgetDefinition>(),
+        projectWidgetDefinition<mediaWidgetDefinition>(),
+        projectWidgetDefinition<networkWidgetDefinition>(),
+        projectWidgetDefinition<nightlightWidgetDefinition>(),
+        projectWidgetDefinition<notificationWidgetDefinition>(),
+        projectWidgetDefinition<powerProfileWidgetDefinition>(),
+        projectWidgetDefinition<privacyWidgetDefinition>(),
+        projectWidgetDefinition<screenshotWidgetDefinition>(),
+        projectWidgetDefinition<sessionWidgetDefinition>(),
+        projectWidgetDefinition<settingsWidgetDefinition>(),
+        projectWidgetDefinition<spacerWidgetDefinition>(),
+        projectWidgetDefinition<sysmonWidgetDefinition>(),
+        projectWidgetDefinition<taskbarWidgetDefinition>(),
+        projectWidgetDefinition<testWidgetDefinition>(),
+        projectWidgetDefinition<textWidgetDefinition>(),
+        projectWidgetDefinition<themeModeWidgetDefinition>(),
+        projectWidgetDefinition<trayWidgetDefinition>(),
+        projectWidgetDefinition<volumeWidgetDefinition>(),
+        projectWidgetDefinition<wallpaperWidgetDefinition>(),
+        projectWidgetDefinition<weatherWidgetDefinition>(),
+        projectWidgetDefinition<workspacesWidgetDefinition>(),
+    };
+
+    const TypedWidgetDefinitionProjection* findTypedWidgetDefinitionProjection(std::string_view type) {
+      const auto projection =
+          std::ranges::find_if(kTypedWidgetDefinitions, [type](const TypedWidgetDefinitionProjection& candidate) {
+            return candidate.type() == type;
+          });
+      return projection != kTypedWidgetDefinitions.end() ? &*projection : nullptr;
+    }
+
+    // Applies a definition's common-setting overrides. A key that names no common
+    // setting is a definition bug, not a silent no-op.
+    void applyCommonOverrides(
+        std::vector<WidgetSettingSpec>& commonSpecs,
+        const std::vector<noctalia::bar::WidgetCommonSettingOverride>& overrides, std::string_view type
+    ) {
+      for (const auto& entry : overrides) {
+        const auto spec = std::ranges::find_if(commonSpecs, [&entry](const WidgetSettingSpec& candidate) {
+          return candidate.schema.key == entry.key;
+        });
+        if (spec == commonSpecs.end()) {
+          throw std::logic_error(
+              std::format("widget definition '{}' overrides unknown common setting '{}'", type, entry.key)
+          );
+        }
+        if (entry.defaultValue.has_value()) {
+          spec->schema.defaultValue = *entry.defaultValue;
+        }
+        if (!entry.descriptionKey.empty()) {
+          spec->descriptionKey = std::string(entry.descriptionKey);
+        }
+        if (entry.visibleWhen.has_value() && entry.replaceVisibleWhen.has_value()) {
+          throw std::logic_error(
+              std::format(
+                  "widget definition '{}' common override '{}' both refines and replaces visibility", type, entry.key
+              )
+          );
+        }
+        if (entry.replaceVisibleWhen.has_value()) {
+          spec->visibleWhen = entry.replaceVisibleWhen;
+        } else if (entry.visibleWhen.has_value()) {
+          if (!entry.visibleWhen->any.empty()) {
+            throw std::logic_error(
+                std::format(
+                    "widget definition '{}' common override '{}' declares alternatives; refinements are 'all' only",
+                    type, entry.key
+                )
+            );
+          }
+          auto refined = spec->visibleWhen.value_or(WidgetSettingVisibility{});
+          refined.all.insert(refined.all.end(), entry.visibleWhen->all.begin(), entry.visibleWhen->all.end());
+          spec->visibleWhen = std::move(refined);
+        }
+      }
+    }
+
+    const std::vector<WidgetTypeSpec> kWidgetTypeSpecs = {
+        {.type = "active_window", .labelKey = "settings.widgets.types.active-window", .glyph = "app-window"},
+        {.type = "audio_visualizer", .labelKey = "settings.widgets.types.audio-visualizer", .glyph = "wave-sine"},
+        {.type = "battery", .labelKey = "settings.widgets.types.battery", .glyph = "battery-4"},
+        {.type = "bluetooth", .labelKey = "settings.widgets.types.bluetooth", .glyph = "bluetooth"},
+        {.type = "brightness", .labelKey = "settings.widgets.types.brightness", .glyph = "brightness-high"},
+        {.type = "clock", .labelKey = "settings.widgets.types.clock", .glyph = "clock"},
+        {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "noctalia"},
+        {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard", .glyph = "clipboard"},
+        {.type = "custom_button", .labelKey = "settings.widgets.types.custom-button", .glyph = "circuit-pushbutton"},
+        {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine", .glyph = "caffeine-off"},
+        {.type = "keyboard_layout", .labelKey = "settings.widgets.types.keyboard-layout", .glyph = "keyboard"},
+        {.type = "launcher", .labelKey = "settings.widgets.types.launcher", .glyph = "search"},
+        {.type = "lock_keys", .labelKey = "settings.widgets.types.lock-keys", .glyph = "lock"},
+        {.type = "media", .labelKey = "settings.widgets.types.media", .glyph = "disc-filled"},
+        {.type = "network", .labelKey = "settings.widgets.types.network", .glyph = "wifi-off"},
+        {.type = "nightlight", .labelKey = "settings.widgets.types.nightlight", .glyph = "nightlight-off"},
+        {.type = "notifications", .labelKey = "settings.widgets.types.notifications", .glyph = "bell"},
+        {.type = "power_profile", .labelKey = "settings.widgets.types.power-profile", .glyph = "balanced"},
+        {.type = "privacy", .labelKey = "settings.widgets.types.privacy", .glyph = "shield-lock"},
+        {.type = "screenshot", .labelKey = "settings.widgets.types.screenshot", .glyph = "screenshot"},
+        {.type = "session", .labelKey = "settings.widgets.types.session", .glyph = "shutdown"},
+        {.type = "settings", .labelKey = "settings.widgets.types.settings", .glyph = "settings"},
+        {.type = "spacer", .labelKey = "settings.widgets.types.spacer", .glyph = "arrows-horizontal"},
+        {.type = "sysmon", .labelKey = "settings.widgets.types.sysmon", .glyph = "cpu-usage"},
+        {.type = "taskbar", .labelKey = "settings.widgets.types.taskbar", .glyph = "apps"},
+        {.type = "test", .labelKey = "settings.widgets.types.test", .glyph = "flask", .visibleInPicker = false},
+        {.type = "text", .labelKey = "settings.widgets.types.text", .glyph = "letter-t"},
+        {.type = "theme_mode", .labelKey = "settings.widgets.types.theme-mode", .glyph = "theme-mode"},
+        {.type = "tray", .labelKey = "settings.widgets.types.tray", .glyph = "apps"},
+        {.type = "volume", .labelKey = "settings.widgets.types.volume", .glyph = "volume-high"},
+        {.type = "wallpaper", .labelKey = "settings.widgets.types.wallpaper", .glyph = "wallpaper-selector"},
+        {.type = "weather", .labelKey = "settings.widgets.types.weather", .glyph = "weather-cloud"},
+        {.type = "workspaces", .labelKey = "settings.widgets.types.workspaces", .glyph = "layout-grid"},
+    };
+
+    const WidgetTypeSpec* findWidgetTypeSpec(std::string_view type) {
+      for (const auto& spec : kWidgetTypeSpecs) {
+        if (spec.type == type) {
+          return &spec;
+        }
+      }
+      return nullptr;
+    }
+
+    std::string defaultWidgetGlyph(std::string_view type) {
+      const auto* spec = findWidgetTypeSpec(type);
+      if (spec != nullptr && !spec->glyph.empty()) {
+        return std::string(spec->glyph);
+      }
+      return "apps";
+    }
+
+    std::string widgetGlyph(std::string_view type, const WidgetConfig* config = nullptr) {
+      if (auto pw = resolvePluginWidget(type)) {
+        return pw->manifest->icon.empty() ? std::string("apps") : pw->manifest->icon;
+      }
+      if (const auto* projection = findTypedWidgetDefinitionProjection(type); projection != nullptr) {
+        if (auto glyph = projection->glyph(config); !glyph.empty()) {
+          return glyph;
+        }
+      }
+      return defaultWidgetGlyph(type);
+    }
+
+    // Resolve a widget `type` to a plugin [[widget]] entry, or nullopt for built-ins.
+    std::optional<scripting::ResolvedPluginEntry>
+    resolvePluginWidget(std::string_view type, scripting::PluginRegistry* pluginRegistry) {
+      auto& registry = pluginRegistry != nullptr ? *pluginRegistry : scripting::PluginRegistry::instance();
+      registry.ensureScanned();
+      auto entry = registry.resolve(type);
+      if (entry.has_value() && entry->entry->kind == scripting::PluginEntryKind::Widget) {
+        return entry;
+      }
+      return std::nullopt;
+    }
+
+    // Display label for a plugin [[widget]] entry: the plugin name, plus the
+    // entry id when the plugin ships more than one widget so same-plugin
+    // widgets stay distinguishable.
+    std::string pluginWidgetDisplayLabel(const scripting::ResolvedPluginEntry& entry) {
+      if (entry.manifest->name.empty()) {
+        return entry.fullId();
+      }
+      const auto widgetEntries = std::ranges::count_if(entry.manifest->entries, [](const scripting::PluginEntry& e) {
+        return e.kind == scripting::PluginEntryKind::Widget;
+      });
+      if (widgetEntries > 1) {
+        return entry.manifest->name + " · " + entry.entry->id;
+      }
+      return entry.manifest->name;
+    }
+
+    std::string appendVersion(std::string text, std::string_view version) {
+      if (version.empty()) {
+        return text;
+      }
+      const std::string versionText = "version " + std::string(version);
+      if (text.empty()) {
+        return versionText;
+      }
+      text += " (";
+      text += versionText;
+      text += ")";
+      return text;
+    }
+
+    WidgetSettingSpec
+    baseSpec(std::string_view key, WidgetControlKind control, WidgetSettingValue defaultValue, bool advanced) {
+      WidgetSettingSpec spec;
+      spec.schema.key = std::string(key);
+      spec.schema.type = schemaTypeForControl(control);
+      spec.schema.defaultValue = std::move(defaultValue);
+      spec.control = control;
+      spec.labelKey = std::string("settings.widgets.settings.") + i18n::keySegment(key) + ".label";
+      spec.descriptionKey = std::string("settings.widgets.settings.") + i18n::keySegment(key) + ".description";
+      spec.advanced = advanced;
+      return spec;
+    }
+
+    WidgetSettingSpec withGroup(WidgetSettingSpec spec, std::string_view group) {
+      spec.group = group;
+      return spec;
+    }
+
+    WidgetSettingSpec boolSpec(std::string_view key, bool defaultValue, bool advanced = false) {
+      return baseSpec(key, WidgetControlKind::Bool, defaultValue, advanced);
+    }
+
+    WidgetSettingSpec intSpec(
+        std::string_view key, std::int64_t defaultValue, double minValue, double maxValue, double step = 1.0,
+        bool advanced = false
+    ) {
+      auto spec = baseSpec(key, WidgetControlKind::Int, defaultValue, advanced);
+      spec.schema.minValue = minValue;
+      spec.schema.maxValue = maxValue;
+      spec.schema.step = step;
+      return spec;
+    }
+
+    WidgetSettingSpec doubleSpec(
+        std::string_view key, double defaultValue, double minValue, double maxValue, double step = 1.0,
+        bool advanced = false
+    ) {
+      auto spec = baseSpec(key, WidgetControlKind::Double, defaultValue, advanced);
+      spec.schema.minValue = minValue;
+      spec.schema.maxValue = maxValue;
+      spec.schema.step = step;
+      return spec;
+    }
+
+    WidgetSettingSpec
+    optionalDoubleSpec(std::string_view key, double minValue, double maxValue, bool advanced = false) {
+      auto spec = baseSpec(key, WidgetControlKind::OptionalDouble, 0.0, advanced);
+      spec.schema.minValue = minValue;
+      spec.schema.maxValue = maxValue;
+      return spec;
+    }
+
+    WidgetSettingSpec colorSpec(std::string_view key, std::string defaultValue = {}, bool advanced = false) {
+      return baseSpec(key, WidgetControlKind::ColorSpec, std::move(defaultValue), advanced);
+    }
+
+    WidgetSettingSpec stringMapSpec(std::string_view key, bool advanced = false) {
+      return baseSpec(key, WidgetControlKind::StringMap, WidgetSettingStringMap{}, advanced);
+    }
+
+    WidgetSettingSpec selectSpec(
+        std::string_view key, std::string defaultValue, std::vector<WidgetSettingSelectOption> options,
+        bool advanced = false
+    ) {
+      auto spec = baseSpec(key, WidgetControlKind::Select, std::move(defaultValue), advanced);
+      for (const auto& option : options) {
+        spec.schema.enumValues.push_back(option.value);
+      }
+      spec.options = std::move(options);
+      return spec;
+    }
+
+    std::string widgetInstanceDisplayLabel(std::string_view name) {
+      if (name == "cpu") {
+        return tr("settings.widgets.instances.cpu");
+      }
+      if (name == "temp") {
+        return tr("settings.widgets.instances.temp");
+      }
+      if (name == "ram") {
+        return tr("settings.widgets.instances.ram");
+      }
+      if (name == "date") {
+        return tr("settings.widgets.instances.date");
+      }
+      if (name == "output_volume") {
+        return tr("settings.widgets.instances.output-volume");
+      }
+      if (name == "input_volume") {
+        return tr("settings.widgets.instances.input-volume");
+      }
+      if (name == "network_tx") {
+        return tr("settings.widgets.instances.network-tx");
+      }
+      if (name == "network_rx") {
+        return tr("settings.widgets.instances.network-rx");
+      }
+      return std::string(name);
+    }
+
+    void addPickerEntry(
+        std::vector<WidgetPickerEntry>& entries, std::unordered_set<std::string>& seen, std::string value,
+        std::string label, std::string description, std::string icon, WidgetReferenceKind kind
+    ) {
+      if (!seen.insert(value).second) {
+        return;
+      }
+      entries.push_back(
+          WidgetPickerEntry{
+              .value = std::move(value),
+              .label = std::move(label),
+              .description = std::move(description),
+              .icon = std::move(icon),
+              .kind = kind,
+          }
+      );
+    }
+
+    void collectLaneUnknowns(
+        const std::vector<std::string>& widgets, std::vector<WidgetPickerEntry>& entries,
+        std::unordered_set<std::string>& seen, const Config& cfg
+    ) {
+      for (const auto& name : widgets) {
+        if (isBuiltInWidgetType(name) || cfg.widgets.contains(name)) {
+          continue;
+        }
+        addPickerEntry(entries, seen, name, name, name, "warning", WidgetReferenceKind::Unknown);
+      }
+    }
+
+  } // namespace
+
+  const std::vector<WidgetTypeSpec>& widgetTypeSpecs() { return kWidgetTypeSpecs; }
+
+  bool isBuiltInWidgetType(std::string_view type) { return findWidgetTypeSpec(type) != nullptr; }
+
+  std::optional<std::string> validateWidgetSemantics(std::string_view type, const WidgetConfig* config) {
+    const auto* projection = findTypedWidgetDefinitionProjection(type);
+    return projection != nullptr ? projection->validateConfig(config) : std::nullopt;
+  }
+
+  bool isPluginWidgetType(std::string_view type) { return resolvePluginWidget(type).has_value(); }
+
+  bool widgetTypeRequiresNamedConfig(std::string_view type) {
+    return type == "custom_button" || type == "spacer" || type == "text" || resolvePluginWidget(type).has_value();
+  }
+
+  std::string widgetTypeForReference(const Config& cfg, std::string_view name) {
+    if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end() && !it->second.type.empty()) {
+      return it->second.type;
+    }
+    if (isBuiltInWidgetType(name)) {
+      return std::string(name);
+    }
+    return {};
+  }
+
+  std::string titleFromWidgetKey(std::string_view key) {
+    std::string out;
+    out.reserve(key.size());
+    bool upperNext = true;
+    for (const char c : key) {
+      if (c == '_' || c == '-') {
+        out.push_back(' ');
+        upperNext = true;
+      } else if (upperNext) {
+        out.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(c))));
+        upperNext = false;
+      } else {
+        out.push_back(c);
+      }
+    }
+    return out;
+  }
+
+  WidgetReferenceInfo widgetReferenceInfo(const Config& cfg, std::string_view name, bool includeManifestVersion) {
+    if (const auto* spec = findWidgetTypeSpec(name)) {
+      if (const auto it = cfg.widgets.find(std::string(name));
+          it != cfg.widgets.end() && !it->second.type.empty() && it->second.type != name) {
+        return WidgetReferenceInfo{
+            .title = std::string(name),
+            .detail = it->second.type,
+            .kind = WidgetReferenceKind::Named,
+        };
+      }
+      return WidgetReferenceInfo{
+          .title = tr(spec->labelKey),
+          .detail = std::string(name),
+          .kind = WidgetReferenceKind::BuiltIn,
+      };
+    }
+
+    if (const auto it = cfg.widgets.find(std::string(name)); it != cfg.widgets.end()) {
+      std::string title = widgetInstanceDisplayLabel(name);
+      std::string detail = it->second.type.empty() ? tr("settings.entities.widget.detail.custom") : it->second.type;
+      if (auto pw = resolvePluginWidget(it->second.type)) {
+        if (!pw->manifest->name.empty()) {
+          title = pluginWidgetDisplayLabel(*pw);
+        }
+        if (includeManifestVersion) {
+          detail = appendVersion(std::move(detail), pw->manifest->version);
+        }
+      }
+      return WidgetReferenceInfo{
+          .title = std::move(title),
+          .detail = std::move(detail),
+          .kind = WidgetReferenceKind::Named,
+      };
+    }
+
+    return WidgetReferenceInfo{
+        .title = widgetInstanceDisplayLabel(name),
+        .detail = std::string(name),
+        .kind = WidgetReferenceKind::Unknown,
+    };
+  }
+
+  std::vector<WidgetPickerEntry> widgetPickerEntries(const Config& cfg) {
+    std::vector<WidgetPickerEntry> entries;
+    std::unordered_set<std::string> seen;
+
+    for (const auto& spec : kWidgetTypeSpecs) {
+      if (!spec.visibleInPicker) {
+        continue;
+      }
+      const auto configIt = cfg.widgets.find(std::string(spec.type));
+      const WidgetConfig* widgetConfig = configIt != cfg.widgets.end() ? &configIt->second : nullptr;
+      addPickerEntry(
+          entries, seen, std::string(spec.type), tr(spec.labelKey), std::string(spec.type),
+          widgetGlyph(
+              widgetConfig != nullptr && !widgetConfig->type.empty() ? widgetConfig->type : spec.type, widgetConfig
+          ),
+          WidgetReferenceKind::BuiltIn
+      );
+    }
+
+    for (const auto& [name, widget] : cfg.widgets) {
+      if (isBuiltInWidgetType(name)) {
+        continue;
+      }
+      // Only surface named instances of built-in multi-instance types (custom_button, spacer).
+      // Plugin-typed instances are already represented by their registry [[widget]] entry below,
+      // and stale/invalid types (e.g. "scripted") are surfaced loudly by config_validate.
+      if (!widget.type.empty() && !isBuiltInWidgetType(widget.type)) {
+        continue;
+      }
+      std::string label = widgetInstanceDisplayLabel(name);
+      std::string description = widget.type.empty() ? tr("settings.entities.widget.detail.custom") : widget.type;
+      addPickerEntry(
+          entries, seen, name, label, std::move(description), widgetGlyph(widget.type, &widget),
+          WidgetReferenceKind::Named
+      );
+    }
+
+    // Plugin [[widget]] entries appear as one-click adds (value = entry id).
+    scripting::PluginRegistry::instance().ensureScanned();
+    for (const auto& entry : scripting::PluginRegistry::instance().entriesOfKind(scripting::PluginEntryKind::Widget)) {
+      const std::string entryId = entry.fullId();
+      if (!seen.insert(entryId).second) {
+        continue;
+      }
+      std::string label = pluginWidgetDisplayLabel(entry);
+      // Lead with the entry id so same-plugin widgets stay distinguishable.
+      std::string description = appendVersion(entry.manifest->description, entry.manifest->version);
+      description = description.empty() ? entryId : entryId + " — " + description;
+      entries.push_back(
+          WidgetPickerEntry{
+              .value = entryId,
+              .label = std::move(label),
+              .description = std::move(description),
+              .icon = entry.manifest->icon.empty() ? "apps" : entry.manifest->icon,
+              .kind = WidgetReferenceKind::Plugin,
+          }
+      );
+    }
+
+    for (const auto& bar : cfg.bars) {
+      collectLaneUnknowns(bar.startWidgets, entries, seen, cfg);
+      collectLaneUnknowns(bar.centerWidgets, entries, seen, cfg);
+      collectLaneUnknowns(bar.endWidgets, entries, seen, cfg);
+      for (const auto& ovr : bar.monitorOverrides) {
+        if (ovr.startWidgets.has_value()) {
+          collectLaneUnknowns(*ovr.startWidgets, entries, seen, cfg);
+        }
+        if (ovr.centerWidgets.has_value()) {
+          collectLaneUnknowns(*ovr.centerWidgets, entries, seen, cfg);
+        }
+        if (ovr.endWidgets.has_value()) {
+          collectLaneUnknowns(*ovr.endWidgets, entries, seen, cfg);
+        }
+      }
+    }
+
+    std::ranges::sort(entries, [](const auto& a, const auto& b) {
+      if (a.label == b.label) {
+        return a.value < b.value;
+      }
+      return a.label < b.label;
+    });
+    return entries;
+  }
+
+  std::vector<WidgetSettingSpec> commonWidgetSettingSpecs(std::string_view shellFontFamily, bool populateFontCatalogs) {
+    const WidgetSettingVisibility capsuleOn{"capsule", {"true"}};
+
+    auto enabled = boolSpec("enabled", true);
+    enabled.visibleInInspector = false;
+    auto anchor = withGroup(boolSpec("anchor", false, true), "presentation");
+    auto interactive = withGroup(boolSpec("interactive", true), "presentation");
+    auto scale = withGroup(doubleSpec("scale", 1.0, 0.2, 2.5, 0.05), "presentation");
+    auto fontScale = withGroup(doubleSpec("font_scale", 1.0, 0.2, 2.5, 0.01), "presentation");
+    auto widgetColor = withGroup(colorSpec("color", {}, true), "presentation");
+    auto widgetIconColor = withGroup(colorSpec("icon_color", {}, true), "presentation");
+    std::vector<WidgetSettingSelectOption> fontWeightOptions;
+    if (populateFontCatalogs) {
+      fontWeightOptions =
+          buildLabelFontWeightSelectOptions(shellFontFamily, FontWeightSelectKind::WidgetInheritDefault);
+    } else {
+      fontWeightOptions.push_back({"", "settings.options.font-weight.default"});
+      for (const FontWeightI18nOption& option : kFontWeightOptions) {
+        fontWeightOptions.push_back({std::to_string(static_cast<int>(option.weight)), std::string(option.labelKey)});
+      }
+    }
+    auto fontWeight = withGroup(selectSpec("font_weight", "", std::move(fontWeightOptions), true), "presentation");
+    fontWeight.integerValue = true;
+
+    // Font picker rendered as a filterable search picker but validated as a free string: a font configured
+    // elsewhere but absent here must still load. Empty value = inherit the bar/shell font.
+    auto fontFamily = baseSpec("font_family", WidgetControlKind::Select, std::string{}, true);
+    fontFamily.schema.type = schema::WidgetSettingType::String;
+    if (populateFontCatalogs) {
+      fontFamily.options = buildFontFamilySelectOptions();
+    }
+    fontFamily.literalLabels = true;
+    fontFamily = withGroup(std::move(fontFamily), "presentation");
+
+    auto capsuleToggle = withGroup(boolSpec("capsule", false), "presentation");
+    auto capsuleFill = withGroup(colorSpec("capsule_fill", "", true), "presentation");
+    capsuleFill.visibleWhen = capsuleOn;
+
+    auto capsuleBorder = withGroup(colorSpec("capsule_border", {}, true), "presentation");
+    capsuleBorder.visibleWhen = capsuleOn;
+
+    auto capsuleForeground = withGroup(colorSpec("capsule_foreground", {}, true), "presentation");
+    capsuleForeground.visibleWhen = capsuleOn;
+
+    auto capsulePadding = withGroup(
+        intSpec("capsule_padding", static_cast<double>(Style::barCapsulePadding), 0.0, 48.0, 1.0), "presentation"
+    );
+    capsulePadding.visibleWhen = capsuleOn;
+    auto capsuleRadius = withGroup(optionalDoubleSpec("capsule_radius", 0.0, 80.0), "presentation");
+    capsuleRadius.visibleWhen = capsuleOn;
+    auto capsuleOpacity = withGroup(doubleSpec("capsule_opacity", 1.0, 0.0, 1.0, 0.01), "presentation");
+    capsuleOpacity.visibleWhen = capsuleOn;
+
+    // Gesture -> action bindings. Reaches every widget type, including those without a typed
+    // definition and plugin widgets, because this list is merged into all of them.
+    // Non-interactive widgets ignore pointer input, so gesture bindings are irrelevant.
+    auto actions = withGroup(stringMapSpec("actions"), "actions");
+    auto scrollRepeat = withGroup(
+        selectSpec(
+            "scroll_repeat", "auto",
+            {{"auto", "settings.widgets.options.auto"},
+             {"gesture", "settings.widgets.options.scroll-gesture"},
+             {"steps", "settings.widgets.options.scroll-steps"}}
+        ),
+        "behavior"
+    );
+    scrollRepeat.visibleWhen = WidgetSettingVisibility{"interactive", {"true"}};
+    actions.visibleWhen = WidgetSettingVisibility{"interactive", {"true"}};
+
+    return {
+        std::move(enabled),         std::move(anchor),
+        std::move(interactive),     std::move(scale),
+        std::move(fontScale),       std::move(widgetColor),
+        std::move(widgetIconColor), std::move(fontFamily),
+        std::move(fontWeight),      std::move(capsuleToggle),
+        std::move(capsuleRadius),   std::move(capsuleFill),
+        std::move(capsuleBorder),   std::move(capsuleForeground),
+        std::move(capsulePadding),  std::move(capsuleOpacity),
+        std::move(scrollRepeat),    std::move(actions),
+    };
+  }
+
+  namespace {
+
+    // The gesture-actions spec carries this type's resolved defaults so the editor can show what
+    // each gesture already does, rather than a column of blanks.
+    void applyGestureActionDefaults(
+        std::vector<WidgetSettingSpec>& specs, std::string_view type, const WidgetConfig* config
+    ) {
+      const auto it = std::ranges::find(specs, "actions", [](const WidgetSettingSpec& spec) {
+        return std::string_view(spec.schema.key);
+      });
+      if (it != specs.end()) {
+        it->schema.defaultValue = noctalia::bar::defaultActionsForType(type, config);
+      }
+    }
+
+  } // namespace
+
+  namespace {
+
+    std::vector<WidgetSettingSpec> typeWidgetSettingSpecs(
+        std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily, bool populateFontCatalogs
+    ) {
+      std::vector<WidgetSettingSpec> specs;
+      const auto* projection = findTypedWidgetDefinitionProjection(type);
+      auto commonSpecs = commonWidgetSettingSpecs(shellFontFamily, populateFontCatalogs);
+      if (projection != nullptr) {
+        applyCommonOverrides(commonSpecs, projection->commonOverrides(), type);
+      }
+
+      if (projection != nullptr) {
+        specs = projection->presentedSettingSpecs();
+      }
+
+      specs.insert(
+          specs.end(), std::make_move_iterator(commonSpecs.begin()), std::make_move_iterator(commonSpecs.end())
+      );
+      applyGestureActionDefaults(specs, type, config);
+      return specs;
+    }
+
+  } // namespace
+
+  std::vector<WidgetSettingSpec> manifestSettingSpecs(
+      const std::vector<scripting::ManifestField>& fields, const scripting::PluginTranslationCatalog* translations
+  ) {
+    // Host-injected panel shell fields carry no label key; their labels come from
+    // pluginPanelShellSettingSpecs() and callers drop the specs produced here.
+    const auto translate = [&](const std::string& key) {
+      if (key.empty() || translations == nullptr) {
+        return key;
+      }
+      return translations->translate(key);
+    };
+
+    std::vector<WidgetSettingSpec> specs;
+    specs.reserve(fields.size());
+    for (const auto& field : fields) {
+      WidgetSettingSpec spec;
+      spec.schema.key = field.key;
+      spec.literalLabel = translate(field.labelKey);
+      spec.literalDescription = translate(field.descriptionKey);
+      spec.advanced = field.advanced;
+      spec.schema.minValue = field.minValue;
+      spec.schema.maxValue = field.maxValue;
+      spec.schema.step = field.step;
+
+      switch (field.type) {
+      case scripting::ManifestFieldType::Bool:
+        spec.control = WidgetControlKind::Bool;
+        spec.schema.defaultValue = field.boolDefault;
+        break;
+      case scripting::ManifestFieldType::Int:
+        spec.control = WidgetControlKind::Int;
+        spec.schema.defaultValue = static_cast<std::int64_t>(field.numberDefault);
+        break;
+      case scripting::ManifestFieldType::Double:
+        spec.control = WidgetControlKind::Double;
+        spec.schema.defaultValue = field.numberDefault;
+        break;
+      case scripting::ManifestFieldType::StringList:
+        spec.control = WidgetControlKind::StringList;
+        spec.schema.defaultValue = field.stringListDefault;
+        break;
+      case scripting::ManifestFieldType::StringMap:
+        spec.control = WidgetControlKind::StringMap;
+        spec.schema.defaultValue = field.stringMapDefault;
+        break;
+      case scripting::ManifestFieldType::File:
+        spec.control = WidgetControlKind::File;
+        spec.schema.defaultValue = field.stringDefault;
+        spec.extensions = field.extensions;
+        break;
+      case scripting::ManifestFieldType::Folder:
+        spec.control = WidgetControlKind::Folder;
+        spec.schema.defaultValue = field.stringDefault;
+        break;
+      case scripting::ManifestFieldType::Select:
+        spec.control = WidgetControlKind::Select;
+        spec.schema.defaultValue = field.stringDefault;
+        spec.literalLabels = true;
+        for (const auto& opt : field.options) {
+          spec.schema.enumValues.push_back(opt.value);
+          spec.options.push_back(WidgetSettingSelectOption{.value = opt.value, .labelKey = translate(opt.labelKey)});
+        }
+        break;
+      case scripting::ManifestFieldType::Color:
+        spec.control = WidgetControlKind::ColorSpec;
+        spec.schema.defaultValue = field.stringDefault;
+        break;
+      case scripting::ManifestFieldType::Glyph:
+        spec.control = WidgetControlKind::Glyph;
+        spec.schema.defaultValue = field.stringDefault;
+        break;
+      case scripting::ManifestFieldType::String:
+      default:
+        spec.control = WidgetControlKind::String;
+        spec.schema.defaultValue = field.stringDefault;
+        break;
+      }
+      spec.schema.type = schemaTypeForControl(spec.control);
+
+      if (field.visibleWhen.has_value()) {
+        spec.visibleWhen = WidgetSettingVisibility{field.visibleWhen->key, field.visibleWhen->values};
+      }
+      specs.push_back(std::move(spec));
+    }
+    return specs;
+  }
+
+  std::vector<WidgetSettingSpec> pluginPanelShellSettingSpecs(const scripting::PluginEntry& entry) {
+    if (entry.kind != scripting::PluginEntryKind::Panel) {
+      return {};
+    }
+    const std::string placementKey = scripting::panelShellSettingKey(entry.id, "placement");
+    const std::string positionKey = scripting::panelShellSettingKey(entry.id, "position");
+    const std::string openNearClickKey = scripting::panelShellSettingKey(entry.id, "open_near_click");
+    const std::string layerKey = scripting::panelShellSettingKey(entry.id, "layer");
+    const std::string entryTitle = entry.id;
+    const auto entryPrefix = [&](std::string_view suffix) {
+      std::string label = entryTitle;
+      label.append(" · ");
+      label.append(suffix);
+      return label;
+    };
+
+    auto placementSpec = [&](const scripting::ManifestField* field) {
+      WidgetSettingSpec spec;
+      spec.schema.key = placementKey;
+      spec.literalLabel = entryPrefix(tr("settings.plugins.panels.placement.label"));
+      spec.literalDescription = tr("settings.plugins.panels.placement.description");
+      spec.control = WidgetControlKind::Select;
+      spec.segmented = true;
+      spec.literalLabels = true;
+      spec.schema.defaultValue = field != nullptr ? field->defaultValue() : entry.panelPlacementDefault;
+      spec.options = {
+          {"attached", tr("settings.options.shell.panel-placement.attached")},
+          {"floating", tr("settings.options.shell.panel-placement.floating")},
+      };
+      for (const auto& option : spec.options) {
+        spec.schema.enumValues.push_back(option.value);
+      }
+      spec.schema.type = schemaTypeForControl(spec.control);
+      return spec;
+    };
+
+    auto positionSpec = [&](const scripting::ManifestField* field) {
+      WidgetSettingSpec spec;
+      spec.schema.key = positionKey;
+      spec.literalLabel = entryPrefix(tr("settings.plugins.panels.position.label"));
+      spec.literalDescription = tr("settings.plugins.panels.position.description");
+      spec.control = WidgetControlKind::Select;
+      spec.literalLabels = true;
+      spec.schema.defaultValue = field != nullptr ? field->defaultValue() : entry.panelPositionDefault;
+      spec.options = {
+          {"auto", tr("settings.options.panel-position.auto")},
+          {"center", tr("settings.options.screen-position.center")},
+          {"top_left", tr("settings.options.screen-position.top-left")},
+          {"top_center", tr("settings.options.screen-position.top-center")},
+          {"top_right", tr("settings.options.screen-position.top-right")},
+          {"center_left", tr("settings.options.screen-position.center-left")},
+          {"center_right", tr("settings.options.screen-position.center-right")},
+          {"bottom_left", tr("settings.options.screen-position.bottom-left")},
+          {"bottom_center", tr("settings.options.screen-position.bottom-center")},
+          {"bottom_right", tr("settings.options.screen-position.bottom-right")},
+      };
+      for (const auto& option : spec.options) {
+        spec.schema.enumValues.push_back(option.value);
+      }
+      spec.schema.type = schemaTypeForControl(spec.control);
+      spec.visibleWhen = WidgetSettingVisibility{placementKey, {"floating"}};
+      return spec;
+    };
+
+    auto layerSpec = [&](const scripting::ManifestField* field) {
+      WidgetSettingSpec spec;
+      spec.schema.key = layerKey;
+      spec.literalLabel = entryPrefix(tr("settings.plugins.panels.layer.label"));
+      spec.literalDescription = tr("settings.plugins.panels.layer.description");
+      spec.control = WidgetControlKind::Select;
+      spec.segmented = true;
+      spec.literalLabels = true;
+      spec.schema.defaultValue = field != nullptr ? field->defaultValue() : entry.panelLayerDefault;
+      spec.options = {
+          {"top", tr("settings.options.layer.top")},
+          {"overlay", tr("settings.options.layer.overlay")},
+      };
+      for (const auto& option : spec.options) {
+        spec.schema.enumValues.push_back(option.value);
+      }
+      spec.schema.type = schemaTypeForControl(spec.control);
+      spec.visibleWhen = WidgetSettingVisibility{placementKey, {"floating"}};
+      return spec;
+    };
+
+    auto openNearClickSpec = [&](const scripting::ManifestField* field) {
+      WidgetSettingSpec spec;
+      spec.schema.key = openNearClickKey;
+      spec.literalLabel = entryPrefix(tr("settings.plugins.panels.open-near-click.label"));
+      spec.literalDescription = tr("settings.plugins.panels.open-near-click.description");
+      spec.control = WidgetControlKind::Select;
+      spec.segmented = true;
+      spec.literalLabels = true;
+      spec.schema.defaultValue = field != nullptr ? field->defaultValue() : entry.panelOpenNearClickDefault;
+      spec.options = {
+          {"false", tr("settings.options.panel-bar-alignment.centered")},
+          {"true", tr("settings.options.panel-bar-alignment.near-trigger")},
+      };
+      spec.schema.type = schema::WidgetSettingType::Bool;
+      spec.visibleWhen = WidgetSettingVisibility{
+          {placementKey, {"attached"}},
+          {positionKey, {"auto"}},
+      };
+      return spec;
+    };
+
+    const scripting::ManifestField* placementField = nullptr;
+    const scripting::ManifestField* positionField = nullptr;
+    const scripting::ManifestField* openNearClickField = nullptr;
+    const scripting::ManifestField* layerField = nullptr;
+    for (const auto& field : entry.settings) {
+      if (field.key == placementKey) {
+        placementField = &field;
+      } else if (field.key == positionKey) {
+        positionField = &field;
+      } else if (field.key == openNearClickKey) {
+        openNearClickField = &field;
+      } else if (field.key == layerKey) {
+        layerField = &field;
+      }
+    }
+
+    return {
+        placementSpec(placementField),
+        positionSpec(positionField),
+        layerSpec(layerField),
+        openNearClickSpec(openNearClickField),
+    };
+  }
+
+  bool widgetSettingIsVisible(
+      const Config& config, std::string_view widgetName, const WidgetSettingSpec& spec,
+      const std::vector<WidgetSettingSpec>& allSpecs, const WidgetSettingCapabilities& capabilities
+  ) {
+    const auto capabilityAvailable = [&](WidgetSettingCapability capability) {
+      switch (capability) {
+      case WidgetSettingCapability::TaskbarWorkspaceGrouping:
+        return capabilities.taskbarWorkspaceGrouping;
+      }
+      return false;
+    };
+    const auto* widget = [&]() -> const WidgetConfig* {
+      const auto it = config.widgets.find(std::string(widgetName));
+      return it != config.widgets.end() ? &it->second : nullptr;
+    }();
+    const auto findSpec = [&](std::string_view key) -> const WidgetSettingSpec* {
+      const auto it = std::ranges::find(allSpecs, key, [](const WidgetSettingSpec& candidate) {
+        return std::string_view(candidate.schema.key);
+      });
+      return it != allSpecs.end() ? &*it : nullptr;
+    };
+    const auto effectiveValue = [&](std::string_view key) -> std::optional<WidgetSettingValue> {
+      const auto* dependency = findSpec(key);
+      if (dependency != nullptr
+          && dependency->requiresCapability.has_value()
+          && !capabilityAvailable(*dependency->requiresCapability)) {
+        return dependency->schema.defaultValue;
+      }
+      if (widget != nullptr) {
+        if (const auto setting = widget->settings.find(std::string(key)); setting != widget->settings.end()) {
+          return setting->second;
+        }
+      }
+      if (dependency != nullptr) {
+        return dependency->schema.defaultValue;
+      }
+      return std::nullopt;
+    };
+    const auto valueText = [](const WidgetSettingValue& value) {
+      if (const auto* textValue = std::get_if<std::string>(&value)) {
+        return *textValue;
+      }
+      if (const auto* integer = std::get_if<std::int64_t>(&value)) {
+        return std::to_string(*integer);
+      }
+      if (const auto* boolean = std::get_if<bool>(&value)) {
+        return std::string(*boolean ? "true" : "false");
+      }
+      return std::string{};
+    };
+
+    if (spec.requiresCapability.has_value() && !capabilityAvailable(*spec.requiresCapability)) {
+      return false;
+    }
+    if (!spec.visibleWhen.has_value()) {
+      return true;
+    }
+    const auto matches = [&](const WidgetSettingVisibilityCondition& condition) {
+      const auto value = effectiveValue(condition.key);
+      if (!value.has_value()) {
+        return false;
+      }
+      if (condition.nonEmpty) {
+        if (const auto* list = std::get_if<std::vector<std::string>>(&*value)) {
+          return !list->empty();
+        }
+        if (const auto* textValue = std::get_if<std::string>(&*value)) {
+          return !textValue->empty();
+        }
+        return false;
+      }
+      const std::string current = valueText(*value);
+      return std::ranges::contains(condition.values, current);
+    };
+    if (!std::ranges::all_of(spec.visibleWhen->all, matches)) {
+      return false;
+    }
+    return spec.visibleWhen->any.empty() || std::ranges::any_of(spec.visibleWhen->any, matches);
+  }
+
+  std::vector<WidgetSettingSpec> widgetSettingSpecs(
+      std::string_view type, const WidgetConfig* config, std::string_view shellFontFamily, bool populateFontCatalogs
+  ) {
+    if (auto pw = resolvePluginWidget(type)) {
+      scripting::PluginTranslationCatalog translations;
+      translations.load(pw->pluginDir);
+      std::vector<WidgetSettingSpec> specs = manifestSettingSpecs(pw->entry->settings, &translations);
+      // Host-owned gate for pointer-axis / onScroll handlers (same key as built-in widgets).
+      specs.push_back(boolSpec("enable_scroll", true));
+      auto commonSpecs = commonWidgetSettingSpecs(shellFontFamily, populateFontCatalogs);
+      specs.insert(
+          specs.end(), std::make_move_iterator(commonSpecs.begin()), std::make_move_iterator(commonSpecs.end())
+      );
+      applyGestureActionDefaults(specs, type, config);
+      return specs;
+    }
+    return typeWidgetSettingSpecs(type, config, shellFontFamily, populateFontCatalogs);
+  }
+
+  namespace {
+
+    bool widgetSettingValuesEqual(const WidgetSettingValue& a, const WidgetSettingValue& b) {
+      const auto numericValue = [](const WidgetSettingValue& value) -> std::optional<double> {
+        if (const auto* i = std::get_if<std::int64_t>(&value)) {
+          return static_cast<double>(*i);
+        }
+        if (const auto* d = std::get_if<double>(&value)) {
+          return *d;
+        }
+        return std::nullopt;
+      };
+
+      const auto aNum = numericValue(a);
+      const auto bNum = numericValue(b);
+      if (aNum.has_value() || bNum.has_value()) {
+        return aNum.has_value() && bNum.has_value() && std::abs(*aNum - *bNum) <= 1.0e-5;
+      }
+      if (a.index() != b.index()) {
+        return false;
+      }
+      return std::visit(
+          [&](const auto& lhs) {
+            using T = std::decay_t<decltype(lhs)>;
+            const auto* rhs = std::get_if<T>(&b);
+            return rhs != nullptr && lhs == *rhs;
+          },
+          a
+      );
+    }
+
+  } // namespace
+
+  std::optional<WidgetSettingSpec> findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey) {
+    return findWidgetSettingSpec(widgetType, settingKey, nullptr);
+  }
+
+  std::optional<WidgetSettingSpec>
+  findWidgetSettingSpec(std::string_view widgetType, std::string_view settingKey, const WidgetConfig* config) {
+    const std::string key(settingKey);
+    for (const auto& spec : widgetSettingSpecs(widgetType, config, "sans-serif")) {
+      if (spec.schema.key == key) {
+        return spec;
+      }
+    }
+    return std::nullopt;
+  }
+
+  namespace {
+
+    std::optional<schema::WidgetSettingSchema> typedWidgetSettingSchema(std::string_view type) {
+      const auto* projection = findTypedWidgetDefinitionProjection(type);
+      if (projection == nullptr) {
+        return std::nullopt;
+      }
+
+      auto fields = projection->schemaFields();
+      auto common = commonWidgetSettingSpecs("sans-serif", false);
+      applyCommonOverrides(common, projection->commonOverrides(), type);
+      std::ranges::transform(common, std::back_inserter(fields), [](const WidgetSettingSpec& spec) {
+        return spec.schema;
+      });
+      return fields;
+    }
+
+  } // namespace
+
+  noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type) {
+    if (auto fields = typedWidgetSettingSchema(type)) {
+      return std::move(*fields);
+    }
+    noctalia::config::schema::WidgetSettingSchema out;
+    for (const auto& spec : widgetSettingSpecs(type, nullptr, "sans-serif", false)) {
+      out.push_back(spec.schema);
+    }
+    return out;
+  }
+
+  noctalia::config::schema::WidgetSettingSchema
+  widgetSettingSchema(std::string_view type, const WidgetConfig* config, scripting::PluginRegistry* pluginRegistry) {
+    noctalia::config::schema::WidgetSettingSchema out;
+    if (auto pluginEntry = resolvePluginWidget(type, pluginRegistry)) {
+      for (const auto& spec : manifestSettingSpecs(pluginEntry->entry->settings)) {
+        out.push_back(spec.schema);
+      }
+      // Host-owned scroll gate (same key as built-in scroll-capable widgets).
+      out.push_back(
+          schema::WidgetSettingField{
+              .key = "enable_scroll",
+              .type = schema::WidgetSettingType::Bool,
+              .defaultValue = true,
+          }
+      );
+      return out;
+    }
+    if (auto fields = typedWidgetSettingSchema(type)) {
+      return std::move(*fields);
+    }
+    for (const auto& spec : widgetSettingSpecs(type, config, "sans-serif", false)) {
+      out.push_back(spec.schema);
+    }
+    return out;
+  }
+
+  std::optional<noctalia::config::schema::WidgetSettingField>
+  findWidgetSettingField(std::string_view widgetType, std::string_view settingKey) {
+    if (auto fields = typedWidgetSettingSchema(widgetType)) {
+      const auto field = std::ranges::find(*fields, settingKey, &schema::WidgetSettingField::key);
+      return field != fields->end() ? std::optional<schema::WidgetSettingField>(*field) : std::nullopt;
+    }
+    if (const auto spec = findWidgetSettingSpec(widgetType, settingKey)) {
+      return spec->schema;
+    }
+    return std::nullopt;
+  }
+
+  bool configOverrideValueMatchesWidgetSetting(
+      const ConfigOverrideValue& overrideValue, const WidgetSettingValue& settingValue
+  ) {
+    const auto matchesBool = [&](bool value) {
+      if (const auto* settingBool = std::get_if<bool>(&settingValue)) {
+        return value == *settingBool;
+      }
+      return false;
+    };
+    const auto matchesInt = [&](std::int64_t value) {
+      if (const auto* settingInt = std::get_if<std::int64_t>(&settingValue)) {
+        return value == *settingInt;
+      }
+      if (const auto* settingDouble = std::get_if<double>(&settingValue)) {
+        return std::abs(static_cast<double>(value) - *settingDouble) <= 1.0e-5;
+      }
+      return false;
+    };
+    const auto matchesDouble = [&](double value) {
+      if (const auto* settingDouble = std::get_if<double>(&settingValue)) {
+        return std::abs(value - *settingDouble) <= 1.0e-5;
+      }
+      if (const auto* settingInt = std::get_if<std::int64_t>(&settingValue)) {
+        return std::abs(value - static_cast<double>(*settingInt)) <= 1.0e-5;
+      }
+      return false;
+    };
+    const auto matchesString = [&](const std::string& value) {
+      if (const auto* settingString = std::get_if<std::string>(&settingValue)) {
+        return value == *settingString;
+      }
+      return false;
+    };
+    const auto matchesStringList = [&](const std::vector<std::string>& value) {
+      if (const auto* settingList = std::get_if<std::vector<std::string>>(&settingValue)) {
+        return value == *settingList;
+      }
+      return false;
+    };
+
+    return std::visit(
+        [&](const auto& value) -> bool {
+          using T = std::decay_t<decltype(value)>;
+          if constexpr (std::is_same_v<T, bool>) {
+            return matchesBool(value);
+          } else if constexpr (std::is_same_v<T, std::int64_t>) {
+            return matchesInt(value);
+          } else if constexpr (std::is_same_v<T, double>) {
+            return matchesDouble(value);
+          } else if constexpr (std::is_same_v<T, std::string>) {
+            return matchesString(value);
+          } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+            return matchesStringList(value);
+          }
+          return false;
+        },
+        overrideValue
+    );
+  }
+
+  bool widgetOverrideValueMatchesRegistryDefault(
+      std::string_view widgetType, std::string_view settingKey, const ConfigOverrideValue& overrideValue
+  ) {
+    const auto field = findWidgetSettingField(widgetType, settingKey);
+    if (!field.has_value()) {
+      return false;
+    }
+    // OptionalDouble unset means inherit/auto, 0 is a valid explicit radius and must persist.
+    if (field->type == schema::WidgetSettingType::OptionalDouble) {
+      return false;
+    }
+    return configOverrideValueMatchesWidgetSetting(overrideValue, field->defaultValue);
+  }
+
+  bool widgetSettingOverrideIsEffective(
+      std::string_view widgetName, std::string_view settingKey, const Config& withOverride,
+      const Config& withoutOverride
+  ) {
+    const auto widgetInConfig = [](const Config& cfg, std::string_view name) -> const WidgetConfig* {
+      const auto widgetIt = cfg.widgets.find(std::string(name));
+      if (widgetIt == cfg.widgets.end()) {
+        return nullptr;
+      }
+      return &widgetIt->second;
+    };
+    const auto valueInConfig = [&](const Config& cfg, std::string_view name,
+                                   std::string_view key) -> std::optional<WidgetSettingValue> {
+      const auto* widget = widgetInConfig(cfg, name);
+      if (widget == nullptr) {
+        return std::nullopt;
+      }
+      const auto settingIt = widget->settings.find(std::string(key));
+      if (settingIt == widget->settings.end()) {
+        return std::nullopt;
+      }
+      return settingIt->second;
+    };
+    const auto tableInConfig = [&](
+                                   const Config& cfg, std::string_view name, std::string_view key
+                               ) -> std::optional<std::unordered_map<std::string, std::string>> {
+      const auto* widget = widgetInConfig(cfg, name);
+      if (widget == nullptr) {
+        return std::nullopt;
+      }
+      const auto tableIt = widget->tables.find(std::string(key));
+      if (tableIt == widget->tables.end()) {
+        return std::nullopt;
+      }
+      return tableIt->second;
+    };
+
+    std::string widgetType(widgetName);
+    if (const auto* withWidget = widgetInConfig(withOverride, widgetName); withWidget != nullptr) {
+      widgetType = withWidget->type;
+    } else if (const auto* withoutWidget = widgetInConfig(withoutOverride, widgetName); withoutWidget != nullptr) {
+      widgetType = withoutWidget->type;
+    }
+
+    const auto field = findWidgetSettingField(widgetType, settingKey);
+    if (field.has_value() && field->type == schema::WidgetSettingType::StringMap) {
+      const auto withTable = tableInConfig(withOverride, widgetName, settingKey);
+      const auto withoutTable = tableInConfig(withoutOverride, widgetName, settingKey);
+      if (!withTable.has_value() && !withoutTable.has_value()) {
+        return false;
+      }
+      return withTable.value_or(std::unordered_map<std::string, std::string>{})
+          != withoutTable.value_or(std::unordered_map<std::string, std::string>{});
+    }
+    const auto withValue = valueInConfig(withOverride, widgetName, settingKey);
+    const auto withoutValue = valueInConfig(withoutOverride, widgetName, settingKey);
+    if (!withValue.has_value() && !withoutValue.has_value()) {
+      return false;
+    }
+    if (!field.has_value()) {
+      if (!withValue.has_value() || !withoutValue.has_value()) {
+        return true;
+      }
+      return !widgetSettingValuesEqual(*withValue, *withoutValue);
+    }
+    if (field->type == schema::WidgetSettingType::OptionalDouble) {
+      if (!withValue.has_value() || !withoutValue.has_value()) {
+        return true;
+      }
+      return !widgetSettingValuesEqual(*withValue, *withoutValue);
+    }
+
+    const WidgetSettingValue defaultValue = field->defaultValue;
+    const auto resolvedValue = [&](const Config& cfg) -> WidgetSettingValue {
+      if (const auto value = valueInConfig(cfg, widgetName, settingKey); value.has_value()) {
+        return *value;
+      }
+      return defaultValue;
+    };
+
+    return !widgetSettingValuesEqual(resolvedValue(withOverride), resolvedValue(withoutOverride));
+  }
+
+  namespace {
+
+    // The manifest-declared default for a plugin-level setting key, mirroring the
+    // plugin settings editor's spec assembly: plugin [[setting]] fields first, then
+    // each [[panel]] entry's shell placement specs and panel-declared fields.
+    std::optional<WidgetSettingValue> pluginSettingDefault(std::string_view pluginId, std::string_view settingKey) {
+      const auto* manifest = scripting::PluginRegistry::instance().findManifest(pluginId);
+      if (manifest == nullptr) {
+        return std::nullopt;
+      }
+      const auto fieldDefault =
+          [&](const std::vector<scripting::ManifestField>& fields) -> std::optional<WidgetSettingValue> {
+        const auto it = std::ranges::find_if(fields, [&](const scripting::ManifestField& field) {
+          return field.key == settingKey;
+        });
+        if (it == fields.end()) {
+          return std::nullopt;
+        }
+        return it->defaultValue();
+      };
+      if (auto value = fieldDefault(manifest->settings)) {
+        return value;
+      }
+      for (const auto& entry : manifest->entries) {
+        if (entry.kind != scripting::PluginEntryKind::Panel) {
+          continue;
+        }
+        for (const auto& spec : pluginPanelShellSettingSpecs(entry)) {
+          if (spec.schema.key == settingKey) {
+            return spec.schema.defaultValue;
+          }
+        }
+        if (auto value = fieldDefault(entry.settings)) {
+          return value;
+        }
+      }
+      return std::nullopt;
+    }
+
+  } // namespace
+
+  bool pluginSettingOverrideIsEffective(
+      std::string_view pluginId, std::string_view settingKey, const Config& withOverride, const Config& withoutOverride
+  ) {
+    const auto valueInConfig = [&](const Config& cfg) -> std::optional<WidgetSettingValue> {
+      const auto pluginIt = cfg.plugins.pluginSettings.find(std::string(pluginId));
+      if (pluginIt == cfg.plugins.pluginSettings.end()) {
+        return std::nullopt;
+      }
+      const auto keyIt = pluginIt->second.find(std::string(settingKey));
+      if (keyIt == pluginIt->second.end()) {
+        return std::nullopt;
+      }
+      return keyIt->second;
+    };
+    const auto withValue = valueInConfig(withOverride);
+    const auto withoutValue = valueInConfig(withoutOverride);
+    if (!withValue.has_value() && !withoutValue.has_value()) {
+      return false;
+    }
+
+    const auto defaultValue = pluginSettingDefault(pluginId, settingKey);
+    if (!defaultValue.has_value()) {
+      // Unknown key (plugin not loaded or stale override): presence alone decides.
+      if (!withValue.has_value() || !withoutValue.has_value()) {
+        return true;
+      }
+      return !widgetSettingValuesEqual(*withValue, *withoutValue);
+    }
+    return !widgetSettingValuesEqual(withValue.value_or(*defaultValue), withoutValue.value_or(*defaultValue));
+  }
+
+} // namespace settings

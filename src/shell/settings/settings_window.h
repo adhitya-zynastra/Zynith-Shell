@@ -1,0 +1,364 @@
+#pragma once
+
+#include "core/timer_manager.h"
+#include "render/animation/animation_manager.h"
+#include "render/scene/input_dispatcher.h"
+#include "render/scene/node.h"
+#include "scripting/plugin_file_cache.h"
+#include "scripting/plugin_manager.h"
+#include "shell/settings/config_export_dialog_modal.h"
+#include "shell/settings/search_picker_popup.h"
+#include "shell/settings/settings_control_factory.h"
+#include "shell/settings/settings_modal_host.h"
+#include "shell/settings/settings_registry.h"
+#include "shell/settings/settings_sheet_modal.h"
+#include "shell/settings/widget_add_popup.h"
+#include "ui/controls/context_menu_popup.h"
+#include "ui/controls/roving_list_nav.h"
+#include "ui/controls/scroll_view.h"
+#include "ui/controls/select_dropdown_popup.h"
+#include "ui/dialogs/layer_popup_host.h"
+#include "wayland/toplevel_surface.h"
+
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+class Box;
+class AsyncTextureCache;
+class Button;
+class AccountsService;
+class CalendarService;
+class ClipboardService;
+class IpcService;
+class ConfigService;
+class CompositorPlatform;
+class ColorPickerDialogPresenter;
+class DependencyService;
+class FileDialogPresenter;
+class Flex;
+class GlyphPickerDialogPresenter;
+class IdleManager;
+class Input;
+class Label;
+class RenderContext;
+class ThumbnailService;
+class UPowerService;
+class WaylandConnection;
+struct KeyboardEvent;
+struct PointerEvent;
+struct wl_output;
+struct wl_surface;
+
+namespace settings {
+  class SettingsDialogPresenter;
+  struct SettingsContentContext;
+} // namespace settings
+
+// Standalone xdg-toplevel settings UI (same binary as the shell; shares RenderContext).
+class SettingsWindow {
+public:
+  SettingsWindow();
+  ~SettingsWindow();
+
+  void initialize(
+      WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, DependencyService* dependencies,
+      UPowerService* upower, IdleManager* idleManager, CompositorPlatform* platform, AccountsService* accounts = nullptr
+  );
+
+  void open(std::string context = "");
+  void openToBarWidget(std::string barName, std::string widgetName);
+  // Opens the window on the plugins section with the plugin's settings editor.
+  // Returns false when the plugin is unknown, disabled, or exposes no settings.
+  [[nodiscard]] bool openToPlugin(std::string pluginId);
+  void close();
+  // Closes the window for a widget editor while preserving the active section for its return.
+  void closeForWidgetEditor();
+  // Reopens the section saved by closeForWidgetEditor(), if any.
+  void reopenAfterWidgetEditor();
+  [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr && m_surface->isRunning(); }
+  [[nodiscard]] wl_surface* wlSurface() const noexcept {
+    return m_surface != nullptr ? m_surface->wlSurface() : nullptr;
+  }
+  [[nodiscard]] bool ownsKeyboardSurface(wl_surface* surface) const noexcept;
+  [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const;
+  [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const;
+
+  [[nodiscard]] bool onPointerEvent(const PointerEvent& event);
+  void onKeyboardEvent(const KeyboardEvent& event);
+  void onThemeChanged();
+  void onFontChanged();
+  void requestRedraw();
+  void onExternalOptionsChanged();
+  void onPluginsChanged();
+  // Drop cached plugin-store files for a source that just advanced its git revision.
+  void invalidatePluginSourceCache(const std::string& sourceName);
+  void setOpenDesktopWidgetEditor(std::function<void()> callback) { m_openDesktopWidgetEditor = std::move(callback); }
+  void setOpenLockscreenWidgetEditor(std::function<void()> callback) {
+    m_openLockscreenWidgetEditor = std::move(callback);
+  }
+  void setOpenWallpaperPanel(std::function<void()> callback) { m_openWallpaperPanel = std::move(callback); }
+  void setPluginManager(scripting::PluginManager* manager) { m_pluginManager = manager; }
+  void setSyncGreeterAppearance(std::function<void()> callback) { m_syncGreeterAppearance = std::move(callback); }
+  void setResetLauncherUsage(std::function<void()> callback) { m_resetLauncherUsage = std::move(callback); }
+  void setResetScreenTime(std::function<void()> callback) { m_resetScreenTime = std::move(callback); }
+  void setResetEncryptedStorage(std::function<void()> callback) { m_resetEncryptedStorage = std::move(callback); }
+  void setSaveWallpaperPaletteAsCustom(std::function<void()> callback) {
+    m_saveWallpaperPaletteAsCustom = std::move(callback);
+  }
+  void setCalendarService(CalendarService* service) { m_calendarService = service; }
+  // Source for the bar widget gesture action picker.
+  void setIpcService(IpcService* service) { m_ipcService = service; }
+  void setClipboardService(ClipboardService* service) { m_clipboardService = service; }
+  // Backs plugin-store thumbnails; trimmed when the window closes.
+  void setAsyncTextureCache(AsyncTextureCache* cache) { m_asyncTextures = cache; }
+  void initializeDialogPresenter(
+      ColorPickerDialogPresenter& colorFallback, GlyphPickerDialogPresenter& glyphFallback,
+      FileDialogPresenter& fileFallback, ThumbnailService& thumbnails
+  );
+  void shutdownDialogPresenter();
+  [[nodiscard]] ColorPickerDialogPresenter* colorPickerDialogPresenter() noexcept;
+  [[nodiscard]] GlyphPickerDialogPresenter* glyphPickerDialogPresenter() noexcept;
+  [[nodiscard]] FileDialogPresenter* fileDialogPresenter() noexcept;
+
+  void onSecondTick();
+  void onIdleLiveStatusChanged();
+  void markSettingsWriteSuccess(bool requestRebuild = true);
+  void markSettingsWriteError(std::string message);
+  void warnOnUnusableCustomSchedule(const std::vector<std::string>& path);
+  void showTransientStatus(std::string message, bool isError = false);
+
+private:
+  void destroyWindow();
+  [[nodiscard]] bool shouldUseModalDialogs() const noexcept;
+  void prepareFrame(bool needsUpdate, bool needsLayout);
+  void buildScene(std::uint32_t width, std::uint32_t height);
+  void rebuildSettingsContent();
+  [[nodiscard]] settings::RegistryEnvironment buildRegistryEnvironment() const;
+  void refreshSettingsRegistry(const Config& cfg);
+  void syncSelectedBarState(const Config& cfg, const std::vector<std::string>& availableBars);
+  [[nodiscard]] std::unique_ptr<Flex> buildHeaderRow(float scale);
+  [[nodiscard]] std::unique_ptr<Flex>
+  buildFilterRow(float scale, const std::string& resetPageScope, std::vector<std::vector<std::string>> resetPagePaths);
+  [[nodiscard]] std::unique_ptr<Flex> buildStatusRow(float scale);
+  [[nodiscard]] std::unique_ptr<Flex> buildBody(
+      float scale, const Config& cfg, const std::vector<settings::SettingsSection>& sections,
+      const std::vector<std::string>& availableBars
+  );
+  [[nodiscard]] std::vector<settings::SelectOption> batteryDeviceOptions() const;
+  // Bindable IPC commands, for the bar widget gesture action picker.
+  [[nodiscard]] std::vector<settings::GestureActionOption> gestureActionCatalog() const;
+  [[nodiscard]] settings::SettingsContentContext makeContentContext(
+      const Config& cfg, const BarConfig* selectedBar, const BarMonitorOverride* selectedMonitorOverride
+  );
+  [[nodiscard]] std::vector<std::vector<std::string>> currentPageResetPaths() const;
+  [[nodiscard]] bool
+  tryPatchSettingsRegistryValue(const std::vector<std::string>& path, const ConfigOverrideValue& value);
+  [[nodiscard]] bool tryPatchSettingsRegistryOverrides(
+      const std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>>& overrides
+  );
+  [[nodiscard]] bool tryPatchSettingsRegistryResetValues(const std::vector<std::vector<std::string>>& paths);
+  void rebuildFilterRow(float scale);
+  void requestSceneRebuild();
+  void
+  requestContentRebuild(bool refreshRegistry = false, bool refreshFilterRow = false, bool rebuildEditorSheet = false);
+  void scheduleDeferredRebuild();
+  void markPluginListDirty();
+  void refreshPluginListIfNeeded();
+  void maybeOpenPendingEditor();
+  void applyPendingContentScrollTarget(float margin);
+  void scrollFocusedAreaIntoView(class InputArea* area);
+  void scrollSidebarNodeIntoView(const Node* node);
+  void clearStatusMessage();
+  void clearTransientSettingsState();
+  void finishSettingsWrite(
+      bool changed, bool forceSceneRebuild, bool pageResetPathsChanged, bool registryAlreadyCurrent,
+      bool rebuildWhenUnchanged = false
+  );
+  void openActionsMenu();
+  void openConfigExportDialog();
+  void openBarWidgetAddPopup(const std::vector<std::string>& lanePath);
+  // Request is taken by value because opening the popup can close the sheet that owns the forwarding control.
+  void openSearchPickerPopup(settings::SearchPickerOpenRequest request);
+  void openSessionActionEntryEditor(std::size_t index);
+  void syncSessionActionInlineSummary(std::size_t index, const SessionPanelActionConfig& row);
+  void openIdleBehaviorEntryEditor(std::size_t index);
+  void openIdleBehaviorCreateEditor();
+  void openNotificationFilterEntryEditor(std::size_t index);
+  void openNotificationFilterCreateEditor();
+  void openCalendarAccountEditor(std::optional<std::string> accountId);
+  void openWidgetInspectorEditor(std::vector<std::string> laneListPath, std::string widgetName);
+  void openCapsuleGroupEditor(std::vector<std::string> laneListPath, std::string groupId);
+  void openPluginSourceCreateEditor(std::optional<PluginSourceConfig> existing = std::nullopt);
+  void openPluginSettingsEditor(std::string pluginId);
+  void openPluginStore();
+  void openCommunityTemplateStore();
+  void openBarWidgetEditorSheet(
+      std::string title, std::function<void(Flex&)> populate, std::function<void()> removeAction = nullptr
+  );
+  void closeWidgetInspectorPopup();
+  void refreshIdleLiveStatusText();
+  void saveSupportReport();
+  void saveConfigExport(settings::ConfigExportMode mode);
+  [[nodiscard]] bool headerDragRegionContains(float sceneX, float sceneY) const;
+  void setSettingOverride(std::vector<std::string> path, ConfigOverrideValue value);
+  void setSettingOverrides(std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> overrides);
+  void clearSettingOverride(std::vector<std::string> path);
+  void clearSettingOverrides(std::vector<std::vector<std::string>> paths);
+  // Reverts a bar lane to the config file, including the capsule groups that lane holds.
+  void resetBarLane(std::vector<std::string> lanePath);
+  void renameWidgetInstance(
+      std::string oldName, std::string newName,
+      std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> referenceOverrides
+  );
+  void createBar(std::string name);
+  void renameBar(std::string oldName, std::string newName);
+  void deleteBar(std::string name);
+  void moveBar(std::string name, int direction);
+  void createMonitorOverride(std::string barName, std::string match);
+  void renameMonitorOverride(std::string barName, std::string oldMatch, std::string newMatch);
+  void deleteMonitorOverride(std::string barName, std::string match);
+  [[nodiscard]] float uiScale() const;
+
+  [[nodiscard]] std::optional<LayerPopupParentContext> topmostPopupParentContext() const;
+  void dismissOpenSelectDropdown();
+
+  WaylandConnection* m_wayland = nullptr;
+  CompositorPlatform* m_platform = nullptr;
+  IdleManager* m_idleManager = nullptr;
+  ConfigService* m_config = nullptr;
+  scripting::PluginManager* m_pluginManager = nullptr;
+  // Cached PluginManager::list() — discovery can spawn git, so refresh it off the UI path.
+  std::vector<scripting::PluginStatus> m_pluginList;
+  bool m_pluginListDirty = true;
+  bool m_pluginListRefreshInFlight = false;
+  std::uint64_t m_pluginListRefreshGeneration = 0;
+  // The plugin store sheet is the sheet currently on screen, so plugin events may rebuild
+  // the sheet body; any other editor sheet must be left alone.
+  bool m_pluginStoreSheetOpen = false;
+  // Plugin catalog scroll state outlives both the store sheet and its async file callbacks.
+  ScrollViewState m_pluginStoreScrollState;
+  scripting::PluginFileCache m_pluginFileCache;
+  RenderContext* m_renderContext = nullptr;
+  DependencyService* m_dependencies = nullptr;
+  UPowerService* m_upower = nullptr;
+  AccountsService* m_accounts = nullptr;
+  CalendarService* m_calendarService = nullptr;
+  ClipboardService* m_clipboardService = nullptr;
+  IpcService* m_ipcService = nullptr;
+  AsyncTextureCache* m_asyncTextures = nullptr;
+  Label* m_idleLiveStatusLabel = nullptr;
+  std::vector<Label*> m_sessionActionSummaryLabels;
+  std::shared_ptr<std::vector<SessionPanelActionConfig>> m_sessionActionsEditState;
+
+  // m_sceneRoot must be destroyed before m_animations — ~Node() calls cancelForOwner().
+  AnimationManager m_animations;
+  std::unique_ptr<ToplevelSurface> m_surface;
+  std::unique_ptr<Node> m_sceneRoot;
+  Flex* m_mainContainer = nullptr; // Outer Flex inside m_sceneRoot, sized to the window
+  Box* m_panelBackground = nullptr;
+  Node* m_headerRow = nullptr;
+  Node* m_filterRow = nullptr;
+  Button* m_actionsMenuButton = nullptr;
+  Flex* m_contentContainer = nullptr;
+  Flex* m_pageTitleRow = nullptr;
+  Flex* m_groupJumpRow = nullptr;
+  ScrollView* m_contentScrollView = nullptr;
+  ScrollView* m_sidebarScrollView = nullptr;
+  RovingListNavHost* m_sidebarNav = nullptr;
+  std::unique_ptr<ContextMenuPopup> m_actionsMenuPopup;
+  std::unique_ptr<settings::WidgetAddPopup> m_widgetAddPopup;
+  std::unique_ptr<settings::ConfigExportDialogModal> m_configExportDialogModal;
+  std::unique_ptr<settings::SearchPickerPopup> m_searchPickerPopup;
+  InputDispatcher m_inputDispatcher;
+  settings::SettingsModalHost m_modalHost;
+  std::unique_ptr<settings::SettingsDialogPresenter> m_dialogPresenter;
+  std::unique_ptr<settings::SettingsSheetModal> m_editorSheetModal;
+  std::unique_ptr<settings::SettingsControlFactory> m_editorSheetFactory;
+  std::vector<std::string> m_editorSheetListPath;
+  std::unique_ptr<SelectDropdownPopup> m_selectPopup;
+  bool m_pointerInside = false;
+  wl_output* m_output = nullptr;
+  std::uint32_t m_minWidthHint = 0;
+  std::uint32_t m_minHeightHint = 0;
+
+  std::uint32_t m_lastSceneWidth = 0;
+  std::uint32_t m_lastSceneHeight = 0;
+  ScrollViewState m_sidebarScrollState;
+  ScrollViewState m_contentScrollState;
+  std::vector<settings::SettingEntry> m_settingsRegistry;
+  bool m_rebuildRequested = false;
+  bool m_contentRebuildRequested = false;
+  bool m_settingsRegistryRefreshRequested = false;
+  bool m_filterRowRefreshRequested = false;
+  bool m_deferredRebuildQueued = false;
+  bool m_deferredSceneRebuild = false;
+  bool m_deferredRefreshRegistry = false;
+  bool m_deferredRefreshFilterRow = false;
+  bool m_deferredRebuildEditorSheet = false;
+  bool m_focusSearchOnRebuild = false;
+  Input* m_settingsSearchInput = nullptr;
+  bool m_scrollToPendingContentTarget = false;
+  // While restoring focus after a content rebuild, defer scroll-into-view until the scene is laid
+  // out; applying it against un-positioned nodes would collapse the scroll offset to the top.
+  bool m_deferFocusScrollToLayout = false;
+  Node* m_pendingContentScrollTarget = nullptr;
+  std::string m_searchQuery;
+  Timer m_searchDebounceTimer;
+  // Set by openToBarWidget (e.g. middle-click on a bar widget) / openToPlugin and consumed after
+  // the Settings scene is available so the requested editor can be mounted into it.
+  std::string m_pendingOpenWidgetInspectorName;
+  std::string m_pendingOpenPluginSettingsId;
+  std::string m_editingWidgetName;
+  std::string m_editingCapsuleGroupId;
+  std::vector<std::string> m_selectedLaneWidgets;
+  std::string m_pendingDeleteWidgetName;
+  std::string m_pendingDeleteWidgetSettingPath;
+  std::string m_renamingWidgetName;
+  // Gesture whose action row has a chosen command that still needs its argument typed.
+  std::string m_pendingGestureKey;
+  std::string m_pendingGestureVerb;
+  // The widget whose actions group is unfolded, empty when none. Keyed by widget rather than a
+  // plain flag so the group survives the rebuild an edit triggers, but starts folded on every
+  // other widget.
+  std::string m_actionsExpandedFor;
+  // Expanded setting groups per page, keyed by content section key (pageScopeKey).
+  // A page gets its default first-group expansion when first rendered this session.
+  std::unordered_map<std::string, std::unordered_set<std::string>> m_expandedSettingGroups;
+  std::string m_creatingBarName;
+  std::string m_renamingBarName;
+  std::string m_pendingDeleteBarName;
+  std::string m_creatingMonitorOverrideBarName;
+  std::string m_creatingMonitorOverrideMatch;
+  std::string m_renamingMonitorOverrideBarName;
+  std::string m_renamingMonitorOverrideMatch;
+  std::string m_pendingDeleteMonitorOverrideBarName;
+  std::string m_pendingDeleteMonitorOverrideMatch;
+  std::string m_pendingDeletePluginId;
+  std::string m_selectedBarName;
+  std::string m_selectedMonitorOverride;
+  std::string m_selectedSection;
+  std::string m_reopenAfterWidgetEditorSection;
+  std::string m_statusMessage;
+  std::string m_pendingResetPageScope;
+  std::vector<std::vector<std::string>> m_pendingResetSettingPaths;
+  bool m_forceEnTranslation = false;
+  bool m_showAdvanced = false;
+  bool m_showOverriddenOnly = false;
+  bool m_statusIsError = false;
+  bool m_pendingEncryptedStorageReset = false;
+  std::function<void()> m_openDesktopWidgetEditor;
+  std::function<void()> m_openLockscreenWidgetEditor;
+  std::function<void()> m_openWallpaperPanel;
+  std::function<void()> m_syncGreeterAppearance;
+  std::function<void()> m_resetLauncherUsage;
+  std::function<void()> m_resetScreenTime;
+  std::function<void()> m_resetEncryptedStorage;
+  std::function<void()> m_saveWallpaperPaletteAsCustom;
+};

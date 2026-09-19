@@ -1,0 +1,40 @@
+[accessibility]
+ui_scale = 1.0
+
+[theme]
+mode = "dark"
+
+[widget.clock]
+enabled = false
+
+[widget.launcher]
+capsule = true
+capsule_radius = "auto"
+
+[desktop_widgets]
+enabled = false
+
+[desktop_widgets.widget.calendar_main]
+type = "calendar"
+
+[desktop_widgets.widget.calendar_main.settings]
+show_events = true
+show_week_numbers = true
+
+[desktop_widgets.widget.gpu_vram]
+type = "sysmon"
+
+[desktop_widgets.widget.gpu_vram.settings]
+stat = "gpu_vram_used"
+
+[plugins]
+enabled = ["noctalia/wallhaven"]
+
+[[plugins.source]]
+name = "test"
+kind = "path"
+location = "tests/config_validate/plugin-source"
+
+[plugin_settings."noctalia/wallhaven"]
+browser_placement = "floating"
+browser_position = "center"

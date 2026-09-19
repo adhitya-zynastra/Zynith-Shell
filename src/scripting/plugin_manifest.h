@@ -1,0 +1,199 @@
+#pragma once
+
+#include "config/config_types.h"
+
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+namespace scripting {
+
+  // Settings-field schema. Declared once per setting in plugin.toml and the single
+  // source of truth for a setting's default (seeded into the runtime settings store).
+  enum class ManifestFieldType : std::uint8_t {
+    Bool,
+    Int,
+    Double,
+    String,
+    StringList,
+    StringMap,
+    File,
+    Folder,
+    Glyph,
+    Select,
+    Color,
+  };
+
+  // `labelKey` is a plugin translation key. When empty the raw `value` is shown.
+  struct ManifestSelectOption {
+    std::string value;
+    std::string labelKey;
+  };
+
+  struct ManifestVisibility {
+    std::string key;
+    std::vector<std::string> values;
+  };
+
+  // Labels and descriptions are always plugin translation keys, resolved against the
+  // plugin's translations/<lang>.json. `labelKey` is mandatory; `descriptionKey` is optional.
+  struct ManifestField {
+    std::string key;
+    std::string labelKey;
+    std::string descriptionKey;
+    ManifestFieldType type = ManifestFieldType::String;
+
+    // Typed default; the active member is selected by `type`.
+    bool boolDefault = false;
+    double numberDefault = 0.0;
+    std::string stringDefault;
+    std::vector<std::string> stringListDefault;
+    WidgetSettingStringMap stringMapDefault;
+
+    std::optional<double> minValue;
+    std::optional<double> maxValue;
+    double step = 1.0;
+    std::vector<ManifestSelectOption> options;
+    std::vector<std::string> extensions;
+    bool advanced = false;
+    std::optional<ManifestVisibility> visibleWhen;
+
+    // The declared default mapped to a settings value.
+    [[nodiscard]] WidgetSettingValue defaultValue() const;
+  };
+
+  // Entry types a plugin may declare. P0 routes only Widget to a surface; the rest
+  // are parsed and registered so the manifest format is forward-compatible.
+  enum class PluginEntryKind : std::uint8_t {
+    Widget,
+    Panel,
+    Shortcut,
+    DesktopWidget,
+    LauncherProvider,
+    Service,
+  };
+
+  // A launcher result category, declared statically on a [[launcher_provider]]
+  // entry so the launcher can render the category filter without running code.
+  struct ManifestLauncherCategory {
+    std::string label;
+    std::string glyph;
+  };
+
+  struct PluginEntry {
+    PluginEntryKind kind = PluginEntryKind::Widget;
+    std::string id;    // unique within the plugin
+    std::string entry; // relative .luau filename
+    std::vector<ManifestField> settings;
+
+    // Bar gesture defaults declared by a [[widget]] entry, as raw gesture-key/action pairs
+    // ("middle" -> "exec playerctl pause"). They feed the same defaults layer built-in widget
+    // types use, so `[widget.<name>.actions]` still overrides them. Kept as strings here: the
+    // gesture vocabulary and action grammar belong to the bar, not to the manifest parser.
+    std::vector<std::pair<std::string, std::string>> widgetActions;
+
+    // Launcher-provider routing metadata (parsed only for LauncherProvider entries);
+    // static so the launcher routes/filters without invoking the plugin.
+    std::string launcherPrefix;
+    std::string launcherGlyph;
+    bool launcherGlobalSearch = false;
+    std::vector<ManifestLauncherCategory> launcherCategories;
+    // Wait this many ms after the last keystroke before running onQuery, so a
+    // network-backed provider isn't hit on every character. 0 = no debounce.
+    int launcherDebounceMs = 0;
+
+    // Panel size in logical pixels (parsed only for Panel entries). Geometry is
+    // host-owned and declared once here so the surface is sized correctly on the
+    // very first open (panel.render lands async). 0 = use the host default.
+    // A "fill" axis spans the output's available extent (the compositor assigns
+    // the size via the layer-shell dual-anchor + size-0 mechanism); the numeric
+    // value is ignored on that axis.
+    double panelWidth = 0.0;
+    double panelHeight = 0.0;
+    bool panelWidthFill = false;
+    bool panelHeightFill = false;
+    // Host-standard shell settings (see plugin_panel_shell.*). Optional
+    // [[panel]] keys provide defaults; injected settings use "{id}_placement",
+    // "{id}_layer", and the corresponding canonical suffixes.
+    std::string panelPlacementDefault = "floating";
+    std::string panelPositionDefault = "auto";
+    bool panelOpenNearClickDefault = false;
+    // The floating layer setting defaults to Top to preserve existing plugin
+    // behavior. An attached panel always follows its host bar's layer.
+    std::string panelLayerDefault = "top";
+    // false: keep open on outside click (auth prompts)
+    bool panelDismissOnOutsideClick = true;
+    // Keyboard focus policy: "on_demand" (focus on click), "exclusive" (focus on
+    // open), or "none" (never focus, so the panel can drive the app the user is
+    // actually typing into). "none" requires panelDismissOnOutsideClick = false.
+    std::string panelKeyboardFocus = "on_demand";
+    // true: live outside PanelManager's single active-panel slot, so opening another
+    // panel leaves this one on screen. Requires panelDismissOnOutsideClick = false.
+    bool panelPersistent = false;
+    // Key chord specs ("space", "ctrl+r") this panel takes over while it holds keyboard
+    // focus. Each is validated as a chord at parse time. While focused, a matching press
+    // or release is delivered to the script's onKey(chord, pressed) and not handled by
+    // the host, so the panel can drive its own key interactions. Verbatim spec strings:
+    // the script is called back with the same text declared here.
+    std::vector<std::string> panelCaptureKeys;
+  };
+
+  struct PluginManifest {
+    std::string id;                     // "author/plugin"
+    std::string name;                   // mandatory display name
+    std::string version;                // mandatory MAJOR.MINOR.PATCH
+    std::uint32_t pluginApiVersion = 0; // mandatory
+    std::string author;
+    std::string license = "MIT";
+    bool deprecated = false;
+    std::vector<std::string> tags;
+    std::vector<std::string> dependencies;
+    std::string icon;
+    std::string description;
+    std::vector<PluginEntry> entries;
+    // Plugin-level settings, declared once at the manifest root ([[setting]]) and
+    // shared across every entry (widget, shortcut, service). Distinct from a
+    // per-entry instance setting; seeded into all of the plugin's runtimes.
+    std::vector<ManifestField> settings;
+
+    [[nodiscard]] const PluginEntry* findEntry(std::string_view entryId) const;
+  };
+
+  // The TOML array-table name for each entry kind (e.g. "widget" -> [[widget]]).
+  [[nodiscard]] std::string_view pluginEntryTableName(PluginEntryKind kind);
+  // Canonical plugin version: three non-negative decimal components without leading zeros.
+  [[nodiscard]] bool isValidPluginVersion(std::string_view version);
+
+  // Build the runtime settings for an instance: every declared field seeded with
+  // its manifest default, then overlaid by the instance's configured values.
+  // Only declared keys are emitted, so a `getConfig` of an undeclared key stays a
+  // loud miss rather than silently resolving from a stray override.
+  [[nodiscard]] std::unordered_map<std::string, WidgetSettingValue>
+  seedEntrySettings(const PluginEntry& entry, const std::unordered_map<std::string, WidgetSettingValue>& overrides);
+
+  // Overlay the plugin-level settings (manifest defaults, then `pluginOverrides`)
+  // onto an already-seeded entry settings map. A key already present (an entry-level
+  // setting) is left untouched — entry-level wins over plugin-level.
+  void mergePluginSettings(
+      const PluginManifest& manifest, const std::unordered_map<std::string, WidgetSettingValue>& pluginOverrides,
+      std::unordered_map<std::string, WidgetSettingValue>& seeded
+  );
+
+  // Settings-map equality with int/double coercion (matches config override
+  // comparison), so reseeding a service from an unchanged config is a no-op.
+  [[nodiscard]] bool settingsEqual(
+      const std::unordered_map<std::string, WidgetSettingValue>& a,
+      const std::unordered_map<std::string, WidgetSettingValue>& b
+  );
+
+  // Parse a plugin.toml. Returns nullopt and sets `error` on a hard failure:
+  // unreadable file, TOML parse error, invalid mandatory metadata, or invalid entries/settings.
+  [[nodiscard]] std::optional<PluginManifest>
+  parsePluginManifest(const std::filesystem::path& manifestPath, std::string* error);
+
+} // namespace scripting

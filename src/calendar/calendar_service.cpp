@@ -1,0 +1,1497 @@
+#include "calendar/calendar_service.h"
+
+#include "calendar/caldav_client.h"
+#include "calendar/caldav_discovery.h"
+#include "calendar/calendar_cache.h"
+#include "calendar/calendar_discovery_state.h"
+#include "calendar/event_link.h"
+#include "calendar/ical_parser.h"
+#include "calendar/vdir_reader.h"
+#include "config/config_service.h"
+#include "core/deferred_call.h"
+#include "core/log.h"
+#include "i18n/i18n.h"
+#include "net/http_client.h"
+#include "net/url_open.h"
+#include "notification/notification_manager.h"
+#include "security/secret_store.h"
+
+#include <algorithm>
+#include <cctype>
+#include <condition_variable>
+#include <cstdlib>
+#include <deque>
+#include <iterator>
+#include <memory>
+#include <mutex>
+#include <nlohmann/json.hpp>
+#include <sodium.h>
+#include <thread>
+#include <unordered_set>
+
+namespace {
+  constexpr Logger kLog("calendar");
+  constexpr const char* kCredentialOwner = "calendar_credentials";
+  constexpr const char* kSecurityMigrationOwner = "security_migrations";
+  constexpr const char* kCalendarCredentialMigration = "calendar_credentials_v1";
+  constexpr const char* kCalendarDiscoveryOwner = "calendar_discovery";
+  constexpr const char* kICloudCalDavServerUrl = "https://caldav.icloud.com/";
+  constexpr auto kConnectPollInterval = std::chrono::seconds{2};
+  // Wide enough for month navigation in the control-center calendar (~1 year each way).
+  constexpr auto kWindowBefore = std::chrono::hours{24 * 365};
+  constexpr auto kWindowAfter = std::chrono::hours{24 * 365};
+  constexpr std::size_t kMaxCacheBytes = 32U * 1024U * 1024U;
+  // Ceiling on the events one vdir account may contribute. A vdir tree is arbitrary user data with no
+  // server-side bound, so the read stops here rather than growing the snapshot without limit.
+  constexpr std::size_t kMaxVdirEventsPerAccount = 100'000;
+
+  std::int64_t toUnix(std::chrono::system_clock::time_point tp) {
+    return std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+  }
+
+  std::chrono::system_clock::time_point fromUnix(std::int64_t seconds) {
+    return std::chrono::system_clock::time_point{std::chrono::seconds{seconds}};
+  }
+
+  std::string caldavServerUrl(const CalendarConfig::Account& account) {
+    if (account.provider == "icloud") {
+      return kICloudCalDavServerUrl;
+    }
+    if (account.provider == "custom") {
+      return account.serverUrl;
+    }
+    return {};
+  }
+
+  std::vector<CalendarSource> sourcesFromCollections(const std::vector<calendar::CalDavCollection>& collections) {
+    std::vector<CalendarSource> sources;
+    sources.reserve(collections.size());
+    for (const calendar::CalDavCollection& collection : collections) {
+      if (collection.id.empty()) {
+        continue;
+      }
+      sources.push_back({
+          .id = collection.id,
+          .name = collection.name,
+      });
+    }
+    return sources;
+  }
+
+  security::SecureBuffer secureBuffer(std::string_view value) {
+    return security::SecureBuffer(std::span(reinterpret_cast<const std::uint8_t*>(value.data()), value.size()));
+  }
+
+  std::string secretString(const calendar::CalendarCredentialStore::Secret& value) {
+    if (!value) {
+      return {};
+    }
+    const auto bytes = value->bytes();
+    return std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+  }
+
+  void wipeString(std::string& value) {
+    if (!value.empty()) {
+      sodium_memzero(value.data(), value.size());
+      value.clear();
+    }
+  }
+} // namespace
+
+struct CalendarService::VdirWorker : std::enable_shared_from_this<CalendarService::VdirWorker> {
+  struct Request {
+    std::string accountId;
+    std::string displayName;
+    std::string color;
+    std::vector<std::string> configuredCalendars;
+    std::filesystem::path rootPath;
+    std::chrono::system_clock::time_point windowStart;
+    std::chrono::system_clock::time_point windowEnd;
+    std::function<void(
+        bool ok, std::vector<CalendarSource> sources, std::vector<std::filesystem::path> watchedPaths,
+        std::vector<CalendarEvent> events
+    )>
+        callback;
+  };
+
+  VdirWorker() : worker([this](std::stop_token stopToken) { workerLoop(stopToken); }) {}
+  ~VdirWorker() { stop(); }
+
+  bool enqueue(Request request) {
+    {
+      std::scoped_lock lock(mutex);
+      if (stopping) {
+        return false;
+      }
+      requests.push_back(std::move(request));
+    }
+    cv.notify_one();
+    return true;
+  }
+
+  void deliver(
+      Request request, bool ok, std::vector<CalendarSource> sources, std::vector<std::filesystem::path> watchedPaths,
+      std::vector<CalendarEvent> events
+  ) {
+    const std::weak_ptr<VdirWorker> weak = weak_from_this();
+    DeferredCall::callLater([weak, cb = std::move(request.callback), ok, sources = std::move(sources),
+                             watchedPaths = std::move(watchedPaths), events = std::move(events)]() mutable {
+      const auto state = weak.lock();
+      if (!state || !state->accepting()) {
+        return;
+      }
+      cb(ok, std::move(sources), std::move(watchedPaths), std::move(events));
+    });
+  }
+
+  void stop() {
+    worker.request_stop();
+    {
+      std::scoped_lock lock(mutex);
+      stopping = true;
+      requests.clear();
+    }
+    cv.notify_one();
+    if (worker.joinable()) {
+      worker.join();
+    }
+  }
+
+private:
+  [[nodiscard]] bool accepting() const {
+    std::scoped_lock lock(mutex);
+    return !stopping;
+  }
+
+  void workerLoop(std::stop_token stopToken) {
+    while (true) {
+      Request request;
+      {
+        std::unique_lock lock(mutex);
+        cv.wait(lock, [this, &stopToken]() { return stopping || stopToken.stop_requested() || !requests.empty(); });
+        if (stopping || stopToken.stop_requested()) {
+          return;
+        }
+        request = std::move(requests.front());
+        requests.pop_front();
+      }
+
+      std::error_code ec;
+      if (!std::filesystem::exists(request.rootPath, ec) || !std::filesystem::is_directory(request.rootPath, ec)) {
+        kLog.warn(
+            "vdir account {} path does not exist or is not a directory: {}", request.accountId,
+            request.rootPath.string()
+        );
+        deliver(std::move(request), false, {}, {}, {});
+        continue;
+      }
+
+      auto collections = calendar::discoverVdirCollections(request.rootPath);
+      if (collections.empty()) {
+        kLog.warn("vdir account {} found no calendar collections in {}", request.accountId, request.rootPath.string());
+        const auto rootPath = request.rootPath;
+        deliver(std::move(request), false, {}, {rootPath}, {});
+        continue;
+      }
+
+      std::vector<CalendarSource> sources;
+      sources.reserve(collections.size());
+      std::vector<std::filesystem::path> watchedPaths;
+      watchedPaths.reserve(collections.size() + 1);
+      watchedPaths.push_back(request.rootPath);
+
+      for (const auto& col : collections) {
+        sources.push_back({
+            .id = col.id,
+            .name = col.name,
+        });
+        watchedPaths.push_back(col.path);
+      }
+
+      const std::vector<std::string> selectedIds =
+          calendar::selectedCalendarSourceIds(sources, request.configuredCalendars);
+      std::erase_if(collections, [&](const calendar::VdirCollection& col) {
+        return !std::ranges::contains(selectedIds, col.id);
+      });
+
+      std::vector<CalendarEvent> allEvents;
+      std::size_t remainingEvents = kMaxVdirEventsPerAccount;
+      for (auto& col : collections) {
+        if (stopToken.stop_requested()) {
+          return;
+        }
+        if (!request.displayName.empty() && collections.size() == 1) {
+          col.name = request.displayName;
+        }
+        if (!request.color.empty()) {
+          col.colorHex = request.color;
+        }
+        auto events =
+            calendar::loadVdirCollectionEvents(col, request.windowStart, request.windowEnd, remainingEvents, stopToken);
+        allEvents.insert(
+            allEvents.end(), std::make_move_iterator(events.begin()), std::make_move_iterator(events.end())
+        );
+      }
+
+      if (stopToken.stop_requested()) {
+        return;
+      }
+
+      deliver(std::move(request), true, std::move(sources), std::move(watchedPaths), std::move(allEvents));
+    }
+  }
+
+  mutable std::mutex mutex;
+  std::condition_variable cv;
+  std::deque<Request> requests;
+  bool stopping = false;
+  std::jthread worker;
+};
+
+CalendarService::CalendarService(
+    ConfigService& configService, HttpClient& httpClient, security::SecretStore& secretStore,
+    security::StorageKeyProvider& storageKeyProvider, NotificationManager* notifications
+)
+    : m_configService(configService), m_httpClient(httpClient), m_notifications(notifications), m_oauth(httpClient),
+      m_google(httpClient), m_credentials(secretStore), m_storageKeyProvider(storageKeyProvider), m_caldav(httpClient),
+      m_vdirWorker(std::make_shared<VdirWorker>()) {}
+
+CalendarService::~CalendarService() = default;
+
+void CalendarService::initialize() {
+  m_activeConfig = m_configService.config().calendar;
+  m_configService.addReloadCallback([this]() { onConfigReload(); });
+  m_credentials.setChangeCallback([this]() {
+    notifyChanged();
+    if (m_credentialChangeCallback) {
+      m_credentialChangeCallback();
+    }
+  });
+  m_initialized = true;
+  syncCachePersistence();
+  initializeCredentials();
+  updateVdirWatches();
+}
+
+void CalendarService::syncCachePersistence() {
+  if (!m_initialized) {
+    return;
+  }
+
+  m_cacheKey.reset();
+  m_cacheWritable = false;
+  setCachePersistenceState(CachePersistenceState::Opening, m_cacheMigrationPending);
+  if (m_storageKeyProvider.state() == security::StorageKeyState::Ready) {
+    auto key = m_storageKeyProvider.deriveKey(security::StorageKeyPurpose::CalendarEvents);
+    if (!key.has_value()) {
+      setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+      return;
+    }
+    m_cacheKey = std::move(*key);
+    if (!loadCache()) {
+      if (m_cachePersistenceState == CachePersistenceState::Opening) {
+        setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+      }
+    }
+    return;
+  }
+
+  CachePersistenceState state = CachePersistenceState::BackendError;
+  switch (m_storageKeyProvider.state()) {
+  case security::StorageKeyState::Opening:
+    state = CachePersistenceState::Opening;
+    break;
+  case security::StorageKeyState::Unavailable:
+    state = CachePersistenceState::Unavailable;
+    break;
+  case security::StorageKeyState::Cancelled:
+    state = CachePersistenceState::Cancelled;
+    break;
+  case security::StorageKeyState::DeniedOrLocked:
+    state = CachePersistenceState::DeniedOrLocked;
+    break;
+  case security::StorageKeyState::MissingKey:
+    state = CachePersistenceState::MissingKey;
+    break;
+  case security::StorageKeyState::Ready:
+  case security::StorageKeyState::BackendError:
+    break;
+  }
+  setCachePersistenceState(state, m_cacheMigrationPending);
+}
+
+void CalendarService::retryCachePersistence() { m_storageKeyProvider.retry(); }
+
+bool CalendarService::clearEncryptedCacheForRecovery() {
+  m_cacheKey.reset();
+  m_cacheWritable = false;
+  std::error_code ec;
+  std::filesystem::remove(cacheFilePath(), ec);
+  if (ec) {
+    kLog.warn("failed to remove encrypted calendar cache during recovery");
+    setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+    return false;
+  }
+  setCachePersistenceState(CachePersistenceState::Opening, m_cacheMigrationPending);
+  return true;
+}
+
+bool CalendarService::hasEncryptedCache() const {
+  std::error_code ec;
+  const bool exists = std::filesystem::exists(cacheFilePath(), ec);
+  return !ec && exists;
+}
+
+calendar::CredentialMigration CalendarService::credentialMigration() {
+  calendar::CredentialMigration migration;
+  migration.complete = m_configService.stateBool(kSecurityMigrationOwner, kCalendarCredentialMigration).value_or(false);
+  if (migration.complete) {
+    return migration;
+  }
+
+  for (const CalendarConfig::Account& account : m_activeConfig.accounts) {
+    const auto append = [this, &migration, &account](std::string_view legacyName, calendar::CredentialKind kind) {
+      const auto value = m_configService.stateString(kCredentialOwner, account.id + std::string(legacyName));
+      if (value.has_value() && !value->empty()) {
+        migration.credentials.push_back({
+            .accountId = account.id,
+            .kind = kind,
+            .value = secureBuffer(*value),
+        });
+      }
+    };
+    if (account.credentialSource == CalendarCredentialSource::SecretService) {
+      append("_password", calendar::CredentialKind::Password);
+    }
+    append("_refresh_token", calendar::CredentialKind::RefreshToken);
+  }
+
+  migration.finalize = [this]() {
+    if (!m_configService.clearStateOwner(kCredentialOwner)) {
+      return false;
+    }
+    return m_configService.setStateBool(kSecurityMigrationOwner, kCalendarCredentialMigration, true);
+  };
+  return migration;
+}
+
+void CalendarService::initializeCredentials() {
+  m_credentials.initialize(credentialMigration(), [this](security::SecretStoreStatus status) {
+    m_credentialsInitialized = true;
+    if (status != security::SecretStoreStatus::Success) {
+      kLog.warn("calendar credential migration is pending");
+    }
+    if (m_activeConfig.enabled) {
+      m_nextRefreshAt = std::chrono::steady_clock::now();
+    }
+    notifyChanged();
+  });
+}
+
+void CalendarService::retryCredentialMigration() {
+  m_credentials.retryMigration(credentialMigration(), [this](security::SecretStoreStatus status) {
+    if (status == security::SecretStoreStatus::Success && m_activeConfig.enabled) {
+      m_nextRefreshAt = std::chrono::steady_clock::now();
+    }
+    notifyChanged();
+  });
+}
+
+CalendarService::ChangeCallbackId CalendarService::addChangeCallback(ChangeCallback callback) {
+  if (!callback) {
+    return 0;
+  }
+  const ChangeCallbackId id = m_nextCallbackId++;
+  m_callbacks.emplace_back(id, std::move(callback));
+  return id;
+}
+
+void CalendarService::removeChangeCallback(ChangeCallbackId callbackId) {
+  if (callbackId == 0) {
+    return;
+  }
+  std::erase_if(m_callbacks, [callbackId](const auto& entry) { return entry.first == callbackId; });
+}
+
+void CalendarService::notifyChanged() {
+  for (auto& [id, callback] : m_callbacks) {
+    (void)id;
+    if (callback) {
+      callback();
+    }
+  }
+}
+
+void CalendarService::notifyGoogleConnectFailure(const std::string& body) const {
+  if (m_notifications == nullptr) {
+    kLog.warn("google connect failure notification dropped: notification manager unavailable");
+    return;
+  }
+  m_notifications->addInternal(
+      i18n::tr("notifications.internal.calendar"),
+      i18n::tr("notifications.internal.calendar-google-connect-failed-title"), body, Urgency::Critical,
+      kDefaultNotificationTimeout * 2, std::string("noctalia-glyph:calendar-x")
+  );
+}
+
+void CalendarService::notifyGoogleCredentialLocked() const {
+  if (m_notifications == nullptr) {
+    kLog.warn("locked calendar credential notification dropped: notification manager unavailable");
+    return;
+  }
+  m_notifications->addInternal(
+      i18n::tr("notifications.internal.calendar"), i18n::tr("notifications.internal.calendar-credential-locked-title"),
+      i18n::tr("notifications.internal.calendar-credential-locked-body"), Urgency::Normal,
+      kDefaultNotificationTimeout * 2, std::string("noctalia-glyph:key")
+  );
+}
+
+void CalendarService::onConfigReload() {
+  const CalendarConfig& next = m_configService.config().calendar;
+  if (next == m_activeConfig) {
+    return;
+  }
+  m_activeConfig = next;
+  updateVdirWatches();
+  std::unordered_set<std::string> activeAccountIds;
+  activeAccountIds.reserve(m_activeConfig.accounts.size());
+  for (const CalendarConfig::Account& account : m_activeConfig.accounts) {
+    activeAccountIds.insert(account.id);
+  }
+  m_credentials.retainAccounts(activeAccountIds);
+  for (auto it = m_googleSessions.begin(); it != m_googleSessions.end();) {
+    if (activeAccountIds.contains(it->first)) {
+      ++it;
+      continue;
+    }
+    wipeString(it->second.accessToken);
+    it = m_googleSessions.erase(it);
+  }
+  if (!m_activeConfig.enabled) {
+    m_eventsByAccount.clear();
+    m_snapshot = CalendarSnapshot{};
+    notifyChanged();
+    return;
+  }
+  // Re-sync soon after any account/config change.
+  m_nextRefreshAt = std::chrono::steady_clock::now();
+  notifyChanged();
+}
+
+int CalendarService::pollTimeoutMs() const {
+  const auto now = std::chrono::steady_clock::now();
+
+  int timeout = -1;
+  const auto consider = [&](std::chrono::steady_clock::time_point when) {
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(when - now).count();
+    const int clamped = ms < 0 ? 0 : static_cast<int>(std::min<std::int64_t>(ms, 60000));
+    timeout = timeout < 0 ? clamped : std::min(timeout, clamped);
+  };
+
+  if (m_vdirDebouncePending) {
+    consider(m_vdirDebounceUntil);
+  }
+  if (m_connect.state == ConnectState::Pending && !m_connect.inFlight) {
+    consider(m_connect.nextPollAt);
+  }
+  if (m_credentialsInitialized && m_activeConfig.enabled && !m_refreshing) {
+    consider(m_nextRefreshAt);
+  }
+  return timeout;
+}
+
+void CalendarService::tick() {
+  const auto now = std::chrono::steady_clock::now();
+
+  if (m_vdirDebouncePending && now >= m_vdirDebounceUntil) {
+    m_vdirDebouncePending = false;
+    requestRefresh();
+  }
+
+  if (m_connect.state == ConnectState::Pending && !m_connect.inFlight && now >= m_connect.nextPollAt) {
+    if (now >= m_connect.deadline) {
+      kLog.warn("google connect timed out for account {}", m_connect.accountId);
+      notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-timeout"));
+      m_connect.state = ConnectState::Failed;
+      notifyChanged();
+    } else {
+      pollConnect();
+    }
+  }
+
+  if (m_credentialsInitialized && m_activeConfig.enabled && !m_refreshing && now >= m_nextRefreshAt) {
+    startRefresh();
+  }
+}
+
+void CalendarService::addPollFds(std::vector<pollfd>& fds) {
+  if (m_vdirInotify.fd() >= 0) {
+    fds.push_back({.fd = m_vdirInotify.fd(), .events = POLLIN, .revents = 0});
+  }
+}
+
+void CalendarService::dispatchPoll(const std::vector<pollfd>& fds, std::size_t startIdx) {
+  if (m_vdirInotify.fd() >= 0 && startIdx < fds.size() && (fds[startIdx].revents & POLLIN) != 0) {
+    bool changed = false;
+    m_vdirInotify.drain([&](const inotify_event* event) {
+      changed = true;
+      if ((event->mask & (IN_DELETE_SELF | IN_MOVE_SELF | IN_IGNORED)) != 0) {
+        if (auto it = m_watchedVdirWds.find(event->wd); it != m_watchedVdirWds.end()) {
+          m_watchedVdirPaths.erase(it->second);
+          m_watchedVdirWds.erase(it);
+        }
+      }
+    });
+    if (changed) {
+      m_vdirDebouncePending = true;
+      m_vdirDebounceUntil = std::chrono::steady_clock::now() + std::chrono::milliseconds{300};
+    }
+  }
+  tick();
+}
+
+void CalendarService::scheduleNextRefresh() {
+  const int minutes = std::max<std::int32_t>(1, m_activeConfig.refreshMinutes);
+  m_nextRefreshAt = std::chrono::steady_clock::now() + std::chrono::minutes{minutes};
+}
+
+void CalendarService::requestRefresh() {
+  if (!m_activeConfig.enabled) {
+    return;
+  }
+  m_nextRefreshAt = std::chrono::steady_clock::now();
+  notifyChanged();
+}
+
+void CalendarService::startRefresh() {
+  if (m_activeConfig.accounts.empty()) {
+    scheduleNextRefresh();
+    return;
+  }
+  m_refreshing = true;
+  m_pendingAccounts = m_activeConfig.accounts.size();
+  for (const CalendarConfig::Account& account : m_activeConfig.accounts) {
+    if (account.type == "caldav") {
+      fetchCalDav(account);
+    } else if (account.type == "google") {
+      fetchGoogle(account);
+    } else if (account.type == "ics") {
+      fetchIcs(account);
+    } else if (account.type == "vdir") {
+      fetchVdir(account);
+    } else {
+      kLog.warn("unknown calendar account type '{}' for id {}", account.type, account.id);
+      accountDone(account.id, false, {});
+    }
+  }
+}
+
+void CalendarService::accountDone(const std::string& accountId, bool ok, std::vector<CalendarEvent> events) {
+  if (ok) {
+    m_eventsByAccount[accountId] = std::move(events);
+  }
+  if (m_pendingAccounts > 0) {
+    --m_pendingAccounts;
+  }
+  if (m_pendingAccounts == 0) {
+    m_refreshing = false;
+    rebuildSnapshot();
+    saveCache();
+    scheduleNextRefresh();
+    notifyChanged();
+  }
+}
+
+void CalendarService::rebuildSnapshot() {
+  // Drop cached events for accounts no longer configured.
+  for (auto it = m_eventsByAccount.begin(); it != m_eventsByAccount.end();) {
+    const bool stillConfigured =
+        std::ranges::contains(m_activeConfig.accounts, it->first, &CalendarConfig::Account::id);
+    it = stillConfigured ? std::next(it) : m_eventsByAccount.erase(it);
+  }
+  for (auto it = m_discoveredVdirPathsByAccount.begin(); it != m_discoveredVdirPathsByAccount.end();) {
+    const bool stillConfigured =
+        std::ranges::contains(m_activeConfig.accounts, it->first, &CalendarConfig::Account::id);
+    it = stillConfigured ? std::next(it) : m_discoveredVdirPathsByAccount.erase(it);
+  }
+
+  std::vector<CalendarEvent> merged;
+  for (const auto& [accountId, events] : m_eventsByAccount) {
+    merged.insert(merged.end(), events.begin(), events.end());
+  }
+  std::ranges::sort(merged, {}, &CalendarEvent::start);
+  m_snapshot.events = std::move(merged);
+  m_snapshot.valid = true;
+}
+
+void CalendarService::fetchCalDav(const CalendarConfig::Account& account) {
+  const std::string serverUrl = caldavServerUrl(account);
+  const std::string username = account.username;
+  if (serverUrl.empty() || username.empty()) {
+    kLog.warn("caldav account {} is missing server_url/username", account.id);
+    accountDone(account.id, false, {});
+    return;
+  }
+
+  lookupCalDavPassword(
+      account,
+      [this, account, serverUrl,
+       username](security::SecretStoreStatus status, calendar::CalendarCredentialStore::Secret password) mutable {
+        if (status != security::SecretStoreStatus::Success || !password || password->empty()) {
+          if (status == security::SecretStoreStatus::NotFound) {
+            kLog.warn("caldav account {} has no stored password", account.id);
+          }
+          accountDone(account.id, false, {});
+          return;
+        }
+
+        const auto now = std::chrono::system_clock::now();
+        const std::string accountId = account.id;
+        const std::string accountColor = account.color;
+        const std::vector<std::string> selectedCalendars = account.calendars;
+        const bool allowRedirectAuth = account.provider == "icloud";
+
+        calendar::discoverCalDavCollections(
+            m_httpClient, serverUrl, username, password, allowRedirectAuth,
+            [this, accountId, username, password, accountColor, selectedCalendars, allowRedirectAuth,
+             now](bool discovered, std::vector<calendar::CalDavCollection> collections) {
+              if (!discovered) {
+                accountDone(accountId, false, {});
+                return;
+              }
+
+              const std::vector<CalendarSource> discoveredSources = sourcesFromCollections(collections);
+              (void)m_configService.setStateString(
+                  kCalendarDiscoveryOwner, accountId + "_calendars",
+                  calendar::serializeCalendarSources(discoveredSources)
+              );
+
+              const std::vector<std::string> selectedIds =
+                  calendar::selectedCalendarSourceIds(discoveredSources, selectedCalendars);
+              std::erase_if(collections, [&](const calendar::CalDavCollection& collection) {
+                return !std::ranges::contains(selectedIds, collection.id);
+              });
+
+              if (collections.empty()) {
+                kLog.warn("caldav account {} has no selected calendars after discovery", accountId);
+                accountDone(accountId, false, {});
+                return;
+              }
+
+              struct FetchContext {
+                CalendarService* service = nullptr;
+                std::string accountId;
+                std::size_t pending = 0;
+                bool anyOk = false;
+                std::vector<CalendarEvent> events;
+              };
+              auto ctx = std::make_shared<FetchContext>();
+              ctx->service = this;
+              ctx->accountId = accountId;
+              ctx->pending = collections.size();
+
+              for (const calendar::CalDavCollection& collection : collections) {
+                calendar::CalDavAccount caldav;
+                caldav.url = collection.url;
+                caldav.username = username;
+                caldav.password = password;
+                caldav.calendarName = collection.name;
+                caldav.color = accountColor.empty() ? collection.color : accountColor;
+
+                m_caldav.fetchEvents(
+                    caldav, now - kWindowBefore, now + kWindowAfter, allowRedirectAuth,
+                    [ctx](bool ok, std::vector<CalendarEvent> events) {
+                      if (ok) {
+                        ctx->anyOk = true;
+                        ctx->events.insert(
+                            ctx->events.end(), std::make_move_iterator(events.begin()),
+                            std::make_move_iterator(events.end())
+                        );
+                      }
+                      if (ctx->pending > 0) {
+                        --ctx->pending;
+                      }
+                      if (ctx->pending == 0) {
+                        ctx->service->accountDone(ctx->accountId, ctx->anyOk, std::move(ctx->events));
+                      }
+                    }
+                );
+              }
+            }
+        );
+      }
+  );
+}
+
+void CalendarService::lookupCalDavPassword(
+    const CalendarConfig::Account& account, calendar::CalendarCredentialStore::LookupCallback callback
+) {
+  if (account.credentialSource == CalendarCredentialSource::SecretService) {
+    m_credentials.lookupPassword(account.id, std::move(callback));
+    return;
+  }
+
+  calendar::CredentialFileResult result = calendar::readCredentialFile(account.passwordFile);
+  if (result.status == calendar::CredentialFileStatus::Success) {
+    callback(security::SecretStoreStatus::Success, std::make_shared<security::SecureBuffer>(std::move(result.value)));
+    return;
+  }
+
+  switch (result.status) {
+  case calendar::CredentialFileStatus::NotFound:
+    kLog.warn("caldav account {} password_file does not exist", account.id);
+    callback(security::SecretStoreStatus::NotFound, {});
+    return;
+  case calendar::CredentialFileStatus::PermissionDenied:
+    kLog.warn("caldav account {} password_file is not readable", account.id);
+    callback(security::SecretStoreStatus::DeniedOrLocked, {});
+    return;
+  case calendar::CredentialFileStatus::Invalid:
+    kLog.warn("caldav account {} password_file is empty, invalid, or too large", account.id);
+    callback(security::SecretStoreStatus::BackendError, {});
+    return;
+  case calendar::CredentialFileStatus::IoError:
+    kLog.warn("caldav account {} password_file could not be read", account.id);
+    callback(security::SecretStoreStatus::BackendError, {});
+    return;
+  case calendar::CredentialFileStatus::Success:
+    break;
+  }
+  callback(security::SecretStoreStatus::BackendError, {});
+}
+
+void CalendarService::fetchIcs(const CalendarConfig::Account& account) {
+  std::string url = account.serverUrl;
+  if (url.empty()) {
+    kLog.warn("ics account {} is missing server_url", account.id);
+    accountDone(account.id, false, {});
+    return;
+  }
+
+  const std::string accountId = account.id;
+  const std::string displayName = account.displayName;
+  const std::string colorHex = account.color;
+
+  // Normalize webcal:// (and webcals://) so libcurl accepts it; scheme match is case-insensitive.
+  auto iEqualsPrefix = [](std::string_view s, std::string_view prefix) {
+    if (s.size() < prefix.size()) {
+      return false;
+    }
+    for (std::size_t i = 0; i < prefix.size(); ++i) {
+      if (std::tolower(static_cast<unsigned char>(s[i])) != prefix[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+  if (iEqualsPrefix(url, "webcal://")) {
+    url.replace(0, std::string_view("webcal").size(), "https");
+  } else if (iEqualsPrefix(url, "webcals://")) {
+    url.replace(0, std::string_view("webcals").size(), "https");
+  }
+
+  HttpRequest req;
+  req.url = url;
+  req.followRedirects = true;
+  req.headers.emplace_back("Accept: text/calendar, */*;q=0.5");
+
+  m_httpClient.request(req, [this, accountId, displayName, colorHex](HttpResponse resp) {
+    if (!resp.transportOk || resp.status != 200) {
+      kLog.warn("failed to fetch ics for account {}: http status {}", accountId, resp.status);
+      accountDone(accountId, false, {});
+      return;
+    }
+
+    calendar::ICalParseControl control{};
+    const auto now = std::chrono::system_clock::now();
+    auto result = calendar::parseICalEvents(resp.body, now - kWindowBefore, now + kWindowAfter, control);
+    for (auto& event : result.events) {
+      event.calendarName = displayName;
+      if (event.colorHex.empty() && !colorHex.empty()) {
+        event.colorHex = colorHex;
+      }
+    }
+
+    switch (result.status) {
+    case calendar::ICalParseStatus::Complete:
+      accountDone(accountId, true, std::move(result.events));
+      return;
+    case calendar::ICalParseStatus::Cancelled:
+      kLog.warn("iCalendar parsing was cancelled for id {}", accountId);
+      break;
+    case calendar::ICalParseStatus::InvalidCalendar:
+      kLog.warn("The URL for {} returned an invalid ICS calendar", accountId);
+      break;
+    case calendar::ICalParseStatus::WorkBudgetExceeded:
+      kLog.warn("iCalendar recurrence expansion exceeded the work limit for id {}", accountId);
+      break;
+    }
+    accountDone(accountId, false, {});
+  });
+}
+
+void CalendarService::updateVdirWatches() {
+  if (m_vdirInotify.fd() < 0) {
+    return;
+  }
+
+  std::unordered_set<std::string> desired;
+  if (m_activeConfig.enabled) {
+    for (const CalendarConfig::Account& account : m_activeConfig.accounts) {
+      if (account.type != "vdir") {
+        continue;
+      }
+      const std::filesystem::path rootPath =
+          account.path.empty() ? calendar::defaultVdirPath() : std::filesystem::path(account.path);
+      std::error_code ec;
+      if (!std::filesystem::exists(rootPath, ec) || !std::filesystem::is_directory(rootPath, ec)) {
+        continue;
+      }
+
+      desired.insert(rootPath.lexically_normal().string());
+      if (auto it = m_discoveredVdirPathsByAccount.find(account.id); it != m_discoveredVdirPathsByAccount.end()) {
+        for (const auto& p : it->second) {
+          if (std::filesystem::is_directory(p, ec)) {
+            desired.insert(p.lexically_normal().string());
+          }
+        }
+      }
+    }
+  }
+
+  // Drop watches no longer desired
+  for (auto it = m_watchedVdirPaths.begin(); it != m_watchedVdirPaths.end();) {
+    if (!desired.contains(it->first.string())) {
+      m_vdirInotify.unwatch(it->second);
+      m_watchedVdirWds.erase(it->second);
+      it = m_watchedVdirPaths.erase(it);
+    } else {
+      ++it;
+    }
+  }
+
+  // Add newly desired watches
+  constexpr std::uint32_t mask =
+      IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_TO | IN_MOVED_FROM | IN_CLOSE_WRITE | IN_DELETE_SELF | IN_MOVE_SELF;
+  for (const auto& pathStr : desired) {
+    const std::filesystem::path path(pathStr);
+    if (m_watchedVdirPaths.contains(path)) {
+      continue;
+    }
+    const auto wd = m_vdirInotify.watch(path, mask);
+    if (!wd.has_value()) {
+      continue;
+    }
+    m_watchedVdirPaths.emplace(path, *wd);
+    m_watchedVdirWds.emplace(*wd, path);
+  }
+}
+
+void CalendarService::fetchVdir(const CalendarConfig::Account& account) {
+  const std::filesystem::path rootPath =
+      account.path.empty() ? calendar::defaultVdirPath() : std::filesystem::path(account.path);
+
+  const auto now = std::chrono::system_clock::now();
+  const auto windowStart = now - kWindowBefore;
+  const auto windowEnd = now + kWindowAfter;
+
+  const std::string accountId = account.id;
+
+  VdirWorker::Request request{
+      .accountId = account.id,
+      .displayName = account.displayName,
+      .color = account.color,
+      .configuredCalendars = account.calendars,
+      .rootPath = rootPath,
+      .windowStart = windowStart,
+      .windowEnd = windowEnd,
+      .callback = [this, accountId](
+                      bool ok, std::vector<CalendarSource> sources, std::vector<std::filesystem::path> watchedPaths,
+                      std::vector<CalendarEvent> events
+                  ) {
+        if (ok) {
+          (void)m_configService.setStateString(
+              kCalendarDiscoveryOwner, accountId + "_calendars", calendar::serializeCalendarSources(sources)
+          );
+        }
+        m_discoveredVdirPathsByAccount[accountId] = std::move(watchedPaths);
+        updateVdirWatches();
+        accountDone(accountId, ok, std::move(events));
+      },
+  };
+
+  if (!m_vdirWorker || !m_vdirWorker->enqueue(std::move(request))) {
+    accountDone(account.id, false, {});
+  }
+}
+
+void CalendarService::refreshGoogleToken(const std::string& accountId, std::function<void(bool, std::string)> cb) {
+  m_credentials.lookupRefreshToken(
+      accountId,
+      [this, accountId, cb = std::move(cb)](
+          security::SecretStoreStatus status, calendar::CalendarCredentialStore::Secret storedRefreshToken
+      ) mutable {
+        if (status == security::SecretStoreStatus::DeniedOrLocked) {
+          if (!m_googleCredentialLockedNotificationShown) {
+            m_googleCredentialLockedNotificationShown = true;
+            notifyGoogleCredentialLocked();
+          }
+        } else if (!m_credentials.anyRefreshTokenLocked()) {
+          m_googleCredentialLockedNotificationShown = false;
+        }
+        if (status != security::SecretStoreStatus::Success) {
+          switch (status) {
+          case security::SecretStoreStatus::NotFound:
+            kLog.warn("google account {} has no stored refresh token; reconnect required", accountId);
+            break;
+          case security::SecretStoreStatus::Unavailable:
+            kLog.warn(
+                "google account {} refresh token is unavailable because Secret Service is unavailable", accountId
+            );
+            break;
+          case security::SecretStoreStatus::Cancelled:
+            kLog.debug("google account {} refresh token lookup was cancelled", accountId);
+            break;
+          case security::SecretStoreStatus::DeniedOrLocked:
+            kLog.warn("google account {} refresh token is locked or access was denied", accountId);
+            break;
+          case security::SecretStoreStatus::BackendError:
+            kLog.warn("google account {} refresh token lookup failed", accountId);
+            break;
+          case security::SecretStoreStatus::Success:
+            break;
+          }
+          cb(false, {});
+          return;
+        }
+        if (!storedRefreshToken || storedRefreshToken->empty()) {
+          kLog.warn("google account {} has an empty refresh token; reconnect required", accountId);
+          m_credentials.eraseRefreshToken(accountId, [](security::SecretStoreStatus) {});
+          cb(false, {});
+          return;
+        }
+        std::string refreshToken = secretString(storedRefreshToken);
+        m_oauth.refresh(
+            refreshToken,
+            [this, accountId, cb = std::move(cb)](bool ok, bool invalidGrant, calendar::OAuthTokens tokens) mutable {
+              if (!ok) {
+                if (invalidGrant) {
+                  kLog.warn("google account {} refresh token rejected; reconnect required", accountId);
+                  clearGoogleSession(accountId);
+                  m_credentials.eraseRefreshToken(accountId, [](security::SecretStoreStatus) {});
+                }
+                cb(false, {});
+                return;
+              }
+              storeGoogleTokens(
+                  accountId, std::move(tokens),
+                  [this, accountId, cb = std::move(cb)](security::SecretStoreStatus storeStatus) mutable {
+                    if (storeStatus != security::SecretStoreStatus::Success) {
+                      clearGoogleSession(accountId);
+                      cb(false, {});
+                      return;
+                    }
+                    cb(true, m_googleSessions[accountId].accessToken);
+                  }
+              );
+            }
+        );
+        wipeString(refreshToken);
+      }
+  );
+}
+
+void CalendarService::googleFetchWithToken(
+    const std::string& accountId, const std::string& accessToken, bool allowRefreshRetry
+) {
+  const auto now = std::chrono::system_clock::now();
+  m_google.fetchEvents(
+      accessToken, now - kWindowBefore, now + kWindowAfter,
+      [this, accountId, allowRefreshRetry](bool ok, bool unauthorized, std::vector<CalendarEvent> events) {
+        if (unauthorized && allowRefreshRetry) {
+          refreshGoogleToken(accountId, [this, accountId](bool refreshed, std::string newToken) {
+            if (!refreshed) {
+              accountDone(accountId, false, {});
+            } else {
+              googleFetchWithToken(accountId, newToken, false);
+            }
+          });
+          return;
+        }
+        accountDone(accountId, ok && !unauthorized, std::move(events));
+      }
+  );
+}
+
+void CalendarService::fetchGoogle(const CalendarConfig::Account& account) {
+  const std::string id = account.id;
+  const auto session = m_googleSessions.find(id);
+  const bool valid = session != m_googleSessions.end()
+      && !session->second.accessToken.empty()
+      && session->second.expiry > std::chrono::system_clock::now() + std::chrono::seconds{60};
+  if (valid) {
+    googleFetchWithToken(id, session->second.accessToken, true);
+  } else {
+    refreshGoogleToken(id, [this, id](bool ok, std::string token) {
+      if (!ok) {
+        accountDone(id, false, {});
+      } else {
+        googleFetchWithToken(id, token, false);
+      }
+    });
+  }
+}
+
+void CalendarService::connectGoogleAccount(const std::string& accountId, const std::string& activationToken) {
+  const auto it = std::ranges::find_if(m_activeConfig.accounts, [&](const CalendarConfig::Account& a) {
+    return a.id == accountId && a.type == "google";
+  });
+  if (it == m_activeConfig.accounts.end()) {
+    kLog.warn("connectGoogleAccount: no google account with id {}", accountId);
+    notifyGoogleConnectFailure(
+        i18n::tr("notifications.internal.calendar-google-connect-missing-account", "account", accountId)
+    );
+    return;
+  }
+
+  m_connect.state = ConnectState::Pending;
+  const std::uint64_t generation = ++m_connect.generation;
+  m_connect.accountId = accountId;
+  m_connect.inFlight = true;
+  m_connect.pollToken.clear();
+  notifyChanged();
+
+  m_oauth.start([this, accountId, activationToken,
+                 generation](bool ok, calendar::GoogleOAuthBroker::StartResult result) {
+    if (m_connect.generation != generation) {
+      return;
+    }
+    m_connect.inFlight = false;
+    if (!ok) {
+      kLog.warn("google oauth start failed for account {}", accountId);
+      if (result.httpStatus == 429) {
+        notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-rate-limited"));
+      } else if (result.httpStatus > 0) {
+        notifyGoogleConnectFailure(
+            i18n::tr("notifications.internal.calendar-google-connect-start-http", "status", result.httpStatus)
+        );
+      } else {
+        notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-start-failed"));
+      }
+      m_connect.state = ConnectState::Failed;
+      notifyChanged();
+      return;
+    }
+    m_connect.pollToken = result.pollToken;
+    const int expiresIn = result.expiresIn > 0 ? result.expiresIn : 600;
+    m_connect.deadline = std::chrono::steady_clock::now() + std::chrono::seconds{expiresIn};
+    m_connect.nextPollAt = std::chrono::steady_clock::now() + kConnectPollInterval;
+    if (!net::openInBrowser(result.authUrl, activationToken)) {
+      kLog.warn("failed to open browser for google consent; url logged at debug");
+      kLog.debug("google consent url: {}", result.authUrl);
+      notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-browser-failed"));
+    }
+    notifyChanged();
+  });
+}
+
+void CalendarService::saveCalDavAccount(
+    const std::string& accountId, CalendarCredentialSource credentialSource, const std::string& passwordFile,
+    std::string password, ConfigMutation persistConfig, CredentialOperationCallback callback
+) {
+  if (!persistConfig || !callback) {
+    return;
+  }
+
+  if (credentialSource == CalendarCredentialSource::File) {
+    wipeString(password);
+    if (passwordFile.empty()
+        || !std::filesystem::path(passwordFile).is_absolute()
+        || calendar::readCredentialFile(passwordFile).status != calendar::CredentialFileStatus::Success) {
+      callback(CredentialOperationResult::FileError);
+      return;
+    }
+    callback(persistConfig() ? CredentialOperationResult::Success : CredentialOperationResult::ConfigError);
+    return;
+  }
+
+  if (password.empty()) {
+    m_credentials.lookupPassword(
+        accountId,
+        [persistConfig = std::move(persistConfig), callback = std::move(callback)](
+            security::SecretStoreStatus status, calendar::CalendarCredentialStore::Secret passwordValue
+        ) mutable {
+          if (status != security::SecretStoreStatus::Success || !passwordValue || passwordValue->empty()) {
+            callback(
+                status == security::SecretStoreStatus::Success ? CredentialOperationResult::MissingCredential
+                                                               : operationResult(status)
+            );
+            return;
+          }
+          callback(persistConfig() ? CredentialOperationResult::Success : CredentialOperationResult::ConfigError);
+        }
+    );
+    return;
+  }
+
+  auto newPassword = std::make_shared<security::SecureBuffer>(secureBuffer(password));
+  wipeString(password);
+  m_credentials.lookupPassword(
+      accountId,
+      [this, accountId, newPassword = std::move(newPassword), persistConfig = std::move(persistConfig),
+       callback = std::move(callback)](
+          security::SecretStoreStatus lookupStatus, calendar::CalendarCredentialStore::Secret oldPassword
+      ) mutable {
+        if (lookupStatus != security::SecretStoreStatus::Success
+            && lookupStatus != security::SecretStoreStatus::NotFound) {
+          callback(operationResult(lookupStatus));
+          return;
+        }
+        m_credentials.storePassword(
+            accountId, std::move(*newPassword),
+            [this, accountId, oldPassword = std::move(oldPassword), persistConfig = std::move(persistConfig),
+             callback = std::move(callback)](security::SecretStoreStatus storeStatus) mutable {
+              if (storeStatus != security::SecretStoreStatus::Success) {
+                callback(operationResult(storeStatus));
+                return;
+              }
+              if (persistConfig()) {
+                callback(CredentialOperationResult::Success);
+                return;
+              }
+
+              const auto cleanupDone = [callback = std::move(callback)](security::SecretStoreStatus cleanupStatus) {
+                const bool cleaned = cleanupStatus == security::SecretStoreStatus::Success
+                    || cleanupStatus == security::SecretStoreStatus::NotFound;
+                callback(cleaned ? CredentialOperationResult::ConfigError : CredentialOperationResult::CleanupError);
+              };
+              if (oldPassword) {
+                m_credentials.storePassword(
+                    accountId, security::SecureBuffer(oldPassword->bytes()), std::move(cleanupDone)
+                );
+              } else {
+                m_credentials.erasePassword(accountId, std::move(cleanupDone));
+              }
+            }
+        );
+      }
+  );
+}
+
+void CalendarService::deleteAccount(
+    const std::string& accountId, ConfigMutation removeConfig, CredentialOperationCallback callback
+) {
+  if (!removeConfig || !callback) {
+    return;
+  }
+  const auto account = std::ranges::find(m_activeConfig.accounts, accountId, &CalendarConfig::Account::id);
+  if (account == m_activeConfig.accounts.end()) {
+    callback(CredentialOperationResult::ConfigError);
+    return;
+  }
+  if (account->type == "caldav" && account->credentialSource == CalendarCredentialSource::File) {
+    clearGoogleSession(accountId);
+    callback(removeConfig() ? CredentialOperationResult::Success : CredentialOperationResult::ConfigError);
+    return;
+  }
+  m_credentials.eraseAccount(
+      accountId,
+      [this, accountId, removeConfig = std::move(removeConfig),
+       callback = std::move(callback)](security::SecretStoreStatus status) mutable {
+        if (status != security::SecretStoreStatus::Success && status != security::SecretStoreStatus::NotFound) {
+          callback(operationResult(status));
+          return;
+        }
+        clearGoogleSession(accountId);
+        callback(removeConfig() ? CredentialOperationResult::Success : CredentialOperationResult::ConfigError);
+      }
+  );
+}
+
+void CalendarService::pollConnect() {
+  m_connect.inFlight = true;
+  const std::string accountId = m_connect.accountId;
+  const std::uint64_t generation = m_connect.generation;
+  m_oauth.poll(
+      m_connect.pollToken,
+      [this, accountId, generation](calendar::GoogleOAuthBroker::PollStatus status, calendar::OAuthTokens tokens) {
+        if (m_connect.generation != generation) {
+          return;
+        }
+        m_connect.inFlight = false;
+        if (m_connect.accountId != accountId) {
+          return; // a newer flow superseded this one
+        }
+        using PollStatus = calendar::GoogleOAuthBroker::PollStatus;
+        switch (status) {
+        case PollStatus::Pending:
+          m_connect.nextPollAt = std::chrono::steady_clock::now() + kConnectPollInterval;
+          break;
+        case PollStatus::Complete:
+          if (tokens.refreshToken.empty()) {
+            notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-result-failed"));
+            m_connect.state = ConnectState::Failed;
+            notifyChanged();
+            break;
+          }
+          m_connect.inFlight = true;
+          storeGoogleTokens(
+              accountId, std::move(tokens), [this, accountId, generation](security::SecretStoreStatus storeStatus) {
+                if (m_connect.generation != generation) {
+                  return;
+                }
+                m_connect.inFlight = false;
+                if (m_connect.accountId != accountId) {
+                  return;
+                }
+                if (storeStatus != security::SecretStoreStatus::Success) {
+                  clearGoogleSession(accountId);
+                  notifyGoogleConnectFailure(
+                      i18n::tr("notifications.internal.calendar-google-connect-credential-store-failed")
+                  );
+                  m_connect.state = ConnectState::Failed;
+                  notifyChanged();
+                  return;
+                }
+                m_connect.state = ConnectState::Success;
+                m_nextRefreshAt = std::chrono::steady_clock::now();
+                notifyChanged();
+              }
+          );
+          break;
+        case PollStatus::Expired:
+          notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-expired"));
+          m_connect.state = ConnectState::Failed;
+          notifyChanged();
+          break;
+        case PollStatus::Error:
+          notifyGoogleConnectFailure(i18n::tr("notifications.internal.calendar-google-connect-result-failed"));
+          m_connect.state = ConnectState::Failed;
+          notifyChanged();
+          break;
+        }
+      }
+  );
+}
+
+void CalendarService::storeGoogleTokens(
+    const std::string& accountId, calendar::OAuthTokens tokens,
+    std::function<void(security::SecretStoreStatus)> callback
+) {
+  const bool hasRefreshToken = !tokens.refreshToken.empty();
+  security::SecureBuffer refreshToken;
+  if (hasRefreshToken) {
+    refreshToken = secureBuffer(tokens.refreshToken);
+    wipeString(tokens.refreshToken);
+  }
+  auto retainAccessToken = [this, accountId, tokens = std::move(tokens),
+                            callback = std::move(callback)](security::SecretStoreStatus status) mutable {
+    if (status == security::SecretStoreStatus::Success) {
+      clearGoogleSession(accountId);
+      m_googleSessions.insert_or_assign(
+          accountId, GoogleSession{.accessToken = std::move(tokens.accessToken), .expiry = tokens.expiry}
+      );
+    }
+    if (callback) {
+      callback(status);
+    }
+  };
+
+  if (!hasRefreshToken) {
+    retainAccessToken(security::SecretStoreStatus::Success);
+    return;
+  }
+  m_credentials.storeRefreshToken(accountId, std::move(refreshToken), std::move(retainAccessToken));
+}
+
+void CalendarService::clearGoogleSession(const std::string& accountId) {
+  const auto it = m_googleSessions.find(accountId);
+  if (it == m_googleSessions.end()) {
+    return;
+  }
+  wipeString(it->second.accessToken);
+  m_googleSessions.erase(it);
+}
+
+CalendarService::CredentialOperationResult CalendarService::operationResult(security::SecretStoreStatus status) {
+  switch (status) {
+  case security::SecretStoreStatus::Success:
+    return CredentialOperationResult::Success;
+  case security::SecretStoreStatus::NotFound:
+    return CredentialOperationResult::MissingCredential;
+  case security::SecretStoreStatus::Unavailable:
+    return CredentialOperationResult::Unavailable;
+  case security::SecretStoreStatus::Cancelled:
+    return CredentialOperationResult::Cancelled;
+  case security::SecretStoreStatus::DeniedOrLocked:
+    return CredentialOperationResult::DeniedOrLocked;
+  case security::SecretStoreStatus::BackendError:
+    return CredentialOperationResult::BackendError;
+  }
+  return CredentialOperationResult::BackendError;
+}
+
+std::filesystem::path CalendarService::cacheFilePath() {
+  const char* xdgCache = std::getenv("XDG_CACHE_HOME");
+  std::filesystem::path base;
+  if (xdgCache != nullptr && xdgCache[0] != '\0') {
+    base = xdgCache;
+  } else if (const char* home = std::getenv("HOME"); home != nullptr) {
+    base = std::filesystem::path(home) / ".cache";
+  } else {
+    base = "/tmp";
+  }
+  return base / "noctalia" / "calendar" / "events.enc";
+}
+
+std::filesystem::path CalendarService::legacyCacheFilePath() {
+  std::filesystem::path path = cacheFilePath();
+  path.replace_filename("events.json");
+  return path;
+}
+
+bool CalendarService::loadCache() {
+  if (!m_cacheKey.has_value()) {
+    return false;
+  }
+
+  if (!calendar::cache::secureExisting(cacheFilePath())) {
+    kLog.warn("failed to secure encrypted calendar cache");
+    return false;
+  }
+  const auto encrypted = calendar::cache::readEncrypted(cacheFilePath(), *m_cacheKey, kMaxCacheBytes);
+  if (encrypted.status == security::EncryptedReadStatus::Success) {
+    if (!parseCache(encrypted.plaintext)) {
+      setCachePersistenceState(CachePersistenceState::RecoveryRequired, m_cacheMigrationPending);
+      return false;
+    }
+    const std::filesystem::path legacyPath = legacyCacheFilePath();
+    std::error_code ec;
+    const bool legacyExists = std::filesystem::exists(legacyPath, ec);
+    if (ec) {
+      return false;
+    }
+    if (legacyExists && (!std::filesystem::remove(legacyPath, ec) || ec)) {
+      setCachePersistenceState(CachePersistenceState::Opening, true);
+      kLog.warn("failed to remove plaintext calendar cache after authenticated encrypted reload");
+      return false;
+    }
+    m_cacheWritable = true;
+    setCachePersistenceState(CachePersistenceState::Ready, false);
+    return true;
+  }
+  if (encrypted.status != security::EncryptedReadStatus::NotFound) {
+    kLog.warn("failed to authenticate or read encrypted calendar cache");
+    if (encrypted.status != security::EncryptedReadStatus::IoError) {
+      setCachePersistenceState(CachePersistenceState::RecoveryRequired, m_cacheMigrationPending);
+    }
+    return false;
+  }
+
+  const std::filesystem::path legacyPath = legacyCacheFilePath();
+  if (!calendar::cache::secureExisting(legacyPath)) {
+    kLog.warn("failed to secure plaintext calendar cache before migration");
+    return false;
+  }
+  const auto legacy = calendar::cache::readLegacy(legacyPath, kMaxCacheBytes);
+  if (legacy.status == calendar::cache::LegacyReadStatus::NotFound) {
+    m_cacheWritable = true;
+    setCachePersistenceState(CachePersistenceState::Ready, false);
+    return true;
+  }
+  setCachePersistenceState(CachePersistenceState::Opening, true);
+  if (legacy.status != calendar::cache::LegacyReadStatus::Success || !parseCache(legacy.contents)) {
+    kLog.warn("failed to read plaintext calendar cache for encryption");
+    return false;
+  }
+
+  const std::string_view contents(reinterpret_cast<const char*>(legacy.contents.data()), legacy.contents.size());
+  if (!calendar::cache::writeEncrypted(cacheFilePath(), contents, *m_cacheKey)) {
+    kLog.warn("failed to encrypt plaintext calendar cache");
+    return false;
+  }
+  m_storageKeyProvider.noteEncryptedDataExists();
+
+  std::error_code ec;
+  if (!std::filesystem::remove(legacyPath, ec) || ec) {
+    kLog.warn("failed to remove plaintext calendar cache after encryption");
+    return false;
+  }
+  m_cacheWritable = true;
+  setCachePersistenceState(CachePersistenceState::Ready, false);
+  return true;
+}
+
+bool CalendarService::parseCache(std::span<const std::uint8_t> contents) {
+  try {
+    const std::string_view json(reinterpret_cast<const char*>(contents.data()), contents.size());
+    const auto j = nlohmann::json::parse(json);
+    std::map<std::string, std::vector<CalendarEvent>> parsed;
+    for (const auto& item : j.at("events")) {
+      CalendarEvent event;
+      event.id = item.value("id", std::string{});
+      event.title = item.value("title", std::string{});
+      event.calendarName = item.value("calendar", std::string{});
+      event.colorHex = item.value("color", std::string{});
+      event.location = item.value("location", std::string{});
+      event.url = calendar::resolveEventLink(event.location, item.value("url", std::string{}));
+      event.start = fromUnix(item.value("start", std::int64_t{0}));
+      event.end = fromUnix(item.value("end", std::int64_t{0}));
+      event.allDay = item.value("all_day", false);
+      const std::string account = item.value("account", std::string{});
+      parsed[account].push_back(std::move(event));
+    }
+    m_eventsByAccount = std::move(parsed);
+    if (!m_eventsByAccount.empty()) {
+      rebuildSnapshot();
+    }
+    return true;
+  } catch (const std::exception& e) {
+    kLog.warn("failed to load calendar cache: {}", e.what());
+    return false;
+  }
+}
+
+void CalendarService::saveCache() {
+  if (!m_cacheWritable || !m_cacheKey.has_value() || m_cachePersistenceState != CachePersistenceState::Ready) {
+    return;
+  }
+
+  nlohmann::json events = nlohmann::json::array();
+  for (const auto& [accountId, accountEvents] : m_eventsByAccount) {
+    for (const CalendarEvent& event : accountEvents) {
+      events.push_back({
+          {"account", accountId},
+          {"id", event.id},
+          {"title", event.title},
+          {"calendar", event.calendarName},
+          {"color", event.colorHex},
+          {"location", event.location},
+          {"url", event.url},
+          {"start", toUnix(event.start)},
+          {"end", toUnix(event.end)},
+          {"all_day", event.allDay},
+      });
+    }
+  }
+
+  const std::string contents = nlohmann::json{{"events", std::move(events)}}.dump();
+  if (!calendar::cache::writeEncrypted(cacheFilePath(), contents, *m_cacheKey)) {
+    kLog.warn("failed to write encrypted calendar cache");
+    m_cacheWritable = false;
+    setCachePersistenceState(CachePersistenceState::BackendError, m_cacheMigrationPending);
+  } else {
+    m_storageKeyProvider.noteEncryptedDataExists();
+  }
+}
+
+void CalendarService::setCachePersistenceState(CachePersistenceState state, bool migrationPending) {
+  if (m_cachePersistenceState == state && m_cacheMigrationPending == migrationPending) {
+    return;
+  }
+  m_cachePersistenceState = state;
+  m_cacheMigrationPending = migrationPending;
+  if (m_credentialChangeCallback) {
+    m_credentialChangeCallback();
+  }
+}

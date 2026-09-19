@@ -1,0 +1,4091 @@
+{
+  "auth": {
+    "fingerprint": {
+      "disconnected": "Fingeravtrykkslesar kopla frå",
+      "error": "Feil med fingeraavtrykkssanning",
+      "no-match": "Fingeravtrykk samsvara ikkje",
+      "not-centered": "Set fingeren i midten og prøv att",
+      "present": "Les av fingeravtrykk ...",
+      "ready": "Set fingeren på lesaren",
+      "remove-and-retry": "Tak fingeren av og prøv att",
+      "retry": "Les av fingeravtrykket ein gong til",
+      "swipe-too-short": "Sveipa var for kort, prøv att",
+      "too-many-attempts": "Slo av fingeravtrykk (for mange freistnader)"
+    },
+    "pam": {
+      "authentication-failed": "Sanning gjekk gale",
+      "start-failed": "PAM-byrjing gjekk gale",
+      "user-unavailable": "Kan ikkje finna den aktuelle brukaren"
+    },
+    "polkit": {
+      "authenticate": "Sanna",
+      "authenticating": "Sannar ...",
+      "default-message": "Sanning krevst",
+      "invalid-password": "Ugildt lykelord",
+      "password-placeholder": "Lykelord",
+      "title": "Sanning krevst"
+    }
+  },
+  "bar": {
+    "screenshot": {
+      "choose-display": "Vel skjerm",
+      "confirm-region": "{copy} for å avrita · {save} for å lagra · Retur eller Mellomrom for standardval · {cancel} for å bryta av · Drag for å velja å nyo",
+      "fullscreen": "Fullskjerm",
+      "overlay-alloc-failed": "Kunne ikkje syna skjermbileteoverlaget (Skjermkort tomt for videominne?)",
+      "region": "Vel område"
+    },
+    "widgets": {
+      "active-window": {
+        "no-active-window": "Inga aktiv rute"
+      },
+      "bluetooth": {
+        "connected": "Kopla til"
+      },
+      "brightness": {
+        "brightness": "Ljosstyrke",
+        "display": "Skjerm"
+      },
+      "lock-keys": {
+        "caps": "Stor",
+        "caps-short": "S",
+        "num": "Tal",
+        "num-short": "T",
+        "scroll": "Blad",
+        "scroll-short": "B"
+      },
+      "media": {
+        "nothing-playing": "Inkje spelar av",
+        "playing": "Spelar"
+      },
+      "network": {
+        "active": "Aktiv",
+        "band": "Band",
+        "connected": "Kopla til",
+        "connecting": "Koplar til",
+        "download": "Nedlasting",
+        "interface": "Grensesnitt",
+        "ip": "IP",
+        "network": "Nettverk",
+        "networks": "Nettverk",
+        "networks-count": "{count} nettverk",
+        "networks-count-plural": "{count} nettverk",
+        "no": "Nei",
+        "not-connected": "Ikkje kopla til",
+        "off": "Av",
+        "on": "På",
+        "scanning": "Søkjer",
+        "signal": "Dekning",
+        "upload": "Opplasting",
+        "vpn": "VPN",
+        "wan-ip": "WAN IP",
+        "wifi": "Wi-Fi",
+        "wired": "Trådbunden",
+        "yes": "Ja"
+      },
+      "privacy": {
+        "camera": "Kamera",
+        "microphone": "Mikrofon",
+        "screen-sharing": "Skjermdeling"
+      },
+      "scripted": {
+        "reload-failed": "Kunne ikkje lasta inn skript å nyo",
+        "reloaded": "Lasta inn skript å nyo"
+      },
+      "sysmon": {
+        "cpu": "Prosessor",
+        "cpu-freq": "Prosessorfrekvens",
+        "cpu-temp": "Prosessortemp",
+        "disk": "Disk",
+        "disk-free": "Disk att",
+        "disk-free-pct": "Disk att %",
+        "disk-used": "Disk bruka",
+        "disk-used-pct": "Disk bruka %",
+        "download": "Nedlasting",
+        "gpu-temp": "Skjermkorttemp",
+        "gpu-usage": "Skjermkortbruk",
+        "gpu-vram": "Skjermkort-VRAM",
+        "ram": "Minne",
+        "swap": "Swap",
+        "system": "System",
+        "upload": "Opplasting"
+      },
+      "volume": {
+        "device": "Eining",
+        "mic": "Mik",
+        "volume": "Ljodstyrke"
+      },
+      "weather": {
+        "default": "Vêr",
+        "error": "Vêrfeil",
+        "loading": "Vêr ...",
+        "no-location": "Ingen stad",
+        "off": "Vêr avslege",
+        "tooltip": {
+          "condition": "Stode",
+          "high": "Høg",
+          "humidity": "Råme",
+          "low": "Låg",
+          "sunrise": "Solrenning",
+          "sunset": "Soleglad",
+          "temperature": "Temperatur",
+          "uv": "UV-indeks",
+          "wind": "Vind"
+        }
+      }
+    }
+  },
+  "clipboard": {
+    "actions": {
+      "clear-all": "Sletta alt",
+      "delete-item": "Sletta oppføring",
+      "keep-pinned": "Haldt fest"
+    },
+    "confirm": {
+      "clear-desc": "Vel om feste oppføringar skal halda seg.",
+      "clear-desc-all-pinned": "Kvar einaste oppføring er fest. Bruk \"Sletta alt\" for å sletta alt.",
+      "clear-desc-no-pinned": "Dette slettar alle oppføringane frå utklippstavla.",
+      "clear-title": "Sletta tavlehistorikken?",
+      "delete-desc": "Dette slettar den valde oppføringa frå tavlehistorikken.",
+      "delete-title": "Sletta tavleoppføringa?"
+    },
+    "empty": {
+      "history-message": "Ingen oppføringar i tavlehistorikken.",
+      "history-title": "Tavlehistorikken er tom",
+      "no-matches-message": "Ingen oppføringar svarar til søket.",
+      "no-matches-title": "Ingen svarande oppføringar"
+    },
+    "entry": {
+      "image": "Bilete",
+      "title": "Tavleoppføring"
+    },
+    "filter-placeholder": "Søk på tavla ...",
+    "preview": {
+      "empty-text-payload": "(tomt tekstinnhald)",
+      "image-title": "Bileteoppføring",
+      "loading": "Lastar inn førebilete ...",
+      "text-title": "Tekstoppføring",
+      "truncated": "... samankrept"
+    },
+    "title": "Utklippstavla"
+  },
+  "common": {
+    "actions": {
+      "apply": "Bruk",
+      "cancel": "Avbryt"
+    },
+    "states": {
+      "auto": "Automatisk",
+      "custom": "Sjølvvald",
+      "inherit": "Erva",
+      "off": "Avslegen"
+    }
+  },
+  "control-center": {
+    "audio": {
+      "application-volumes": "Ljodstyrke på applikasjonar",
+      "choose-effects-profile": "Vel profil",
+      "effects-profile": "Verknader",
+      "input-device-prefix": "Innljod",
+      "no-application-audio": "Applikasjonen har ikkje ljod",
+      "no-application-audio-body": "Ingen applikasjonar spelar ljod av no.",
+      "no-input-devices": "Ingen innljodseiningar",
+      "no-input-devices-body": "Ingen opptakskjelder er tilgjengelege no.",
+      "no-input-selected": "Inga innljodseining er vald",
+      "no-output-devices": "Ingen utljodseiningar",
+      "no-output-devices-body": "Ingen utljodsmål er tilgjengelege no.",
+      "no-output-selected": "Inga utljodseining er vald",
+      "output-device-prefix": "Utljod",
+      "unavailable-body": "PipeWire er ikkje aktiv.",
+      "unavailable-title": "Ljod utilgjengeleg"
+    },
+    "bluetooth": {
+      "accept": "Godtak",
+      "address": "Adresse",
+      "auto-reconnect": "Kopla til att automatisk",
+      "bluetooth": "Bluetooth",
+      "enter-code": "Skriv inn kode",
+      "no-devices": "Ingen einingar funne. Leita for å finna nære Bluetootheiningar.",
+      "off": "Bluetooth er avslegen",
+      "pair-title": "Par {device}",
+      "pairing-detail": {
+        "authorize": "Godtek du parespurnaden som kjem inn?",
+        "authorize-service": "Vil du gjeva tilgang til tenesta {uuid}?",
+        "confirm": "Stadfest at denne koden samsvarar den som er vist på eininga:",
+        "display-passkey": "Skriv inn denne koden på eininga:",
+        "display-pin": "Skriv inn denne PIN-koden på eininga:",
+        "passkey": "Skriv inn passlykelen vist på eininga:",
+        "pin-code": "Skriv inn PIN-koden vist på eininga:"
+      },
+      "reject": "Avslå",
+      "rfkill-blocked": "Bluetooth er sperra av systemet. Slå det på for å sletta sperra.",
+      "sections": {
+        "available": "Tilgjengeleg(e)",
+        "connected": "Kopla til",
+        "paired": "Para"
+      },
+      "unavailable": "Bluetooth-teneste utilgjengeleg",
+      "unknown-device": "Ukjend eining",
+      "visible": "Finnande av nære einingar"
+    },
+    "calendar": {
+      "all-day": "Hiele døgeret",
+      "events": "Arrangement",
+      "no-events": "Ingen arrangement",
+      "today": "I dag",
+      "toggle-events-card": "Slå av / på arrangementkort"
+    },
+    "display": {
+      "disabled": "Avslegen",
+      "no-displays": "Ingen skjermar tilgjengelege",
+      "unknown-resolution": "Ukjend oppløysing"
+    },
+    "home": {
+      "avatar-error-title": "Brukarbiletet vart ikkje oppdatert",
+      "media": {
+        "idle": "Inaktiv",
+        "no-active-player": "Ingen aktiv avspelar",
+        "nothing-playing": "Inkje spelar av",
+        "paused": "På vent",
+        "playback-unavailable": "Avspeling utilgjengeleg",
+        "playing": "Spelar",
+        "unavailable": "Utilgjengeleg",
+        "unknown-artist": "Ukjend artist",
+        "unknown-track": "Ukjend låt"
+      },
+      "select-avatar": "Vel brukarbilete",
+      "unknown": "ukjent",
+      "uptime": "Oppetid - {uptime}",
+      "weather": {
+        "data-unavailable": "Vẽrdata utilgjengeleg",
+        "disabled": "Vêr er avslege i tilmåtinga.",
+        "fetching": "Hentar varsel ..."
+      }
+    },
+    "media": {
+      "active-player": "Aktiv avspelar",
+      "nothing-playing": "Inkje spelar av",
+      "now-playing": "Spelar no",
+      "start-playback": "Byrja avspeling i ein MPRIS-app"
+    },
+    "network": {
+      "available": "Tilgjengeleg",
+      "connect": "Kopla til",
+      "current-connection": "Koplinga no",
+      "external-ip": "WAN {ip}",
+      "no-networks": "Inkje nettverk som er nære nok",
+      "not-connected": "Ikkje tilkopla",
+      "password": "Lykelord",
+      "password-prompt": "Skriv inn lykelord",
+      "password-prompt-for": "Skriv inn lykelord for {ssid}",
+      "saved": "Lagra",
+      "unavailable-detail": "Installer og slå på NetworkManager, wpa_supplicant eller iwd for å handsama nettverk herfrå.",
+      "unavailable-title": "Nettverktenesta utilgjengeleg",
+      "vpns": "VPN",
+      "wi-fi": "Wi-Fi",
+      "wifi": "Wi-Fi",
+      "wifi-off": "Wi-Fi er av",
+      "wifi-on": "Wi-Fi er på",
+      "wired-connection": "Trådsamband"
+    },
+    "notifications": {
+      "clear-all": "Sletta alle varsel",
+      "dnd-off": "Slå av Ikkje uroa",
+      "dnd-on": "Slå på Ikkje uroa",
+      "empty-body": "Nylege varsel viser seg her.",
+      "empty-title": "Ingen varsel",
+      "filter": {
+        "all": "Alle",
+        "older": "Eldre",
+        "today": "I dag",
+        "yesterday": "I går"
+      },
+      "filter-empty-body": "Ingen varsel svarar til søket.",
+      "filter-empty-title": "Inkjevetta her",
+      "untitled": "Varsel utan namn"
+    },
+    "power": {
+      "battery": "Batteri",
+      "design-capacity": "att av opphavleg kapasitet",
+      "health": "Batterihelse",
+      "performance-inhibited": "Yting ikkje tilgjengeleg",
+      "peripherals": "Tilkopla einingar",
+      "power-profile": "Straumprofil",
+      "time-to-empty": "{time} att",
+      "time-to-full": "{time} til fullt",
+      "unknown-device": "Ukjend eining"
+    },
+    "screen-time": {
+      "back": "Attende",
+      "disabled": "Skjermtidssporing er av. Slå henne på i Innstillingar for å spora bruk for kvar app.",
+      "empty": "Ingen appbruk er spora enno. Set ei rute i fokus for å byrja med sporing.",
+      "hour-0": "Midnatt",
+      "hour-12": "Middag",
+      "hour-18": "kl 18",
+      "hour-6": "kl 6",
+      "most-used": "MEST BRUKA",
+      "range": {
+        "14-days": "14 dagar",
+        "3-days": "3 dagar",
+        "today": "I dag"
+      },
+      "view-day": "Vis detaljar for dagen"
+    },
+    "shortcuts": {
+      "audio": "Ljod",
+      "bluetooth": "Bluetooth",
+      "caffeine": "Koffein",
+      "clipboard": "Utklippstavla",
+      "dark-mode": {
+        "auto": "Auto-modus",
+        "dark": "Mørk-modus",
+        "light": "Ljos-modus"
+      },
+      "keyboard-layout": "Knappefjøloppsett",
+      "media": "Media",
+      "mic-mute": "Mikrofon",
+      "nightlight": "Natteljos",
+      "nightlight-states": {
+        "forced": "Alltid på",
+        "off": "Natteljos",
+        "scheduled-day": "Planlagt",
+        "scheduled-night": "Køyrer"
+      },
+      "notification": "Ikkje uroa",
+      "power-profile": "Straum",
+      "screen-time": "Skjermtid",
+      "session": "Øykt",
+      "system": "System",
+      "wallpaper": "Bakgrunnsbilete",
+      "weather": "Vêr",
+      "wifi": "Wi-Fi"
+    },
+    "system": {
+      "labels": {
+        "load": "Prosessorlast",
+        "ram": "Minne",
+        "swap": "Swap"
+      },
+      "titles": {
+        "cpu": "Prosessor",
+        "gpu": "Skjermkort",
+        "memory": "Minne",
+        "network": "Nettverk",
+        "resources": "Ressursar",
+        "system": "System"
+      },
+      "tooltips": {
+        "load": "Lastesnitt over 1 / 5 / 15 minutt"
+      },
+      "unknown": "ukjent",
+      "uptime-prefix": "Opp {uptime} · {osAge}"
+    },
+    "tabs": {
+      "audio": "Ljod",
+      "bluetooth": "Bluetooth",
+      "calendar": "Kalender",
+      "home": "Heim",
+      "media": "Media",
+      "monitor": "Skjerm",
+      "network": "Nettverk",
+      "notifications": "Varsel",
+      "power": "Straum",
+      "screen-time": "Skjermtid",
+      "system": "System",
+      "weather": "Vẽr"
+    },
+    "weather": {
+      "daily": {
+        "tooltip": {
+          "condition": "Vêr",
+          "high": "Høg",
+          "low": "Låg",
+          "sunrise": "Solrenning",
+          "sunset": "Soleglad"
+        }
+      },
+      "data-unavailable": "Vêrdata utilgjengeleg",
+      "details": {
+        "elevation": "Høgd",
+        "sunrise": "Solrenning",
+        "sunset": "Soleglad",
+        "temp-max": "Høgste temperatur",
+        "temp-min": "Lægste temperatur",
+        "timezone": "Tidssone",
+        "uv-index": "UV-nivå",
+        "wind": "Vind"
+      },
+      "disabled": "Slå på [weather] i config.toml",
+      "fetching": "Hentar varsel ...",
+      "forecast-placeholder": {
+        "day": "Sundag",
+        "description": "Vêr",
+        "temperature": "10 / 4 °C"
+      },
+      "forecast-view": {
+        "daily": "Dagleg",
+        "hourly": "Kvar time"
+      },
+      "hourly": {
+        "summary": "{condition} / Regn {precip} %",
+        "tooltip": {
+          "condition": "Vêr",
+          "humidity": "Råme",
+          "rain": "Regn",
+          "wind": "Vind"
+        }
+      },
+      "location-unavailable": "Stad utilgjengeleg",
+      "no-location-body": "Legg til adressa di eller slå på finn-stad i Stadinnstillingane.",
+      "no-location-title": "Ingen stad fastsett",
+      "refreshing": "Hentar vêr å nyo ...",
+      "waiting": "Ventar på vêrdata"
+    }
+  },
+  "desktop-widgets": {
+    "editor": {
+      "actions": {
+        "add": "Legg til",
+        "clone": "Tvifalda (Ctrl+C, Ctrl+V for å rita av / lima)",
+        "done": "Ferdig",
+        "flip-horizontal": "Snu vassrett",
+        "flip-vertical": "Snu loddrett",
+        "hide": "Gøym",
+        "settings": "Innstillingar",
+        "show": "Vis",
+        "stack-back": "Set bak",
+        "stack-front": "Set føre",
+        "trash": "Sletta"
+      },
+      "dialogs": {
+        "select-sticker-image": "Vel merkebilete"
+      },
+      "settings": {
+        "aspect-ratio": "Sidetilhøve",
+        "background": "Bakgrunn",
+        "background-color": "Let",
+        "background-opacity": "Uklårleik",
+        "background-padding": "Utfylling",
+        "background-radius": "Radius",
+        "background-section": "Bakgrunn",
+        "bands": "Band",
+        "bar-width": "Stongbreidde",
+        "bloom-intensity": "Bloom",
+        "center-password-text": "Set lykelordtekst i midten",
+        "center-text": "Set tekst i midten",
+        "centered": "I midten",
+        "change-image": "Brigda ...",
+        "circle": "Ring",
+        "clock-style": "Klokkestil",
+        "clock-style-analog": "Analog",
+        "clock-style-digital": "Digital",
+        "color": "Let",
+        "color-1": "Let 1",
+        "color-2": "Let 2",
+        "color2": "Let 2",
+        "command": "Kommando",
+        "custom-color": "Sjølvvald",
+        "description": "Skildring",
+        "device": "Eining",
+        "display": "Skjerm",
+        "display-gauge": "Målar",
+        "display-graph": "Graf",
+        "fade-when-idle": "Folna når uaktiv",
+        "fill-color": "Fyllelet",
+        "font-family": "Skrifttype",
+        "font-family-default": "Systemstandard",
+        "forecast-days": "Varseldagar",
+        "format": "Format",
+        "gauge-layout": "Målaroppsett",
+        "glyph": "Symbol",
+        "hide-when-no-media": "Gøym når inkjevetta spelar av",
+        "highlight-color": "Framhevingslet",
+        "horizontal": "Vassrett",
+        "hover-background": "Bakgrunn ved sviv",
+        "hover-foreground": "Framgrunn ved sviv",
+        "image-path": "Bilete",
+        "inner-diameter": "Indre tverrmål",
+        "input-opacity": "Uklårleik av inndata",
+        "input-radius": "Indre radius",
+        "interface": "Grensesnitt",
+        "label": "Merkelapp",
+        "label-min-width": "Minste merkelappbreidd",
+        "layout": "Oppsett",
+        "mirrored": "Spegla",
+        "network-speed-compact": "Tett nettverkssnøggleik",
+        "network-speed-unit": "Eining for nettverkssnøggleik",
+        "network-speed-unit-auto": "Auto",
+        "network-speed-unit-kilobytes": "kB/s",
+        "network-speed-unit-megabytes": "MB/s",
+        "opacity": "Uklårleik",
+        "primary-color": "Hovudlet",
+        "reset-defaults": "Stell tilbake",
+        "reversed": "Omvendt",
+        "ring-opacity": "Ringuklårleik",
+        "rotation-speed": "Omsvivsfart",
+        "scroll-step": "Bladsteg",
+        "secondary-color": "Andrelet",
+        "sensitivity": "Varsemd",
+        "shadow": "Skugge",
+        "show-caps-lock": "Storlåsåtvaring",
+        "show-device": "Vis eining",
+        "show-events": "Vis arrangement",
+        "show-forecast": "Vis varsel",
+        "show-keyboard-layout": "Knappefjøloppsett",
+        "show-label": "Vis namn",
+        "show-login-button": "Innskrivingsknapp",
+        "show-media": "Media",
+        "show-password-hint": "Lykelordhjelp",
+        "show-session-buttons": "Øykteknappar",
+        "show-unlock-hint": "Lås opp hjelp",
+        "show-vpn-label": "Vis VPN-merkelapp",
+        "show-weather": "Vêr",
+        "show-week-numbers": "Vis veketal",
+        "show-when-idle": "Vis når inaktiv",
+        "stat": "Info",
+        "stat-cpu-freq": "Prosessorfrekvens",
+        "stat-cpu-temp": "Prosessortemp",
+        "stat-cpu-usage": "Prosessorbruk",
+        "stat-gpu-temp": "Skjermkorttemp",
+        "stat-gpu-usage": "Skjermkortbruk",
+        "stat-gpu-vram": "Skjermkort-VRAM",
+        "stat-net-rx": "Netto Rx",
+        "stat-net-tx": "Netto Tx",
+        "stat-none": "Ingen",
+        "stat-ram-pct": "RAM %",
+        "stat-swap-pct": "Swap %",
+        "stat2": "Info 2",
+        "title": "Namn",
+        "track-color": "Sporlet",
+        "variant": "Stil",
+        "variant-default": "Standard",
+        "variant-destructive": "Skjemmande",
+        "variant-ghost": "Skrømt",
+        "variant-outline": "Rand",
+        "variant-primary": "Primær",
+        "variant-secondary": "Sekundær",
+        "vertical": "Loddrett",
+        "visualization-mode": "Modus",
+        "visualization-mode-all": "Alle",
+        "visualization-mode-bars": "Stenger",
+        "visualization-mode-bars-rings": "Stenger og ringar",
+        "visualization-mode-rings": "Ringar",
+        "visualization-mode-wave": "Bylgja",
+        "visualization-mode-wave-rings": "Bylgja og ringar",
+        "wave-thickness": "Bylgjetjukn",
+        "widget-section": "Nøytel"
+      },
+      "state": {
+        "grid": "Rutenett"
+      },
+      "title": "Skrivebordsnøytlar",
+      "types": {
+        "audio-visualizer": "Ljodframsyning",
+        "button": "Knapp",
+        "calendar": "Kalender",
+        "clock": "Klokke",
+        "fancy-audio-visualizer": "Tøff ljodframsyning",
+        "label": "Namn",
+        "login-box": "Innskrivingsfelt",
+        "media-player": "Avspelar",
+        "sticker": "Klistremerke",
+        "system-monitor": "Systemvakt",
+        "volume": "Ljodstyrke",
+        "weather": "Vêr"
+      }
+    },
+    "media": {
+      "nothing-playing": "Inkje spelar av"
+    },
+    "volume": {
+      "mic": "Mik",
+      "muted": "Dempa",
+      "volume": "Ljodstyrke"
+    },
+    "weather": {
+      "error": "Noko gjekk gale",
+      "loading": "Lastar inn",
+      "no-location": "Ingen stad",
+      "off": "Vêr avslege"
+    }
+  },
+  "dock": {
+    "actions": {
+      "close": "Lat att",
+      "close-all": "Lat att alle"
+    },
+    "launcher": "Veljar"
+  },
+  "internal-apps": {
+    "settings": {
+      "display-name": "Innstillingar"
+    }
+  },
+  "launcher": {
+    "categories": {
+      "all": "Alle",
+      "applications": {
+        "development": "Utvikling",
+        "education": "Utdaning",
+        "games": "Spel",
+        "graphics": "Grafikk",
+        "internet": "Internett",
+        "multimedia": "Multimedia",
+        "office": "Kontor",
+        "system": "System",
+        "utilities": "Reiskapar"
+      },
+      "emoji": {
+        "activity": "Handling",
+        "animals": "Dyr",
+        "flags": "Flagg",
+        "food": "Mat",
+        "nature": "Natur",
+        "objects": "Ting",
+        "people": "Folk",
+        "symbols": "Teikn",
+        "travel": "Reise"
+      },
+      "recently-used": "Nyleg bruka"
+    },
+    "context-menu": {
+      "open": "Opna",
+      "pin": "Fest til Veljaren",
+      "pin-to-dock": "Fest til Festepunktet",
+      "unpin": "Fest frå Veljaren",
+      "unpin-from-dock": "Fest frå Festepunktet"
+    },
+    "empty": {
+      "no-results": "Ingen oppslag",
+      "type-to-search": "Skriv for å leita ..."
+    },
+    "origins": {
+      "appimage": "AppImage",
+      "flatpak": "Flatpak",
+      "nix": "Nix",
+      "snap": "Snap",
+      "system": "System",
+      "user": "Brukar"
+    },
+    "providers": {
+      "applications": {
+        "title": "Applikasjonar"
+      },
+      "calculator": {
+        "title": "Kalkulator"
+      },
+      "emoji": {
+        "title": "Emoji"
+      },
+      "session": {
+        "action-subtitle": "Køyr øyktsgjerd",
+        "command-subtitle": "Køyr sjølvvald kommando",
+        "title": "Øykt"
+      },
+      "wallpaper": {
+        "title": "Bakgrunnsbilete"
+      },
+      "window": {
+        "title": "Ruter"
+      }
+    },
+    "search-placeholder": "Leita i applikasjonar ..."
+  },
+  "location": {
+    "errors": {
+      "address-lookup-failed": "Adressesøk gjekk gale",
+      "ip-geolocation-failed": "IP-geolokasjon gjekk gale",
+      "parse-geocode": "Kunne ikkje tolka geokodesvar",
+      "parse-ip-geolocation": "Kunne ikkje tolka IP-geokodesvar"
+    },
+    "locations": {
+      "current": "Stad no"
+    },
+    "source": {
+      "address": "Adresse",
+      "auto": "Automatisk",
+      "manual": "For hand"
+    }
+  },
+  "lockscreen": {
+    "authenticating": "Sannar ...",
+    "authentication-failed": "Sanning gjekk gale",
+    "caps-lock-on": "Storlås er på",
+    "password-cleared": "Lykelord rett",
+    "password-placeholder": "Lykelord",
+    "ready": "Skriv inn lykelordet ditt og trykk på Retur.",
+    "unlocked": "Låst opp",
+    "waiting": "Ventar på låsestadfesting ..."
+  },
+  "notifications": {
+    "actions": {
+      "fallback": "Gjerd",
+      "open": "Opna"
+    },
+    "inline-reply": {
+      "button": "Svar",
+      "placeholder": "Skriv eit svar ..."
+    },
+    "internal": {
+      "battery": "Batteri",
+      "battery-critical-body": "{device}: {percent} % - datamaskina di slår seg av snart",
+      "battery-critical-title": "Batteri svært lågt",
+      "battery-device": "Batterieining",
+      "battery-low-body": "{device}: {percent} % att",
+      "battery-low-title": "Lågt batteri",
+      "calendar": "Kalender",
+      "calendar-credential-locked-body": "Lås opp lykelringen bruka av Løyndomstenesta, og prøv att i Innstillingar. Med GNOME Keyring må du gjera ein lykelring som låser seg opp automatisk til standardvalet, til dømes Login.",
+      "calendar-credential-locked-title": "Kalenderlykelringen er låst",
+      "calendar-google-connect-browser-failed": "Ingen nettlesaropnar kunne opna for å køyra Google-sanning. Sjå etter standardlesaren eller oppsettet for xdg-open.",
+      "calendar-google-connect-credential-store-failed": "Sanning ferdig, men oppattnyingsteiknet kunne ikkje lagrast. Lås opp eller byrja Løyndomstenesta, og kopla til att.",
+      "calendar-google-connect-expired": "Google-sanning gjekk ut før innskrivinga var ferdig. Du må byrja koplinga å nyo.",
+      "calendar-google-connect-failed-title": "Kunne ikkje kopla til Google Calendar",
+      "calendar-google-connect-missing-account": "Ingen tilmåta Google Calendar-konto svara til \"{account}\".",
+      "calendar-google-connect-rate-limited": "Google-sanning har mellombels lastgrense. Bia litt, og prøv att.",
+      "calendar-google-connect-result-failed": "Vann ikkje verta ferdig med Google-sanning. Du må byrja koplinga å nyo.",
+      "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå etter nettverktilkoplinga og prøv å nyo.",
+      "calendar-google-connect-start-http": "Kunne ikkje byrja Google-sanninga. OAuth-handsamaren svara med HTTP {status}.",
+      "calendar-google-connect-timeout": "Google-sanning gjekk ut. Byrja koplinga å nyo når du vil skriva deg inn.",
+      "config-migration-body": "Oppdater {path} i brunnfila. Noctalia legg til dette utbytet berre mellombels. Køyr noctalia config validate for å sjå alle dei naudsynlege brigda.",
+      "config-migration-title": "Tilmåtinga krev oppdatering",
+      "dbus-disabled": "DBus-varsel avslegne",
+      "desktop-widgets-editor": "Nøytelbrigdar",
+      "desktop-widgets-editor-enabled": "Skrivebordsnøytelbrigdaren er på. Gå til eit tomt arbeidsrom slik at opne ruter ikkje ligg over brigdaren.",
+      "greeter-sync": "Noctaliahelsar",
+      "greeter-sync-pending": "Ventar på stjornargodkjenning for å skriva til helsaren.",
+      "greeter-sync-pending-console": "Ventar på stjornargodkjenning. Godkjenn polkit-meldinga i Noctalia, i ein TTY eller konsoll, eller køyr pkexec sjølv.",
+      "greeter-sync-pending-manual": "Filene ventar. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Eller set shell.greeter_sync.privilege_command (til dømes ghostty -e pkexec) og synkroniser å nyo.",
+      "greeter-sync-success": "Utsjånad synkronisert. Brigde viser neste gong du skriv deg inn.",
+      "greeter-sync-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
+      "greeter-sync-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
+      "keybind-app": "Noctalia",
+      "keybind-invalid-modifier": "Snarvegen godtek éin knapp utan hjelpeknappar.",
+      "keybind-invalid-printable": "Skrivande knappar (bokstavar, tal, teikn) krev ein hjelpeknapp som Ctrl eller Alt.",
+      "keybind-invalid-super": "Du kan ikkje bruka Superknappen/Windowsknappen i skalsnarvegar.",
+      "keybind-invalid-title": "Snarveg ikkje tillaten.",
+      "launcher-usage-reset": "Programveljar",
+      "launcher-usage-reset-success": "Bruksdata sletta.",
+      "lockscreen-widgets-editor": "Låseskjermnøytelbrigdar",
+      "lockscreen-widgets-editor-blocked-locked": "Lås opp øykta før du brigdar på låseskjermnøytlar.",
+      "lockscreen-widgets-editor-enabled": "Låseskjermnøytelbrigdaren er på. Gå til eit tomt arbeidsrom slik at opne ruter ikkje ligg over brigdaren.",
+      "mpris-disabled": "MPRIS avslege",
+      "polkit-agent": "Polkit-agent",
+      "polkit-no-session": "Polkit-agenten krev logind, elogind eller XDG_SESSION_ID. På oppsett med berre seatd kan han ikkje senda grafisk leietekst. Bruk pkexec i terminal for helsarsynkro, eller installer elogind for sanning i øykta.",
+      "screen-time-reset": "Skjermtid",
+      "screen-time-reset-success": "Brukshistorikk sletta.",
+      "session-bus-unavailable": "Øyktebus ikkje tilgjengeleg",
+      "wallpaper-palette-export": "Sjølvvald palett",
+      "wallpaper-palette-export-success": "Lagra \"{name}\" og sette palettbrunn til sjølvvald."
+    }
+  },
+  "osd": {
+    "bluetooth": {
+      "off": "Bluetooth av",
+      "on": "Bluetooth på"
+    },
+    "caffeine": {
+      "off": "Koffein av",
+      "on": "Koffein på"
+    },
+    "dnd": {
+      "off": "Ikkje uroa av",
+      "on": "Ikkje uroa på"
+    },
+    "effects": {
+      "input": "Inndataverknader",
+      "output": "Utdataverknader"
+    },
+    "lock-keys": {
+      "caps-off": "Storlås av",
+      "caps-on": "Storlås på",
+      "num-off": "Tallås av",
+      "num-on": "Tallås på",
+      "scroll-off": "Bladlås av",
+      "scroll-on": "Bladlås på"
+    },
+    "nightlight": {
+      "forced": "Alltid på",
+      "off": "Natteljos av",
+      "running": "Køyrer",
+      "scheduled": "Etla"
+    },
+    "privacy": {
+      "camera-off": "Kamera stogga",
+      "camera-on": "Kamera på",
+      "mic-off": "Mikrofon stogga",
+      "mic-on": "Mikrofon på",
+      "screen-off": "Skjermdeling stogga",
+      "screen-on": "Skjermdeling på"
+    },
+    "wifi": {
+      "off": "Wi-Fi av",
+      "on": "Wi-Fi på"
+    }
+  },
+  "plugins": {
+    "auto-disabled": {
+      "body-errors": "{plugin} råkå for mange feil og vart avslegen. Lasta henne inn att etter du har løyst problemet.",
+      "body-timeouts": "{plugin} heldt opp å svara og vart avslegen. Lasta henne inn att etter du har løyst problemet.",
+      "title": "Utviding avslegen"
+    },
+    "enable-failed": {
+      "body-error": "{plugin}: {error}",
+      "body-incompatible": "{plugin} vil ha plugin API {version}; denne Noctalia stør API {oldest} – {current}",
+      "body-timeout": "{plugin} tok for lang tid til å installera.",
+      "title": "Utviding ikkje påslegen"
+    }
+  },
+  "power": {
+    "battery": {
+      "states": {
+        "battery": "Batteri",
+        "charging": "Ladar",
+        "discharging": "Ladar ut",
+        "empty": "Tomt",
+        "pending-discharge": "Ventar på utlading",
+        "plugged-in": "Kopla til"
+      },
+      "tooltip": {
+        "device": "Batteri",
+        "device-numbered": "Batteri {index}",
+        "health": "Helse",
+        "rate": "Rate",
+        "status": "Status",
+        "time-left": "Tid att",
+        "time-to-full": "Tid til fullt",
+        "unknown-device": "Ukjend eining"
+      }
+    },
+    "profiles": {
+      "balanced": "Vanleg",
+      "performance": "Yting",
+      "power-saver": "Straumsparing"
+    }
+  },
+  "session": {
+    "actions": {
+      "custom": "Sjølvvald",
+      "lock": "Lås",
+      "lock-and-suspend": "Lås og set i dvale",
+      "logout": "Skriv ut",
+      "reboot": "Start å nyo",
+      "shutdown": "Slå av",
+      "suspend": "Set i dvale"
+    },
+    "errors": {
+      "lock-body": "Protokollen for øyktelås er ikkje tilgjengeleg",
+      "lock-title": "Lås utilgjengeleg"
+    }
+  },
+  "settings": {
+    "actions": {
+      "confirm-reset": "Stadfest nullstilling",
+      "reset": "Nullstill"
+    },
+    "badges": {
+      "advanced": "Avansert",
+      "community": "Samfunn",
+      "deprecated": "Utgått",
+      "inherited": "Ervd",
+      "monitor": "Skjerm",
+      "official": "Offisiell",
+      "override": "Overstyr"
+    },
+    "calendar-accounts": {
+      "add-title": "Legg til kalenderkonto",
+      "calendars-label": "Kalendrar",
+      "color-label": "Let",
+      "credential-source-file": "Lykelordsfil",
+      "credential-source-keyring": "Lykelring",
+      "credential-source-label": "Lagring for innskrivingsdata",
+      "delete-error": "Kunne ikkje sletta kalenderkonto",
+      "edit-title": "Brigda på kalenderkonto",
+      "ics-url-label": "ICS-URL",
+      "id-label": "Konto-ID",
+      "invalid": "Sjå etter dei merkte felta for kalenderkontoen",
+      "name-label": "Visingsnamn",
+      "name-placeholder": "Personleg kalender",
+      "password-file-error": "Kunne ikkje lesa den tilmåta lykelordfila. Sjå etter at ho finst, er ei vanleg lesande fil, og inneheld eit lykelord.",
+      "password-file-label": "Lykelordsfil",
+      "password-keep-placeholder": "Haldt tomt for å halda fram med same lykelord",
+      "password-label": "App-lykelord",
+      "password-placeholder": "Sereige app-lykelord",
+      "password-save-error": "Kunne ikkje lagra lykelordet til kalenderkontoen.",
+      "provider": {
+        "custom": "CalDAV",
+        "google": "Google",
+        "icloud": "iCloud",
+        "ics": "ICS-URL"
+      },
+      "provider-label": "Leverandør",
+      "save": "Lagra",
+      "save-connect": "Lagra og kopla til",
+      "save-error": "Kunne ikkje lagra kalenderkonto.",
+      "secret-cleanup-error": "Noctalia kunne ikkje lagra kontoen, og kunne ikkje skipa innskrivingsdata på lykelringen opp att eller retta opp i han. Prøv atter når du har låst opp Løyndomstenesta.",
+      "secret-service-cancelled": "Leieteksten for Løyndomstenesta vart avbroten. Prøv att når du er klar til å låsa henne opp.",
+      "secret-service-error": "Fekk ikkje tilgang til kalenderinnskrivingsdata i Løyndomstenesta. Prøv att.",
+      "secret-service-locked": "Kalenderinnskrivingsdata er låste eller tilgang vart neitta. Lås opp Løyndomstenesta og prøv att.",
+      "secret-service-unavailable": "Inga løyndomstenesta er tilgjengeleg. Start opp ein semjande løyndomstenestegjevar og prøv att.",
+      "server-url-label": "Tenar URL",
+      "username-label": "Brukarnamn",
+      "username-placeholder": "namn@doeme.no"
+    },
+    "controls": {
+      "keybind": {
+        "add": "Trykk for å leggja til snarveg",
+        "recording-placeholder": "Trykk på eit knappeval ...",
+        "unset-placeholder": "Trykk for å binda ..."
+      },
+      "list": {
+        "add-entry-placeholder": "Legg til ..."
+      },
+      "path-browse": {
+        "file-title": "Vel fil",
+        "folder-title": "Vel mappe"
+      },
+      "select": {
+        "unknown-value": "Ukjend: {value}"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Vel ein let"
+      }
+    },
+    "entities": {
+      "bar": {
+        "create": "Skapa",
+        "delete": "Sletta",
+        "delete-confirm-desc": "Denne stonga, som var laga med grensesnittet, vert sletta frå settings.toml.",
+        "delete-confirm-title": "Sletta \"{name}\"?",
+        "id-placeholder": "Stong-ID",
+        "label": "Stong: {name}",
+        "management": "Stong",
+        "move-down": "Flytta nedetter",
+        "move-up": "Flytta oppetter",
+        "new": "Ny stong",
+        "rename": "Nytt namn",
+        "rename-save": "Lagra"
+      },
+      "monitor-override": {
+        "create": "Skapa",
+        "delete": "Sletta",
+        "delete-confirm-desc": "Denne skjermoverstyringa, som var laga med grensesnittet, vert sletta frå settings.toml.",
+        "delete-confirm-title": "Sletta \"{name}\"?",
+        "label": "Skjerm: {name}",
+        "management": "Skjermoverstyring",
+        "match-placeholder": "Skjermsamsvar",
+        "new": "Skjermoverstyring",
+        "rename": "Nytt namn",
+        "rename-save": "Lagra"
+      },
+      "widget": {
+        "add": "Legg til nøytel",
+        "detail": {
+          "custom": "Sjølvvald nøytel"
+        },
+        "editor": {
+          "description": "Stell nøytlar i dei ulike stongfelta",
+          "title": "Stongnøytlar"
+        },
+        "group": {
+          "accordion": "Trekkspel",
+          "accordion-description": "Vis berre fyrste nøytelen; sviv over pilla for å sjå resten",
+          "accordion-direction": "Retning for avduking",
+          "accordion-direction-description": "Sida på fyrste nøytelen som dei andre nøytlane fell ut frå",
+          "action": "Gruppe",
+          "border": "Rand",
+          "border-description": "Leten for pilleomritet; lat vera på Vanleg for inkje omrit",
+          "clear": "Rydd",
+          "deselect": "Avvel",
+          "drag": "Ny rekkjefylgje",
+          "drawer-columns": "Ilåtssøyler",
+          "drawer-columns-description": "Kor mange nøytlar det er i kvar rad i ilåtsfjøla",
+          "drawer-detached": "Ubunden fjøl",
+          "drawer-detached-description": "Opna ilåtet som ei flytande fjøl med eigen bakgrunn heller enn å vera bunde til stonga.",
+          "drawer-enabled": "Ilåt",
+          "drawer-enabled-description": "Flytta nøytlar i grupper inn i ei ilåtsfjøl som du slår av og på med ein knapp",
+          "drawer-glyph-closed": "Attlatenmerke",
+          "drawer-glyph-closed-description": "Symbol som du ser på knappen til å opna og lata att ilåtet når fjøla er attlaten",
+          "drawer-glyph-opened": "Opna merke",
+          "drawer-glyph-opened-description": "Symbol som du ser på knappen til å opna og lata att ilåtet når fjøla er open",
+          "edit": "Brigda på stil",
+          "fill": "Bakgrunn",
+          "fill-description": "Leten for pillebakgrunnen; hex-leter er stødde òg.",
+          "foreground": "Framgrunn",
+          "foreground-description": "Leten for merke og merkelappar til nøytlar i denne gruppa",
+          "hide": "Gøym denne gruppa",
+          "hide-widget": "Gøym denne nøytelen",
+          "hint": "Del av pillegruppe",
+          "members": "{count} nøytlar",
+          "opacity": "Uklårleik",
+          "opacity-description": "Uklårleik for pillebakgrunn",
+          "orphan": "Ukjend gruppe",
+          "padding": "Utfylling",
+          "padding-description": "Indre utfylling mellom pilleranda og nøytlane sine, i piksel",
+          "radius": "Radius",
+          "radius-description": "Hyrneradius på pillene i piksel; erver pilleradien åt stonga automatisk.",
+          "remove-from-group": "Sletta frå gruppa",
+          "remove-orphan": "Sletta ukjend gruppa",
+          "remove-widget": "Sletta frå stonga",
+          "select": "Vel for gruppering",
+          "selected": "{count} utvalde",
+          "settings-widget": "Nøytelinnstillingar",
+          "show": "Syn denne gruppa",
+          "show-widget": "Syn denne nøytelen",
+          "style": "Stil",
+          "title": "Pillegruppe",
+          "ungroup": "Skil",
+          "widget-spacing": "Mellomrom",
+          "widget-spacing-description": "Rom mellom nøytlar i denne gruppa, i piksel; Auto erver nøytelmellomromet frå stonga."
+        },
+        "inspector": {
+          "add-instance-title": "Legg til ny nøytel med namn {widget} i {lane}",
+          "add-title": "Legg til nøytel i {lane}",
+          "move-to-lane": "Flytta til {lane}",
+          "reset-defaults": "Nullstill til standardval"
+        },
+        "instance": {
+          "create-save": "Skapa",
+          "delete": "Sletta",
+          "delete-confirm-desc": "Denne nøytelen med namn vert sletta frå kvar stong og innstillingane gløymde.",
+          "delete-confirm-title": "Sletta \"{name}\"?",
+          "id-description": "Bruk berre bokstavar, tal, understrek, eller strek. Inkje mellomrom, må vera eineståande.",
+          "id-placeholder": "Nøytel-ID",
+          "rename": "Nytt namn",
+          "rename-save": "Lagra"
+        },
+        "lanes": {
+          "center": "I midten",
+          "customize": "Måta til",
+          "empty": "Ingen nøytlar",
+          "empty-hint": "Legg til ein nøytel i feltet.",
+          "end": "Ende",
+          "start": "Byrjing"
+        },
+        "picker": {
+          "empty": "Fann ingen nøytlar",
+          "instance-description": "Nøytel med namn for sort \"{type}\"",
+          "instance-toggle": "Nøytel med namn",
+          "placeholder": "Leita i nøytlar ..."
+        },
+        "raw": {
+          "delete": "Sletta",
+          "description": "Ustødde lyklar heldt på frå denne nøyteltilmåtinga.",
+          "title": "Råe innstillingar"
+        },
+        "settings": {
+          "empty": "Ingen innstillingar funne med desse søkjevilkåra.",
+          "groups": {
+            "actions": "Gjerningar",
+            "behavior": "Åtburd",
+            "grouping": "Gruppering",
+            "presentation": "Framsyning",
+            "runtime": "Køyretid",
+            "taskbar": {
+              "grouping": "Gruppering",
+              "windows": "Ruter",
+              "workspace-labels": "Arbeidsromnamn"
+            },
+            "widget": "Nøytel",
+            "workspaces": {
+              "colors": "Leter",
+              "list": "Arbeidsrom",
+              "pills": "Pillestil"
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "avatar-accounts": "Kunne ikkje oppdatera brukarbiletet åt systemkontoen.",
+      "avatar-invalid-path": "Biletebanen du gav er ikkje ei leseleg biletefil.",
+      "avatar-load": "Kunne ikkje lasta inn biletet. Bruk PNG, JPEG, WebP, GIF, BMP, eller SVG.",
+      "avatar-write": "Kunne ikkje førebu brukarbiletet til lagring.",
+      "bar": {
+        "create": "Kunne ikkje skapa stong.",
+        "delete": "Kunne ikkje sletta stong.",
+        "move": "Kunne ikkje flytta på stong.",
+        "rename": "Kunne ikkje gjeva stonga eit nytt namn."
+      },
+      "batch-write": "Kunne ikkje lagra sume innstillingar.",
+      "custom-schedule-times": "Sjølvvalt oppsett krev både solrennings- og solegladtid i HH:MM-format",
+      "export-config": "Utførsla av tilmåtinga gjekk gale.",
+      "export-wallpaper-palette": "Kunne ikkje lagra paletten frå bakgrunnabiletet som sjølvvald palett.",
+      "monitor-override": {
+        "create": "Kunne ikkje skapa skjermoverstyring.",
+        "delete": "Kunne ikkje sletta skjermoverstyring.",
+        "rename": "Kunne ikkje gjeva skjermoverstyring eit nytt namn."
+      },
+      "reset-page": "Kunne ikkje nullstille sume innstillingar.",
+      "support-report": "Kunne ikkje lagra støtterapport.",
+      "sync-greeter": "Kunne ikkje synkronisera utsjånad med Noctaliahelsaren.",
+      "sync-greeter-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
+      "sync-greeter-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
+      "widget": {
+        "rename": "Kunne ikkje gjeva eit nytt namn til nøytelen."
+      },
+      "write": "Kunne ikkje lagra innstillingar."
+    },
+    "export-config": {
+      "export": "Før ut",
+      "full-effective-description": "Fører ut alle aktive innstillingar, medrekna innebygde standardinnstillingar. Nyttig for å sjå over eller dela eit utklipp, men eksplisitt fester standardane som er på no.",
+      "full-effective-save-title": "Lagra full effektiv tilmåting",
+      "full-effective-title": "Full effektiv tilmåting",
+      "merged-user-description": "Blandar tilmåtingsfler og grensesnittoverstyringar i éi TOML-fil. Innebygde standardinnstillingar held seg som implisitte.",
+      "merged-user-save-title": "Lagra blanda brukartilmåting",
+      "merged-user-title": "Blanda brukartilmåting (tilrådd)",
+      "title": "Før ut tilmåting"
+    },
+    "idle": {
+      "behavior": {
+        "add": "Legg til åtburd",
+        "command-label": "Inaktiv-kommando",
+        "command-placeholder": "notify-send \"Inaktiv\"",
+        "kind": {
+          "custom": "Sjølvvald",
+          "lock": "Lås",
+          "lock-and-suspend": "Lås og set i dvale",
+          "screen-off": "Skjerm av",
+          "suspend": "Set i dvale"
+        },
+        "kind-section-label": "Gjerd",
+        "locked-timeout-label": "Tidsavbrot når låst (sekund, 0 = av)",
+        "name-label": "Namn",
+        "name-placeholder": "Inaktiv-åtburd",
+        "resume-command-label": "Framhaldkommando",
+        "resume-command-placeholder": "notify-send 'Ute frå dvale'",
+        "summary": "{name} · {seconds} s",
+        "summary-disabled-timeout": "{name} · timeout avslege",
+        "timeout-label": "Timeout sekund",
+        "unnamed": "Åtburd utan namn"
+      },
+      "live-status": {
+        "active": "Aktiv",
+        "idle-for-one": "Inaktiv i 1 sekund",
+        "idle-for-seconds": "Inaktiv i {seconds} sekund"
+      }
+    },
+    "navigation": {
+      "groups": {
+        "accessibility": "Tilgjenge",
+        "audio": "Ljod",
+        "authentication": "Sanning",
+        "automation": "Automatisering",
+        "backdrop": "Bakgrunnsbilete",
+        "background": "Bakgrunn",
+        "battery": "Batteri",
+        "behavior": "Åtburd",
+        "borders": "Omrit",
+        "brightness": "Ljosstyrke",
+        "built-in": "Innebygd",
+        "calendar": "Kalender",
+        "capsules": "Piller",
+        "clipboard": "Utklippstavle",
+        "community": "Samfunn",
+        "control-center": "Styrerom",
+        "dead-zone": "Daudsone",
+        "directories": "Mapper",
+        "display": "Vising",
+        "effects": "Verknader",
+        "filtering": "Søkjevilkår",
+        "focus-styling": "Åtgaumstil",
+        "formats": "Format",
+        "general": "Ålmenn",
+        "greeter": "Helsar",
+        "grouping": "Gruppering",
+        "history": "Soge",
+        "home": "Heim",
+        "hot-corners": "Snøgghyrno",
+        "idle": "Inaktiv",
+        "interface": "Grensesnitt",
+        "keybinds": "Snarvegar",
+        "keyboard-layout": "Knappefjøloppsett",
+        "kinds": "Slag",
+        "launcher": "Veljar",
+        "layout": "Oppsett",
+        "lifecycle": "Livslaup",
+        "location": "Stad",
+        "lock-screen": "Låseskjerm",
+        "media": "Media",
+        "monitor": "Systemvakt",
+        "monitor-polling": "Spørjingsmellomrom",
+        "monitor-thresholds": "Framhevingstreskel",
+        "monitors": "Skjermar",
+        "motion": "Rørsle",
+        "navigation": "Framleiting",
+        "network": "Nettverk",
+        "night-light": "Natteljos",
+        "notifications": "Varsel",
+        "osd": "Skjervising",
+        "overview": "Oversyn",
+        "pinned-apps": "Feste appar",
+        "polkit": "Polkit",
+        "power": "Straum",
+        "privacy": "Personvern",
+        "profile": "Profil",
+        "providers": "Tenestegjevarar",
+        "screen-corners": "Skjermhyrno",
+        "screen-time": "Skjermtid",
+        "screenshot": "Skjermbilete",
+        "security": "Tryggleik",
+        "session-panel": "Øyktefjøl",
+        "shape": "Form",
+        "system": "System",
+        "theme": "Ham",
+        "toasts": "Skjermvarsel",
+        "transition": "Overgang",
+        "user": "Brukar",
+        "wallpaper": "Bakgrunnsbilete",
+        "weather": "Vêr",
+        "widget-list": "Nøytelliste",
+        "widgets": "Nøytlar"
+      },
+      "sections": {
+        "accessibility": "Tilgjenge",
+        "appearance": "Utsjånad",
+        "backdrop": "Bakgrunn",
+        "bar": "Stong",
+        "control-center": "Styrerom",
+        "desktop": "Skrivebord",
+        "dock": "Festepunkt",
+        "hooks": "Krokar",
+        "keybinds": "Snarvegar",
+        "launcher": "Programveljar",
+        "location": "Stad",
+        "niri": "Niri",
+        "notifications": "Varsel",
+        "osd": "Skjermvising",
+        "panels": "Fjøler",
+        "plugins": "Utvidingar",
+        "popups": "Sprettoppar",
+        "power": "Straum",
+        "security": "Tryggleik",
+        "services": "Tenester",
+        "shell": "Skal",
+        "system": "System",
+        "templates": "Malar",
+        "wallpaper": "Bakgrunnsbilete"
+      }
+    },
+    "notifications": {
+      "filter": {
+        "add": "Legg til søkjevilkår",
+        "add-title": "Legg til Varselvilkår",
+        "allow-permanent": "Tillat varig",
+        "allowed-urgencies-label": "Tillatne naudnivå",
+        "flag": {
+          "history": "historikk",
+          "permanent": "varig",
+          "sound": "ljod",
+          "toast": "skjermvarsel"
+        },
+        "flags-label": "Når samsvar",
+        "match-content-label": "Innhald-regex",
+        "match-content-placeholder": "Regex mønster som finn samandrag eller hovudtekst...",
+        "match-label": "App",
+        "match-placeholder": "Appnamn, skrivebordsoppslag eller klasse ...",
+        "override-duration": "Overstyringsvaring",
+        "play-sound": "Spel av ljod",
+        "save-history": "Lagra i historikken",
+        "show-toast": "Vis skjermvarsel",
+        "summary": "{match} · {flags}",
+        "summary-blocked": "{match} · sperra",
+        "summary-disabled": "{match} · avslegen",
+        "unnamed": "Søkjevilkår utan namn"
+      }
+    },
+    "options": {
+      "accordion-direction": {
+        "end": "Etter fyrste nøytel",
+        "start": "Før fyrste nøytel"
+      },
+      "bar": {
+        "auto-hide": {
+          "off": "Av",
+          "on": "På",
+          "smart": "Sløg"
+        }
+      },
+      "clipboard": {
+        "auto-paste": {
+          "ctrl-shift-v": "Ctrl+Shift+V",
+          "ctrl-v": "Ctrl+V",
+          "shift-insert": "Shift+Insert"
+        }
+      },
+      "control-center": {
+        "sidebar": {
+          "compact": "Tett",
+          "full": "Full",
+          "none": "Ingen"
+        }
+      },
+      "dock-launcher-position": {
+        "end": "Ende",
+        "none": "Ingen",
+        "start": "Byrjing"
+      },
+      "edge": {
+        "bottom": "Botn",
+        "left": "Venstre",
+        "right": "Høgre",
+        "top": "Topp"
+      },
+      "font-weight": {
+        "bold": "Feit",
+        "book": "Bok",
+        "default": "Vanleg (stong)",
+        "heavy": "Tung",
+        "light": "Lett",
+        "medium": "Medels",
+        "regular": "Vanleg",
+        "semi-bold": "Halvfeit",
+        "semi-light": "Halvlett",
+        "thin": "Tunn",
+        "ultra-bold": "Svært feit",
+        "ultra-heavy": "Svært tung",
+        "ultra-light": "Svært lett"
+      },
+      "hot-corners": {
+        "command": "Køyr kommando",
+        "control-center": "Styrerom",
+        "launcher": "Programveljar",
+        "none": "Ingen",
+        "window-switcher": "Ruteveljar"
+      },
+      "layer": {
+        "overlay": "Overlag",
+        "top": "Topp"
+      },
+      "notification-urgency": {
+        "critical": "Kritisk",
+        "low": "Låg",
+        "normal": "Vanleg"
+      },
+      "orientation": {
+        "horizontal": "Vassrett",
+        "vertical": "Loddrett"
+      },
+      "panel-bar-alignment": {
+        "centered": "I midten",
+        "near-trigger": "Nær utløysar"
+      },
+      "panel-position": {
+        "auto": "Fylg stonga"
+      },
+      "screen-position": {
+        "bottom-center": "Botn i midten",
+        "bottom-left": "Botn venstre",
+        "bottom-right": "Botn høgre",
+        "center": "I midten",
+        "center-left": "I midten venstre",
+        "center-right": "I midten høgre",
+        "top-center": "Topp i midten",
+        "top-left": "Topp venstre",
+        "top-right": "Topp høgre"
+      },
+      "shell": {
+        "panel-placement": {
+          "attached": "Bunden",
+          "floating": "Svivande"
+        },
+        "panel-transparency": {
+          "glass": "Glas",
+          "soft": "Mjuk",
+          "solid": "Hard"
+        },
+        "password-style": {
+          "filled-circles": "Fylte ringar",
+          "random-icons": "Vilkårlege merke"
+        },
+        "shadow-direction": {
+          "center": "I midten",
+          "down": "Ned",
+          "down-left": "Ned venstre",
+          "down-right": "Ned høgre",
+          "left": "Venstre",
+          "right": "Høgre",
+          "up": "Opp",
+          "up-left": "Opp venstre",
+          "up-right": "Opp høgre"
+        }
+      },
+      "theme": {
+        "mode": {
+          "dark": "Mørk",
+          "light": "Ljos"
+        },
+        "source": {
+          "built-in": "Innebygd",
+          "community": "Samfunn",
+          "custom": "Sjølvvald",
+          "wallpaper": "Bakgrunnsbilete"
+        }
+      },
+      "theme-role": {
+        "custom": "Sjølvvald",
+        "default": "Vanleg"
+      },
+      "wallpaper": {
+        "fill": {
+          "center": "I midten",
+          "crop": "Skjer av",
+          "fit": "Høve",
+          "repeat": "Tile",
+          "span": "Spana",
+          "stretch": "Strekk"
+        },
+        "order": {
+          "alphabetical": "Alfabetisk",
+          "random": "Vilkårleg"
+        },
+        "transition": {
+          "disc": "Skive",
+          "fade": "Folna",
+          "honeycomb": "Biekube",
+          "stripes": "Render",
+          "wipe": "Sveip",
+          "zoom": "Zoom"
+        }
+      },
+      "weather": {
+        "unit": {
+          "imperial": "Britisk",
+          "metric": "Metrisk"
+        }
+      }
+    },
+    "plugins": {
+      "browse-store": "Leita i Utvidingar",
+      "panels": {
+        "open-near-click": {
+          "description": "Der fjøla er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "placement": {
+          "description": "Bind fjøla til stonga eller flyt henne nær stongranda",
+          "label": "Stadsetjing"
+        },
+        "position": {
+          "description": "Stad på skjermen når fjøla flyt",
+          "label": "Stad"
+        }
+      },
+      "plugins": {
+        "configure": "Måta til",
+        "delete": "Sletta",
+        "delete-confirm-desc": "Denne utvidinga vert desinstallert og sletta frå disken.",
+        "delete-confirm-title": "Sletta \"{name}\"?",
+        "deprecated": "utgått",
+        "empty": "Fann ingen utvidingar. Legg til brunn, eller sjå etter nettverket.",
+        "held-back": "eldre utgåve",
+        "held-back-hint": "v{version} krev utvidings-API {required}; denne Noctalia stør opp til {current}. Få ei nyare Noctalia for å få henne.",
+        "incompatible-plugin-api": "usemjande utvidings-API",
+        "remove": "Sletta utviding",
+        "requires": "Krev: {dependencies}",
+        "title": "Utvidingar",
+        "update-all": "Oppdater alle ({count})",
+        "update-available": "ny utgåve tilgjengeleg",
+        "update-to": "oppdater til {version}"
+      },
+      "settings": {
+        "empty": "Ingen innstillingar tilgjengelege"
+      },
+      "sources": {
+        "add": "Legg til brunn",
+        "add-title": "Legg til utvidingsbrunn",
+        "auto-update": "Oppdater utvidingar automatisk",
+        "auto-update-desc": "Sjå i påslegne brunnar etter nye utgåver i bakgrunnen og haldt installerte utvidingar à jour",
+        "edit": "Brigda brunn",
+        "edit-title": "Brigda utvidingsbrunn",
+        "empty": "Ingen brunnar tilmåta.",
+        "errors": {
+          "duplicate-name": "Ein brunn med denne ID finst alt.",
+          "invalid-name": "Brunn-ID må bruka bokstavar, tal, '.', '_' eller '-', og byrja med bokstav eller tal.",
+          "location-required": "Brunnstad er påkravd."
+        },
+        "kind": {
+          "git": "Git",
+          "path": "Spor"
+        },
+        "kind-label": "Slag",
+        "location-label": "Stad",
+        "location-placeholder-git": "https://github.com/me/noctalia-utvidingar",
+        "location-placeholder-path": "~/dev/noctalia-utvidingar",
+        "name-label": "Brunn-ID",
+        "name-placeholder": "utvidingane-mine",
+        "precedence-hint": "Brunnar lægre ned på lista overstyrer høgre brunnar når dei båe byd på same utvidinga.",
+        "remove": "Sletta brunn",
+        "save": "Lagra",
+        "title": "Brunnar",
+        "update": "Oppdater brunn"
+      },
+      "store": {
+        "add": "Legg til i Noctalia",
+        "back-to-catalog": "Attende til utvidingskatalogen",
+        "categories": "Klasser",
+        "category-all": "Alle",
+        "empty": "Ingen utvidingar funne",
+        "held-back": "Eldre utgåve",
+        "held-back-hint": "Installerer v{version} for utvidings-API {resolved}. Den nyaste v{latest} krev utvidings-API {latestRequired}; denne Noctalia stør opp til {current}.",
+        "incompatible": "Usemjande",
+        "incompatible-hint": "Krev utvidings-API {required}; denne Noctalia stør {oldest} – {current}.",
+        "loading": "Lastar inn katalog ...",
+        "no-readme": "Ingen skildring tilgjengeleg.",
+        "open-page": "Opna utvidingssida på noctalia.dev",
+        "open-source": "Opna kodelageret for utvidinga",
+        "results-count": "{count} utvidingar",
+        "search-placeholder": "Leita i utvidingar ...",
+        "sort-added-at-asc": "Sorter med dato lagt til (eldst fyrst)",
+        "sort-added-at-desc": "Sorter med dato lagt til (nyast fyrst)",
+        "sort-name-asc": "Sorter med namn (A-Å)",
+        "sort-name-desc": "Sorter med namn (Å-A)",
+        "sort-updated-at-asc": "Sorter med dato oppdatert (eldst fyrst)",
+        "sort-updated-at-desc": "Sorter med dato oppdatert (nyast fyrst)",
+        "source-all": "Alle brunnar",
+        "title": "Utvidingsbua"
+      }
+    },
+    "schema": {
+      "accessibility": {
+        "high-contrast": {
+          "description": "Auka ljosskilnaden gjennom å skyva flate- og bakgrunnsleter mot endeverda",
+          "label": "Stor ljosskilnad"
+        }
+      },
+      "appearance": {
+        "animation-speed": {
+          "description": "Multiplikator for animasjonsfart",
+          "label": "Animasjonsfart"
+        },
+        "animations": {
+          "description": "Slå på eller av animasjonar i grensesnittet",
+          "label": "Animasjonar"
+        },
+        "app-icon-color": {
+          "description": "Palettlet bruka for å leta appmerke",
+          "label": "Appmerkelet"
+        },
+        "app-icon-colorize": {
+          "description": "Leta applikasjonsmerke gjenom heile skalet for å samsvara paletten",
+          "label": "Leta appmerke"
+        },
+        "builtin-palette": {
+          "description": "Vel ein palett frå den innebygde katalogen",
+          "label": "Innebygd palett"
+        },
+        "button-borders": {
+          "description": "Teikna omrit kring knappar gjennom heile skalet",
+          "label": "Knappeomrit"
+        },
+        "card-borders": {
+          "description": "Teikna omrit kring delingskort innan fjølene og innstillingsruta",
+          "label": "Kortomrit"
+        },
+        "community-palette": {
+          "description": "Vel ein palett frå samfunnskatalogen",
+          "label": "Samfunnspalett",
+          "search-placeholder": "Leita i palettar ..."
+        },
+        "corner-roundness": {
+          "description": "Høva inn hyrneradius gjennom alle ilåta og styringar i skalgrensesnittet",
+          "label": "Rundingsgrad på hyrno"
+        },
+        "custom-palette": {
+          "description": "Vel ein palett frå ~/.config/noctalia/palettes/",
+          "label": "Sjølvvald palett",
+          "search-placeholder": "Leita i sjølvvalde palettar ..."
+        },
+        "export-wallpaper-palette": {
+          "button": "Lagra som sjølvvald palett",
+          "description": "Lagra paletten som vart laga av bakgrunnsbiletet som ei sjølvvald palettfil ein kan bruka att",
+          "label": "Før ut bakgrunnspalett"
+        },
+        "font-family": {
+          "description": "Skrifttype for skalgrensesnittet",
+          "label": "Skrifttype"
+        },
+        "global-shadow-alpha": {
+          "description": "Skuggeuklårleik på alle flater"
+        },
+        "global-shadow-direction": {
+          "description": "Retninga skuggen kjem frå flater"
+        },
+        "input-borders": {
+          "description": "Teikna omrit kring tekstfelt og andre inndatafelt gjennom skalet.",
+          "label": "Inndataomrit"
+        },
+        "language": {
+          "description": "Overstyr automatisk lokale",
+          "label": "Mål"
+        },
+        "palette-source": {
+          "description": "Kvar Noctalia tek letpaletten frå",
+          "label": "Palettbrunn"
+        },
+        "popup-borders": {
+          "description": "Teikna omrit kring sprettoppar og nedtrekksval",
+          "label": "Sprettoppomrit"
+        },
+        "popup-shadows": {
+          "description": "Teikna fallskuggar attom sprettoppar og nedtrekksval",
+          "label": "Sprettoppskuggar"
+        },
+        "pure-black-dark": {
+          "description": "Gjer mørke flater heilsvart, som hindrar bandleggjing på OLED-fjøler (einast i mørkham)",
+          "label": "Heilsvart"
+        },
+        "theme-mode": {
+          "description": "Vel Mørk, Ljos eller Automatisk alt etter tida",
+          "label": "Hammodus"
+        },
+        "ui-scale": {
+          "description": "Gjera heile grensesnittet større eller mindre",
+          "label": "Grensesnittskala"
+        },
+        "wallpaper-generation-scheme": {
+          "description": "Vel korleis letene i bakgrunnsbiletet utgjer ein palett",
+          "label": "Palettskipingsmåte"
+        }
+      },
+      "backdrop": {
+        "blur-intensity": {
+          "description": "Viskingstyrke på bakgrunnen",
+          "label": "Viskingstyrke"
+        },
+        "enabled": {
+          "description": "Slå på bakgrunnen"
+        },
+        "tint-intensity": {
+          "description": "Letstyrke på bakgrunnen",
+          "label": "Letstyrke"
+        }
+      },
+      "bar": {
+        "auto-hide": {
+          "description": "Av held stonga synleg; På gøymer henne fram til du rører peikaren til skjermranda; Sløg syner stonga på tome arbeidsrom og gøymer henne når ruter er opne"
+        },
+        "background-opacity": {
+          "description": "Bakgrunnsuklårleik til stonga"
+        },
+        "border": {
+          "description": "Leten for stongomritet; hex-leter er stødde òg.",
+          "label": "Omrit"
+        },
+        "border-width": {
+          "description": "Indre omritsbreidde til stonga",
+          "label": "Omritsbreidde"
+        },
+        "capsule-border": {
+          "description": "Standardlet for pilleomrit; hex-leter er stødde òg.",
+          "label": "Pilleomrit"
+        },
+        "capsule-fill": {
+          "description": "Standardlet for bakgrunnen; hex-leter er stødde òg.",
+          "label": "Pillefyll"
+        },
+        "capsule-foreground": {
+          "description": "Standardlet for merke og merkelappar i piller; hex-leter er stødde òg.",
+          "label": "Pilleframgrunn"
+        },
+        "capsule-opacity": {
+          "description": "Uklårleik for nøytelpillebakgrunnar",
+          "label": "Pilleuklårleik"
+        },
+        "capsule-padding": {
+          "description": "Utfylling i nøytelpiller",
+          "label": "Pilleutfylling"
+        },
+        "capsule-radius": {
+          "description": "Standard hyrneradius for nøytelpiller, arbeidsrompiller og arbeidsgrupper på oppgåvelina; haldt tomt for automatisk pilleform, eller set 0 for rette hyrno",
+          "label": "Pilleradius"
+        },
+        "capsule-thickness": {
+          "description": "Pillestorleik på stonga som brøklut av stongtjukna (1.0 fyller stonga)",
+          "label": "Pilletjukn"
+        },
+        "center-widgets": {
+          "description": "Nøytlar midt i stonga",
+          "label": "Nøytlar i midten"
+        },
+        "concave-edge-corners": {
+          "description": "Skòra runde skard i to av stonghyrno (krev randmarg = 0); med endemarg = 0 vert hyrno på den indre randa skòra, elles er det hyrno som råkar skjermranda.",
+          "label": "Innvendes randhyrno"
+        },
+        "contact-shadow": {
+          "description": "Mørk letgradient mellom ei bunden fjøl og stonga for å ymta på djupn i saumen"
+        },
+        "content-padding": {
+          "description": "Utfylling i innhaldsområdet på stonga",
+          "label": "Innhaldsutfylling"
+        },
+        "content-scale": {
+          "description": "Storleikstilhøve for stonginnhald",
+          "label": "Innhaldsskala"
+        },
+        "corner-bottom-left": {
+          "description": "Hyrneradius botn venstre på stonga"
+        },
+        "corner-bottom-right": {
+          "description": "Hyrneradius botn høgre på stonga"
+        },
+        "corner-radius": {
+          "description": "Hyrneradius på stonga"
+        },
+        "corner-top-left": {
+          "description": "Hyrneradius topp venstre på stonga"
+        },
+        "corner-top-right": {
+          "description": "Hyrneradius topp høgre på stonga"
+        },
+        "dead-zone-action": {
+          "description": "Gjerning som køyrer på stongdelane utan nøytel på"
+        },
+        "edge-margin": {
+          "description": "Avstand mellom stonga og nærmaste skjermrand; set til 0 px for å sitja på den randa"
+        },
+        "enabled": {
+          "description": "Vis eller gøym denne stonga"
+        },
+        "end-widgets": {
+          "description": "Nøytlar på enden (høgre / botn) av stonga",
+          "label": "Endenøytlar"
+        },
+        "ends-margin": {
+          "description": "Styttar stonga frå kvar ende; set til 0 px for full-breidde eller full-høgd"
+        },
+        "font-family": {
+          "description": "Skrifttype for nøytlane på denne stonga; haldt dette tomt for å erva standardskrifttypen (skriftætt per-nøytel overstyrer dette)",
+          "label": "Skrifttype"
+        },
+        "font-weight": {
+          "description": "Standardvekt for nøytelmerkelappar på denne stonga.",
+          "label": "Skriftvekt"
+        },
+        "hover-highlight": {
+          "description": "Lett leta nøytelen under musepeikaren med eigen let",
+          "label": "Framheving ved sviv"
+        },
+        "layer": {
+          "description": "Bruk Overlag for å visa stonga over appar i fullskjerm; bundne fjøler fylgjer stonga.",
+          "label": "Wayland-lag"
+        },
+        "opposite-edge-margin": {
+          "description": "Tilleggsrom på innersida av stonga, bort frå skjermranda; bruk når fullauka ruter ikkje vyrder stag"
+        },
+        "panel-overlap": {
+          "description": "Kor mykje ei bunden fjøl går inn over stongranda for å gøyma saumen, i piksel (måta til om du ser ei lina eller eit gap)",
+          "label": "Paneloverlapp"
+        },
+        "position": {
+          "description": "Kva for skjerm stonga sit på"
+        },
+        "reserve-space": {
+          "description": "Skyv ruter bort frå stongranda"
+        },
+        "shadow": {
+          "description": "Kasta den ålmenne flateskuggen frå stonga"
+        },
+        "show-on-workspace-switch": {
+          "description": "Openberr stonga ein augneblink når arbeidsromet med åtgaum skifter",
+          "label": "Vis når arbeidsrom skifter"
+        },
+        "start-widgets": {
+          "description": "Nøytlar på byrjinga (venstre / topp) av stonga",
+          "label": "Byrjingsnøytlar"
+        },
+        "thickness": {
+          "description": "Stongtjukn i piksel",
+          "label": "Tjukn"
+        },
+        "widget-capsules": {
+          "description": "Gjev nøytlar pillebakgrunnar",
+          "label": "Nøytelpiller"
+        },
+        "widget-color": {
+          "description": "Standardlet for merke og merkelappar til nøytlar på denne stonga; hex-leter er stødde òg.",
+          "label": "Nøytellet"
+        },
+        "widget-icon-color": {
+          "description": "Overstyrer nøytelleten for merke på denne stonga; hex-leter er stødde òg",
+          "label": "Nøytelmerkelet"
+        },
+        "widget-spacing": {
+          "description": "Rom mellom stongnøytlar",
+          "label": "Nøytelmellomrom"
+        }
+      },
+      "desktop": {
+        "hot-corners-bottom-left": {
+          "description": "Det som skjer når peikaren råkar hyrna i botn venstre",
+          "label": "Hyrna botn venstre"
+        },
+        "hot-corners-bottom-left-command": {
+          "description": "Skalkommando som køyrer når du råkar hyrna i botn venstre",
+          "label": "Kommando"
+        },
+        "hot-corners-bottom-right": {
+          "description": "Det som skjer når peikaren råkar hyrna i botn høgre",
+          "label": "Hyrna botn høgre"
+        },
+        "hot-corners-bottom-right-command": {
+          "description": "Skalkommando som køyrer når du råkar hyrna i botn høgre",
+          "label": "Kommando"
+        },
+        "hot-corners-delay-ms": {
+          "description": "Kor lenge peikaren må halda seg i hyrna før gjerninga køyrer (0 = med det same)",
+          "label": "Verknadshefte"
+        },
+        "hot-corners-enabled": {
+          "description": "Gjer ting ved å råka skjermhyrno med muspeikaren",
+          "label": "Snøgghyrno"
+        },
+        "hot-corners-top-left": {
+          "description": "Det som skjer når peikaren råkar hyrna i topp venstre",
+          "label": "Hyrna topp venstre"
+        },
+        "hot-corners-top-left-command": {
+          "description": "Skalkommando som køyrer når du råkar hyrna i topp venstre",
+          "label": "Kommando"
+        },
+        "hot-corners-top-right": {
+          "description": "Det som skjer når peikaren råkar hyrna i topp høgre",
+          "label": "Hyrna topp høgre"
+        },
+        "hot-corners-top-right-command": {
+          "description": "Skalkommando som køyrer når du råkar hyrna i botn høgre",
+          "label": "Kommando"
+        },
+        "screen-corners-enabled": {
+          "description": "Runda av skjermhyrno med eit svart overlag",
+          "label": "Skjermhyrno"
+        },
+        "screen-corners-size": {
+          "description": "Radius åt dei avrunda skjermhyrno i piksel",
+          "label": "Hyrnestorleik"
+        },
+        "widgets": {
+          "description": "Vis nøytlar på skrivebordet",
+          "label": "Skrivebordsnøytlar"
+        },
+        "widgets-editor": {
+          "button": "Slå av / på brigdaren",
+          "description": "Legg til, flytta og høva til skrivebordsnøytlar",
+          "label": "Nøytelbrigdar"
+        }
+      },
+      "dock": {
+        "active-icon-opacity": {
+          "description": "Uklårleik for festepunktsmerket med åtgaum",
+          "label": "Aktiv merkeuklårleik"
+        },
+        "active-icon-scale": {
+          "description": "Storleik for festepunktsmerket med åtgaum",
+          "label": "Aktiv merkeskala"
+        },
+        "active-monitor-only": {
+          "description": "Vis berre applikasjonar som køyrer på den aktive skjermen",
+          "label": "Berre den aktive skjermen"
+        },
+        "auto-hide": {
+          "description": "Av held festepunktet synleg; På gøymer det fram til du rører peikaren til skjermranda; Sløg syner festepunktet på tome arbeidsrom og gøymer det når ruter er opne"
+        },
+        "background-opacity": {
+          "description": "Bakgrunnsuklårleik til festepunktet"
+        },
+        "border": {
+          "description": "Leten til festepunktsomritet; hex-leter er stødde òg",
+          "label": "Omrit"
+        },
+        "border-width": {
+          "description": "Innbreidda til omritet på festepunktet",
+          "label": "Omritsbreidd"
+        },
+        "concave-edge-corners": {
+          "description": "Runda hyrno innvendes på sida som møter skjermranda; krev at margen på skjermranda er 0",
+          "label": "Innvendes randhyrno"
+        },
+        "corner-bottom-left": {
+          "description": "Hyrneradius botn venstre på festepunktet"
+        },
+        "corner-bottom-right": {
+          "description": "Hyrneradius botn høgre på festepunktet"
+        },
+        "corner-radius": {
+          "description": "Hyrneradius på festepunktet"
+        },
+        "corner-top-left": {
+          "description": "Hyrneradius topp venstre på festepunktet"
+        },
+        "corner-top-right": {
+          "description": "Hyrneradius topp høgre på festepunktet"
+        },
+        "cross-axis-padding": {
+          "description": "Indre utfylling med krossaksen på festepunktet (mellom merke om skjermranda)"
+        },
+        "edge-margin": {
+          "description": "Avstand frå nærmaste skjermrand; positive tal flyttar festepunktet bort frå henne"
+        },
+        "enabled": {
+          "description": "Vis eller gøym festepunktet"
+        },
+        "ends-margin": {
+          "description": "Innsett frå kvar ende av festepunktet langs med midtlina."
+        },
+        "icon-size": {
+          "description": "Storleik på festepunktsmerke i piksel",
+          "label": "Merkestorleik"
+        },
+        "inactive-icon-opacity": {
+          "description": "Uklårleik for festepunktsmerke utan åtgaum",
+          "label": "Uklårleik for inaktive merke"
+        },
+        "inactive-icon-scale": {
+          "description": "Storleik for festepunktsmerke utan åtgaum",
+          "label": "Skala for inaktive merke"
+        },
+        "item-spacing": {
+          "description": "Rom mellom ting på festepunktet",
+          "label": "Mellomrom"
+        },
+        "launcher-custom-image": {
+          "description": "Bruk eit bilete som programveljarmerket heller enn eit symbol",
+          "label": "Programveljar - sjølvvalt bilete",
+          "placeholder": "Bane til bilete"
+        },
+        "launcher-custom-image-colorize": {
+          "description": "Leta biletet du valde sjølv med merkeleten",
+          "label": "Leta sjølvvalt bilete"
+        },
+        "launcher-icon": {
+          "description": "Merket for programveljaren på festepunktet",
+          "label": "Programveljarmerke"
+        },
+        "launcher-position": {
+          "description": "Vis knappen for programveljaren i byrjinga eller enden av festepunktet",
+          "label": "Programveljarknapp"
+        },
+        "layer": {
+          "description": "Bruk Overlag for å visa festepunktet over appar i fullskjerm",
+          "label": "Wayland-lag"
+        },
+        "magnification": {
+          "description": "Auke merke nær peikaren, som i macOS.",
+          "label": "Auke"
+        },
+        "magnification-scale": {
+          "description": "Høgste aukemultiplikator for merke midt i peikaren (1.0 slår av auke)",
+          "label": "Aukeskala"
+        },
+        "main-axis-padding": {
+          "description": "Indre utfylling på festepunktet på endane langs med midtlina (før det fyrste og etter det siste merket)"
+        },
+        "monitors": {
+          "description": "Vel kva for skjermar viser festepunktet (haldt dette tomt for alle); aktivskjerm søkjevilkår vert bruka for desse skjermane",
+          "label": "Skjermar"
+        },
+        "pinned-apps": {
+          "description": "Skrivebordsoppslag-ID for appar på festepunktet",
+          "label": "Feste appar"
+        },
+        "position": {
+          "description": "Kva for skjermrand festepunktet sit på"
+        },
+        "reserve-space": {
+          "description": "Skyv ruter bort frå festepunktsranda"
+        },
+        "shadow": {
+          "description": "Kasta den ålmenne flateskuggen frå festepunktet"
+        },
+        "show-dots": {
+          "description": "Vis prikkar attmed merka for ruter som køyrer",
+          "label": "Vis prikkar"
+        },
+        "show-instance-count": {
+          "description": "Vis eit tal for kor mange opne tilfelle det er",
+          "label": "Vis tilfelletal"
+        },
+        "show-running": {
+          "description": "Vis køyrande applikasjonar som ikkje er feste",
+          "label": "Vis køyrande"
+        }
+      },
+      "hooks": {
+        "command-placeholder": "skalkommando eller skriftbane",
+        "events": {
+          "battery-charging": {
+            "description": "Kommandoen som køyrer når batteriet byrjar å lada opp",
+            "label": "Ved lading"
+          },
+          "battery-discharging": {
+            "description": "Kommandoen som køyrer når batteriet byrjar å lada ut",
+            "label": "Ved utlading"
+          },
+          "battery-percentage-changed": {
+            "description": "Kommandoen som køyrer når batteriprosent brigdar",
+            "label": "Ved brigde i batteriprosent"
+          },
+          "battery-plugged": {
+            "description": "Kommandoen som køyrer når batteriet er fullt ladt eller ventar på lading ",
+            "label": "Ved batteritilkopling"
+          },
+          "bluetooth-disabled": {
+            "description": "Kommandoen som køyrer når Bluetooth er avslegen",
+            "label": "Ved Bluetooth av"
+          },
+          "bluetooth-enabled": {
+            "description": "Kommandoen som køyrer når Bluetooth er påslegen",
+            "label": "Ved Bluetooth på"
+          },
+          "colors-changed": {
+            "description": "Kommandoen som køyrer når den aktive paletten brigdar",
+            "label": "Ved nye leter"
+          },
+          "logging-out": {
+            "description": "Kommandoen som køyrer før utskriving",
+            "label": "Ved utskriving"
+          },
+          "power-profile-changed": {
+            "description": "Kommandoen som køyrer når den aktive UPower / PPD straumprofilen brigdar",
+            "label": "Ved brigda straumprofil"
+          },
+          "rebooting": {
+            "description": "Kommandoen som køyrer for datamaskina startar å nyo",
+            "label": "Ved omstart"
+          },
+          "session-locked": {
+            "description": "Kommandoen som køyrer når øykta er låst",
+            "label": "Ved øyktelås"
+          },
+          "session-unlocked": {
+            "description": "Kommandoen som køyrer etter øykta er låst opp",
+            "label": "Ved øykteopplåsing"
+          },
+          "shutting-down": {
+            "description": "Kommandoen som køyrer før datamaskina slår av",
+            "label": "Ved avslåing"
+          },
+          "started": {
+            "description": "Kommandoen som køyrer etter Noctalia byrjar",
+            "label": "Ved byrjing"
+          },
+          "theme-mode-changed": {
+            "description": "Kommandoen som køyrer når hammodusen brigdar mellom ljos og mørk",
+            "label": "Ved brigda hammodus"
+          },
+          "wallpaper-changed": {
+            "description": "Kommandoen som køyrer når bakgrunnsbiletet brigdar; gjev NOCTALIA_WALLPAPER_PATH og NOCTALIA_WALLPAPER_CONNECTOR",
+            "label": "Ved nytt bakgrunnsbilete"
+          },
+          "wifi-disabled": {
+            "description": "Kommandoen som køyrer når Wi-Fi er avslegen",
+            "label": "Ved avslegen Wi-Fi"
+          },
+          "wifi-enabled": {
+            "description": "Kommandoen som køyrer når Wi-Fi er påslegen",
+            "label": "Ved påslegen Wi-Fi"
+          }
+        }
+      },
+      "idle": {
+        "behaviors": {
+          "description": "Øyktehandlingar som finst (lås, skjermar av, set i dvale) eller sjølvvlade kommandoar, timeout, attopptaksparing, og orden",
+          "label": "Åtburdar"
+        },
+        "pre-action-fade": {
+          "description": "Sekund fullskjermsmørkning før dvalekommandoen; bruk 0 for å slå av ",
+          "label": "Inaktiv mørkning"
+        }
+      },
+      "keybinds": {
+        "cancel": {
+          "description": "Lat att sprettoppar, avvis fjøler, eller avbryt handling",
+          "label": "Avbryt"
+        },
+        "copy": {
+          "description": "Rita av det du har valt",
+          "label": "Rita av"
+        },
+        "delete": {
+          "description": "Sletta det du har valt",
+          "label": "Sletta"
+        },
+        "down": {
+          "description": "Flytta på åtgaum eller vel ned ei rad",
+          "label": "Flytta nedetter"
+        },
+        "left": {
+          "description": "Flytta på åtgaum eller vel til venstre",
+          "label": "Flytta til venstre"
+        },
+        "right": {
+          "description": "Flytta på åtgaum eller vel til høgre",
+          "label": "Flytta til høgre"
+        },
+        "save": {
+          "description": "Lagra det du har valt",
+          "label": "Lagra"
+        },
+        "tab-next": {
+          "description": "Flytta åtgaum til neste styregruppe",
+          "label": "Åtgaum til neste"
+        },
+        "tab-previous": {
+          "description": "Flytta åtgaum til førre styregruppe",
+          "label": "Åtgaum til førre"
+        },
+        "up": {
+          "description": "Flytta på åtgaum eller vel opp ei rad",
+          "label": "Flytta oppetter"
+        },
+        "validate": {
+          "description": "Stadfest val, send inndata, eller aktiviser tingen med åtgaum",
+          "label": "Stadfest"
+        }
+      },
+      "lockscreen": {
+        "allow-empty-password": {
+          "description": "Lat Retur senda tomt lykelord (slå på for security-key eller andre PAM-stack utan lykelord; haldt av for å sleppa undan at vekkjingstastar vert låste ved uhell)",
+          "label": "Send tome lykelord"
+        },
+        "blur-intensity": {
+          "description": "Kor mykje visking det er på låseskjermen",
+          "label": "Viskingsstyrke"
+        },
+        "blurred-desktop": {
+          "description": "Bruk eit bilete av skrivebordet som låseskjermsbakgrunn",
+          "label": "Skrivebordsopptak"
+        },
+        "enabled": {
+          "description": "Slå på øyktelås, logind-integrering og låsehandlingar",
+          "label": "Låseskjerm"
+        },
+        "fingerprint": {
+          "description": "Lås opp med fingeravtrykkslesar med fprintd, attmed lykelord",
+          "label": "Opplåsing med fingeravtrykk"
+        },
+        "lock-before-suspend": {
+          "description": "Lås øykta før svevn (lok ned, systemstl dvale, mm.); Lås og Set i dvale gjerningar låser enno fyrst.",
+          "label": "Lås før dvale"
+        },
+        "monitors": {
+          "description": "Vel kva for skjermar viser låseskjermen; haldt dette tomt for å visa på alle skjermar",
+          "label": "Skjermar"
+        },
+        "tint-intensity": {
+          "description": "Flateleting på låseskjermsbakgrunnen",
+          "label": "Letingsstyrke"
+        },
+        "wallpaper": {
+          "description": "Sjølvvalt bilete for låseskjermsbakgrunnen; haldt dette tomt for å bruka bakgrunnsbiletet på skrivebordet.",
+          "label": "Bakgrunnsbilete",
+          "placeholder": "Bruk bakgrunnsbiletet på skrivebordet"
+        },
+        "widgets": {
+          "description": "Vis nøytlar som du kan måta til på låseskjermen",
+          "label": "Låseskjermsnøytlar"
+        },
+        "widgets-editor": {
+          "button": "Slå av / på brigdaren",
+          "description": "Legg til, flytta og brigda storleik på nøytlar på låseskjermen",
+          "label": "Låseskjermsnøytelbrigdar"
+        }
+      },
+      "notifications": {
+        "allowed-urgencies": {
+          "description": "Vis einast eksterne varsel på valde naudnivå",
+          "label": "Tillatne naudnivå"
+        },
+        "blacklist": {
+          "description": "Gøym desse sendarar (appnamn, skrivebordsoppslag eller klasse)",
+          "label": "Varselsvartliste"
+        },
+        "blacklist-allow-critical": {
+          "description": "Vis svært viktige varsel frå svartlista sendarar"
+        },
+        "border": {
+          "description": "Teikna omrit kring skjermvarsel",
+          "label": "Omrit"
+        },
+        "collapse-on-dismiss": {
+          "description": "Lat skjermvarsel fyller mellomrom når eitt er avvist",
+          "label": "Fyll på avvising"
+        },
+        "daemon": {
+          "description": "Slå på den innebygde varselhandsamaren",
+          "label": "Varselhandsamar"
+        },
+        "filters": {
+          "description": "Reglar for einskilde sendarar for skjermvarsel, historikk og ljod; fyrste vilkåret som samsvarar vinn",
+          "label": "Varselvilkår"
+        },
+        "history-retention-hours": {
+          "description": "Sletta oppslag i varselhistorikken automatisk om dei er eldre enn so mange timar (0 for å halda på dei i all æve)",
+          "label": "Minnetimar"
+        },
+        "layer": {
+          "description": "Bruk Overlag for å visa skjermvarsel over appar i fullskjerm.",
+          "label": "Wayland-lag"
+        },
+        "max-visible": {
+          "description": "Kor mange skjermvarsel som kan vera på skjermen samstundes (0 for å fylla skjermen so mykje råd er)",
+          "label": "Mest synlege skjermvarsel"
+        },
+        "monitors": {
+          "description": "Vel kva for skjermar skjermvarsel kjem opp på; haldt dette tomt for å visa på alle",
+          "label": "Skjermar"
+        },
+        "offset-x": {
+          "description": "Fast vassrett avstand frå skjerm- eller stongranda",
+          "label": "Vassrett avstand"
+        },
+        "offset-y": {
+          "description": "Fast loddrett avstand frå skjerm- eller stongranda",
+          "label": "Loddrett avstand"
+        },
+        "position": {
+          "description": "Kvar skjermvarsel viser seg på skjermen",
+          "label": "Skjermtilhald"
+        },
+        "scale": {
+          "description": "Høva inn skjermvarsel i tilhøve med grensesnittskalaen til skalet",
+          "label": "Storleik"
+        },
+        "show-actions": {
+          "description": "Vis verkeknappar i skjermvarsel; når dette er avslege, fører eit trykk på varselet til standardgjerninga",
+          "label": "Vis verkeknappar"
+        },
+        "show-app-name": {
+          "description": "Vis namnet til applikasjonen som sender varselet i skjermvarsel",
+          "label": "Vis appnamn"
+        },
+        "toast-opacity": {
+          "description": "Bakgrunnsuklårleiken til skjermvarsel",
+          "label": "Bakgrunnsuklårleik"
+        }
+      },
+      "panels": {
+        "borders": {
+          "description": "Teikn eit omrit på flytande fjøler",
+          "label": "Grenser"
+        },
+        "control-center-sidebar": {
+          "description": "Vel korleis sidestonga skal visast",
+          "label": "Sidestong"
+        },
+        "control-center-sidebar-section": {
+          "description": "Når du opnar ei serskild fane (ljodstyrke, media osb.)",
+          "label": "Sidestong på faneopning"
+        },
+        "control-center-tabs": {
+          "description": "Vel kva for faner syner seg i Styreromet; faner utan hake vert gøymde",
+          "label": "Styreromsfaner"
+        },
+        "control-center-width": {
+          "description": "Breidda åt styreromsfjøla i piksel (tett og utan-sidestong modus minskar seg frå dette)",
+          "label": "Styreromsbreidd"
+        },
+        "floating-layer": {
+          "description": "Bruk Topp dersom ruter som tillèt inndata vert gøymde attom flytande fjøler; Overlag held fjøler over innhald i fullskjerm",
+          "label": "Lag for flytande fjøler"
+        },
+        "floating-offset": {
+          "description": "Gap i piksel mellom ei flytande eller ubunden fjøl og stongranda",
+          "label": "Flyteavvik"
+        },
+        "home-session-button": {
+          "description": "Vis øyktegjerningar-knappen øvst i heimefana",
+          "label": "Vis øykteknapp øvst"
+        },
+        "home-shortcuts": {
+          "description": "Vel opp til seks snarvegsknappar på heimefana",
+          "label": "Heimesnarvegar"
+        },
+        "home-shortcuts-show-labels": {
+          "description": "Vis tekstmerkelappar under snarvegmerke i heimfana",
+          "label": "Vis snarvegmerkelappar"
+        },
+        "launcher-app-grid": {
+          "description": "Vis ei rutenett med appmerke med namn under når søket gjev berre appar",
+          "label": "Apprutenett"
+        },
+        "launcher-auto-paste": {
+          "description": "Etter kalkulator, emoji og andre avritsgjerningar, lima inn til ruta med åtgaum (same snarvegar som utklippstavla auto-lim)",
+          "label": "Auto-lim"
+        },
+        "launcher-categories": {
+          "description": "Vis klassevilkår i programveljaren; openberr med F6, og vel neste eller førre med F6 og Shift+F6",
+          "label": "Vis klasse"
+        },
+        "launcher-compact": {
+          "description": "Bruk mindre merke og tettare utkomerader",
+          "label": "Tette rader"
+        },
+        "launcher-currency-exchange": {
+          "description": "Hent vekslingskurs frå tredje-parti brunnar på nettet",
+          "label": "Valutavekslingskurs"
+        },
+        "launcher-global-calculator": {
+          "description": "Vis kalkulatorutfall i søk utan førefeste i tillegg",
+          "label": "Kalkulator i allsøk"
+        },
+        "launcher-global-emoji": {
+          "description": "Vis emojiutfall i søk utan førefeste i tillegg",
+          "label": "Emoji i allsøk"
+        },
+        "launcher-global-session": {
+          "description": "Vis øyktegjerningar i søk utan førefeste i tillegg",
+          "label": "Øykt i allsøk"
+        },
+        "launcher-global-wallpaper": {
+          "description": "Vis bakgrunnsbilete i søk utan førefeste i tillegg",
+          "label": "Bakgrunnsbilete i allsøk"
+        },
+        "launcher-global-windows": {
+          "description": "Vis opne ruter i søk utan førefeste i tillegg",
+          "label": "Ruter i allsøk"
+        },
+        "launcher-pinned-apps": {
+          "description": "Skriverbords-IDar til appane feste til veljaren; desse viser seg fyrst når veljaren opnar",
+          "label": "Feste appar"
+        },
+        "launcher-prefix-calculator": {
+          "description": "Førefeste til kalkulator i allsøk",
+          "label": "Kalkulatorførefeste"
+        },
+        "launcher-prefix-character": {
+          "description": "Førefeste som utløyser alle tilleggsgjerningar (t.d. /)",
+          "label": "Sams førefeste"
+        },
+        "launcher-prefix-emoji": {
+          "description": "Førefeste til emojisøk i allsøk",
+          "label": "Emojiførefeste"
+        },
+        "launcher-prefix-session": {
+          "description": "Førefeste til øyktegjerningar i allsøk",
+          "label": "Øykteførefeste"
+        },
+        "launcher-prefix-wallpaper": {
+          "description": "Førefeste til bakgrunnsbileteval i allsøk",
+          "label": "Bakgrunnsbileteførefeste"
+        },
+        "launcher-prefix-windows": {
+          "description": "Førefeste til rutesøk i allsøk",
+          "label": "Rutesøkførefeste"
+        },
+        "launcher-reset-usage": {
+          "button": "Nullstill",
+          "description": "Nullstill brukstal og nyleg historikk bruka til veljarsortering",
+          "label": "Nullstill bruksdata"
+        },
+        "launcher-session-search": {
+          "description": "Ha med øyktegjerningar (lås, set i dvale, start å nyo, slå av, skriv ut) i vanlege søk i veljaren, ikkje berre attom /session førefestet",
+          "label": "Slå på øyktesøk"
+        },
+        "launcher-show-icons": {
+          "description": "Vis appmerke i veljarutkomene",
+          "label": "Vis appmerke"
+        },
+        "launcher-sort-by-usage": {
+          "description": "Før nylege appar oppetter i lista og vis eit klassevilkår med namn \"Nyleg bruka\"",
+          "label": "Sorter med bruk"
+        },
+        "list-item-background": {
+          "description": "Teikna ein avrunda bakgrunn bak kvar veljar- og tavlelisteoppslag",
+          "label": "Bakgrunn fo listeoppslag"
+        },
+        "open-near-click-clipboard": {
+          "description": "Der tavlefjøla er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "open-near-click-control-center": {
+          "description": "Der Styreromsfjøla er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "open-near-click-launcher": {
+          "description": "Der veljarfjøla er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "open-near-click-session": {
+          "description": "Der øyktefjøla er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "open-near-click-wallpaper": {
+          "description": "Der fjøla for bakgrunnsbileteval er når du opnar henne med eit trykk på stongnøytelen",
+          "label": "Langs med stonga"
+        },
+        "panel-anchor-bar": {
+          "description": "Stongfjøler bind seg til dette når dei er opna; haldt dette tomt for å fylgja nøytelen, snarvegen eller festepunktet som opna dei",
+          "label": "Ankra stong"
+        },
+        "placement-clipboard": {
+          "description": "Vel om tavla er bunden til stonga eller flyter i ein stad du vel",
+          "label": "Stad"
+        },
+        "placement-control-center": {
+          "description": "Vel om Styreromet er bunden til stonga eller flyter i ein stad du vel",
+          "label": "Stad"
+        },
+        "placement-launcher": {
+          "description": "Vel om programveljaren er bunden til stongaeller flyter i ein stad du vel",
+          "label": "Stad"
+        },
+        "placement-polkit": {
+          "description": "Vel om polkitleieteksten er bunden til stonga eller flyter i ein stad du vel",
+          "label": "Stadsetjing"
+        },
+        "placement-session": {
+          "description": "Vel om øyktefjøla er bunden til stonga eller flyter i ein stad du vel",
+          "label": "Stad"
+        },
+        "placement-wallpaper": {
+          "description": "Vel om fjøla for bakgrunnsbileteval er bunden til stonga eller flyter i ein stad du vel",
+          "label": "Stad"
+        },
+        "position-clipboard": {
+          "description": "Det utklippstavla flyt på skjermen; Fylg stonga held henne nær stonga",
+          "label": "Stad"
+        },
+        "position-control-center": {
+          "description": "Der Styreromet flyt på skjermen; Fylg stonga held det nært stonga",
+          "label": "Stad"
+        },
+        "position-launcher": {
+          "description": "Der programveljaren flyt på skjermen; Fylg stonga held han nær stonga",
+          "label": "Stad"
+        },
+        "position-polkit": {
+          "description": "Der polkitleietekst flyt på skjermen; Fylg stonga held han nær stonga",
+          "label": "Stad"
+        },
+        "position-session": {
+          "description": "Der øyktefjøla flyt på skjermen; Fylg stonga held henne nær stonga",
+          "label": "Stad"
+        },
+        "position-wallpaper": {
+          "description": "Der veljaren for bakgrunnsbilete flyt på skjermen; Fylg stonga held han nær stonga",
+          "label": "Stad"
+        },
+        "shadow": {
+          "description": "Kasta den ålmenne flateskuggen frå fjøleflater"
+        },
+        "transparency-mode": {
+          "description": "Glasstil på fjøler, medrekna uklårleik for flytande fjøler og kortklårleik",
+          "label": "Klårleik"
+        }
+      },
+      "power": {
+        "session-actions": {
+          "description": "Øykteval, rekkjefylgje, sjølvvalde kommandoar og merke",
+          "label": "Val"
+        },
+        "session-grid": {
+          "description": "Vis gjerder på øyktefjøla i rutenett",
+          "label": "Rutenett"
+        },
+        "session-grid-columns": {
+          "description": "Kor mange søyler rutenettet har",
+          "label": "Søyler"
+        },
+        "session-show-shortcuts": {
+          "description": "Vis eller gøym snarvegshjelp",
+          "label": "Vis snarvegar"
+        }
+      },
+      "services": {
+        "audio-overdrive": {
+          "description": "Tillat ljodstyrke over 100 %",
+          "label": "Ljodoverdrive"
+        },
+        "calendar": {
+          "description": "Vis hende frå kalendarkontoane dine på nettet",
+          "label": "Kalender"
+        },
+        "calendar-add": {
+          "button": "Legg til konto",
+          "description": "Legg til iCloud-, CalDAV-, Google-kontoar eller ein ICS-URL",
+          "label": "Kalenderkontoar"
+        },
+        "calendar-credentials": {
+          "button": "Prøv att",
+          "description-cancelled": "Leietekst til løyndomstenesta vart avbroten; prøv att når du er klar",
+          "description-error": "Noctalia kunne ikkje finna innskrivingsdata til kalenderen gjennom Løyndomstenesta",
+          "description-locked": "Innskrivingsdata til kalenderen er låste eller tilgang var neitta; lås opp Løyndomstenesta og prøv att",
+          "description-migration": "Innskrivingsdata til kalenderen i berr tekst ventar på å flytta inn til Løyndomstenesta; dei vert ikkje bruka til kalendersynkronisering",
+          "description-opening": "Innskrivingsdata til kalenderen vert opna gjennom Løyndomstenesta",
+          "description-unavailable": "Ingen Løyndomstenestegjevar er tilgjengeleg i denne øykta",
+          "label": "Lagring for innskrivingsdata til kalenderen"
+        },
+        "calendar-edit": {
+          "button": "Brigda",
+          "button-reconnect": "Kopla til att",
+          "button-retry": "Prøv att",
+          "description": "Oppdater denne kalenderkontoen",
+          "description-locked": "Oppattnyingsteiknet ligg i ein låst lykelring; lås han opp og prøv att",
+          "description-reconnect": "Google-sanning vantar; kopla til kontoen att."
+        },
+        "calendar-event-date-format": {
+          "description": "Datoformatet vist på arrangementskortet på dagen du vel",
+          "label": "Datoformat for arrangement"
+        },
+        "calendar-event-time-format": {
+          "description": "Tidsformatet vist for kalenderarrangement",
+          "label": "Tidsformat for arrangement"
+        },
+        "calendar-refresh-interval": {
+          "description": "Kor ofte kalenderhende skal oppdatera seg (minutt)",
+          "label": "Tidsrom for oppattnying"
+        },
+        "calendar-storage": {
+          "button": "Prøv att",
+          "description-cancelled": "Leieteksten for kryptert lagring vart avbroten; kalenderarrangement er tilgjengelege berre for denne øykta",
+          "description-error": "Noctalia kunne ikkje opna eller lagra det krypterte mellomlageret for kalenderarrangement",
+          "description-locked": "Kryptert lagring er låst eller tilgang neitta; ordna tilgang og prøv att",
+          "description-migration": "Mellomlageret for kalenderarrangement i berr tekst ventar på kryptering; det held seg fram til flyttinga har vellukka",
+          "description-missing-key": "Lykelen for mellomlagring av kalenderarrangement vantar; innskrivingsdata brukar anna lagring (filer i mellomlageret er berga)",
+          "description-opening": "Det krypterte mellomlageret for kalenderarrangement opnar",
+          "description-recovery": "Noctalia kunne ikkje sanna mellomlageret for kalenderarrangement eller det er skadt, prøv att med attoppskipa og rett lykel eller nullstill privat lagring",
+          "description-unavailable": "Ingen tilgjengelege Løyndomstenestegjevarar; kalenderarrangement held seg tilgjengelege berre for denne øykta",
+          "label": "Lager for kalenderarrangement"
+        },
+        "calendar-week-numbers": {
+          "description": "Vis ISO 8601 veketal attmed kalenderen",
+          "label": "Veketal"
+        },
+        "custom-schedule": {
+          "description": "Bruk sjølvvalde solrennings- / solegladstider heller enn å rekna dei ut frå stad",
+          "label": "Sjølvvald timeplan"
+        },
+        "day-temperature": {
+          "description": "Lettemperatur på dagtida (Kelvin)",
+          "label": "Dagstemperatur"
+        },
+        "ddcutil": {
+          "description": "Styr ljosstyrke på eksterne skjermar med DDC / CI",
+          "label": "DDC / CI (ddcutil)",
+          "requires-ddcutil": "Installer ddcutil for å kunna styra ljosstyrke med DDC / CI"
+        },
+        "force-night-light": {
+          "description": "Ha natteljoset på heile tida",
+          "label": "Nøyd natteljos"
+        },
+        "latitude": {
+          "description": "Breiddegrad for solerennings- / solegladstid, bruka når finn-stad og addresse er avslegne",
+          "label": "Breiddegrad"
+        },
+        "location-address": {
+          "description": "By eller adresse å finna, bruka når finn-stad er avslege",
+          "label": "Adresse",
+          "placeholder": "By, Land"
+        },
+        "location-auto-locate": {
+          "description": "Finn staden din automatisk ut frå IP-adressa di med noctalia.dev",
+          "label": "Finn-stad (IP)"
+        },
+        "longitude": {
+          "description": "Lengdegrad for solerennings- / solegladstid, bruka når finn-stad og addresse er avslegne",
+          "label": "Lengdegrad"
+        },
+        "minimum-brightness": {
+          "description": "Hindra skjermen frå å mørkna heilt",
+          "label": "Minste tillaten ljosstyrke"
+        },
+        "mpris-blacklist": {
+          "description": "Avspelarar å oversjå for mediastyre og Spelar no",
+          "label": "MPRIS-avspelar svarteliste"
+        },
+        "night-light": {
+          "description": "Skift skjermleter til å vera varmare om natta",
+          "label": "Natteljos",
+          "requires-gamma-control": "Kompositoren stør ikkje gammastyre"
+        },
+        "night-temperature": {
+          "description": "Lettemperatur om natta (Kelvin)",
+          "label": "Nattetemperatur"
+        },
+        "notification-sound": {
+          "description": "Ljodfila bruka for varseltilbakemelding",
+          "label": "Varselljod",
+          "placeholder": "/bane/til/ljod.wav"
+        },
+        "shell-sounds": {
+          "description": "Spel av ljodverknader med skalhende",
+          "label": "Skalljod"
+        },
+        "sound-volume": {
+          "description": "Ljodstyrke for skalljodverknader",
+          "label": "Ljodstyrke"
+        },
+        "sunrise": {
+          "description": "Solrenningstid i HH:MM, bruka når ingen stad er gjeven",
+          "label": "Solrenning"
+        },
+        "sunset": {
+          "description": "Solegladstid i HH:MM, bruka når ingen stad er gjeven",
+          "label": "Soleglad"
+        },
+        "sync-monitor-brightness": {
+          "description": "Synkroniser ljosstyrke på alle skjermar",
+          "label": "Sykroniser skjermljos"
+        },
+        "system-monitor": {
+          "cpu-poll": {
+            "description": "Sekund mellom prosessorbruks-, prosessortemp- og lastsnittsprøve (0 slår av)",
+            "label": "Prosessor-spørjingsmellomrom"
+          },
+          "description": "Prøv prosessor-, minne-, nettverks-, last-, temp- og diskstatistikk",
+          "disk-poll": {
+            "description": "Sekund mellom diskbruks- og swapbruksprøve (0 slår av)",
+            "label": "Disk-spørjingsmellomrom"
+          },
+          "gpu-poll": {
+            "description": "Sekund mellom skjermkorttemperatur-, -bruks- og VRAM-prøve; skjermkortet vert prøvt berre når noko viser skjermkortinformasjon, for å hindra at ei maskin som ikkje gjer noko vekkjer seg (0 slår dette av heilt)",
+            "label": "Skjermkort-spørjingsmellomrom"
+          },
+          "label": "Systemvakt",
+          "memory-poll": {
+            "description": "Sekund mellom RAM-bruksprøve (0 slår av)",
+            "label": "Minne-spørjingsmellomrom"
+          },
+          "network-poll": {
+            "description": "Sekund mellom nettverkgjennomtrekksprøve (0 slår av)",
+            "label": "Nettverk-spørjingsmellomrom"
+          },
+          "stats": {
+            "cpu-freq": "Prosessorfrekvens",
+            "cpu-temp": "Prossessortemp",
+            "cpu-usage": "Prosessorbruk",
+            "disk-free": "Disk att",
+            "disk-free-pct": "Disk att %",
+            "disk-usage": "Diskbruk",
+            "disk-used": "Disk bruka",
+            "disk-used-pct": "Disk bruka %",
+            "gpu-temp": "Skjermkorttemp",
+            "gpu-usage": "Skjermkortbruk",
+            "gpu-vram": "Skjermkort-VRAM",
+            "network-rx": "Nedlasting",
+            "network-tx": "Opplasting",
+            "ram-usage": "Minnebruk",
+            "swap-usage": "Swapbruk"
+          },
+          "threshold": {
+            "description": "Aktivitetstreskel (venstre) og kritisk treskel (høgre)",
+            "label": "{stat}"
+          }
+        },
+        "volume-change-sound": {
+          "description": "Ljodfil bruka til ljodtilbakemelding",
+          "label": "Ljod for brigde i ljodstyrke",
+          "placeholder": "/bane/til/ljod.wav"
+        },
+        "weather": {
+          "description": "Slå på vêrtenesta med open-meteo.com",
+          "label": "Vêr"
+        },
+        "weather-effects": {
+          "description": "Vis synlege vêrverknader",
+          "label": "Vêrverknader"
+        },
+        "weather-refresh-interval": {
+          "description": "Kor ofte å lasta inn vêrdata å nyo (minutt)",
+          "label": "Tidsrom for oppattnying"
+        },
+        "weather-unit": {
+          "description": "Måleiningssystem for vêr",
+          "label": "Måleiningar"
+        }
+      },
+      "shared": {
+        "auto-hide": {
+          "label": "Gøym automatisk"
+        },
+        "background-opacity": {
+          "label": "Bakgrunnsuklårleik"
+        },
+        "contact-shadow": {
+          "label": "Møteskugge"
+        },
+        "corner-bottom-left": {
+          "label": "Radius botn venstre"
+        },
+        "corner-bottom-right": {
+          "label": "Radius botn høgre"
+        },
+        "corner-radius": {
+          "label": "Hyrneradius"
+        },
+        "corner-top-left": {
+          "label": "Radius topp venstre"
+        },
+        "corner-top-right": {
+          "label": "Radius topp høgre"
+        },
+        "cross-axis-padding": {
+          "label": "Utfylling på tvers av hovudlina"
+        },
+        "edge-margin": {
+          "label": "Randavstand"
+        },
+        "enabled": {
+          "label": "Påslege"
+        },
+        "ends-margin": {
+          "label": "Endeavstand"
+        },
+        "main-axis-padding": {
+          "label": "Utfylling langs med hovudlina"
+        },
+        "opposite-edge-margin": {
+          "label": "Motsette randavstand"
+        },
+        "position": {
+          "label": "Stad"
+        },
+        "reserve-space": {
+          "label": "Haldt av rom"
+        },
+        "shadow": {
+          "label": "Skugge"
+        },
+        "shadow-alpha": {
+          "label": "Skuggeuklårleik"
+        },
+        "shadow-direction": {
+          "label": "Skuggelei"
+        }
+      },
+      "shell": {
+        "avatar-path": {
+          "description": "Bane til sjølvvalt brukarbilete; store bilete er automatisk avskorne og minska.",
+          "label": "Biletebane",
+          "placeholder": "/bane/til/bilete.png"
+        },
+        "clipboard-auto-paste": {
+          "description": "Lima inn utklippstavleval automatisk",
+          "label": "Utklippstavle auto-lim"
+        },
+        "clipboard-confirm-clear-history": {
+          "description": "Spør før du slettar utklippstavlehistorikk eller eit ufest oppslag frå fjøla; når dette er av, skjer dei gjerningane med det same (feste oppslag spør enno før sletting)",
+          "label": "Stadfest sletta historikk"
+        },
+        "clipboard-enabled": {
+          "description": "Slå på utklippstavlehistorikk, tavlefjøla, og integrering av rita av / lima inn",
+          "label": "Utklippstavle"
+        },
+        "clipboard-history-max-entries": {
+          "description": "Største mengd ufeste oppslag lagra på utklippstavla",
+          "label": "Historikkstorleik"
+        },
+        "clipboard-image-action": {
+          "description": "Kommando som køyrer frå bileteoppslag på tavla; bruk {path} for filbana, {stdin} for å merka stdin-tilhaldet, eller ikkje skriv inn {path} for å røyra automatisk",
+          "label": "Biletehandlingskommando",
+          "placeholder": "gimp {path} eller satty -f -"
+        },
+        "clipboard-keep-from-closed-apps": {
+          "description": "Haldt på det du rita av sist for å lima det etter applikasjonen du rita det av frå vert attlaten",
+          "label": "Haldt utklippstavla frå attlatne appar"
+        },
+        "clipboard-storage": {
+          "button": "Prøv att",
+          "description-cancelled": "Leieteksten for Løyndomstenesta vart avbroten; tavlehistorikken er tilgjengeleg berre for denne øykta",
+          "description-error": "Noctalia kunne ikkje opna eller lagra kryptert tavlehistorikk ",
+          "description-locked": "Lykellagring for tavla er låst eller tilgang neitta; ordna tilgang og prøv att",
+          "description-migration": "Tavlehistorikk i berr tekst ventar på kryptering; filer no er berga fram til flytting er vellukka",
+          "description-missing-key": "Den tilmåta kryptolagringslykelen vantar; tavlehistorikken no er berga",
+          "description-opening": "Kryptert tavlehistorikk opnar",
+          "description-recovery": "Noctalia kunne ikkje sanna tavlehistorikk eller han er skadd; prøv att med attoppskipa og rett lykel, eller nullstill privat lagring",
+          "description-unavailable": "Ingen Løyndomstenestegjevar er tilgjengeleg; tavlehistorikk er tilgjengeleg berre for denne øykta",
+          "label": "Tavlehistorikklagring"
+        },
+        "date-format": {
+          "description": "Standard datoformattering for skalgrensesnittet utan eigen innstilling",
+          "label": "Datoformattering"
+        },
+        "external-ip": {
+          "description": "Finn den offentlege WAN IP-adressa til oppkoplinga (med api.noctalia.dev) og vis henne i nettverksfana i Styreromet",
+          "label": "Vis WAN IP"
+        },
+        "greeter-sync-auto": {
+          "description": "Synkorniser helsaren automatisk når bakgrunn, leter eller ham vert brigda",
+          "label": "Synkroniser Helsaren automatisk"
+        },
+        "greeter-sync-privilege-command": {
+          "description": "Byt ut pkexec/run0 med Synkro no i helsaren; banen for godkjenningshjelparen og ventemappa vert lagt til automatisk. (døme: ghostty -e pkexec)",
+          "label": "Helsarsynkro rettskommando"
+        },
+        "keyboard-layout-custom-labels": {
+          "description": "Gjev merkelappar til knappefjøloppsett som vert bruka gjennom skalet",
+          "label": "Knappefjøloppsettsnamn"
+        },
+        "launch-apps-as-systemd-services": {
+          "description": "Køyrer applikasjonar i serskilde systemd-tenester slik at dei ikkje dela cgroup med Noctalia",
+          "label": "Køyr appar som systemd-tenester",
+          "requires-systemd-session": "Krev at Noctalia køyrer som systemd-brukartenesta (uwsm eller systemd brukareining)"
+        },
+        "launch-apps-custom-command": {
+          "description": "Ballar inn appar som køyrer frå veljaren, festepunktet og oppgåvelina; byter ut $CMD med den opphavlege kommandoen.",
+          "label": "Sjølvvald veljarkommando",
+          "placeholder": "$CMD"
+        },
+        "niri-overview-type-to-launch": {
+          "description": "Opna programveljaren når du skriv i niri-oversyn; brukar ei lita knappefjøl-åtgaumsflate medan oversyna er open",
+          "label": "Skriv for å køyra"
+        },
+        "offline-mode": {
+          "description": "Sperra alle utgåande nettverkstrafikk",
+          "label": "Fråkopla-modus"
+        },
+        "osd-background-opacity": {
+          "description": "Bakgrunnsuklårleik for OSD-sprettoppar",
+          "label": "Bakgrunnsuklårleik"
+        },
+        "osd-border": {
+          "description": "Teikna omrit kring OSD-sprettoppar",
+          "label": "Omrit"
+        },
+        "osd-enabled": {
+          "description": "Hovudbrytar for alle OSD-sprettopper; når denne er avslegen viser ingen OSD.",
+          "label": "Slå på OSD"
+        },
+        "osd-kinds-bluetooth": {
+          "description": "Vis ein OSD-sprettopp når Bluetooth er slegen av / på.",
+          "label": "Bluetooth"
+        },
+        "osd-kinds-brightness": {
+          "description": "Vis ein OSD-sprettopp når ljosstyrken på skjermen brigdar",
+          "label": "Ljosstyrke"
+        },
+        "osd-kinds-caffeine": {
+          "description": "Vis ein OSD-sprettopp når koffeinstoda (dvale-hindraren) brigdar",
+          "label": "Koffein"
+        },
+        "osd-kinds-dnd": {
+          "description": "Vis ein OSD-sprettopp når Ikkje uroa er av- / påslegen",
+          "label": "Ikkje uroa"
+        },
+        "osd-kinds-keyboard-backlight": {
+          "description": "Vis OSD-sprettopp når ljosstyrken på knappefjølsljos brigdar",
+          "label": "Knappefjølsljos"
+        },
+        "osd-kinds-keyboard-layout": {
+          "description": "Vis ein OSD-sprettopp når oppsettet for inndataknappefjøla brigdar",
+          "label": "Knappefjøloppsett"
+        },
+        "osd-kinds-lock-keys": {
+          "description": "Vis OSD-sprettoppar for Storlås-, Tallås- og Bladlåsbrigde",
+          "label": "Låsknappar"
+        },
+        "osd-kinds-media": {
+          "description": "Vis ein OSD-sprettopp når ein ny låt byrjar å spela av",
+          "label": "Spelar no"
+        },
+        "osd-kinds-nightlight": {
+          "description": "Vis ein OSD-sprettopp når natteljos er av- / påslege",
+          "label": "Natteljos"
+        },
+        "osd-kinds-power-profile": {
+          "description": "Vis ein OSD-sprettopp når straumprofilen brigdar",
+          "label": "Straumprofil"
+        },
+        "osd-kinds-privacy": {
+          "description": "Vis ein OSD-sprettopp når mikrofon-, kamera- eller skjermdelingsopptak byrjar eller stoggar",
+          "label": "Personvern"
+        },
+        "osd-kinds-volume": {
+          "description": "Vis OSD-sprettoppar når ljodstyrke brigdar; bruk avanserte innstillingar for å styra ut- og innljod kvar for seg",
+          "label": "Ljodstyrke"
+        },
+        "osd-kinds-volume-input": {
+          "description": "Vis ein OSD-sprettopp når innljodstyrke (mikrofon) brigdar",
+          "label": "Innljodstyrke"
+        },
+        "osd-kinds-volume-output": {
+          "description": "Vis ein OSD-sprettopp når utljodstyrke (høgtalar) brigdar",
+          "label": "Utljodstyrke"
+        },
+        "osd-kinds-wifi": {
+          "description": "Vis ein OSD-sprettopp når Wi-Fi er av- / påslegen",
+          "label": "Wi-Fi"
+        },
+        "osd-monitors": {
+          "description": "Vel kva for skjermar som viser OSD-sprettoppar; haldt dette tomt for å visa på alle",
+          "label": "Skjermar"
+        },
+        "osd-offset-x": {
+          "description": "Fast vassrett avstand frå skjermranda",
+          "label": "Vassrett avstand"
+        },
+        "osd-offset-y": {
+          "description": "Fast loddrett avstand frå skjermranda",
+          "label": "Loddrett avstand"
+        },
+        "osd-orientation": {
+          "description": "Oppsettslei for OSD-sprettoppar",
+          "label": "Lei"
+        },
+        "osd-position": {
+          "description": "Stad på skjermen for OSD-sprettoppar",
+          "label": "Skjermstad"
+        },
+        "osd-position-vertical": {
+          "description": "Stad på skjermen når leia er loddrett",
+          "label": "Loddrettstad"
+        },
+        "osd-scale": {
+          "description": "Brigda storleiken til OSD-sprettoppar i høve til skalgrensesnittet (1.0 er standardstorleiken)",
+          "label": "Skala"
+        },
+        "password-style": {
+          "description": "Synleg stil for merka som løyner lykelord",
+          "label": "Lykelordstil"
+        },
+        "polkit-agent": {
+          "description": "Slå på den innebygde sanningsagenten",
+          "label": "Polkit-agent"
+        },
+        "privacy-cam-filter-regex": {
+          "description": "Regex som kameraappar overser i personvernsvarsel og OSDar",
+          "label": "Kameravilkår-regex"
+        },
+        "privacy-mic-filter-regex": {
+          "description": "Regex som mikrofonappar overser i personvernsvarsel og OSDar",
+          "label": "Mikrofonvilkår-regex"
+        },
+        "privacy-screen-filter-regex": {
+          "description": "Regex som skjermdelingsappar overser i personvernsvarsel og OSDar",
+          "label": "Skjerdelingsvilkår-regex"
+        },
+        "screen-time-enabled": {
+          "description": "Spora appbruk og vis det i Styreromet",
+          "label": "Skjermtid"
+        },
+        "screen-time-reset": {
+          "button": "Nullstill",
+          "description": "Nullstill historikken på lagra appbruk i framgrunnen",
+          "label": "Nullstill skjermtidsdata"
+        },
+        "screenshot-confirm-region": {
+          "description": "Etter at du har teikna eit område, haldt overlaget ope fram til du stadfester med Retur eller Mellomrom",
+          "label": "Stadfest område"
+        },
+        "screenshot-copy-to-clipboard": {
+          "description": "Set den opptekne PNG-fila på utklippstavlevalet",
+          "label": "Rita av til utklippstavla"
+        },
+        "screenshot-directory": {
+          "description": "Mappe for lagra PNG-filer; haldt dette tomt for ~/Bilete",
+          "label": "Utdatamappe",
+          "placeholder": "~/Bilete"
+        },
+        "screenshot-filename-pattern": {
+          "description": "strftime-mønster utan filtype (.png er lagt til); bruk %s for unix-epok",
+          "label": "Mønster for filnamn"
+        },
+        "screenshot-freeze-screen": {
+          "description": "Tak opp skrivebordet før områdeval slik at innhald som rører på seg sit stille",
+          "label": "Frys skjermen"
+        },
+        "screenshot-pipe-command": {
+          "description": "Køyre kommandoen som /bin/sh -lc med PNG-et på stdin; til oppmerkingsprogram eller opplastarar (til dømes: swappy -f eller satty -f -) ",
+          "label": "Røyra kommando",
+          "placeholder": "swappy -f -"
+        },
+        "screenshot-pipe-to-command": {
+          "description": "Send det oppteke PNG-et til ein skalkommando på stdin",
+          "label": "Røyra til kommando"
+        },
+        "screenshot-remember-last-region": {
+          "description": "Vel området som sist vart valt på førehand (medrekna etter avbrot) neste gong du tek opp skjermområde",
+          "label": "Hugsa førre område"
+        },
+        "screenshot-save-to-file": {
+          "description": "Skriv skjermbilete som PNG-filer til utdatamappa",
+          "label": "Lagra til fil"
+        },
+        "screenshot-show-cursor": {
+          "description": "Ha med peikaren i skjermbilete",
+          "label": "Vis peikaren"
+        },
+        "settings-window-translucent": {
+          "description": "Gjer bakgrunnen i Innstillingar gjennomsynleg til kompositorverknader",
+          "label": "Gjennomsynleg bakgrunn i instillingar"
+        },
+        "show-location": {
+          "description": "Vis stadnamn i vêrnøytlane",
+          "label": "Vis stad"
+        },
+        "sync-greeter": {
+          "button": "Synkroniser no",
+          "description": "Rita av bakgrunnsbiletet og leter til Noctaliahelsar (krev stjornargodkjenning)",
+          "label": "Noctaliahelsar"
+        },
+        "telemetry": {
+          "description": "Sender ein liten anonym oppstartsping med utgåve, OS, kompositor, skjermoppløysingar, minne og grensesnitttilhøve",
+          "label": "Anonym oppstartsping"
+        },
+        "time-format": {
+          "description": "Standard tidsformattering for skalgrensesnitt utan eigne innstillingar",
+          "label": "Tidsformattering"
+        }
+      },
+      "system": {
+        "battery-device-warning-threshold": {
+          "description": "Overstyr batteriåtvaringstreskelen på denne eininga. Set 0 for å slå av åtvaringar på denne eininga.",
+          "label": "{device} åtvaringstreskel"
+        },
+        "battery-warning-threshold": {
+          "description": "Systembatteriprosenten som får skalet til å senda \"lågt batteri\"-varsel, og som får nøytlar til å brigda til åtvaringsleten. Set 0 for å slå av.",
+          "label": "Batteriåtvaringstreskel"
+        }
+      },
+      "templates": {
+        "builtin-ids": {
+          "description": "Slå av / på samanbundne appmalar til å verta teikna med hamskifte",
+          "empty": "Ingen innebygde malar er tilgjengelege.",
+          "label": "Innebygde malar"
+        },
+        "community-ids": {
+          "description": "Leita etter og slå av / på malar frå samfunnet til å verta teikna med hamskifte",
+          "empty": "Ingen malar frå samfunnet er tilgjengelege enno. Slå på malar frå samfunnet og nya katalogen opp att fyrst.",
+          "label": "Malar frå samfunnet"
+        },
+        "dynamic-output": "Utdatabanen er funnen når malen er gjeven",
+        "enable-builtins": {
+          "description": "Bruk den samanbundne katalogen med hammalar til appar",
+          "label": "Slå på innebygde malar"
+        },
+        "enable-community-templates": {
+          "description": "Lasta ned og bruka malar frå samfunnskatalogen",
+          "label": "Slå på malar frå samfunnet"
+        }
+      },
+      "wallpaper": {
+        "automation": {
+          "description": "Brigda på bakgrunnsbilete automatisk på tidsbrytar",
+          "label": "Automatisk brigde"
+        },
+        "automation-interval": {
+          "description": "Sekund mellom bakgrunnsbrigde",
+          "label": "Brigdemellomrom"
+        },
+        "automation-order": {
+          "description": "Vel bakgrunnsbilete vilkårleg eller alfabetisk",
+          "label": "Rekkjefylgje"
+        },
+        "automation-recursive": {
+          "description": "Leita i undermapper etter bakgrunnsbilete",
+          "label": "Tak med undermapper"
+        },
+        "directory": {
+          "description": "Mappa med bakgrunnsbilete",
+          "label": "Bakgrunnsbiletemappe"
+        },
+        "directory-dark": {
+          "description": "Bakgrunnsbiletemappa bruka i mørkhammodus",
+          "label": "Mørkmodusmappe",
+          "placeholder": "~/Bilete/Bakgrunn"
+        },
+        "directory-light": {
+          "description": "Bakgrunnsbiletemappa bruka i ljoshammodus",
+          "label": "Ljosmodusmappe",
+          "placeholder": "~/Bilete/Bakgrunn"
+        },
+        "edge-smoothness": {
+          "description": "Kor jamne rendene på bileta er når dei brigdar mellom seg",
+          "label": "Randejamnad"
+        },
+        "enabled": {
+          "description": "Slå på bakgrunnsbiletetenesta"
+        },
+        "fill-color": {
+          "description": "Fast let vist bakom bilete i udekte område",
+          "label": "Fyllelet"
+        },
+        "fill-mode": {
+          "description": "Korleis bakgrunnsbilete høva seg inn på skjermen",
+          "label": "Fyllemodus"
+        },
+        "monitor-directory": {
+          "label": "Bakgrunnsbiletemappe"
+        },
+        "monitor-directory-dark": {
+          "label": "Mørkmodusmappe",
+          "placeholder": "~/Bilete/Bakgrunn"
+        },
+        "monitor-directory-light": {
+          "label": "Ljosmodusmappe",
+          "placeholder": "~/Bilete/Bakgrunn"
+        },
+        "panel": {
+          "button": "Opna fjøl",
+          "description": "Opna fjøla for bakgrunnsbileteval",
+          "label": "Bakgrunnsbiletefjøl"
+        },
+        "per-monitor-directories": {
+          "description": "Bruk skilde biletemapper for kvar skjerm",
+          "label": "Mappe for kvar skjerm"
+        },
+        "transition-duration": {
+          "description": "Tida biletebrigde tek i millisekund",
+          "label": "Brigdetid"
+        },
+        "transition-on-startup": {
+          "description": "Spel av eit brigde når skalet fyrst viser eit bakgrunnsbilete",
+          "label": "Rørsle på oppstart"
+        },
+        "transitions": {
+          "description": "Verknader tilgjengelege når bakgrunnsbilete brigdar (vilkårleg kvart brigde)",
+          "label": "Brigdeverknader"
+        }
+      }
+    },
+    "session-actions": {
+      "add": "Legg til gjerning",
+      "clear-glyph": "Sletta",
+      "command-label": "Skalkommando",
+      "command-placeholder": "Valfri bash-kommando, haldt dette tomt for innebygd åtburd",
+      "command-required-placeholder": "Skalkommando for å køyra",
+      "countdown-seconds-description": "Vent so mange sekund før du køyrer. Slå på att for å stadfesta med det same. 0 køyrer med det same.",
+      "countdown-seconds-label": "Nedteljing (sekund)",
+      "glyph-label": "Symbol",
+      "glyph-picker-title": "Gjerningssymbol",
+      "kind-section-label": "Åtburd",
+      "label-field": "Merkelapp",
+      "label-placeholder": "Valfri knappetekst",
+      "shortcut-label": "Snarveg",
+      "variant": {
+        "default": "Standard",
+        "destructive": "Skjemmande",
+        "ghost": "Skrømt",
+        "outline": "Rand",
+        "primary": "Primær",
+        "secondary": "Sekundær"
+      },
+      "variant-label": "Knappestil"
+    },
+    "storage-recovery": {
+      "button": "Nullstill privat lagring",
+      "button-confirm": "Stadfest nullstilling",
+      "description": "Sletta lagra tavlehistorikk og kalenderarrangement i all æve, og opna privat lagring å nyo (ei tilmåta lykelfil vert aldri brigda)",
+      "error-delete": "Nokre filer i privat lagring kunne ikkje slettast. Lagringslykene var berga.",
+      "error-key": "Filer i privat lagring var sletta, men Noctalia kunne ikkje opna trygg lagring å nyo. Ordna tilgang og prøv att.",
+      "label": "Berga privat lagring",
+      "success": "Privat lagring vellukka med nullstilling"
+    },
+    "templates": {
+      "store": {
+        "browse": "Leita i malar",
+        "categories": "Klasser",
+        "category-all": "Alle",
+        "empty": "Ingen malar samsvarar vilkåra dine",
+        "enabled-count": "{count} påslegne",
+        "filter-all": "Alle",
+        "filter-enabled": "Påslegne",
+        "results-count": "{count} malar",
+        "search-placeholder": "Leita i malar ...",
+        "sort-category-asc": "Sorter etter klasse (A-Å)",
+        "sort-category-desc": "Sorter etter klasse (Å-A)",
+        "sort-name-asc": "Sorter etter namn (A-Å)",
+        "sort-name-desc": "Sorter etter namn (Å-A)",
+        "title": "Malar frå samfunnet"
+      }
+    },
+    "widgets": {
+      "actions": {
+        "command-placeholder": "Skalkommando",
+        "default": "Standard",
+        "disabled": "Avslegne",
+        "run-command": "Køyr kommando ...",
+        "unset": "Ikkje fastsett"
+      },
+      "gestures": {
+        "back": "Attendeknapp",
+        "forward": "Framknapp",
+        "left": "Venstretrykk",
+        "middle": "Midttrykk",
+        "right": "Høgretrykk",
+        "scroll-down": "Blad nedetter",
+        "scroll-left": "Blad venstre",
+        "scroll-right": "Blad høgre",
+        "scroll-up": "Blad oppetter"
+      },
+      "instances": {
+        "cpu": "Prosessor",
+        "date": "Dato",
+        "input-volume": "Innljodstyrke",
+        "network-rx": "Nettverk inn",
+        "network-tx": "Nettverk ut",
+        "output-volume": "Utljodstyrke",
+        "ram": "Minne",
+        "temp": "Temperatur"
+      },
+      "map-placeholders": {
+        "effects-profile-name": "Profilnamn",
+        "glyph-name": "Symbolnamn",
+        "key": "Lykel",
+        "label": "Merkelapp",
+        "layout-name": "Oppsettsnamn",
+        "value": "Verde"
+      },
+      "options": {
+        "after": "Etter",
+        "always": "Alltid",
+        "auto": "Auto",
+        "before": "Før",
+        "both": "Både",
+        "compact": "Tett",
+        "count": "Tal",
+        "cpu-freq": "Prosessorfrekvens",
+        "cpu-temp": "Prosessortemperatur",
+        "cpu-usage": "Prosessorbruk",
+        "disk-free": "Disk att",
+        "disk-free-percent": "Disk att %",
+        "disk-used": "Disk bruka",
+        "disk-used-percent": "Disk bruka %",
+        "dots": "Prikkar",
+        "focus-hint": "Åtgaumshjelp",
+        "full": "Full",
+        "gauge": "Målar",
+        "glyph": "Symbol",
+        "gpu-temp": "Skjermkorttemperatur",
+        "gpu-usage": "Skjermkortbruk",
+        "gpu-vram": "Skjermkort-VRAM",
+        "graph": "Graf",
+        "graphic": "Grafisk",
+        "hidden": "Gøymd",
+        "icon-and-text": "Merke og tekst",
+        "icon-only": "Berre merke",
+        "icons": "Merke",
+        "id": "ID",
+        "input": "Inndata",
+        "instance": "Kvar stadsetjing",
+        "kilobytes": "kB/s",
+        "megabytes": "MB/s",
+        "minimal": "Minimalistisk",
+        "name": "Namn",
+        "net-rx": "Nettverk inn",
+        "net-tx": "Nettverk ut",
+        "none": "Ingen",
+        "on-hover": "Ved sviv",
+        "output": "Utdata",
+        "percent": "Prosent",
+        "ram-percent": "Minne %",
+        "ram-used": "Minne bruka",
+        "rate": "Rate",
+        "regular": "Vanleg",
+        "replace": "Byt ut",
+        "scroll-gesture": "Ein gong kvar rørsle",
+        "scroll-steps": "Kvart steg",
+        "shared": "Dela",
+        "short": "Kort",
+        "swap-percent": "Swap %",
+        "text": "Tekst",
+        "text-only": "Berre tekst",
+        "time": "Tid",
+        "workspace-label-centered": "I midten",
+        "workspace-label-corner": "Hyrna",
+        "workspace-label-inside": "I pille"
+      },
+      "settings": {
+        "actions": {
+          "description": "Det musrørsler gjer med denne nøytelen. Vel kommando, køyr skalkommando, eller slå han av.",
+          "label": "Rørslegjerningar"
+        },
+        "active-color": {
+          "description": "Leten for aktive personvernsmerke; hex-leter er stødde òg.",
+          "label": "Aktiv-let"
+        },
+        "active-indicator-color": {
+          "description": "Leten for visaren under rutemerket med åtgaum",
+          "label": "Leten for åtgaumsvisaren"
+        },
+        "active-opacity": {
+          "description": "Uklårleiken på merket til ruta med åtgaum.",
+          "label": "Aktiv-merkeuklårleik"
+        },
+        "active-pill-size": {
+          "description": "Minste tillaten arbeidsrompillelengd lagns med stonga, som multiplikator av pilletjukn",
+          "label": "Aktiv-pillestorleik",
+          "workspaces-description": "Minste tillaten arbeidsrompillelengd lagns med stonga, som multiplikator av pilletjukn; merkelappar kan gå utover dette"
+        },
+        "album-art-only": {
+          "description": "Vis berre den runde albumkunsten utan spornamn",
+          "label": "Berre albumkunst"
+        },
+        "anchor": {
+          "description": "Fest denne nøytelen som midtankeret for skipnaden",
+          "label": "Anker"
+        },
+        "art-size": {
+          "description": "Storleik på mediakunst i piksel",
+          "label": "Kunststorleik"
+        },
+        "artist-first": {
+          "description": "Vis kunstnaren før spornamnet (Kunstnar - Spornamn)",
+          "label": "Kunstnar fyrst"
+        },
+        "bands": {
+          "description": "Tal på framsyningsband",
+          "label": "Band"
+        },
+        "cam-filter-regex": {
+          "description": "Regex som kameraprosessnamn overser",
+          "label": "Kameravilkår-regex"
+        },
+        "capsule": {
+          "description": "Teikn ei pille bak denne nøytelen",
+          "label": "Pille"
+        },
+        "capsule-border": {
+          "description": "Leten for pilleomritet; hex-leter er stødde òg.",
+          "label": "Pilleomrit"
+        },
+        "capsule-fill": {
+          "description": "Leten for pillebakgrunnen; hex-leter er stødde òg.",
+          "label": "Pillebakgrunn"
+        },
+        "capsule-foreground": {
+          "description": "Leten for innhald i pilla; hex-leter er stødde òg.",
+          "label": "Pilleframgrunn"
+        },
+        "capsule-opacity": {
+          "description": "Uklårleiken til pillebakgrunnen",
+          "label": "Pilleuklårleik"
+        },
+        "capsule-padding": {
+          "description": "Indre utfylling i pilla",
+          "label": "Pilleutfylling"
+        },
+        "capsule-radius": {
+          "description": "Hyrneradius for denne nøytelpilla; haldt dette tomt for automatisk pilleform, eller set 0 for rette vinklar",
+          "label": "Pilleradius",
+          "taskbar-description": "Hyrneradius for nøytelpilla, arbeidsromdiskmerke og arbeidsromgruppepiller; haldt dette tomt for automatisk pilleform, eller set 0 for rette vinklar ",
+          "workspaces-description": "Hyrneradius for denne nøytelpilla og arbeidsrompiller; haldt dette tomt for automatisk pilleform, eller set 0 for rette vinklar"
+        },
+        "centered": {
+          "description": "Set framsyningsstenger i midten heller enn å skipa dei etter randa",
+          "label": "I midten"
+        },
+        "change-color-on-hover": {
+          "description": "Brigda fyllinga og letene for merkelappane på eit arbeidsrom når peikaren sviv over det",
+          "label": "Brigda let på sviv"
+        },
+        "color": {
+          "description": "Leten for merke og merkelappar til denne nøytelen; hex-leter er stødde òg.",
+          "label": "Let"
+        },
+        "color-1": {
+          "description": "Fyrste gradientlet i framsyninga",
+          "label": "Let 1"
+        },
+        "color-2": {
+          "description": "Andre gradientlet i framsyninga",
+          "label": "Let 2"
+        },
+        "custom-image": {
+          "description": "Bane til eit sjølvvalt bilete. Haldt dette tomt for å bruka merkesymbolet.",
+          "dialog-title": "Vel eit bilete",
+          "label": "Sjølvvalt bilete"
+        },
+        "custom-image-colorize": {
+          "description": "Leta det sjølvvalde biletet lett med innstillinga \"Merkelet\"",
+          "label": "Leta sjølvvalt bilete"
+        },
+        "detached-panel": {
+          "description": "Opna ilåtet som ei flytande fjøl heller enn å binda det til stongranda",
+          "label": "Fri fjøl"
+        },
+        "device": {
+          "description": "Eining å vakta eller styra",
+          "label": "Eining"
+        },
+        "display": {
+          "active-window-description": "Merke, namn eller båe to på vassrette stenger; loddrette stenger kan berre ha merke.",
+          "description": "Visingsmodus for denne nøytelen",
+          "label": "Vising"
+        },
+        "display-mode": {
+          "description": "Teikn batteriet som ei grafisk form, Tabler-symbol eller einast merkelapp",
+          "label": "Visingsmodus"
+        },
+        "drawer": {
+          "description": "Vis ein korgeknapp i stonga og opna ting i ei fjøl",
+          "label": "Bruk ilåtsknapp"
+        },
+        "drawer-columns": {
+          "description": "Kor mange merke det er i kvar rad i ilåtsfjøla",
+          "label": "Ilåtssøyler"
+        },
+        "drawer-item-size": {
+          "description": "Kor stor korgmerka er i ilåtsfjøla i piksel",
+          "label": "Storleik på ilåtsmerke"
+        },
+        "effects-profile-glyphs": {
+          "description": "Gjev merkesymbol namn etter EasyEffects profilnamn",
+          "label": "Verknadsprofilsymbol"
+        },
+        "empty-color": {
+          "description": "Leten for tome arbeidsrom; hex-leter er stødde òg.",
+          "label": "Tomlet"
+        },
+        "enable-scroll": {
+          "description": "Tillat bladhjul og peikeplatebladgjerningar på denne nøytelen",
+          "label": "Slå på blading"
+        },
+        "focused-color": {
+          "description": "Leten for arbeidsromet med åtgaum; hex-leter er stødde òg.",
+          "label": "Åtgaumslet"
+        },
+        "focused-output-only": {
+          "description": "Framheva einast arbeidsromet med åtgaum på skjermen med åtgaum",
+          "label": "Framheva einast skjermen med åtgaum",
+          "taskbar-description": "Bruk åtgaumsleten einast for arbeidsromet med åtgaum på skjermen med mus- eller knappefjølsåtgaum; andre skjermar brukar innhaldsleten",
+          "workspaces-description": "Framheva arbeidsromet med åtgaum einast på skjermen med mus- eller knappefjølsåtgaum; andre skjermar viser arbeidsroma sine med innhald"
+        },
+        "font-family": {
+          "description": "Skrifttype for denne nøytelen; haldt dette tomt for å erva skrifttypen på stonga",
+          "label": "Skrifttype"
+        },
+        "font-weight": {
+          "description": "Standard erver vekta frå skrifttypen på stongen",
+          "label": "Skrifttypevekt"
+        },
+        "format": {
+          "description": "Tidsformatteringstreng",
+          "label": "Formattering"
+        },
+        "glyph": {
+          "description": "Merkesymbolnamn",
+          "label": "Symbol",
+          "sysmon-description": "Sjølvvalt merkesymbol. Haldt dette tomt for å bruka merket for den valde statistikken",
+          "volume-description": "Sjølvvalt merkesymbol. Haldt dette tomt for å bruka dei innebygde dynamiske merka."
+        },
+        "glyph-position": {
+          "description": "Rekkefylgja for symbol i høve til tekst / graf / målar",
+          "label": "Symbolstad"
+        },
+        "group-by-workspace": {
+          "description": "Del merke på oppgåvelina inn i arbeidsromspiller når kompositordata er tilgjengeleg",
+          "label": "Del etter arbeidsrom"
+        },
+        "group-single-icon-per-app": {
+          "description": "Når Noctalia delar etter arbeidsrom med merke, slå saman mange ruter frå same appen til eitt merke og eit tal.",
+          "label": "Eit merke for kvar app"
+        },
+        "height": {
+          "description": "Nøytelhøgd i piksel",
+          "label": "Høgd"
+        },
+        "hidden": {
+          "description": "Ting-ID å gøyma i korga",
+          "label": "Gøymde ting"
+        },
+        "hide-album-art": {
+          "description": "Gøym platekunst",
+          "label": "Gøym platekunst"
+        },
+        "hide-artist": {
+          "description": "Gøym artistnamnet og vis berre spornamn",
+          "label": "Gøym artist"
+        },
+        "hide-empty-workspaces": {
+          "description": "Når Noctalia delar etter arbeidsrom, ikkje tak med piller utan køyrande ruter i lista på oppgåvelina.",
+          "label": "Gøym tome arbeidsrom"
+        },
+        "hide-inactive": {
+          "description": "Gøym inaktive personvernsmerke og gøym nøytelen når inkje har åtgaum",
+          "label": "Gøym inaktiv"
+        },
+        "hide-when-empty": {
+          "description": "Gøym arbeidsrompiller når det er ingen opne ruter",
+          "label": "Gøym når tom",
+          "workspaces-description": "Gøym arbeidsrompiller utan opne ruter"
+        },
+        "hide-when-full": {
+          "description": "Gøym batterinøytelen når fullt ladt",
+          "label": "Gøym når fullt"
+        },
+        "hide-when-no-connected-device": {
+          "description": "Gøym Bluetooth-nøytelen når ingen einingar er kopla til",
+          "label": "Gøym når inga tilkopla eining"
+        },
+        "hide-when-no-media": {
+          "description": "Gøym medianøytelen når ingen MPRIS-avspelar er aktiv",
+          "label": "Gøym når inkje spelar av"
+        },
+        "hide-when-no-unread": {
+          "description": "Gøym varselnøytelen når det er ingen ulesne varsel",
+          "label": "Gøym når ingen nye"
+        },
+        "hide-when-off": {
+          "description": "Gøym låseknappvisaren når inaktiv",
+          "label": "Gøym når av"
+        },
+        "hide-when-plugged": {
+          "description": "Gøym batterinøytelen når kopla opp til vekselstraum",
+          "label": "Gøym når trådbunde"
+        },
+        "hide-when-single-layout": {
+          "description": "Gøym knappefjøloppsettnøytelen minder fleire enn eitt oppsett er tilmåta",
+          "label": "Gøym når eitt oppsett"
+        },
+        "highlight-color": {
+          "description": "Leten på eller over den kritiske treskelen",
+          "label": "Framhevingslet"
+        },
+        "hot-reload": {
+          "description": "Lasta inn den programmerte nøytelen å nyo når brunnen brigdar",
+          "label": "Snøgg nylasting"
+        },
+        "icon-color": {
+          "description": "Overstyrer nøytelleten einast for merke; hex-leter er stødde òg.",
+          "label": "Merkelet"
+        },
+        "icon-size": {
+          "description": "Merkestorleik i piksel",
+          "label": "Merkestorleik"
+        },
+        "icon-spacing": {
+          "description": "Rom mellom personvernsvisarmerke i piksel",
+          "label": "Merkemellomrom"
+        },
+        "inactive-color": {
+          "description": "Leten bruka på inaktive personvernsvisarar; hex-leter er stødde òg.",
+          "label": "Inaktiv-let"
+        },
+        "inactive-opacity": {
+          "description": "Uklårleik på merke for ruter utan åtgaum.",
+          "label": "Uklårleik på inaktiv-merke"
+        },
+        "inactive-pill-size": {
+          "description": "Minste tillaten lengd for piller som viser inaktive arbeidsrom langs med stonga, som multiplikator på pilletjukn",
+          "label": "Inaktiv-pilletjukn",
+          "workspaces-description": "Minste tillaten lengd for piller som viser inaktive arbeidsrom langs med stonga, som multiplikator på pilletjukn; merkelappar kan gå utover dette"
+        },
+        "interactive": {
+          "description": "Tillata peikarsviv, trykk, blading og hjelpetekst på denne nøytelen",
+          "label": "Interaktiv"
+        },
+        "interface": {
+          "description": "Nettverkgrensesnitt til skjerm; haldt dette tomt for å bruka summen over alle grensesnitt",
+          "label": "Grensesnitt"
+        },
+        "label": {
+          "description": "Valfri ubrigdande tekst vist på knappen",
+          "label": "Merkelapp"
+        },
+        "label-content": {
+          "description": "Det merkelappen for straum viser: ladingsprosent, tid att eller straumtrekk",
+          "label": "Merkelappsinnhald"
+        },
+        "label-min-width": {
+          "description": "Minste tillaten breidd på merkelappar i piksel for å hindra auke og minking",
+          "label": "Merkelapp min breidd"
+        },
+        "label-show-units": {
+          "description": "Vis einingar som prosent / GiB / °C",
+          "label": "Vis einingar"
+        },
+        "label-source": {
+          "description": "Det merkelappar for arbeidsrom viser",
+          "label": "Merkelappsbrunn"
+        },
+        "labels-only-when-occupied": {
+          "description": "Gøym arbeidsrommerkelappar på tome arbeidsrom utan åtgaum",
+          "label": "Merkelappar berre med innhald",
+          "workspaces-description": "Vis arbeidsrom-ID eller namnemerkelappar på arbeidsrom med opne ruter og på arbeidsromet med åtgaum endå det er tomt; andre tome taggar held seg utan merkelapp"
+        },
+        "length": {
+          "description": "Lengd på mellomrom i piksel",
+          "label": "Lengd"
+        },
+        "match-adjacent-spacing": {
+          "description": "Vidka gap mellom korgemerke på lina for å vera lik mellomromet på grannenøytlar på stonga (medrekna pilleutfylling)",
+          "label": "Lik mellomrom på grannenøytlar"
+        },
+        "max-label-chars": {
+          "description": "Høgst tillate tal på teikn å visa for arbeidsromnamn",
+          "label": "Høgst tal teikn",
+          "workspaces-description": "Høgst tillate tal på teikn i merkelappar for arbeidsromnamn"
+        },
+        "max-length": {
+          "description": "Største tillaten nøytellengd i piksel",
+          "label": "Største lengd"
+        },
+        "mic-filter-regex": {
+          "description": "Regex som mikrofonprosessnamn overser",
+          "label": "Mikrofonvilkår-regex"
+        },
+        "min-length": {
+          "description": "Minste tillaten nøytellengd i piksel",
+          "label": "Minste lengd"
+        },
+        "minimal": {
+          "description": "Vis einast arbeidsrom-id eller namnemerkelappar, utan animerte piller",
+          "label": "Måtehalden stil",
+          "taskbar-description": "Einast tekst på arbeidsrommerkelappar, utan leta bakgrunnar"
+        },
+        "mirrored": {
+          "description": "Spegla framsyninga kring midtpunktet",
+          "label": "Spegla"
+        },
+        "mute-color": {
+          "description": "Leten for merket og merkelappen når dempa; hex-leter er stødde òg.",
+          "label": "Dempelet"
+        },
+        "mute-glyph": {
+          "description": "Merkesymbol bruka når dempa eller på 0 % ljodstyrke. Haldt dette tomt for å bruka det innebygde dempesymbolet.",
+          "label": "Dempesymbol"
+        },
+        "network-speed-compact": {
+          "description": "Bruk korte einingar, til dømes 1,2 M heller enn 1,2 MB/s",
+          "label": "Tett nettverkssnøggleik"
+        },
+        "network-speed-unit": {
+          "description": "Eininga bruka for nettverkssnøggleik inn og ut; skifter automatisk mellom B/s, kB/s, MB/s og GB/s",
+          "label": "Eining for nettverkssnøggleik"
+        },
+        "occupied-color": {
+          "description": "Leten for arbeidsrom med ruter i; hex-leter er stødde òg.",
+          "label": "Innhaldslet"
+        },
+        "only-active-workspace": {
+          "description": "Gøym ruter i arbeidsrom utan åtgaum.",
+          "label": "Berre arbeidsrom med åtgaum"
+        },
+        "path": {
+          "description": "Bane bruka av diskstatistikk",
+          "label": "Bane"
+        },
+        "pill-scale": {
+          "description": "Måta til tilhøvet til arbeidsrompiller",
+          "label": "Pilleskala",
+          "workspaces-description": "Måta til skalaen åt arbeidsrompiller"
+        },
+        "pinned": {
+          "description": "Korgting-ID som held seg synleg på stonga når ilåtsmodus er på",
+          "label": "Feste ting",
+          "taskbar-description": "Skrivebordsappar som held seg på oppgåvelina når dei ikkje køyrer; oversett medan Del etter arbeidsrom er på",
+          "taskbar-label": "Feste appar"
+        },
+        "pinned-opacity": {
+          "description": "Uklårleiken på feste appar som ikkje køyrer no",
+          "label": "Uklårleik på feste appar"
+        },
+        "reversed": {
+          "description": "Vend om frekvensrekkjefylgja til stengene frå låg-til-høg til høg-til-låg",
+          "label": "Omvendt"
+        },
+        "scale": {
+          "description": "Brigda storleiken på denne nøytelen i høve til innhaldsskala på stonga",
+          "label": "Skala"
+        },
+        "scope": {
+          "description": "Køyr éi skriftkøyretid for kvar nøytelstadsetjing, eller dela éi øykt over alle stenger med same nøytel-id",
+          "label": "Køyretidsråme"
+        },
+        "script": {
+          "description": "Bane til lua-skrifta",
+          "label": "Skrift"
+        },
+        "scroll-repeat": {
+          "description": "Vel om bladgjerningar fylgjer kommandosemantikk, køyrer éin gong kvar rørsle, eller tek seg opp att med kvart bladsteg",
+          "label": "Bladoppattak"
+        },
+        "show-active-indicator": {
+          "description": "Vis ein liten prikk under rutemerket med åtgaum på oppgåvelina.",
+          "label": "Åtgaumsvisar"
+        },
+        "show-all-outputs": {
+          "description": "Tak med ruter frå alle skjermar på denne nøytelen.",
+          "label": "Vis alle skjermar"
+        },
+        "show-all-workspaces": {
+          "description": "Vis arbeidsrom frå alle skjermar på denne nøytelen",
+          "label": "Vis alle skjermar"
+        },
+        "show-caps-lock": {
+          "description": "Vis Storlåsstoda",
+          "label": "Vis Storlås"
+        },
+        "show-condition": {
+          "description": "Vis vêrtekst",
+          "label": "Vis vêr"
+        },
+        "show-empty-label": {
+          "description": "Vis vikartekst når ingen ruter har åtgaum, heller enn å gøyma nøytelen",
+          "label": "Vis tom merkelapp"
+        },
+        "show-glyph": {
+          "description": "Vis nøytelsymbolet eller sjølvvalt bilete",
+          "label": "Vis symbol"
+        },
+        "show-label": {
+          "description": "Vis merkelappen til nøytelen",
+          "label": "Vis merkelapp"
+        },
+        "show-labels": {
+          "description": "Vis merkelappar på arbeidsrom",
+          "label": "Vis merkelappar"
+        },
+        "show-num-lock": {
+          "description": "Vis Tallåsstoda",
+          "label": "Vis Tallås"
+        },
+        "show-scroll-lock": {
+          "description": "Vis Bladlåsstoda",
+          "label": "Vis Bladlås"
+        },
+        "show-temperature": {
+          "description": "Vis tekst for temperaturen no",
+          "label": "Vis temperatur"
+        },
+        "show-unlock-hint": {
+          "description": "Vis stodekortet over innskrivingsfeltet til opplåsingshjelp og sanningsleietekst. Feil og Storlåsåtvaringar viser seg enno når dette er avslege.",
+          "label": "Opplåsingshjelp"
+        },
+        "show-value": {
+          "description": "Vis verdet no attmed visaren",
+          "label": "Vis verde"
+        },
+        "show-vpn-label": {
+          "description": "Byter ut nettverksnamn med VPN-namn i Utbytemodus; legg til VPN-namn attmed VPN-merke i Bådemodus",
+          "label": "Vis VPN-namn"
+        },
+        "show-when-idle": {
+          "description": "Haldt framsyninga synleg endå inkje spelar av",
+          "label": "Vis når uvyrk"
+        },
+        "show-window-title": {
+          "description": "Vis rutenamnet attmed merket (berre på vassrette stenger)",
+          "label": "Vis rutenamn"
+        },
+        "show-workspace-label": {
+          "description": "Vis arbeidsromtaggen på oppgåvelinepiller i grupper; slå av for grupper med berre merke.",
+          "label": "Merkelapp for arbeidsrompiller"
+        },
+        "stat": {
+          "description": "Systemstatistikk å visa",
+          "label": "Statistikk"
+        },
+        "style": {
+          "description": "Utsjånad for arbeidsrombytar",
+          "label": "Stil",
+          "workspaces-description": "Vanleg viser animerte piller; Minimalistisk er berre tekst; Åtgaumshjelp gjev prikkar for arbeidsrom utan åtgaum og ei auka pille med merke med appen med åtgaum"
+        },
+        "taskbar-max-width": {
+          "description": "Kor brei alt i hop kan vera; rutenamn minskar seg for å høva seg og gøymer seg når dei er for smale ",
+          "label": "Oppgåvelina størst breidd"
+        },
+        "text": {
+          "description": "Tekst vist på stonga",
+          "label": "Tekst"
+        },
+        "timezone": {
+          "description": "Tidssone (e.g. Europe/Berlin) å bruka for denne klokka; haldt dette tomt for å nytta systemklokka. Må vera på engelsk.",
+          "label": "Tidssone"
+        },
+        "title-scroll": {
+          "description": "Når nøytelnamnet skal rulla",
+          "label": "Namnerull"
+        },
+        "tooltip": {
+          "description": "Hjelpetekst ved sviv over knappen",
+          "label": "Hjelpetekst"
+        },
+        "tooltip-format": {
+          "description": "Valfri formattering for hjelpeteksten",
+          "label": "Hjelpetekstformattering"
+        },
+        "type": {
+          "description": "Innebygd nøytelsort for denne nøytelen med namn",
+          "label": "Sort"
+        },
+        "urgent-color": {
+          "description": "Let bruka på naudarbeidsrom; hex-leter er stødde òg",
+          "label": "Naudlet"
+        },
+        "vertical-format": {
+          "description": "Valfri formattering bruka på loddrette stenger",
+          "label": "Loddrett formattering"
+        },
+        "visualization": {
+          "description": "Målar, graf eller ingen dataframsyning",
+          "label": "Framsyning"
+        },
+        "vpn-status": {
+          "description": "Korleis VPN-stoda viser seg: Byt ut byter ut nettverksmerke for VPN-skjold, Både viser dei attmed kvarandre, Gøymd slår av VPN-visaren",
+          "label": "VPN-stode"
+        },
+        "warning-color": {
+          "description": "Leten når straum er på eller under treskelen for batteriåtvaring",
+          "label": "Åtvaringslet"
+        },
+        "width": {
+          "description": "Nøytelbreidd i piksel",
+          "label": "Breidd"
+        },
+        "window-title-max-width": {
+          "description": "Største tillaten breidd i piksel for rutenamn",
+          "label": "Rutenamn største breidd"
+        },
+        "workspace-group-capsule": {
+          "description": "Teikna bakgrunnen og omritet kring kvar arbeidsrom i ei gruppe. Slå av for å halda merkegrupper og arbeidsromdiskar som dei er, med berre merkelappar.",
+          "label": "Arbeidsromgruppepille"
+        },
+        "workspace-group-content": {
+          "description": "Det kvar arbeidsromgruppe viser: appmerke, rutetal eller prikkar (opp til fem, då +N for resten)",
+          "label": "Gruppeinnhald"
+        },
+        "workspace-label-placement": {
+          "description": "Hyrna, med midtpunkt på randa, eller inne i pilla.",
+          "label": "Stad for arbeidsrommerkelapp"
+        }
+      },
+      "types": {
+        "active-window": "Rute med åtgaum",
+        "audio-visualizer": "Ljodframsyning",
+        "battery": "Batteri",
+        "bluetooth": "Bluetooth",
+        "brightness": "Ljosstyrke",
+        "caffeine": "Koffein",
+        "clipboard": "Utklippstavle",
+        "clock": "Klokke",
+        "control-center": "Styrerom",
+        "custom-button": "Sjølvvald knapp",
+        "keyboard-layout": "Knappefjøloppsett",
+        "launcher": "Programveljar",
+        "lock-keys": "Låseknappar",
+        "media": "Media",
+        "network": "Nettverk",
+        "nightlight": "Natteljos",
+        "notifications": "Varsel",
+        "power-profile": "Straumprofil",
+        "privacy": "Personvernsvisar",
+        "screenshot": "Skjermbilete",
+        "scripted": "Programmert",
+        "session": "Øykt",
+        "settings": "Innstillingar",
+        "spacer": "Mellomrom",
+        "sysmon": "Systemvakt",
+        "taskbar": "Oppgåvelina",
+        "test": "Test",
+        "text": "Tekst",
+        "theme-mode": "Hammodus",
+        "tray": "Korg",
+        "volume": "Ljodstyrke",
+        "wallpaper": "Bakgrunnsbilete",
+        "weather": "Vêr",
+        "workspaces": "Arbeidsrom"
+      }
+    },
+    "window": {
+      "export-config": "Før ut tilmåting ...",
+      "export-config-saved": "Tilmåtingsutførsle lagra.",
+      "filter-overridden": "Overstyrt",
+      "legacy-config-warning": "Utdatert innstilling: {issue}. Brigda på dette brunnoppslag; Noctalia legg til dette utbytet berre mellombels. Køyr nocatlia config validate for å sjå alle dei naudsynlege brigda.",
+      "native-title": "Noctalia-innstillingar",
+      "no-results": "Ingen innstillingar funne",
+      "no-results-hint": "Prøv med eit anna innstillingsnamn eller config-lykel.",
+      "offline-mode-notice": {
+        "appearance": "Nedlasta palettar frå samfunnet kjem ikkje til å verka.",
+        "calendar-account": "Kalenderfinning og synkronisering kjem ikkje til å verka.",
+        "disable-hint": "Slå av avnetes-modus i Tryggleik.",
+        "launcher": "Noctalia kjem ikkje til å kunna henta valutakurs.",
+        "location": "Vêr og stadfinning kjem ikkje til å verka.",
+        "plugin-store": "Utvidingskatalogen og -nedlasting kjem ikkje til å verka.",
+        "plugins": "HTTP-spurnader frå utvidingar kjem ikkje til å verka. Git-brunnar kan oppdatera enno.",
+        "security": "Ekstern IP-finning og telemetri kjem ikkje til å verka.",
+        "services": "Synkronisering av kalenderkonto kjem ikkje til å verka.",
+        "template-store": "Nedlasting av malar frå samfunnet kjem ikkje til å verka.",
+        "templates": "Nedlasting og oppdatering av malar frå samfunnet kjem ikkje til å verka.",
+        "title": "Avnetes-modus"
+      },
+      "reset-page": "Nullstill sida",
+      "reset-page-confirm": "Stadfest nullstilling",
+      "search-placeholder": "Leita i innstillingane ...",
+      "search-truncated": "Viser dei fyrste {count} svara. Høva inn søket ditt for å få betre utfall.",
+      "support-report": "Støtterapport",
+      "support-report-saved": "Støtterapport lagra.",
+      "support-report-title": "Lagra støtterapport",
+      "title": "Innstillingar"
+    }
+  },
+  "setup-wizard": {
+    "browse": "Leita",
+    "builtin-palette": "Innebygd palett",
+    "footer-note": "Du kan brigda på desse seinare i innstillingane.",
+    "get-started": "Tak til",
+    "mode": "Modus",
+    "no-wallpaper-selected": "Du har ikkje valt eit bakgrunnsbilete",
+    "select-wallpaper": "Vel eit bakgrunnsbilete",
+    "subtitle": "Nokre snøggval for å hjelpa deg taka til.",
+    "title": "Velkomen åt Noctalia!",
+    "wallpaper": "Bakgrunnsbilete",
+    "wallpaper-scheme": "Bakgrunnsbilete letmønster"
+  },
+  "system": {
+    "hardware": {
+      "unknown": "Ukjent",
+      "unknown-cpu": "Ukjend prosessor",
+      "unknown-distro": "Ukjend linux-dåm",
+      "unknown-gpu": "Ukjent skjermkort"
+    }
+  },
+  "theme": {
+    "scheme": {
+      "dysfunctional": "Uverksam",
+      "faithful": "Trufast",
+      "m3-content": "M3 Content",
+      "m3-fruit-salad": "M3 Fruit Salad",
+      "m3-monochrome": "M3 Monochrome",
+      "m3-rainbow": "M3 Rainbow",
+      "m3-tonal-spot": "M3 Tonal Spot",
+      "muted": "Dempa",
+      "soft": "Mjuk",
+      "vibrant": "Livleg"
+    }
+  },
+  "time": {
+    "duration": {
+      "less-than-day": "mindre enn 1 dag",
+      "less-than-minute": "< 1 m",
+      "three-parts": "{first} {second} {third}",
+      "two-parts": "{first} {second}"
+    },
+    "file": {
+      "unknown": "Ukjend"
+    },
+    "relative": {
+      "days-ago": "for {count} dag sidan",
+      "days-ago-plural": "for {count} dagar sidan",
+      "hours-ago": "for {count} t sidan",
+      "hours-ago-plural": "for {count} t sidan",
+      "just-now": "nett no",
+      "minutes-ago": "for {count} min sidan",
+      "minutes-ago-plural": "for {count} min sidan"
+    },
+    "units": {
+      "day": "{count} dag",
+      "day-plural": "{count} dagar",
+      "hour": "{count} time",
+      "hour-compact": "{count}t",
+      "hour-plural": "{count} timar",
+      "minute": "{count} minutt",
+      "minute-compact": "{count}m",
+      "minute-plural": "{count} minutt",
+      "month": "{count} månad",
+      "month-plural": "{count} månader",
+      "year": "{count} år",
+      "year-plural": "{count} år"
+    }
+  },
+  "tray": {
+    "menu": {
+      "empty": "Ingen menyoppslag ...",
+      "pin": "Fest",
+      "unpin": "Fest frå"
+    }
+  },
+  "ui": {
+    "controls": {
+      "search-picker": {
+        "empty": "Ingen utkomer",
+        "placeholder": "Leita ..."
+      },
+      "select": {
+        "placeholder": "Vel noko"
+      }
+    },
+    "dialogs": {
+      "color-picker": {
+        "title": "Let"
+      },
+      "file": {
+        "actions": {
+          "open": "Opna",
+          "save": "Lagra",
+          "select-folder": "Vel mappe"
+        },
+        "empty-filtered": "Ingen filer samsvarar med vilkåret",
+        "entry": {
+          "folder": "Mappe"
+        },
+        "filename-placeholder": "Filnamn",
+        "filter-placeholder": "Vilkår ...",
+        "sort": {
+          "ascending": "↑",
+          "date": "Dato",
+          "descending": "↓",
+          "name": "Namn",
+          "size": "Storleik"
+        },
+        "title": {
+          "default": "Filval",
+          "open": "Opna fil",
+          "save": "Lagra fil",
+          "select-folder": "Vel mappe"
+        }
+      },
+      "glyph-picker": {
+        "all-categories": "Alle",
+        "search-placeholder": "Leita etter symbol ...",
+        "title": "Vel eit symbol"
+      }
+    }
+  },
+  "wallpaper": {
+    "panel": {
+      "all-monitors": "ALLE",
+      "color-title": "Leten på bakgrunnsbilete",
+      "filter-placeholder": "Vilkår ...",
+      "flatten": "Gjera flat",
+      "loading": "Lastar inn bakgrunnsbilete ...",
+      "sort-date-asc": "Sorter med dato (eldst fyrst)",
+      "sort-date-desc": "Sorter med dato (yngst fyrst)",
+      "sort-name-asc": "Sorter med namn (A - Å)",
+      "sort-name-desc": "Sorter med namn (Å - A)",
+      "sort-random": "Sorter vilkårleg (stokka)",
+      "title": "Bakgrunnsbilete"
+    }
+  },
+  "weather": {
+    "conditions": {
+      "full": {
+        "clear-sky": "Klår himmel",
+        "drizzle": "Yr",
+        "fog": "Skodde",
+        "mainly-clear": "Klår for det meste",
+        "overcast": "Svært skyut",
+        "partly-cloudy": "Delvis skyut",
+        "rain-showers": "Regnbyer",
+        "snow": "Snø",
+        "snow-showers": "Snøelingar",
+        "thunderstorm": "Torevêr",
+        "unknown": "Ukjent"
+      },
+      "short": {
+        "clear": "Klår",
+        "cloudy": "Skyut",
+        "drizzle": "Yr",
+        "fog": "Skodde",
+        "mostly-clear": "Klår for det meste",
+        "overcast": "Svært skyut",
+        "showers": "Byer",
+        "snow": "Snø",
+        "snow-showers": "Snøelingar",
+        "storm": "Storm",
+        "weather": "Vêr"
+      }
+    },
+    "errors": {
+      "fetch-failed": "Vêrhenting gjekk gale",
+      "parse-weather": "Kunne ikkje tolka vêrsvaret"
+    }
+  },
+  "window-switcher": {
+    "empty": "Ingen opne ruter",
+    "hint": "Tab · Shift+Tab · Piler · Lyft frå Alt for å skifta · Esc for å bryta av",
+    "title": "Ruter"
+  }
+}

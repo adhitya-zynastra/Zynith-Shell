@@ -1,0 +1,88 @@
+#pragma once
+
+#include "core/timer_manager.h"
+#include "shell/bar/widget.h"
+
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <unordered_set>
+
+class Image;
+class InputArea;
+class HttpClient;
+class Glyph;
+class Label;
+class MprisService;
+class Renderer;
+class ProgressBar;
+struct MprisPlayerInfo;
+struct wl_output;
+
+enum class MediaTitleScrollMode : std::uint8_t {
+  None,
+  Always,
+  OnHover,
+};
+
+class MediaWidget : public Widget {
+public:
+  struct Options {
+    int maxWidth = 220;
+    int minWidth = 80;
+    int artSize = 16;
+    MediaTitleScrollMode titleScrollMode = MediaTitleScrollMode::None;
+    bool hideWhenNoMedia = false;
+    bool albumArtOnly = false;
+    bool hideAlbumArt = false;
+    bool hideArtist = false;
+    bool artistFirst = false;
+    bool showProgress = false;
+  };
+
+  MediaWidget(MprisService* mpris, HttpClient* httpClient, wl_output* output, Options options);
+
+  void create() override;
+
+private:
+  void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
+  void doUpdate(Renderer& renderer) override;
+  void applyTitleScrollMode(bool titleVisible);
+  void syncState(Renderer& renderer, const std::optional<MprisPlayerInfo>& active);
+  void syncWidgetVisibility(bool hasMedia);
+  // Applies playback position to the fill and arms the update timer. Update-phase only: it decides
+  // eligibility itself instead of reading the visibility that doLayout() applies afterwards.
+  void syncProgress(const std::optional<MprisPlayerInfo>& active);
+  [[nodiscard]] bool progressFillEligible(const std::optional<MprisPlayerInfo>& active) const noexcept;
+  [[nodiscard]] std::optional<MprisPlayerInfo> activePlayer() const;
+  [[nodiscard]] static std::string buildDisplayText(const MprisPlayerInfo& player, bool hideArtist, bool artistFirst);
+
+  MprisService* m_mpris = nullptr;
+  HttpClient* m_httpClient = nullptr;
+  float m_maxWidth = 220.0F;
+  float m_minWidth = 80.0F;
+  float m_artSize = 16.0F;
+  MediaTitleScrollMode m_titleScrollMode = MediaTitleScrollMode::None;
+  bool m_hideWhenNoMedia = false;
+  bool m_albumArtOnly = false;
+  bool m_hideAlbumArt = false;
+  bool m_hideArtist = false;
+  bool m_artistFirst = false;
+  bool m_showProgress = false;
+  // Cached from the last doLayout(); the update phase has no container extents of its own.
+  bool m_isVertical = false;
+  bool m_progressFillVisible = false;
+  InputArea* m_area = nullptr;
+  Image* m_art = nullptr;
+  Glyph* m_emptyGlyph = nullptr;
+  Label* m_label = nullptr;
+  ProgressBar* m_progressBar = nullptr;
+
+  std::string m_lastText;
+  std::string m_lastArtUrl;
+  std::string m_lastPlaybackStatus;
+  std::unordered_set<std::string> m_pendingArtDownloads;
+  std::shared_ptr<void> m_aliveGuard = std::make_shared<int>(0);
+  Timer m_progressTimer;
+};
