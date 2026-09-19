@@ -86,7 +86,7 @@ public:
   // lockfade: visual-only transitions. They never touch authentication or lock state.
   // Entrance runs once, before the first frame is painted; exit fades the UI out ahead of unlock.
   void playExit();
-  static constexpr float kExitDurationMs = 380.0F;
+  static constexpr float kExitDurationMs = 304.0F; // base; / speed 0.8 = the approved 380 ms
 
   [[nodiscard]] bool firstFrameRendered() const noexcept { return m_firstFrameRendered; }
   void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }

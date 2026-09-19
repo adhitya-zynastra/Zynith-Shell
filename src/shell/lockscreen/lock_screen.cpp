@@ -13,6 +13,7 @@
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
+#include "render/animation/motion_service.h"
 #include "render/render_context.h"
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/keyboard_layout_label.h"
@@ -22,6 +23,7 @@
 #include "wayland/wayland_seat.h"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <thread>
 
@@ -936,8 +938,12 @@ void LockScreen::beginUnlockTransition() {
       instance.surface->playExit();
     }
   }
+  // Match the surfaces' fades exactly: AnimationManager divides durations by the global
+  // [shell.animation] speed and skips them when animations are disabled.
+  const auto& motion = MotionService::instance();
+  const float exitMs = motion.enabled() ? LockSurface::kExitDurationMs / std::max(0.05F, motion.speed()) : 0.0F;
   m_unlockTransitionTimer.start(
-      std::chrono::milliseconds(static_cast<int>(LockSurface::kExitDurationMs)), [this]() {
+      std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
         requestCompositorCrossfade(0);
         unlock();
       }

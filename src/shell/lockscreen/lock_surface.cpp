@@ -1309,6 +1309,9 @@ void LockSurface::updateCopy() {
 }
 
 // ── lockfade ────────────────────────────────────────────────────────────────
+// Durations below are *base* values: AnimationManager divides them by [shell.animation] speed.
+// They were tuned and approved at speed 1.6 and halved when the desktop moved to 0.8, so the
+// effective timings are unchanged (e.g. 210 ms base fade -> 262 ms on screen).
 // Visual state only. Everything here is driven by m_animations (the surface's existing
 // frame-clock animation manager): no timers of our own, no threads, no polling, and it
 // honours the global animation speed / reduced-motion settings.
@@ -1345,9 +1348,9 @@ void LockSurface::playEntrance() {
   }
   std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
 
-  constexpr float kBaseDelayMs = 140.0F; // let the compositor crossfade reveal the wallpaper first
-  constexpr float kStepMs = 40.0F;
-  constexpr float kFadeMs = 420.0F;
+  constexpr float kBaseDelayMs = 70.0F;  // let the compositor crossfade reveal the wallpaper first
+  constexpr float kStepMs = 20.0F;
+  constexpr float kFadeMs = 210.0F;
   float delayMs = kBaseDelayMs;
   for (Node* node : nodes) {
     node->setOpacity(0.0F);
@@ -1373,9 +1376,9 @@ void LockSurface::syncPromptPresentation() {
   }
   m_promptShown = wantShown;
   if (wantShown) {
-    fadeNode(m_loginPanel, 1.0F, 220.0F, 0.0F, Easing::EaseOutCubic);
+    fadeNode(m_loginPanel, 1.0F, 110.0F, 0.0F, Easing::EaseOutCubic);
   } else {
-    fadeNode(m_loginPanel, 0.0F, 260.0F, 0.0F, Easing::EaseInOutQuad);
+    fadeNode(m_loginPanel, 0.0F, 130.0F, 0.0F, Easing::EaseInOutQuad);
   }
 }
 
@@ -1388,8 +1391,8 @@ void LockSurface::playExit() {
 
   // Password pill leaves first, then the composition recedes top-to-bottom, all within
   // kExitDurationMs so LockScreen can unlock exactly when the UI has gone.
-  fadeNode(m_loginPanel, 0.0F, 160.0F, 0.0F, Easing::EaseOutQuad);
-  fadeNode(m_authPanel, 0.0F, 160.0F, 0.0F, Easing::EaseOutQuad);
+  fadeNode(m_loginPanel, 0.0F, 80.0F, 0.0F, Easing::EaseOutQuad);
+  fadeNode(m_authPanel, 0.0F, 80.0F, 0.0F, Easing::EaseOutQuad);
 
   if (m_widgetLayer != nullptr) {
     std::vector<Node*> nodes;
@@ -1398,10 +1401,10 @@ void LockSurface::playExit() {
     }
     std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
 
-    constexpr float kStartMs = 40.0F;
-    constexpr float kFadeMs = 260.0F;
+    constexpr float kStartMs = 20.0F;
+    constexpr float kFadeMs = 130.0F;
     const float spanMs = kExitDurationMs - kStartMs - kFadeMs;
-    const float stepMs = nodes.size() > 1 ? std::min(15.0F, spanMs / static_cast<float>(nodes.size() - 1)) : 0.0F;
+    const float stepMs = nodes.size() > 1 ? std::min(7.5F, spanMs / static_cast<float>(nodes.size() - 1)) : 0.0F;
     float delayMs = kStartMs;
     for (Node* node : nodes) {
       fadeNode(node, 0.0F, kFadeMs, delayMs, Easing::EaseInOutQuad);
