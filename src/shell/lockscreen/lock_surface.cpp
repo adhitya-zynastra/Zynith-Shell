@@ -1382,17 +1382,20 @@ void LockSurface::syncPromptPresentation() {
   }
 }
 
-void LockSurface::playExit() {
+float LockSurface::playExit() {
   if (m_exiting) {
-    return;
+    return m_exitEndBaseMs;
   }
   m_exiting = true;
   m_promptShown = false;
 
-  // Password pill leaves first, then the composition recedes top-to-bottom, all within
-  // kExitDurationMs so LockScreen can unlock exactly when the UI has gone.
-  fadeNode(m_loginPanel, 0.0F, 80.0F, 0.0F, Easing::EaseOutQuad);
-  fadeNode(m_authPanel, 0.0F, 80.0F, 0.0F, Easing::EaseOutQuad);
+  // Password pill leaves first, then the composition recedes top-to-bottom. The widget fade
+  // length is derived so the LAST fade ends exactly at kExitDurationMs; the returned end time
+  // is what LockScreen waits for, so timer and visuals cannot drift apart.
+  constexpr float kPillFadeMs = 80.0F;
+  fadeNode(m_loginPanel, 0.0F, kPillFadeMs, 0.0F, Easing::EaseOutQuad);
+  fadeNode(m_authPanel, 0.0F, kPillFadeMs, 0.0F, Easing::EaseOutQuad);
+  float endBaseMs = kPillFadeMs;
 
   if (m_widgetLayer != nullptr) {
     std::vector<Node*> nodes;
@@ -1402,16 +1405,20 @@ void LockSurface::playExit() {
     std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
 
     constexpr float kStartMs = 20.0F;
-    constexpr float kFadeMs = 130.0F;
-    const float spanMs = kExitDurationMs - kStartMs - kFadeMs;
-    const float stepMs = nodes.size() > 1 ? std::min(7.5F, spanMs / static_cast<float>(nodes.size() - 1)) : 0.0F;
+    constexpr float kStepMs = 7.5F;
+    constexpr float kMinFadeMs = 130.0F;
+    const float staggerMs = nodes.empty() ? 0.0F : kStepMs * static_cast<float>(nodes.size() - 1);
+    const float fadeMs = std::max(kMinFadeMs, kExitDurationMs - kStartMs - staggerMs);
     float delayMs = kStartMs;
     for (Node* node : nodes) {
-      fadeNode(node, 0.0F, kFadeMs, delayMs, Easing::EaseInOutQuad);
-      delayMs += stepMs;
+      fadeNode(node, 0.0F, fadeMs, delayMs, Easing::EaseInOutQuad);
+      endBaseMs = std::max(endBaseMs, delayMs + fadeMs);
+      delayMs += kStepMs;
     }
   }
+  m_exitEndBaseMs = endBaseMs;
   requestUpdate();
+  return endBaseMs;
 }
 
 std::vector<SessionPanelActionConfig> LockSurface::resolveSessionActions() const {

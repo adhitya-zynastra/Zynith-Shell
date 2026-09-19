@@ -933,15 +933,17 @@ void LockScreen::beginUnlockTransition() {
   if (m_unlockTransitionTimer.active()) {
     return;
   }
+  // Wait exactly as long as the slowest surface's exit fades take on screen. The surfaces'
+  // AnimationManager uses effective = base / [shell.animation].speed (MotionService clamps speed
+  // to 0.05..4), and applies final values instantly when animations are disabled.
+  float exitEndBaseMs = 0.0F;
   for (auto& instance : m_instances) {
     if (instance.surface != nullptr) {
-      instance.surface->playExit();
+      exitEndBaseMs = std::max(exitEndBaseMs, instance.surface->playExit());
     }
   }
-  // Match the surfaces' fades exactly: AnimationManager divides durations by the global
-  // [shell.animation] speed and skips them when animations are disabled.
   const auto& motion = MotionService::instance();
-  const float exitMs = motion.enabled() ? LockSurface::kExitDurationMs / std::max(0.05F, motion.speed()) : 0.0F;
+  const float exitMs = motion.enabled() ? exitEndBaseMs / std::max(0.05F, motion.speed()) : 0.0F;
   m_unlockTransitionTimer.start(
       std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
         requestCompositorCrossfade(0);

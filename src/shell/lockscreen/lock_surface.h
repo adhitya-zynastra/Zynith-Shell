@@ -85,8 +85,11 @@ public:
 
   // lockfade: visual-only transitions. They never touch authentication or lock state.
   // Entrance runs once, before the first frame is painted; exit fades the UI out ahead of unlock.
-  void playExit();
-  static constexpr float kExitDurationMs = 304.0F; // base; / speed 0.8 = the approved 380 ms
+  // Returns the BASE time (ms, before [shell.animation] speed scaling) at which the last exit
+  // fade completes, so the caller can unlock exactly when the UI has gone.
+  float playExit();
+  // Exit schedule target, base ms. Effective = base / speed: 304 / 0.8 = 380 ms on screen.
+  static constexpr float kExitDurationMs = 304.0F;
 
   [[nodiscard]] bool firstFrameRendered() const noexcept { return m_firstFrameRendered; }
   void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }
@@ -204,6 +207,7 @@ private:
   bool m_entrancePending = true;
   bool m_promptShown = false;
   bool m_exiting = false;
+  float m_exitEndBaseMs = 0.0F;
 
   SessionActionRunner* m_sessionActions = nullptr;
   MprisService* m_mpris = nullptr;
