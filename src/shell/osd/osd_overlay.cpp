@@ -5,6 +5,7 @@
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/ui_phase.h"
+#include "i18n/i18n.h"
 #include "ipc/ipc_arg_parse.h"
 #include "ipc/ipc_service.h"
 #include "render/core/renderer.h"
@@ -124,8 +125,27 @@ namespace {
       }
       return horizontalCardLength(s);
     }
-    return (Style::controlHeight + Style::spaceSm) * s;
+    // zynith: progress OSDs carry a title line above the bar.
+    return (showProgress ? Style::controlHeight * 1.75F + Style::spaceSm : Style::controlHeight + Style::spaceSm) * s;
   }
+
+  // zynith: title for progress OSDs; other kinds show only their value text.
+  [[nodiscard]] std::string osdTitle(OsdKind kind) {
+    switch (kind) {
+    case OsdKind::Volume:
+      return i18n::tr("osd.title.volume");
+    case OsdKind::Microphone:
+      return i18n::tr("osd.title.microphone");
+    case OsdKind::Brightness:
+      return i18n::tr("osd.title.brightness");
+    case OsdKind::KeyboardBacklight:
+      return i18n::tr("osd.title.keyboard-backlight");
+    default:
+      return {};
+    }
+  }
+
+  [[nodiscard]] float iconDiscSize(float s) { return Style::controlHeight * 1.2F * s; }
 
   [[nodiscard]] std::uint32_t osdSurfaceWidth(float s, const std::string& orientation, float innerPadX) {
     const float w = cardWidth(s, orientation) + innerPadX * 2.0F;
@@ -281,7 +301,7 @@ void OsdOverlay::show(const OsdContent& content) {
 
 bool OsdOverlay::isVisible() const {
   return std::ranges::any_of(m_instances, [](const auto& inst) {
-    return inst->visible || inst->showPending || inst->showAnimId != 0;
+    return inst->visible || inst->showPending || inst->showAnimId != 0 || inst->holdTimer.active();
   });
 }
 
@@ -696,7 +716,37 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
   if (vertical) {
     row = ui::column(rowProps, std::move(icon), std::move(progress), std::move(value));
   } else {
-    row = ui::row(rowProps, std::move(icon), std::move(progress), std::move(value));
+    // zynith layout: accent disc + (title over bar) + value.
+    const float disc = iconDiscSize(s);
+    auto iconDisc = ui::row({
+        .out = &inst.iconDisc,
+        .align = FlexAlign::Center,
+        .justify = FlexJustify::Center,
+        .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
+        .radius = disc * 0.5F,
+        .width = disc,
+        .height = disc,
+    });
+    iconDisc->addChild(std::move(icon));
+    auto title = ui::label({
+        .out = &inst.title,
+        .text = "",
+        .fontSize = Style::fontSizeCaption * s,
+        .fontWeight = FontWeight::Medium,
+        .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+        .maxLines = 1,
+        .configure = [](Label& label) { label.setZIndex(1); },
+    });
+    auto column = ui::column({
+        .out = &inst.textColumn,
+        .align = FlexAlign::Stretch,
+        .justify = FlexJustify::Center,
+        .gap = Style::spaceXs * s,
+        .flexGrow = 1.0F,
+    });
+    column->addChild(std::move(title));
+    column->addChild(std::move(progress));
+    row = ui::row(rowProps, std::move(iconDisc), std::move(column), std::move(value));
   }
   card->addChild(std::move(row));
 
@@ -751,7 +801,38 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
   inst.value->setMinWidth((!vertical && m_content.showProgress) ? inst.progressValueMinWidth : 0.0F);
   inst.value->setText(m_content.value);
   inst.progress->setRadius(osdProgressRadius(s));
-  inst.progress->setProgress(m_content.progress);
+  if (inst.iconDisc != nullptr) {
+    inst.iconDisc->setFill(colorSpecFromRole(accentRole, 0.16F));
+  }
+  if (inst.title != nullptr) {
+    const std::string titleText = m_content.showProgress ? osdTitle(m_content.kind) : std::string{};
+    inst.title->setText(titleText);
+    inst.title->setVisible(!titleText.empty());
+  }
+  if (inst.textColumn != nullptr) {
+    inst.textColumn->setVisible(m_content.showProgress);
+  }
+  // zynith: the bar glides to new values with the shell's AnimationManager (speed / off aware);
+  // retargeting mid-glide continues from the current position, so rapid changes never stack.
+  const float target = m_content.progress;
+  if (inst.shownProgress < 0.0F) {
+    inst.progress->setProgress(target);
+    inst.shownProgress = target;
+  } else if (std::abs(target - inst.shownProgress) > 0.0001F) {
+    if (inst.progressAnimId != 0) {
+      inst.animations.cancel(inst.progressAnimId);
+    }
+    ProgressBar* bar = inst.progress;
+    Instance* self = &inst;
+    inst.progressAnimId = inst.animations.animate(
+        inst.shownProgress, target, Style::animNormal, Easing::EaseOutCubic,
+        [bar, self](float v) {
+          bar->setProgress(v);
+          self->shownProgress = v;
+        },
+        [self]() { self->progressAnimId = 0; }, bar
+    );
+  }
   Renderer& renderer = inst.surface->renderTarget().renderer();
   inst.row->layout(renderer);
   const float rowX = std::round((cw - inst.row->width()) * 0.5F);
@@ -765,7 +846,8 @@ void OsdOverlay::updateBlurRegion(Instance& inst) const {
   if (inst.surface == nullptr || inst.background == nullptr || inst.sceneRoot == nullptr) {
     return;
   }
-  if (!inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0) {
+  if (!inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0
+      && !inst.holdTimer.active()) {
     inst.surface->clearBlurRegion();
     return;
   }
@@ -844,6 +926,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
     return;
   }
 
+  inst.holdTimer.stop();
   if (inst.hideAnimId != 0) {
     inst.animations.cancel(inst.hideAnimId);
     inst.hideAnimId = 0;
@@ -867,9 +950,8 @@ void OsdOverlay::animateInstance(Instance& inst) {
     applyReveal(inst, 1.0F);
   }
 
-  inst.hideAnimId = inst.animations.animateTimer(
-      1.0F, 0.0F, kHideDelayMs, Easing::Linear, [](float /*v*/) {},
-      [this, &inst]() {
+  // zynith: hold with an event-loop timer (no frames while the OSD just sits there).
+  inst.holdTimer.start(std::chrono::milliseconds(kHideDelayMs), [this, &inst]() {
         inst.hideAnimId = inst.animations.animate(
             1.0F, 0.0F, Style::animNormal, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
             [this, &inst]() {
@@ -877,7 +959,8 @@ void OsdOverlay::animateInstance(Instance& inst) {
               inst.visible = false;
               DeferredCall::callLater([this]() {
                 const bool allIdle = std::ranges::all_of(m_instances, [](const auto& i) {
-                  return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0;
+                  return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0
+                      && !i->holdTimer.active();
                 });
                 if (allIdle) {
                   destroySurfaces();
@@ -885,6 +968,10 @@ void OsdOverlay::animateInstance(Instance& inst) {
               });
             }
         );
+        // Started outside a frame: ask for one so the hide animation begins ticking.
+        if (inst.surface != nullptr) {
+          inst.surface->requestRedraw();
+        }
       }
   );
 }

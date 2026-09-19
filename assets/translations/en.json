@@ -874,6 +874,12 @@
     }
   },
   "osd": {
+    "title": {
+      "brightness": "Brightness",
+      "keyboard-backlight": "Keyboard",
+      "microphone": "Microphone",
+      "volume": "Volume"
+    },
     "bluetooth": {
       "off": "Bluetooth Off",
       "on": "Bluetooth On"

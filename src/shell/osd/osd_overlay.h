@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "wayland/layer_surface.h"
 
@@ -92,6 +93,9 @@ private:
     Flex* row = nullptr;
     Box* background = nullptr;
     Glyph* glyph = nullptr;
+    Flex* iconDisc = nullptr;   // zynith: accent-tinted disc behind the glyph (horizontal layout)
+    Flex* textColumn = nullptr; // zynith: title above the progress bar
+    Label* title = nullptr;
     Label* value = nullptr;
     ProgressBar* progress = nullptr;
     float progressValueMinWidth = 0.0F;
@@ -99,6 +103,11 @@ private:
     float rowBaseY = 0.0F;
     AnimationManager::Id showAnimId = 0;
     AnimationManager::Id hideAnimId = 0;
+    // zynith: the on-screen hold is an event-loop timer, not an animation, so an idle OSD
+    // does not keep the frame clock running for 1.4 s.
+    Timer holdTimer;
+    AnimationManager::Id progressAnimId = 0;
+    float shownProgress = -1.0F; // <0: nothing shown yet, set without gliding
     bool showPending = false;
     bool visible = false;
     float appliedCornerRadiusScale = -1.0F;
