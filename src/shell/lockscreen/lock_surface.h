@@ -83,6 +83,11 @@ public:
   void setOutputKey(std::string outputKey) { m_outputKey = std::move(outputKey); }
   void setWidgetsHost(LockscreenWidgetsHost* host) noexcept { m_widgetsHost = host; }
 
+  // lockfade: visual-only transitions. They never touch authentication or lock state.
+  // Entrance runs once, before the first frame is painted; exit fades the UI out ahead of unlock.
+  void playExit();
+  static constexpr float kExitDurationMs = 380.0F;
+
   [[nodiscard]] bool firstFrameRendered() const noexcept { return m_firstFrameRendered; }
   void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }
 
@@ -118,6 +123,10 @@ private:
   [[nodiscard]] std::string resolveStatusText(const lockscreen_login_box::LoginBoxStyle& style, bool& isError) const;
   [[nodiscard]] bool passwordFieldContainsPoint(float sceneX, float sceneY) const;
   void focusPasswordField();
+  // lockfade helpers
+  void playEntrance();
+  void syncPromptPresentation();
+  void fadeNode(Node* node, float to, float durationMs, float delayMs, Easing easing);
 
   ext_session_lock_surface_v1* m_lockSurface = nullptr;
   wl_output* m_output = nullptr;
@@ -191,6 +200,10 @@ private:
   LockscreenWidgetsHost* m_widgetsHost = nullptr;
   bool m_firstFrameRendered = false;
   std::function<void()> m_renderCallback;
+  // lockfade state
+  bool m_entrancePending = true;
+  bool m_promptShown = false;
+  bool m_exiting = false;
 
   SessionActionRunner* m_sessionActions = nullptr;
   MprisService* m_mpris = nullptr;

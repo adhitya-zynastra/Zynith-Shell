@@ -120,6 +120,9 @@ private:
   void startFingerprint();
   void stopFingerprint();
   void handleFingerprintStatus(const std::string& message, bool isError);
+  // lockfade: visual transitions around (unchanged) lock()/unlock().
+  void beginUnlockTransition();
+  void requestCompositorCrossfade(std::uint16_t delayMs) const;
   static void clearSensitiveString(std::string& value);
 
   WaylandConnection* m_wayland = nullptr;
@@ -153,4 +156,5 @@ private:
   const WeatherService* m_weather = nullptr;
   HttpClient* m_httpClient = nullptr;
   Timer m_suspendTimeoutTimer;
+  Timer m_unlockTransitionTimer; // lockfade: defers unlock() until the lock UI has faded out
 };

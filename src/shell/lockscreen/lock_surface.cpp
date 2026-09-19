@@ -540,6 +540,8 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
   setSceneRoot(&m_root);
   setAnimationManager(&m_animations);
   m_root.setAnimationManager(&m_animations);
+  // lockfade: the password row starts invisible (it still holds keyboard focus) and fades in on input.
+  m_loginPanel->setOpacity(0.0F);
   setConfigureCallback([this](std::uint32_t /*width*/, std::uint32_t /*height*/) { requestLayout(); });
   setPrepareFrameCallback([this](bool needsUpdate, bool needsLayout) { prepareFrame(needsUpdate, needsLayout); });
   requestUpdate();
@@ -896,6 +898,11 @@ void LockSurface::prepareFrame(bool needsUpdate, bool needsLayout) {
   if (needsUpdate || needsLayout) {
     UiPhaseScope layoutPhase(UiPhase::Layout);
     layoutScene(width(), height());
+  }
+
+  // lockfade: start the entrance once widgets exist and are positioned, before the first paint.
+  if (m_entrancePending && m_widgetLayer != nullptr && !m_widgetLayer->children().empty()) {
+    playEntrance();
   }
 }
 
@@ -1276,16 +1283,18 @@ void LockSurface::updateCopy() {
   const lockscreen_login_box::LoginBoxStyle style = resolveLoginStyle();
 
   if (m_authPanel != nullptr && m_authLabel != nullptr) {
-    bool isError = false;
-    const std::string text = resolveStatusText(style, isError);
-    const bool show = m_locked && !m_blackout && !text.empty() && isLoginBoxEnabled();
+    // lockfade: auth status and errors are rendered inside the password pill
+    // (syncPromptPresentation); this separate label is kept only for the Caps Lock warning.
+    const bool show = m_locked && !m_blackout && !m_exiting && m_capsLock && style.showCapsLock && isLoginBoxEnabled();
     m_authPanel->setVisible(show);
     m_authLabel->setVisible(show);
     if (show) {
-      m_authLabel->setText(text);
-      m_authLabel->setColor(colorSpecFromRole(isError ? ColorRole::Error : ColorRole::OnSurfaceVariant));
+      m_authLabel->setText(i18n::tr("lockscreen.caps-lock-on"));
+      m_authLabel->setColor(colorSpecFromRole(ColorRole::Error));
     }
   }
+
+  syncPromptPresentation();
 
   if (m_layoutChip != nullptr) {
     const bool show =
@@ -1297,6 +1306,109 @@ void LockSurface::updateCopy() {
       m_layoutChip->setEnabled(m_layoutSwitchable);
     }
   }
+}
+
+// ── lockfade ────────────────────────────────────────────────────────────────
+// Visual state only. Everything here is driven by m_animations (the surface's existing
+// frame-clock animation manager): no timers of our own, no threads, no polling, and it
+// honours the global animation speed / reduced-motion settings.
+
+void LockSurface::fadeNode(Node* node, float to, float durationMs, float delayMs, Easing easing) {
+  if (node == nullptr) {
+    return;
+  }
+  m_animations.cancelForOwner(node);
+  const float from = node->opacity();
+  const float fadeMs = std::max(1.0F, durationMs);
+  const float totalMs = delayMs + fadeMs;
+  // One linear clock over delay+fade; the easing is applied to the post-delay portion.
+  m_animations.animate(
+      0.0F, totalMs, totalMs, Easing::Linear,
+      [node, from, to, delayMs, fadeMs, easing](float elapsedMs) {
+        const float t = std::clamp((elapsedMs - delayMs) / fadeMs, 0.0F, 1.0F);
+        node->setOpacity(from + ((to - from) * applyEasing(easing, t)));
+      },
+      {}, node
+  );
+}
+
+void LockSurface::playEntrance() {
+  m_entrancePending = false;
+  if (m_widgetLayer == nullptr) {
+    return;
+  }
+  // Top-to-bottom stagger by on-screen position, so the order follows the composition
+  // (visualizer → avatar → name → clock → date → media/weather) without naming widgets.
+  std::vector<Node*> nodes;
+  for (const auto& child : m_widgetLayer->children()) {
+    nodes.push_back(child.get());
+  }
+  std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
+
+  constexpr float kBaseDelayMs = 140.0F; // let the compositor crossfade reveal the wallpaper first
+  constexpr float kStepMs = 40.0F;
+  constexpr float kFadeMs = 420.0F;
+  float delayMs = kBaseDelayMs;
+  for (Node* node : nodes) {
+    node->setOpacity(0.0F);
+    fadeNode(node, 1.0F, kFadeMs, delayMs, Easing::EaseOutCubic);
+    delayMs += kStepMs;
+  }
+}
+
+void LockSurface::syncPromptPresentation() {
+  if (m_loginPanel == nullptr || m_passwordField == nullptr) {
+    return;
+  }
+
+  // Errors and "Authenticating…" live inside the pill, as its placeholder text.
+  const bool statusInPill = (m_error || m_authenticating) && !m_status.empty();
+  m_passwordField->setInvalid(m_error);
+  m_passwordField->setPlaceholder(statusInPill ? m_status : i18n::tr("lockscreen.password-placeholder"));
+
+  // Hidden while idle; revealed by typing, an in-flight attempt, or an error to show.
+  const bool wantShown = m_locked && !m_blackout && !m_exiting && (!m_password.empty() || statusInPill);
+  if (wantShown == m_promptShown) {
+    return;
+  }
+  m_promptShown = wantShown;
+  if (wantShown) {
+    fadeNode(m_loginPanel, 1.0F, 220.0F, 0.0F, Easing::EaseOutCubic);
+  } else {
+    fadeNode(m_loginPanel, 0.0F, 260.0F, 0.0F, Easing::EaseInOutQuad);
+  }
+}
+
+void LockSurface::playExit() {
+  if (m_exiting) {
+    return;
+  }
+  m_exiting = true;
+  m_promptShown = false;
+
+  // Password pill leaves first, then the composition recedes top-to-bottom, all within
+  // kExitDurationMs so LockScreen can unlock exactly when the UI has gone.
+  fadeNode(m_loginPanel, 0.0F, 160.0F, 0.0F, Easing::EaseOutQuad);
+  fadeNode(m_authPanel, 0.0F, 160.0F, 0.0F, Easing::EaseOutQuad);
+
+  if (m_widgetLayer != nullptr) {
+    std::vector<Node*> nodes;
+    for (const auto& child : m_widgetLayer->children()) {
+      nodes.push_back(child.get());
+    }
+    std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
+
+    constexpr float kStartMs = 40.0F;
+    constexpr float kFadeMs = 260.0F;
+    const float spanMs = kExitDurationMs - kStartMs - kFadeMs;
+    const float stepMs = nodes.size() > 1 ? std::min(15.0F, spanMs / static_cast<float>(nodes.size() - 1)) : 0.0F;
+    float delayMs = kStartMs;
+    for (Node* node : nodes) {
+      fadeNode(node, 0.0F, kFadeMs, delayMs, Easing::EaseInOutQuad);
+      delayMs += stepMs;
+    }
+  }
+  requestUpdate();
 }
 
 std::vector<SessionPanelActionConfig> LockSurface::resolveSessionActions() const {

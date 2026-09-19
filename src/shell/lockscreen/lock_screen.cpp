@@ -2,7 +2,9 @@
 
 #include "auth/fingerprint_authenticator.h"
 #include "capture/screencopy_util.h"
+#include "compositors/compositor_detect.h"
 #include "compositors/compositor_platform.h"
+#include "compositors/niri/niri_runtime.h"
 #include "config/config_service.h"
 #include "config/config_types.h"
 #include "core/deferred_call.h"
@@ -78,7 +80,7 @@ bool LockScreen::initialize(
       m_status = i18n::tr("lockscreen.unlocked");
       m_statusIsError = false;
       updatePromptOnSurfaces();
-      unlock();
+      beginUnlockTransition();
     });
     m_fingerprint->setStatusCallback([this](const std::string& message, bool isError) {
       handleFingerprintStatus(message, isError);
@@ -142,6 +144,9 @@ bool LockScreen::lock() {
     }
   }
 
+  // lockfade: compositor freezes the current frame and crossfades into the lock surface.
+  requestCompositorCrossfade(120);
+
   m_lock = ext_session_lock_manager_v1_lock(m_wayland->sessionLockManager());
   if (m_lock == nullptr) {
     kLog.warn("failed to create session lock object");
@@ -171,6 +176,7 @@ bool LockScreen::lock() {
 }
 
 void LockScreen::unlock() {
+  m_unlockTransitionTimer.stop();
   m_lockDeferred = false;
   if (!isActive()) {
     return;
@@ -840,7 +846,7 @@ void LockScreen::handlePasswordEdited(const std::string& value) {
 }
 
 void LockScreen::tryAuthenticate() {
-  if (m_authenticating || !m_locked) {
+  if (m_authenticating || !m_locked || m_unlockTransitionTimer.active()) {
     return;
   }
   if (m_password.empty()) {
@@ -891,7 +897,7 @@ void LockScreen::handleAuthResult(std::uint64_t generation, PamAuthenticator::Re
     m_status = i18n::tr("lockscreen.unlocked");
     m_statusIsError = false;
     updatePromptOnSurfaces();
-    unlock();
+    beginUnlockTransition();
     return;
   }
 
@@ -915,6 +921,37 @@ void LockScreen::stopFingerprint() {
   if (m_fingerprint != nullptr) {
     m_fingerprint->stop();
   }
+}
+
+// ── lockfade ────────────────────────────────────────────────────────────────
+// Authentication has already succeeded when this runs. It only defers the unchanged unlock()
+// by LockSurface::kExitDurationMs so the lock UI can fade out, then asks the compositor to
+// crossfade from that frame (wallpaper only) back to the desktop.
+void LockScreen::beginUnlockTransition() {
+  if (m_unlockTransitionTimer.active()) {
+    return;
+  }
+  for (auto& instance : m_instances) {
+    if (instance.surface != nullptr) {
+      instance.surface->playExit();
+    }
+  }
+  m_unlockTransitionTimer.start(
+      std::chrono::milliseconds(static_cast<int>(LockSurface::kExitDurationMs)), [this]() {
+        requestCompositorCrossfade(0);
+        unlock();
+      }
+  );
+}
+
+void LockScreen::requestCompositorCrossfade(std::uint16_t delayMs) const {
+  // niri's native frozen-frame crossfade over its existing IPC connection; no-op elsewhere.
+  if (m_compositorPlatform == nullptr || compositors::detect() != compositors::CompositorKind::Niri) {
+    return;
+  }
+  (void)m_compositorPlatform->niriRuntime().requestAction(
+      nlohmann::json{{"DoScreenTransition", nlohmann::json{{"delay_ms", delayMs}}}}, true
+  );
 }
 
 void LockScreen::handleFingerprintStatus(const std::string& message, bool isError) {
