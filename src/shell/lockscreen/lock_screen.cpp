@@ -18,6 +18,7 @@
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/keyboard_layout_label.h"
 #include "shell/lockscreen/lock_surface.h"
+#include "shell/veil/screen_veil.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
@@ -220,6 +221,9 @@ void LockScreen::unlock() {
   clearInstances();
   m_pointerSurface = nullptr;
   wl_display_flush(m_wayland->display());
+
+  // lockfade: session is now unlocked; let the veil carry the eye into the live desktop.
+  fadeOutUnlockVeils();
 }
 
 void LockScreen::onFontChanged() { requestLayout(); }
@@ -942,14 +946,70 @@ void LockScreen::beginUnlockTransition() {
       exitEndBaseMs = std::max(exitEndBaseMs, instance.surface->playExit());
     }
   }
+  // Prepared now (invisible until unlock: the compositor shows only lock surfaces while locked).
+  createUnlockVeils();
   const auto& motion = MotionService::instance();
   const float exitMs = motion.enabled() ? exitEndBaseMs / std::max(0.05F, motion.speed()) : 0.0F;
   m_unlockTransitionTimer.start(
       std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
-        requestCompositorCrossfade(0);
         unlock();
       }
   );
+}
+
+void LockScreen::createUnlockVeils() {
+  m_unlockVeilSafetyTimer.stop();
+  m_unlockVeils.clear();
+  if (m_wayland == nullptr || m_renderContext == nullptr || m_configService == nullptr) {
+    return;
+  }
+  const auto& config = m_configService->config();
+  for (const auto& instance : m_instances) {
+    if (instance.surface == nullptr || instance.output == nullptr) {
+      continue;
+    }
+    // Draw exactly what the lock background draws: same source, blur, tint and fill.
+    ScreenVeil::Style style{
+        .nameSpace = "noctalia-unlock-veil",
+        .layer = LayerShellLayer::Overlay,
+        .blurIntensity = config.lockscreen.blurIntensity,
+        .tintIntensity = config.lockscreen.tintIntensity,
+        .fillMode = config.wallpaper.fillMode,
+        .fillColor = resolveWallpaperFillColor(config.wallpaper),
+    };
+    auto veil = std::make_unique<ScreenVeil>(*m_wayland, m_renderContext, m_textureCache);
+    bool ok = false;
+    if (instance.surface->isBlackout()) {
+      style.blurIntensity = 0.0F;
+      style.tintIntensity = 0.0F;
+      style.fillColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
+      ok = veil->showWallpaper(instance.output, {}, style, 1.0F);
+    } else if (const auto it = m_desktopCaptures.find(instance.output); it != m_desktopCaptures.end()) {
+      ok = veil->showImage(instance.output, it->second, style, 1.0F); // blurred_desktop mode
+    } else {
+      ok = veil->showWallpaper(instance.output, wallpaperPathForOutput(instance.connectorName), style, 1.0F);
+    }
+    if (ok) {
+      m_unlockVeils.push_back(std::move(veil));
+    }
+  }
+}
+
+void LockScreen::fadeOutUnlockVeils() {
+  // A veil that never produced a frame would appear *after* the desktop and flash; drop it.
+  std::erase_if(m_unlockVeils, [](const std::unique_ptr<ScreenVeil>& veil) { return !veil->ready(); });
+  if (m_unlockVeils.empty()) {
+    return;
+  }
+  // Base 210 ms, divided by [shell.animation] speed (0.8 -> ~262 ms). Ease-out: the desktop is
+  // mostly visible within ~100 ms and settles softly. Input already goes to the desktop.
+  constexpr float kVeilFadeMs = 210.0F;
+  auto clearVeils = [this]() { DeferredCall::callLater([this]() { m_unlockVeils.clear(); }); };
+  for (auto& veil : m_unlockVeils) {
+    veil->fadeTo(0.0F, kVeilFadeMs, Easing::EaseOutCubic, clearVeils);
+  }
+  // Belt and braces: never let a veil outlive the handoff, even if frames stop (e.g. DPMS off).
+  m_unlockVeilSafetyTimer.start(std::chrono::milliseconds(2000), [this]() { m_unlockVeils.clear(); });
 }
 
 void LockScreen::requestCompositorCrossfade(std::uint16_t delayMs) const {

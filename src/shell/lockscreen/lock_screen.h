@@ -26,6 +26,7 @@ class CompositorPlatform;
 class FingerprintAuthenticator;
 class HttpClient;
 class LockSurface;
+class ScreenVeil;
 class MprisService;
 class RenderContext;
 class SessionActionRunner;
@@ -123,6 +124,9 @@ private:
   // lockfade: visual transitions around (unchanged) lock()/unlock().
   void beginUnlockTransition();
   void requestCompositorCrossfade(std::uint16_t delayMs) const;
+  // unlock veil: an unlocked-side copy of the final lock frame that fades into the live desktop.
+  void createUnlockVeils();
+  void fadeOutUnlockVeils();
   static void clearSensitiveString(std::string& value);
 
   WaylandConnection* m_wayland = nullptr;
@@ -157,4 +161,6 @@ private:
   HttpClient* m_httpClient = nullptr;
   Timer m_suspendTimeoutTimer;
   Timer m_unlockTransitionTimer; // lockfade: defers unlock() until the lock UI has faded out
+  std::vector<std::unique_ptr<ScreenVeil>> m_unlockVeils; // lockfade: live only for the handoff
+  Timer m_unlockVeilSafetyTimer;                          // lockfade: guarantees veils are removed
 };
