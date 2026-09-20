@@ -17,6 +17,7 @@
 #include <vector>
 
 class Button;
+class CarouselView;
 class ConfigService;
 class Flex;
 class Input;
@@ -107,6 +108,8 @@ private:
   [[nodiscard]] static const char* sortModeTooltipKey(SortMode mode);
   void applyColorWallpaper();
   void rebindGrid(bool resetScroll = false);
+  [[nodiscard]] InputArea* browseFocusArea() const;
+  [[nodiscard]] bool browseOwnsFocus(const InputArea* area) const;
   void resetSelection();
   [[nodiscard]] bool hasVisibleSelection() const;
   void selectVisibleIndex(std::size_t index);
@@ -144,6 +147,9 @@ private:
   Button* m_colorButton = nullptr;
   Button* m_closeButton = nullptr;
   VirtualGridView* m_grid = nullptr;
+  // zynith: alternate browse surface — a centred horizontal carousel over the same
+  // adapter. Exactly one of m_grid / m_carousel is built (see [wallpaper] carousel).
+  CarouselView* m_carousel = nullptr;
   Flex* m_loadingBox = nullptr;
   Spinner* m_spinner = nullptr;
   std::unique_ptr<WallpaperGridAdapter> m_adapter;
@@ -171,6 +177,7 @@ private:
   bool m_syncingFavoriteControls = false;
   bool m_syncingGridSelectionVisual = false;
   bool m_gridKeyboardActive = false;
+  bool m_carouselMode = false;
   std::vector<std::string> m_favoritePaletteDetailValues;
   std::vector<PaletteSource> m_paletteSourceOrder;
   static constexpr std::size_t kNoVisibleSelection = std::numeric_limits<std::size_t>::max();

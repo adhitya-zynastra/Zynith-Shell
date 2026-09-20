@@ -19,6 +19,7 @@
 #include "theme/custom_palettes.h"
 #include "theme/theme_service.h"
 #include "ui/builders.h"
+#include "ui/controls/carousel_view.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -56,6 +57,10 @@ namespace {
   constexpr float kFavoriteSelectMinWidth = 168.0F;
   constexpr float kFavoritesMetaRowGap = Style::spaceSm;
   constexpr float kTileAspect = 0.78F; // height / width, leaves room for label under widescreen thumb
+  // Carousel: focused item width as a fraction of the panel, and centre-to-centre spacing
+  // as a fraction of that width (< 1 makes neighbours overlap behind the focused item).
+  constexpr float kCarouselCellWidthRatio = 0.60F;
+  constexpr float kCarouselStrideRatio = 0.62F;
 
   [[nodiscard]] std::size_t themeModeSegmentIndex(ThemeMode mode) {
     switch (mode) {
@@ -732,7 +737,32 @@ void WallpaperPanel::create() {
     }
   });
 
-  root->addChild(
+  m_carouselMode = m_config != nullptr && m_config->config().wallpaper.carousel;
+
+  if (m_carouselMode) {
+    // Cinematic browse surface: one dominant wallpaper at the centre, neighbours
+    // receding to either side. Same adapter, same tiles, same thumbnail cache.
+    auto carousel = std::make_unique<CarouselView>();
+    carousel->setScale(scale);
+    carousel->setStrideRatio(kCarouselStrideRatio);
+    carousel->setPreloadCount(1);
+    carousel->setItemCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+    carousel->setFlexGrow(1.0F);
+    carousel->setFillWidth(true);
+    carousel->setAdapter(m_adapter.get());
+    carousel->setOnFocusChanged([this](std::optional<std::size_t> idx) {
+      if (m_syncingGridSelectionVisual) {
+        return;
+      }
+      // Focus only: the wallpaper is applied on an explicit click or Enter.
+      m_selectedVisibleIndex = (idx.has_value() && *idx < m_visibleEntries.size()) ? *idx : kNoVisibleSelection;
+      syncThemeControls();
+      m_dirty = true;
+      PanelManager::instance().refresh();
+    });
+    m_carousel = static_cast<CarouselView*>(root->addChild(std::move(carousel)));
+  } else {
+    root->addChild(
       ui::virtualGridView({
           .out = &m_grid,
           .contentScale = scale,
@@ -758,10 +788,11 @@ void WallpaperPanel::create() {
               },
           .configure = [](VirtualGridView& grid) { grid.setFillWidth(true); },
       })
-  );
+    );
+  }
 
-  if (m_grid != nullptr && m_grid->focusArea() != nullptr) {
-    m_grid->focusArea()->setOnFocusGain([this]() {
+  if (InputArea* browseFocus = browseFocusArea(); browseFocus != nullptr) {
+    browseFocus->setOnFocusGain([this]() {
       m_gridKeyboardActive = true;
       if (m_grid != nullptr && hasVisibleSelection()) {
         m_syncingGridSelectionVisual = true;
@@ -769,7 +800,7 @@ void WallpaperPanel::create() {
         m_syncingGridSelectionVisual = false;
       }
     });
-    m_grid->focusArea()->setOnFocusLoss([this]() {
+    browseFocus->setOnFocusLoss([this]() {
       m_gridKeyboardActive = false;
       if (m_grid != nullptr) {
         m_syncingGridSelectionVisual = true;
@@ -841,6 +872,14 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
   // geometry: configure the cell height to follow the chosen tile aspect.
   if (m_grid != nullptr) {
     m_grid->setCellHeight(kMinTileWidth * contentScale() * kTileAspect);
+  }
+
+  // The carousel's focused item scales with the panel, so it stays dominant at any
+  // panel size while its neighbours stay partially visible at the edges.
+  if (m_carousel != nullptr) {
+    const float cellW = std::clamp(width * kCarouselCellWidthRatio, 220.0F, std::max(220.0F, width - 48.0F));
+    // The view shrinks this to fit its own body height, keeping the aspect.
+    m_carousel->setCellSize(cellW, cellW * kTileAspect);
   }
 
   m_rootLayout->setSize(width, height);
@@ -915,6 +954,9 @@ void WallpaperPanel::onClose() {
   if (m_grid != nullptr) {
     m_grid->setAdapter(nullptr);
   }
+  if (m_carousel != nullptr) {
+    m_carousel->setAdapter(nullptr);
+  }
   m_adapter.reset();
   m_thumbnailPendingSub.disconnect();
 
@@ -936,6 +978,7 @@ void WallpaperPanel::onClose() {
   m_favoritePaletteSourceSegmented = nullptr;
   m_favoritePaletteDetailSelect = nullptr;
   m_grid = nullptr;
+  m_carousel = nullptr;
   m_loadingBox = nullptr;
   m_spinner = nullptr;
   m_scanPending = false;
@@ -944,6 +987,18 @@ void WallpaperPanel::onClose() {
   m_lastWidth = 0.0F;
   m_lastHeight = 0.0F;
   m_thumbnailRefreshPending = false;
+}
+
+InputArea* WallpaperPanel::browseFocusArea() const {
+  if (m_carousel != nullptr) {
+    return m_carousel->focusArea();
+  }
+  return m_grid != nullptr ? m_grid->focusArea() : nullptr;
+}
+
+bool WallpaperPanel::browseOwnsFocus(const InputArea* area) const {
+  return isDescendantOf(area, m_carousel != nullptr ? static_cast<const Node*>(m_carousel)
+                                                    : static_cast<const Node*>(m_grid));
 }
 
 bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
@@ -957,8 +1012,8 @@ bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
   if (m_favoriteThemeSegmented != nullptr && focused == m_favoriteThemeSegmented->focusArea()) {
     const bool moveIntoGrid = KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)
         || KeybindMatcher::matches(KeybindAction::TabNext, sym, modifiers);
-    if (moveIntoGrid && m_grid != nullptr && m_grid->focusArea() != nullptr) {
-      dispatcher.setFocus(m_grid->focusArea());
+    if (moveIntoGrid && browseFocusArea() != nullptr) {
+      dispatcher.setFocus(browseFocusArea());
       if (!hasVisibleSelection() && !m_visibleEntries.empty()) {
         selectVisibleIndex(0);
       }
@@ -968,8 +1023,8 @@ bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
 
   if (m_favoritePaletteSourceSegmented != nullptr && focused == m_favoritePaletteSourceSegmented->focusArea()) {
     const bool moveIntoGrid = KeybindMatcher::matches(KeybindAction::Down, sym, modifiers);
-    if (moveIntoGrid && m_grid != nullptr && m_grid->focusArea() != nullptr) {
-      dispatcher.setFocus(m_grid->focusArea());
+    if (moveIntoGrid && browseFocusArea() != nullptr) {
+      dispatcher.setFocus(browseFocusArea());
       if (!hasVisibleSelection() && !m_visibleEntries.empty()) {
         selectVisibleIndex(0);
       }
@@ -977,7 +1032,16 @@ bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     }
   }
 
-  if (focused != nullptr && !isDescendantOf(focused, m_grid)) {
+  if (m_filterInput != nullptr && focused == m_filterInput->inputArea()
+      && KeybindMatcher::matches(KeybindAction::Down, sym, modifiers) && browseFocusArea() != nullptr) {
+    dispatcher.setFocus(browseFocusArea());
+    if (!hasVisibleSelection() && !m_visibleEntries.empty()) {
+      selectVisibleIndex(0);
+    }
+    return true;
+  }
+
+  if (focused != nullptr && !browseOwnsFocus(focused)) {
     return false;
   }
 
@@ -1343,6 +1407,9 @@ void WallpaperPanel::syncLoadingState() {
   if (m_grid != nullptr) {
     m_grid->setVisible(!loading);
   }
+  if (m_carousel != nullptr) {
+    m_carousel->setVisible(!loading);
+  }
   if (m_spinner != nullptr) {
     if (loading) {
       m_spinner->start();
@@ -1387,11 +1454,20 @@ void WallpaperPanel::applyFilter() {
 }
 
 void WallpaperPanel::rebindGrid(bool resetScroll) {
-  if (m_grid == nullptr) {
-    return;
-  }
   if (m_adapter != nullptr) {
     m_adapter->setCurrentWallpaperPath(currentWallpaperPathForSelection());
+  }
+  if (m_carousel != nullptr) {
+    m_carousel->notifyDataChanged();
+    if (resetScroll || m_visibleEntries.empty()) {
+      m_carousel->resetToStart();
+    } else if (hasVisibleSelection()) {
+      m_carousel->setFocusedIndex(m_selectedVisibleIndex, /*animated=*/false);
+    }
+    return;
+  }
+  if (m_grid == nullptr) {
+    return;
   }
   m_grid->notifyDataChanged();
   if (resetScroll || m_visibleEntries.empty()) {
@@ -1489,7 +1565,9 @@ void WallpaperPanel::selectVisibleIndex(std::size_t index) {
   }
 
   m_selectedVisibleIndex = index;
-  if (m_grid != nullptr) {
+  if (m_carousel != nullptr) {
+    m_carousel->setFocusedIndex(index, /*animated=*/true);
+  } else if (m_grid != nullptr) {
     m_grid->setSelectedIndex(index);
     m_grid->scrollToIndex(index);
   }
@@ -1519,6 +1597,7 @@ bool WallpaperPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) 
 
   // Approximate column count from current grid layout. VirtualGridView does
   // not expose its column count directly, so we recompute from viewport width.
+  // The carousel is a single row: Up/Down step one item, like Left/Right.
   std::size_t columns = 1;
   if (m_grid != nullptr) {
     const float viewportW = m_grid->scrollView().contentViewportWidth();

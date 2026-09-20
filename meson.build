@@ -902,6 +902,7 @@ _noctalia_sources = files(
   'src/ui/controls/spinner.cpp',
   'src/ui/controls/stepper.cpp',
   'src/ui/controls/toggle.cpp',
+  'src/ui/controls/carousel_view.cpp',
   'src/ui/controls/virtual_grid_view.cpp',
   'src/ui/controls/virtual_list_view.cpp',
   'src/ui/builders.cpp',

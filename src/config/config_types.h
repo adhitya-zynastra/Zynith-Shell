@@ -524,6 +524,8 @@ struct WallpaperConfig {
   bool perMonitorDirectories = false;
   WallpaperAutomationConfig automation;
   std::vector<WallpaperMonitorOverride> monitorOverrides;
+  // zynith: browse wallpapers as a centred horizontal carousel instead of a grid.
+  bool carousel = false;
 
   bool operator==(const WallpaperConfig&) const = default;
 };

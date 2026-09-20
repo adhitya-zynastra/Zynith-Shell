@@ -99,7 +99,7 @@ ScrollView::ScrollView() {
     applyScrollOffsetValue(clampOffset(m_dragStartOffset - delta));
   });
   viewportArea->setOnAxisHandler([this](const InputArea::PointerData& data) {
-    if (!scrollable() || data.axis != scrollAxis(m_orientation)) {
+    if (!scrollable() || (data.axis != scrollAxis(m_orientation) && !m_crossAxisWheel)) {
       return false;
     }
 

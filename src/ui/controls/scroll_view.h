@@ -6,6 +6,7 @@
 #include "ui/signal.h"
 #include "ui/style.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -36,6 +37,11 @@ public:
   void requestScrollToBottom();
   void scrollBy(float delta);
   void setScrollbarVisible(bool visible);
+  // zynith: accept wheel events on the other axis too (a mouse wheel emits a vertical
+  // axis even over a horizontal strip). Off by default: no change for existing views.
+  void setCrossAxisWheel(bool enabled) { m_crossAxisWheel = enabled; }
+  // zynith: distance one wheel detent travels (default Style::scrollWheelStep).
+  void setScrollWheelStep(float step) { m_scrollWheelStep = std::max(1.0F, step); }
   // Vertical clearance at both track ends (e.g. the host card's corner radius).
   void setScrollbarInsetV(float inset);
   // Layout scale of the surface hosting this view (1.0 = base logical px). Scales the
@@ -117,6 +123,7 @@ private:
   float m_backgroundSoftness = 1.0F;
   bool m_scrollbarShown = false;
   bool m_showScrollbar = true;
+  bool m_crossAxisWheel = false;
   bool m_dragging = false;
   ScrollOrientation m_orientation = ScrollOrientation::Vertical;
 };
