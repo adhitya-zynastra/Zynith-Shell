@@ -171,7 +171,11 @@ namespace {
 
   [[nodiscard]] float osdCardRadius(float cw, float ch, float layoutScale) {
     const float maxR = std::min(cw, ch) * 0.5F;
-    return std::min(maxR, Style::scaledRadiusXl(layoutScale));
+    // zynith: a floating HUD wants clearly rounded ends, so scale the radius with the card
+    // height (0.36 = softly rounded, short of a full pill). The themed radius is the floor,
+    // and the blur region uses this same value, so glass and fill keep one silhouette.
+    const float zynith = std::max(Style::scaledRadiusXl(layoutScale), ch * 0.36F);
+    return std::min(maxR, zynith);
   }
 
   [[nodiscard]] float osdProgressRadius(float layoutScale) {

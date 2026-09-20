@@ -2753,6 +2753,11 @@
           "description": "Color temperature at night (Kelvin)",
           "label": "Night Temperature"
         },
+        "mute-sound": {
+          "description": "Sound played when mute is toggled",
+          "label": "Mute Sound",
+          "placeholder": "Default (none)"
+        },
         "notification-sound": {
           "description": "Sound file used for notification feedback",
           "label": "Notification Sound",

@@ -9,7 +9,8 @@
 #include <string>
 
 namespace {
-  constexpr auto kVolumeSoundCooldown = std::chrono::milliseconds(70);
+  // zynith: quieter than upstream (70 ms) — holding a volume key ticks ~9x/s, not ~14x/s.
+  constexpr auto kVolumeSoundCooldown = std::chrono::milliseconds(110);
   constexpr auto kSuppressInputOsdAfterOutput = std::chrono::milliseconds(500);
   constexpr float kVolumeChangeEpsilon = 0.003F;
 
@@ -94,9 +95,20 @@ void AudioOsd::showOutput(std::uint32_t sinkId, float volume, bool muted, bool p
     m_overlay->show(makeOutputContent(volume, muted));
     m_currentKind = OsdKind::Volume;
   }
-  if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
-    m_soundPlayer->play("volume-change");
-    m_lastSoundAt = now;
+  // zynith: mute toggles get their own cue and bypass the volume cooldown (a stray volume event
+  // often lands microseconds earlier and would otherwise swallow it). The cue is only audible when
+  // unmuting — playing it while the sink is muted would be silence.
+  if (playFeedback && m_soundPlayer != nullptr) {
+    const bool muteChanged = muted != m_lastSinkMuted;
+    if (muteChanged) {
+      if (!muted) {
+        m_soundPlayer->play("mute");
+        m_lastSoundAt = now;
+      }
+    } else if (!muted && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+      m_soundPlayer->play("volume-change");
+      m_lastSoundAt = now;
+    }
   }
   m_lastSinkId = sinkId;
   m_lastSinkVolume = volume;
@@ -125,9 +137,17 @@ void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted, bool 
     m_overlay->show(makeInputContent(volume, muted));
     m_currentKind = OsdKind::Microphone;
   }
-  if (playFeedback && m_soundPlayer != nullptr && now - m_lastSoundAt >= kVolumeSoundCooldown) {
-    m_soundPlayer->play("volume-change");
-    m_lastSoundAt = now;
+  if (playFeedback && m_soundPlayer != nullptr) {
+    const bool muteChanged = muted != m_lastSourceMuted;
+    if (muteChanged) {
+      if (!muted) {
+        m_soundPlayer->play("mute");
+        m_lastSoundAt = now;
+      }
+    } else if (!muted && now - m_lastSoundAt >= kVolumeSoundCooldown) {
+      m_soundPlayer->play("volume-change");
+      m_lastSoundAt = now;
+    }
   }
   m_lastSourceId = sourceId;
   m_lastSourceVolume = volume;
@@ -221,12 +241,13 @@ void AudioOsd::onAudioStateChanged(const PipeWireService& service) {
     if (sinkRouteChanged) {
       showOutputName(sinkName, sinkMuted);
     } else if (sinkVolumeChanged || sinkMuteChanged) {
-      // Passive PipeWire updates: click only on real volume changes while unmuted.
-      showOutput(sink->id, sink->volume, sinkMuted, sinkVolumeChanged && !sinkMuted);
+      // Passive PipeWire updates: click on real volume changes while unmuted, plus the
+      // mute cue when unmuting (a cue at mute time would play into the muted sink = silence).
+      showOutput(sink->id, sink->volume, sinkMuted, sinkVolumeChanged || sinkMuteChanged);
     } else if (sourceRouteChanged && now >= m_suppressAutoInputOsdUntil) {
       showInputName(sourceName, sourceMuted);
     } else if ((sourceVolumeChanged || sourceMuteChanged) && now >= m_suppressAutoInputOsdUntil) {
-      showInput(source->id, source->volume, sourceMuted, sourceVolumeChanged && !sourceMuted);
+      showInput(source->id, source->volume, sourceMuted, sourceVolumeChanged || sourceMuteChanged);
     }
   }
 

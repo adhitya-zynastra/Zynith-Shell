@@ -1388,6 +1388,7 @@ void Application::initBrightnessAndPipewire() {
     struct LoadedSoundPaths {
       std::filesystem::path volumeChange;
       std::filesystem::path notification;
+      std::filesystem::path mute;
     };
     auto loadedSoundPaths = std::make_shared<LoadedSoundPaths>();
 
@@ -1414,6 +1415,15 @@ void Application::initBrightnessAndPipewire() {
       if (loadedSoundPaths->volumeChange != volumeChangePath) {
         if (m_soundPlayer->load("volume-change", volumeChangePath)) {
           loadedSoundPaths->volumeChange = volumeChangePath;
+        }
+      }
+
+      if (!audio.muteSound.empty()) {
+        const auto mutePath = resolveSoundPath(audio.muteSound, "sounds/volume-change.wav");
+        if (loadedSoundPaths->mute != mutePath) {
+          if (m_soundPlayer->load("mute", mutePath)) {
+            loadedSoundPaths->mute = mutePath;
+          }
         }
       }
 

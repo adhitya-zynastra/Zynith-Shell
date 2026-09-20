@@ -26,6 +26,7 @@ namespace noctalia::config::schema {
         field(&AudioConfig::soundVolume, "sound_volume", kUnitRange),
         field(&AudioConfig::volumeChangeSound, "volume_change_sound"),
         field(&AudioConfig::notificationSound, "notification_sound"),
+        field(&AudioConfig::muteSound, "mute_sound"),
     };
     return s;
   }

@@ -2677,6 +2677,17 @@ namespace settings {
         "sound path file", true
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Services, "audio", tr("settings.schema.services.mute-sound.label"),
+        tr("settings.schema.services.mute-sound.description"), {"audio", "mute_sound"},
+        TextSetting{
+            .value = cfg.audio.muteSound,
+            .placeholder = tr("settings.schema.services.mute-sound.placeholder"),
+            .browseMode = TextSettingBrowseMode::OpenFile,
+            .browseFileExtensions = {".wav", ".flac", ".ogg", ".oga", ".opus", ".mp3", ".aiff", ".aif"}
+        },
+        "sound path file", true
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Services, "audio", tr("settings.schema.services.notification-sound.label"),
         tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
         TextSetting{

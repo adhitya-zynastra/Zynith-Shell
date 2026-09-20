@@ -1266,6 +1266,8 @@ struct AudioConfig {
   float soundVolume = 0.5F;
   std::string volumeChangeSound;
   std::string notificationSound;
+  // Played when mute is toggled (distinct from a volume step). Empty = no mute cue.
+  std::string muteSound;
 
   bool operator==(const AudioConfig&) const = default;
 };

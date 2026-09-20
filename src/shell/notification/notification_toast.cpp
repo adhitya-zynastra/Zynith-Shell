@@ -2447,20 +2447,29 @@ InputArea* NotificationToast::buildCard(
 
   const std::string displaySummary = StringUtils::trimLeadingBlankLines(entry.summary);
   const std::string displayBody = StringUtils::trimLeadingBlankLines(entry.body);
-  auto textColumn = ui::column(
-      {
-          .align = FlexAlign::Stretch,
-          .width = textMaxWidth,
-      },
-      ui::label({
-          .text = displaySummary,
-          .fontSize = summaryFontSize(scale),
-          .fontWeight = FontWeight::Bold,
-          .color = colorSpecFromRole(ColorRole::OnSurface),
-          .maxWidth = topTextMaxWidth,
-          .maxLines = kMaxSummaryLines,
-      })
-  );
+  auto textColumn = ui::column({
+      .align = FlexAlign::Stretch,
+      .width = textMaxWidth,
+  });
+  // zynith: the app identity leads as an accent caption instead of a grey footer.
+  if (showAppName) {
+    textColumn->addChild(ui::label({
+        .text = entry.appName,
+        .fontSize = metaFontSize(scale),
+        .fontWeight = FontWeight::Medium,
+        .color = colorSpecFromRole(entry.urgency == Urgency::Critical ? ColorRole::Error : ColorRole::Primary),
+        .maxWidth = topTextMaxWidth,
+        .maxLines = 1,
+    }));
+  }
+  textColumn->addChild(ui::label({
+      .text = displaySummary,
+      .fontSize = summaryFontSize(scale),
+      .fontWeight = FontWeight::Bold,
+      .color = colorSpecFromRole(ColorRole::OnSurface),
+      .maxWidth = topTextMaxWidth,
+      .maxLines = kMaxSummaryLines,
+  }));
   std::unique_ptr<Flex> actionsRow;
   std::unique_ptr<Flex> inlineReplyRow;
   std::unique_ptr<Input> inlineReplyInput;
@@ -2628,26 +2637,6 @@ InputArea* NotificationToast::buildCard(
     *outInlineReplyInput = nullptr;
   }
 
-  if (showAppName) {
-    auto footerRow = ui::row(
-        {
-            .align = FlexAlign::Center,
-            .justify = FlexJustify::End,
-            .padding = Style::spaceXs * scale,
-            .width = textMaxWidth,
-        },
-        ui::label({
-            .text = entry.appName,
-            .fontSize = metaFontSize(scale),
-            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-            .maxWidth = textMaxWidth,
-            .maxLines = 1,
-            .textAlign = TextAlign::End,
-        })
-    );
-    textColumn->addChild(std::move(footerRow));
-  }
-
   contentRow->addChild(std::move(textColumn));
   foreground->addChild(std::move(contentRow));
   foreground->layout(renderer);
@@ -2663,7 +2652,8 @@ InputArea* NotificationToast::buildCard(
           .height = cardHeight,
           .configure = [scale, bgAlpha, borderWidth, urgency = entry.urgency](Box& box) {
             box.setCardStyle();
-            box.setRadius(Style::scaledRadiusXl(scale));
+            // zynith: floating glass card, same silhouette language as the OSD/power menu.
+            box.setRadius(std::max(Style::scaledRadiusXl(scale), 16.0F * scale));
             box.setFill(colorSpecFromRole(ColorRole::Surface, bgAlpha));
             box.setBorder(
                 colorSpecFromRole(urgency == Urgency::Critical ? ColorRole::Error : ColorRole::Outline), borderWidth
