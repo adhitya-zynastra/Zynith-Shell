@@ -576,6 +576,16 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_closeDesktopWidgetsEditor();
   }
 
+  // Already open, same panel, same output: let it move to the new context in
+  // place. Tearing it down and rebuilding would replay the opening animation
+  // for what the user experiences as navigation inside an open panel.
+  if (isOpen() && !m_closing && m_activePanel != nullptr && m_activePanelId == panelId
+      && m_output == request.output && m_activePanel->retargetOpen(request.context)) {
+    requestLayout();
+    requestRedraw();
+    return;
+  }
+
   // If a panel is open or closing, destroy it immediately with no close animation.
   // Bump the generation first so any in-flight deferred destroyPanel is a no-op.
   if (isOpen() || m_closing) {
@@ -1287,8 +1297,27 @@ void PanelManager::showModalBackdrop(wl_output* output) {
   m_modalBackdrop.reset();
   m_modalBackdropClosing = false;
 
-  // One synchronous screencopy of the current desktop, then GPU blur. Nothing runs while open.
   WaylandConnection& wayland = m_platform->wayland();
+
+  // Live mode: dim only. No screencopy, no GPU blur, and nothing frozen — what
+  // is underneath keeps rendering, so changes there stay visible while the panel
+  // is open. Also skips a full-screen capture per open.
+  if (m_activePanel != nullptr && m_activePanel->modalBackdropMode() == Panel::ModalBackdropMode::Live) {
+    auto liveVeil = std::make_unique<ScreenVeil>(wayland, m_renderContext, nullptr);
+    const ScreenVeil::Style liveStyle{
+        .nameSpace = "noctalia-modal-backdrop",
+        .layer = LayerShellLayer::Top,
+        .blurIntensity = 0.0F,
+        .tintIntensity = 0.46F,
+    };
+    if (liveVeil->showTint(output, liveStyle, 0.0F)) {
+      liveVeil->fadeTo(1.0F, Style::animNormal, Easing::EaseOutQuint);
+      m_modalBackdrop = std::move(liveVeil);
+    }
+    return;
+  }
+
+  // One synchronous screencopy of the current desktop, then GPU blur. Nothing runs while open.
   ScreencopyCapture capture(wayland);
   ScreencopyImage image;
   std::string error;
@@ -1309,7 +1338,7 @@ void PanelManager::showModalBackdrop(wl_output* output) {
     return;
   }
   // Same duration/curve as the detached panel reveal, so dim+blur and panel read as one motion.
-  veil->fadeTo(1.0F, Style::animNormal, Easing::EaseOutCubic);
+  veil->fadeTo(1.0F, Style::animNormal, Easing::EaseOutQuint);
   m_modalBackdrop = std::move(veil);
 }
 
@@ -2191,7 +2220,7 @@ void PanelManager::startAttachedOpenAnimation() {
 
   m_attachedOpenAnimationPending = false;
   m_animations.animate(
-      m_attachedRevealProgress, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+      m_attachedRevealProgress, 1.0F, Style::animNormal, Easing::EaseOutQuint,
       [this](float v) { applyAttachedReveal(v); }, {}, m_attachedRevealClipNode
   );
 }
@@ -2605,8 +2634,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     } else {
       applyDetachedReveal(0.0F);
       m_animations.animate(
-          0.0F, 1.0F, Style::animNormal, Easing::EaseOutCubic, [this](float v) { applyDetachedReveal(v); }, {},
-          m_sceneRoot.get()
+          m_detachedRevealProgress, 1.0F, Style::animNormal, Easing::EaseOutQuint,
+          [this](float v) { applyDetachedReveal(v); }, {}, m_sceneRoot.get()
       );
     }
 

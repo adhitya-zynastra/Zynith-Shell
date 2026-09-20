@@ -52,6 +52,11 @@ public:
   // Create the surface on `output` showing the wallpaper at `path` (or the given image).
   bool showWallpaper(wl_output* output, std::string path, const Style& style, float initialOpacity);
   bool showImage(wl_output* output, ScreencopyImage image, const Style& style, float initialOpacity);
+  // Tint only: no texture, nothing captured. What is underneath keeps rendering
+  // and stays live — used where the desktop must remain observable through the
+  // veil (e.g. the wallpaper browser, where the point is to watch the wallpaper
+  // change). `blurIntensity` is ignored; ask the compositor for blur instead.
+  bool showTint(wl_output* output, const Style& style, float initialOpacity);
 
   // Fade the whole veil. Base duration: divided by [shell.animation] speed like every shell fade.
   void fadeTo(float opacity, float durationMs, Easing easing, std::function<void()> onDone = {});
@@ -76,6 +81,7 @@ private:
   AnimationManager m_animations;
   std::unique_ptr<Node> m_root;
   WallpaperNode* m_image = nullptr;
+  bool m_tintOnly = false;
   Box* m_tint = nullptr;
   std::unique_ptr<LayerSurface> m_surface;
 

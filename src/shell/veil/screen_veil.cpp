@@ -32,11 +32,26 @@ ScreenVeil::~ScreenVeil() {
 bool ScreenVeil::showWallpaper(wl_output* output, std::string path, const Style& style, float initialOpacity) {
   m_wallpaperPath = std::move(path);
   m_capture.reset();
+  m_tintOnly = false;
   return create(output, style, initialOpacity);
+}
+
+bool ScreenVeil::showTint(wl_output* output, const Style& style, float initialOpacity) {
+  m_wallpaperPath.clear();
+  m_capture.reset();
+  m_tintOnly = true;
+  if (!create(output, style, initialOpacity)) {
+    return false;
+  }
+  // No image node: the tint box alone composites over live content below. The
+  // surface's own configure/prepare cycle sizes and paints it.
+  m_ready = true;
+  return true;
 }
 
 bool ScreenVeil::showImage(wl_output* output, ScreencopyImage image, const Style& style, float initialOpacity) {
   m_wallpaperPath.clear();
+  m_tintOnly = false;
   m_capture = std::make_unique<ScreencopyImage>(std::move(image));
   return create(output, style, initialOpacity);
 }
@@ -50,9 +65,11 @@ bool ScreenVeil::create(wl_output* output, const Style& style, float initialOpac
 
   m_root = ui::node({});
   m_root->setOpacity(std::clamp(initialOpacity, 0.0F, 1.0F));
-  auto image = std::make_unique<WallpaperNode>();
-  m_image = static_cast<WallpaperNode*>(m_root->addChild(std::move(image)));
-  m_image->setZIndex(0);
+  if (!m_tintOnly) {
+    auto image = std::make_unique<WallpaperNode>();
+    m_image = static_cast<WallpaperNode*>(m_root->addChild(std::move(image)));
+    m_image->setZIndex(0);
+  }
   m_root->addChild(ui::box({
       .out = &m_tint,
       .visible = m_style.tintIntensity > 0.0F,
@@ -121,8 +138,10 @@ void ScreenVeil::prepareFrame(bool needsUpdate, bool needsLayout) {
     const auto w = static_cast<float>(m_surface->width());
     const auto h = static_cast<float>(m_surface->height());
     m_root->setSize(w, h);
-    m_image->setPosition(0.0F, 0.0F);
-    m_image->setSize(w, h);
+    if (m_image != nullptr) {
+      m_image->setPosition(0.0F, 0.0F);
+      m_image->setSize(w, h);
+    }
     if (m_tint != nullptr) {
       m_tint->setPosition(0.0F, 0.0F);
       m_tint->setSize(w, h);
@@ -135,6 +154,11 @@ void ScreenVeil::prepareFrame(bool needsUpdate, bool needsLayout) {
 }
 
 void ScreenVeil::applyContent() {
+  if (m_tintOnly || m_image == nullptr) {
+    m_contentDirty = false;
+    m_ready = true;
+    return;
+  }
   auto& tm = m_renderContext->textureManager();
   releaseTextures();
 

@@ -742,7 +742,7 @@ void NotificationToast::onNotificationEvent(const Notification& n, NotificationE
               const float targetY = cardSurfaceY(*inst, i);
               Instance* instPtr = inst.get();
               cs.entryAnimId = inst->animations.animate(
-                  preservedReveal, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+                  preservedReveal, 1.0F, Style::animNormal, Easing::EaseOutQuint,
                   [this, viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY,
                    cardHeight = cs.clipHeight, scale = notificationUiScale(m_config),
                    edgePad = horizontalInnerPad(notificationUiScale(m_config))](float v) {
@@ -1025,7 +1025,7 @@ void NotificationToast::addCardToInstance(Instance& inst, std::size_t entryIndex
 
   // Entry animation
   cs.entryAnimId = inst.animations.animate(
-      0.0F, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+      0.0F, 1.0F, Style::animNormal, Easing::EaseOutQuint,
       [this, viewport = cs.cardNode, content = cs.cardContent, foreground = cs.cardForeground, targetY,
        cardHeight = cs.clipHeight, scale = notificationUiScale(m_config),
        edgePad = horizontalInnerPad(notificationUiScale(m_config))](float v) {
@@ -1874,7 +1874,7 @@ void NotificationToast::collapseStack() {
         Node* content = cs.cardContent;
         Node* foreground = cs.cardForeground;
         cs.entryAnimId = inst->animations.animate(
-            currentReveal, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+            currentReveal, 1.0F, Style::animNormal, Easing::EaseOutQuint,
             [this, viewport, content, foreground, newSurfY, cardHeight, scale,
              edgePad = horizontalInnerPad(scale)](float v) {
               applyCardRevealNodes(
@@ -1896,7 +1896,7 @@ void NotificationToast::collapseStack() {
       Node* cardNode = cs.cardNode;
 
       cs.slideAnimId = inst->animations.animate(
-          oldSurfY, newSurfY, Style::animNormal, Easing::EaseInOutQuad,
+          oldSurfY, newSurfY, Style::animNormal, Easing::EaseInOutQuint,
           [cardNode, px](float v) { cardNode->setPosition(px, v); },
           [this, instPtr, entryId]() {
             if (auto* state = findCardState(*instPtr, entryId); state != nullptr) {

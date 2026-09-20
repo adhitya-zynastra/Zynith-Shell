@@ -12,6 +12,12 @@ enum class Easing : std::uint8_t {
   EaseOutCubic,
   EaseInOutCubic,
   EaseOutBack,
+  // Long-tail curves: most of the distance is covered immediately, then the
+  // motion settles slowly. Reads as responsive and liquid at the same time,
+  // which shorter cubic curves cannot do at the same duration.
+  EaseOutQuint,
+  EaseInOutQuint,
+  EaseOutExpo,
 };
 
 float applyEasing(Easing easing, float t);

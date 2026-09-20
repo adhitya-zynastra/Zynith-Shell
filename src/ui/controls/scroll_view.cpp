@@ -192,7 +192,7 @@ void ScrollView::animateScrollTo(float target, float durationMs) {
       : std::clamp(distance * kScrollAnimMsPerPx, kMinScrollAnimDurationMs, static_cast<float>(Style::animNormal));
 
   m_scrollAnimId = animationManager()->animate(
-      m_scrollOffset, clampedTarget, resolvedDuration, Easing::EaseOutCubic,
+      m_scrollOffset, clampedTarget, resolvedDuration, Easing::EaseOutQuint,
       [this](float value) { applyScrollOffsetValue(value); }, [this]() { m_scrollAnimId = 0; }, this
   );
   markPaintDirty();

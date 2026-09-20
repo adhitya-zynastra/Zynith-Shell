@@ -6,9 +6,16 @@ namespace Style {
 
   inline constexpr int barThicknessDefault = 34;
 
-  inline constexpr int animFast = 100;
-  inline constexpr int animNormal = 200;
-  inline constexpr int animSlow = 400;
+  // Motion hierarchy (base values; [shell.animation].speed scales all of them).
+  // micro   — hovers, toggles, focus rings: must feel instant.
+  // surface — panels revealing, content transitioning, OSD/toast arrival.
+  // large   — full-screen or cinematic motion.
+  // The surface/large tiers are deliberately longer than a "snappy" shell and
+  // are paired with long-tail easings, so motion departs immediately and
+  // settles gracefully instead of stopping abruptly.
+  inline constexpr int animFast = 130;
+  inline constexpr int animNormal = 300;
+  inline constexpr int animSlow = 520;
 
   inline constexpr float radiusSm = 3.0F;
   inline constexpr float radiusMd = 6.0F;

@@ -67,6 +67,8 @@ public:
   [[nodiscard]] bool fillsHeight() const noexcept override { return carouselMode(); }
   [[nodiscard]] bool hasDecoration() const override { return !carouselMode(); }
   [[nodiscard]] bool wantsModalBackdrop() const override { return carouselMode(); }
+  // Dim, never freeze: applying a wallpaper has to be visible behind the browser.
+  [[nodiscard]] ModalBackdropMode modalBackdropMode() const override { return ModalBackdropMode::Live; }
   [[nodiscard]] std::string panelScreenPosition() const override {
     return carouselMode() ? std::string("top_center") : Panel::panelScreenPosition();
   }

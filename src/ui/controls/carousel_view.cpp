@@ -37,6 +37,9 @@ namespace {
   // Hard ceiling on the working set, whatever the geometry asks for.
   constexpr std::size_t kMaxPerSide = 3;
   constexpr std::size_t kMaxPoolSize = 16;
+  // Paint order: cards span 0..kFocusZIndex by depth, the hit-test overlay sits above.
+  constexpr std::int32_t kFocusZIndex = 1000;
+  constexpr std::int32_t kOverlayZIndex = 5000;
 
 } // namespace
 
@@ -92,7 +95,10 @@ CarouselView::CarouselView() {
   m_canvas = static_cast<Canvas*>(m_scroll->content()->addChild(std::move(canvas)));
 
   auto inputArea = std::make_unique<InputArea>();
-  inputArea->setZIndex(50);
+  // Above every card: cards carry a depth-derived z-index (up to kFocusZIndex) so
+  // the arc paints back-to-front, and an InputArea sitting under them would never
+  // see a press — WallpaperTile is itself an InputArea and would swallow it.
+  inputArea->setZIndex(kOverlayZIndex);
   inputArea->setFocusable(true);
   inputArea->setAcceptedButtons(InputArea::buttonMask({BTN_LEFT}));
   inputArea->setOnEnter([this](const InputArea::PointerData& data) { onPointerMotion(data.localX, data.localY); });
@@ -406,10 +412,12 @@ void CarouselView::onPointerPress(float localX, float localY) {
   float y = 0.0F;
   float w = 0.0F;
   float h = 0.0F;
-  if (slotRectForIndex(*idx, x, y, w, h)
+  const bool haveRect = slotRectForIndex(*idx, x, y, w, h);
+  const bool overlayTook = haveRect
       && m_adapter->onPointerPress(*idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
                                    (localY - y) / std::max(0.01F, h) * m_cellHeightResolved, m_cellWidthResolved,
-                                   m_cellHeightResolved)) {
+                                   m_cellHeightResolved);
+  if (overlayTook) {
     notifyDataChanged();
     return;
   }
@@ -586,7 +594,7 @@ void CarouselView::doLayout(Renderer& renderer) {
       tile->setPosition(centreX - cellW * 0.5F, sample.centreY - cellH * 0.5F);
       tile->setScale(sample.scale);
       tile->setOpacity(sample.opacity);
-      tile->setZIndex(static_cast<std::int32_t>(std::lround((1.0F - sample.depth) * 1000.0F)));
+      tile->setZIndex(static_cast<std::int32_t>(std::lround((1.0F - sample.depth) * static_cast<float>(kFocusZIndex))));
       tile->setVisible(onArc);
       tile->layout(renderer);
 

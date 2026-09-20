@@ -33,6 +33,9 @@ using namespace control_center;
 
 namespace {
 
+  // How far content travels while transitioning between sections (logical px).
+  constexpr float kTabTransitionTravel = 34.0F;
+
   constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
   // Full-height cards need room for rounded-rect AA before the tab viewport clips them.
   constexpr float kTabViewportClipInset = 1.0F;
@@ -426,6 +429,12 @@ void ControlCenterPanel::onOpen(std::string_view context) {
   selectTab(tabFromContext(context), animateTabSwitch);
 }
 
+bool ControlCenterPanel::retargetOpen(std::string_view context) {
+  // The shell stays exactly where it is; only the content region transitions.
+  selectTab(tabFromContext(context), /*animated=*/true);
+  return true;
+}
+
 bool ControlCenterPanel::isContextActive(std::string_view context) const {
   return m_activeTab == tabFromContext(context);
 }
@@ -621,7 +630,11 @@ void ControlCenterPanel::applyTabContainerVisibility(TabId activeTab) {
 }
 
 void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) {
-  const float travel = bodyHeight > 0.0F ? bodyHeight : 0.0F;
+  // Content settles into place over a short distance instead of flying a whole
+  // body height: a full-height slide reads as the panel re-opening, which is
+  // exactly what section navigation must not look like.
+  const float travel =
+      bodyHeight > 0.0F ? std::min(bodyHeight * 0.10F, kTabTransitionTravel * contentScale()) : 0.0F;
   const float contentHeight = tabContentHeight(bodyHeight);
   for (std::size_t i = 0; i < kTabCount; ++i) {
     auto* container = m_tabContainers[i];
@@ -637,11 +650,15 @@ void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) 
     if (m_tabTransitionActive && travel > 0.0F) {
       const auto direction = static_cast<float>(m_tabTransitionDirection);
       if (tabId == m_tabTransitionOutgoing) {
-        offsetY = -direction * travel * m_tabTransitionProgress;
-        opacity = 1.0F - 0.3F * m_tabTransitionProgress;
+        // An interrupted switch leaves the outgoing content part-way; continue
+        // from where it actually is rather than snapping it back.
+        const float from = m_tabTransitionOutgoingStart;
+        const float to = -direction * travel;
+        offsetY = from + (to - from) * m_tabTransitionProgress;
+        opacity = std::max(0.0F, 1.0F - m_tabTransitionProgress);
       } else if (tabId == m_activeTab) {
         offsetY = direction * travel * (1.0F - m_tabTransitionProgress);
-        opacity = 0.7F + 0.3F * m_tabTransitionProgress;
+        opacity = m_tabTransitionProgress;
       }
     }
 
@@ -717,7 +734,7 @@ void ControlCenterPanel::startTabTransition(TabId from, TabId to) {
   PanelManager::instance().requestFrameTick();
 
   m_tabTransitionAnimId = m_animations->animate(
-      0.0F, 1.0F, static_cast<float>(Style::animNormal), Easing::EaseOutCubic,
+      0.0F, 1.0F, static_cast<float>(Style::animNormal), Easing::EaseOutQuint,
       [this](float progress) {
         m_tabTransitionProgress = progress;
         applyTabTransitionLayout();
@@ -788,10 +805,20 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   const TabId previousTab = m_activeTab;
   const bool tabChanged = tab != previousTab;
 
+  // Interrupting a switch: remember where the content that is now leaving
+  // actually sits, so the next transition continues from there.
+  float interruptedOffset = 0.0F;
+  bool interrupted = false;
   if (m_tabTransitionAnimId != 0 && m_animations != nullptr) {
+    const std::size_t incomingIdx = tabIndex(m_activeTab);
+    if (m_tabContainers[incomingIdx] != nullptr) {
+      interruptedOffset = m_tabContainers[incomingIdx]->y();
+      interrupted = true;
+    }
     m_animations->cancel(m_tabTransitionAnimId);
     m_tabTransitionAnimId = 0;
-    finishTabTransition();
+    m_tabTransitionActive = false;
+    applyTabContainerVisibility(m_activeTab);
   }
 
   m_activeTab = tab;
@@ -802,6 +829,7 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   updateTabChrome(tab);
 
   if (tabChanged && animated && m_animations != nullptr && m_tabBodies != nullptr) {
+    m_tabTransitionOutgoingStart = interrupted ? interruptedOffset : 0.0F;
     startTabTransition(previousTab, tab);
   } else {
     m_tabTransitionActive = false;

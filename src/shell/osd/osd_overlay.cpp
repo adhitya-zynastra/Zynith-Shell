@@ -25,7 +25,10 @@ namespace {
 
   constexpr Logger kLog("osd");
 
-  constexpr int kHideDelayMs = Style::animSlow * 3 + Style::animFast * 2;
+  // How long a value OSD stays on screen after the last change. Pinned, not
+  // derived from the motion tiers: this is a dwell time, not an animation, and
+  // it was tuned by hand (Phase 4).
+  constexpr int kHideDelayMs = 1400;
 
   enum class OsdRevealDir { FromLeft, FromRight, FromTop, FromBottom };
 
@@ -829,7 +832,7 @@ void OsdOverlay::updateInstanceContent(Instance& inst) {
     ProgressBar* bar = inst.progress;
     Instance* self = &inst;
     inst.progressAnimId = inst.animations.animate(
-        inst.shownProgress, target, Style::animNormal, Easing::EaseOutCubic,
+        inst.shownProgress, target, Style::animNormal, Easing::EaseOutQuint,
         [bar, self](float v) {
           bar->setProgress(v);
           self->shownProgress = v;
@@ -943,7 +946,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
       inst.sceneRoot->setOpacity(1.0F);
       applyReveal(inst, 0.0F);
       inst.showAnimId = inst.animations.animate(
-          0.0F, 1.0F, Style::animNormal, Easing::EaseOutCubic, [this, &inst](float v) { applyReveal(inst, v); },
+          0.0F, 1.0F, Style::animNormal, Easing::EaseOutQuint, [this, &inst](float v) { applyReveal(inst, v); },
           [&inst]() {
             inst.showAnimId = 0;
             inst.visible = true;

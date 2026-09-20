@@ -45,6 +45,15 @@ public:
     return false;
   }
   [[nodiscard]] virtual bool dismissTransientUi() { return false; }
+  // Re-open request for the panel that is already open on this output. A panel
+  // that can move to `context` live returns true and keeps its surface, scene
+  // and animation state — otherwise PanelManager destroys and rebuilds it,
+  // which replays the whole opening animation for what is really just a
+  // navigation inside an open panel.
+  [[nodiscard]] virtual bool retargetOpen(std::string_view context) {
+    (void)context;
+    return false;
+  }
   [[nodiscard]] virtual bool deferExternalRefresh() const { return false; }
   [[nodiscard]] virtual bool deferPointerRelayout() const { return false; }
 
@@ -92,6 +101,13 @@ public:
   // When true, PanelManager fades a dimmed, blurred snapshot of the desktop in behind the panel
   // (ScreenVeil) for as long as it is open. Only meaningful for floating panels.
   [[nodiscard]] virtual bool wantsModalBackdrop() const { return false; }
+  // How that backdrop is drawn. `Snapshot` blurs one screencopy of the desktop —
+  // cheap to keep on screen, but frozen, so anything that changes underneath
+  // stays invisible until the panel closes. `Live` dims without capturing, so
+  // the desktop keeps rendering through it (the wallpaper browser needs this:
+  // applying a wallpaper must be visible behind the open browser).
+  enum class ModalBackdropMode : std::uint8_t { Snapshot, Live };
+  [[nodiscard]] virtual ModalBackdropMode modalBackdropMode() const { return ModalBackdropMode::Snapshot; }
   // True to live in PersistentPanelHost instead of PanelManager's single active
   // slot: opening another panel leaves it on screen, and only an explicit toggle
   // or close dismisses it.

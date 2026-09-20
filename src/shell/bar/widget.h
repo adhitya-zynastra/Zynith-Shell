@@ -88,6 +88,10 @@ public:
   void setActionContext(IpcInvocationContext context) { m_actionContext = std::move(context); }
   // Config type of this widget ("clock", "battery", …), recorded when bindings resolve.
   [[nodiscard]] std::string_view widgetType() const noexcept { return m_widgetType; }
+  // Capsule group this widget was created in ("" when it stands alone). Lets an
+  // interaction treat a cluster as one target instead of its member widgets.
+  void setCapsuleGroupId(std::string id) { m_capsuleGroupId = std::move(id); }
+  [[nodiscard]] std::string_view capsuleGroupId() const noexcept { return m_capsuleGroupId; }
 
   [[nodiscard]] const noctalia::bar::WidgetActionBindings& gestureBindings() const noexcept {
     return m_gestureBindings;
@@ -188,6 +192,7 @@ protected:
   Node* m_capsuleShell = nullptr;
   Box* m_capsuleBox = nullptr;
   std::string m_widgetType;
+  std::string m_capsuleGroupId;
   Box* m_hoverBox = nullptr;
   float m_hoverProgress = 0.0F;
 

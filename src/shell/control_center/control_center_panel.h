@@ -81,6 +81,7 @@ public:
   void create() override;
   void onFrameTick(float deltaMs) override;
   void onOpen(std::string_view context) override;
+  [[nodiscard]] bool retargetOpen(std::string_view context) override;
   void onClose() override;
   [[nodiscard]] bool dismissTransientUi() override;
   [[nodiscard]] bool isContextActive(std::string_view context) const override;
@@ -197,6 +198,8 @@ private:
   AnimationManager::Id m_tabTransitionAnimId = 0;
   TabId m_tabTransitionOutgoing = TabId::Home;
   float m_tabTransitionProgress = 1.0F;
+  // Offset the outgoing content starts from (non-zero when a switch interrupts another).
+  float m_tabTransitionOutgoingStart = 0.0F;
   int m_tabTransitionDirection = 1;
   bool m_tabTransitionActive = false;
   bool m_firstOpenAfterCreate = false;

@@ -2480,7 +2480,8 @@ void Bar::populateWidgets(BarInstance& instance) {
   // Creates one widget for `name`. When `groupSpec` is set the widget is a member of a capsule group and
   // takes the group's capsule style + foreground; otherwise it resolves its own per-widget/bar capsule.
   auto createWidget = [&](const std::string& name, const WidgetBarCapsuleSpec* groupSpec,
-                          const std::optional<ColorSpec>* groupForeground, std::vector<std::unique_ptr<Widget>>& dest) {
+                          const std::optional<ColorSpec>* groupForeground, std::vector<std::unique_ptr<Widget>>& dest,
+                          std::string_view groupId = {}) {
     const WidgetConfig* wcPtr = nullptr;
     if (auto it = widgetConfigs.find(name); it != widgetConfigs.end()) {
       wcPtr = &it->second;
@@ -2528,6 +2529,9 @@ void Bar::populateWidgets(BarInstance& instance) {
     } else if (instance.barConfig.widgetIconColor.has_value()) {
       widget->setWidgetIconColor(instance.barConfig.widgetIconColor);
     }
+    if (!groupId.empty()) {
+      widget->setCapsuleGroupId(std::string(groupId));
+    }
     dest.push_back(std::move(widget));
   };
 
@@ -2545,7 +2549,7 @@ void Bar::populateWidgets(BarInstance& instance) {
         }
         const WidgetBarCapsuleSpec groupSpec = capsuleSpecFromGroup(instance.barConfig, *group);
         for (const auto& member : group->members) {
-          createWidget(member, &groupSpec, &group->foreground, dest);
+          createWidget(member, &groupSpec, &group->foreground, dest, group->id);
         }
         continue;
       }
@@ -2941,7 +2945,28 @@ void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
     return;
   }
   const auto& cc = m_config->config().controlCenter;
-  if (!cc.hoverOpen || target == nullptr || target->widgetType() != "clock") {
+  if (!cc.hoverOpen || target == nullptr) {
+    return;
+  }
+  // The clock may share a capsule group (Zynith puts the clock and the audio
+  // visualiser in one cluster), and the cluster reads as a single control:
+  // resting anywhere on it counts, not only on the clock widget itself.
+  const bool targetIsClock = target->widgetType() == "clock";
+  bool targetInClockGroup = false;
+  if (!targetIsClock && !target->capsuleGroupId().empty()) {
+    const BarCapsuleGroupStyle* group =
+        findBarCapsuleGroupStyle(instance.barConfig, std::string(target->capsuleGroupId()));
+    if (group != nullptr) {
+      targetInClockGroup = std::ranges::any_of(group->members, [&](const std::string& member) {
+        const auto it = m_config->config().widgets.find(member);
+        const std::string_view type = it != m_config->config().widgets.end() && !it->second.type.empty()
+            ? std::string_view(it->second.type)
+            : std::string_view(member);
+        return type == "clock";
+      });
+    }
+  }
+  if (!targetIsClock && !targetInClockGroup) {
     return;
   }
   if (PanelManager::instance().isOpenPanel("control-center")) {
@@ -2949,12 +2974,15 @@ void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
   }
   BarInstance* inst = &instance;
   CompositorPlatform* platform = m_platform;
+  const std::string clockGroupId(target->capsuleGroupId());
   instance.hoverIntentTimer.start(
-      std::chrono::milliseconds(std::max<std::int32_t>(0, cc.hoverOpenDelayMs)), [inst, platform]() {
-        if (inst->hoverHighlightWidget == nullptr
-            || inst->hoverHighlightWidget->widgetType() != "clock"
-            || PanelManager::instance().isOpenPanel("control-center")) {
+      std::chrono::milliseconds(std::max<std::int32_t>(0, cc.hoverOpenDelayMs)), [inst, platform, clockGroupId]() {
+        if (inst->hoverHighlightWidget == nullptr || PanelManager::instance().isOpenPanel("control-center")) {
           return;
+        }
+        const Widget* held = inst->hoverHighlightWidget;
+        if (held->widgetType() != "clock" && held->capsuleGroupId() != clockGroupId) {
+          return; // pointer moved off the time cluster
         }
         openPanelAtBarPointer(
             *inst, inst->lastPointerSx, inst->lastPointerSy, platform, inst->barConfig.name, "control-center", "home",

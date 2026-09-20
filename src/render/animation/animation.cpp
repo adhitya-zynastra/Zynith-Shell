@@ -1,6 +1,7 @@
 #include "render/animation/animation.h"
 
 #include <algorithm>
+#include <cmath>
 
 float applyEasing(Easing easing, float t) {
   t = std::clamp(t, 0.0F, 1.0F);
@@ -40,6 +41,22 @@ float applyEasing(Easing easing, float t) {
     const float f = t - 1.0F;
     return 1.0F + c3 * f * f * f + c1 * f * f;
   }
+
+  case Easing::EaseOutQuint: {
+    const float f = 1.0F - t;
+    return 1.0F - f * f * f * f * f;
+  }
+
+  case Easing::EaseInOutQuint:
+    if (t < 0.5F) {
+      return 16.0F * t * t * t * t * t;
+    } else {
+      const float f = -2.0F * t + 2.0F;
+      return 1.0F - (f * f * f * f * f) / 2.0F;
+    }
+
+  case Easing::EaseOutExpo:
+    return t >= 1.0F ? 1.0F : 1.0F - std::pow(2.0F, -10.0F * t);
   }
 
   return t;
