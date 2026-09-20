@@ -86,6 +86,9 @@ public:
       std::string_view logContext
   );
   void setActionContext(IpcInvocationContext context) { m_actionContext = std::move(context); }
+  // Config type of this widget ("clock", "battery", …), recorded when bindings resolve.
+  [[nodiscard]] std::string_view widgetType() const noexcept { return m_widgetType; }
+
   [[nodiscard]] const noctalia::bar::WidgetActionBindings& gestureBindings() const noexcept {
     return m_gestureBindings;
   }
@@ -184,6 +187,7 @@ protected:
   bool m_barPointerSuppressed = false;
   Node* m_capsuleShell = nullptr;
   Box* m_capsuleBox = nullptr;
+  std::string m_widgetType;
   Box* m_hoverBox = nullptr;
   float m_hoverProgress = 0.0F;
 

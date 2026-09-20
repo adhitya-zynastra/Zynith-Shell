@@ -207,7 +207,7 @@ namespace {
            .gap = gap,
            .paddingV = paddingV,
            .paddingH = Style::spaceSm * m_style.scale,
-           .radius = Style::scaledRadiusMd(m_style.scale)}
+           .radius = std::max(Style::scaledRadiusLg(m_style.scale), 10.0F * m_style.scale)}
       );
       addChild(std::move(row));
 
@@ -471,7 +471,7 @@ namespace {
           .gap = gap,
           .paddingV = padding,
           .paddingH = padding,
-          .radius = Style::scaledRadiusMd(m_style.scale),
+          .radius = std::max(Style::scaledRadiusLg(m_style.scale), 10.0F * m_style.scale),
           .fillWidth = true,
           .fillHeight = true,
       });

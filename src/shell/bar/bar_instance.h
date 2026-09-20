@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/timer_manager.h"
 #include "config/config_service.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_area.h"
@@ -72,6 +73,8 @@ struct BarInstance {
   // smart_auto_hide: active workspace empty (or overview open) — keep the bar visible.
   bool smartAutoHidePinnedVisible = false;
   bool pointerInside = false;
+  // zynith: hover-intent for the clock -> control center (one-shot, armed only while hovering).
+  Timer hoverIntentTimer;
   float lastPointerSx = 0.0F;
   float lastPointerSy = 0.0F;
   std::size_t attachedPopupCount = 0;

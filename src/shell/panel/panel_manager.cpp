@@ -45,6 +45,11 @@
 PanelManager* PanelManager::s_instance = nullptr;
 
 namespace {
+  // zynith: panels share the OSD/toast silhouette — clearly rounded, themed radius as the floor.
+  [[nodiscard]] float zynithPanelRadius(float scale) {
+    return std::max(Style::scaledRadiusXl(scale), 16.0F * scale);
+  }
+
 
   constexpr Logger kLog("panel");
   constexpr auto kKeyboardRelaxDelay = std::chrono::milliseconds(100);
@@ -2299,7 +2304,8 @@ void PanelManager::applyPanelCompositorBlur(
     return;
   }
 
-  const float radius = Style::scaledRadiusXl(m_activePanel->contentScale());
+  // zynith: panels share the toast/OSD silhouette (see panelSurfaceRadius).
+  const float radius = zynithPanelRadius(m_activePanel->contentScale());
   const CornerShapes corners = m_attachedToBar ? attached_panel::cornerShapes(m_attachedBarPosition) : CornerShapes{};
   const RectInsets logicalInset =
       m_attachedToBar ? attached_panel::logicalInset(m_attachedBarPosition, radius) : RectInsets{};
@@ -2443,7 +2449,7 @@ void PanelManager::onConfigReloaded() {
         m_config->config().shell.panel.shadow && shell::surface_shadow::enabled(true, shadowConfig);
     m_panelShadowNode->setVisible(panelShadow);
     if (!m_attachedToBar && panelShadow) {
-      const float shadowRadius = Style::scaledRadiusXl(m_activePanel->contentScale());
+      const float shadowRadius = zynithPanelRadius(m_activePanel->contentScale());
       m_panelShadowNode->setStyle(
           shell::surface_shadow::style(
               shadowConfig, panelBackgroundOpacity,
@@ -2540,7 +2546,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
       const bool panelBorders = m_config != nullptr && m_config->config().shell.panel.borders;
       bg->setPanelStyle(panelBorders);
       if (m_attachedToBar) {
-        const float radius = Style::scaledRadiusXl(m_activePanel->contentScale());
+        const float radius = zynithPanelRadius(m_activePanel->contentScale());
         bg->clearBorder();
         bg->setCornerShapes(attached_panel::cornerShapes(m_attachedBarPosition));
         bg->setLogicalInset(attached_panel::logicalInset(m_attachedBarPosition, radius));
@@ -2652,7 +2658,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
   const auto panelY = static_cast<float>(m_panelInsetY);
   const float panelW = m_panelVisualWidth > 0 ? static_cast<float>(m_panelVisualWidth) : w;
   const float panelH = m_panelVisualHeight > 0 ? static_cast<float>(m_panelVisualHeight) : h;
-  const float attachedRadius = m_attachedToBar ? Style::scaledRadiusXl(m_activePanel->contentScale()) : 0.0F;
+  const float attachedRadius = m_attachedToBar ? zynithPanelRadius(m_activePanel->contentScale()) : 0.0F;
   const bool barIsVertical = m_attachedToBar && (m_attachedBarPosition == "left" || m_attachedBarPosition == "right");
   // The bg extends past the body along the bar cross axis for concave-corner notches.
   const float bgX = barIsVertical ? panelX : panelX - attachedRadius;
@@ -2671,7 +2677,7 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     m_panelShadowNode->setPosition(bgX + shadowOffsetX, bgY + shadowOffsetY);
     m_panelShadowNode->setSize(bgW, bgH);
     if (!m_attachedToBar && panelShadow) {
-      const float shadowRadius = Style::scaledRadiusXl(m_activePanel->contentScale());
+      const float shadowRadius = zynithPanelRadius(m_activePanel->contentScale());
       const float panelBackgroundOpacity = shell::panel_surface::backgroundOpacity(m_config);
       m_panelShadowNode->setStyle(
           shell::surface_shadow::style(

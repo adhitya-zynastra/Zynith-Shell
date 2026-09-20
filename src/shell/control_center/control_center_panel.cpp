@@ -101,7 +101,9 @@ bool ControlCenterPanel::dismissTransientUi() {
 void ControlCenterPanel::create() {
   const float scale = contentScale();
   const ControlCenterSidebarMode sidebarMode = sidebarModeForOpen(pendingOpenContext());
-  m_compact = sidebarMode == ControlCenterSidebarMode::Compact;
+  m_topNav = m_config != nullptr && m_config->config().controlCenter.topNav;
+  // zynith top nav: icon-only buttons in a row above the content (no scroll rail needed).
+  m_compact = m_topNav || sidebarMode == ControlCenterSidebarMode::Compact;
   m_showSidebar = sidebarMode != ControlCenterSidebarMode::None;
 
   for (auto& tab : m_tabs) {
@@ -109,26 +111,29 @@ void ControlCenterPanel::create() {
     tab->setPanelCardOpacity(panelCardOpacity());
   }
 
-  auto rootLayout = ui::row({
+  const ui::FlexProps rootProps{
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
       .gap = Style::panelPadding * scale,
       .padding = 0.0F,
-  });
+  };
+  auto rootLayout = m_topNav ? ui::column(rootProps) : ui::row(rootProps);
 
   if (m_showSidebar) {
-    auto sidebar = ui::column({
+    const ui::FlexProps sidebarProps{
         .out = &m_sidebar,
-        .align = FlexAlign::Start,
+        .align = m_topNav ? FlexAlign::Center : FlexAlign::Start,
+        .justify = m_topNav ? FlexJustify::Center : FlexJustify::Start,
         .gap = 0.0F,
-        .padding = Style::spaceMd * scale,
-        .fillWidth = false,
-        .fillHeight = true,
-        .configure = [this, scale](Flex& column) {
-          column.setFill(colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()));
-          column.setRadius(Style::scaledRadiusXl(scale));
+        .padding = (m_topNav ? Style::spaceXs : Style::spaceMd) * scale,
+        .fillWidth = m_topNav,
+        .fillHeight = !m_topNav,
+        .configure = [this, scale](Flex& flex) {
+          flex.setFill(colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()));
+          flex.setRadius(Style::scaledRadiusXl(scale));
         },
-    });
+    };
+    auto sidebar = m_topNav ? ui::row(sidebarProps) : ui::column(sidebarProps);
 
     auto sidebarScrollArea = ui::inputArea({});
     sidebarScrollArea->setParticipatesInLayout(false);
@@ -157,7 +162,7 @@ void ControlCenterPanel::create() {
     });
 
     auto sidebarNav = std::make_unique<RovingListNavHost>(RovingListNavController::Options{
-        .axis = RovingListNavAxis::Vertical,
+        .axis = m_topNav ? RovingListNavAxis::Horizontal : RovingListNavAxis::Vertical,
         .mode = RovingListNavMode::FollowFocus,
         .keepItemsInTabOrder = false,
         .wrap = true,
@@ -208,13 +213,20 @@ void ControlCenterPanel::create() {
       sidebarNav->registerItem(m_tabButtons[idx], onClick);
     }
 
-    if (sidebarScroll->content() != nullptr) {
-      if (!m_compact) {
-        sidebarScroll->content()->setAlign(FlexAlign::Stretch);
+    if (m_topNav) {
+      // No rail to scroll: the icon row fits the panel width, so skip the scroll view entirely.
+      sidebarNav->setDirection(FlexDirection::Horizontal);
+      sidebar->addChild(std::move(sidebarNav));
+      sidebarScroll.reset();
+    } else {
+      if (sidebarScroll->content() != nullptr) {
+        if (!m_compact) {
+          sidebarScroll->content()->setAlign(FlexAlign::Stretch);
+        }
+        sidebarScroll->content()->addChild(std::move(sidebarNav));
       }
-      sidebarScroll->content()->addChild(std::move(sidebarNav));
+      sidebar->addChild(std::move(sidebarScroll));
     }
-    sidebar->addChild(std::move(sidebarScroll));
     rootLayout->addChild(std::move(sidebar));
   }
 

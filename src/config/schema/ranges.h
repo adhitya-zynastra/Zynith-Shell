@@ -15,6 +15,7 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kRefreshMinutesRange{5, 240, 5}; // calendar/weather refresh interval
 
   // Shell.
+  inline constexpr Range<std::int64_t> kHoverIntentRange{0, 2000, 50};   // clock hover-open delay (ms)
   inline constexpr Range<float> kAnimationSpeedRange{0.1F, 4.0F, 0.05F};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
   inline constexpr Range<std::int64_t> kControlCenterWidthRange{600, 1200, 10};

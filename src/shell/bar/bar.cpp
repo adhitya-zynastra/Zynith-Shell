@@ -2929,6 +2929,39 @@ void Bar::updateWidgetHoverHighlight(BarInstance& instance, InputArea* hoveredAr
   if (target != nullptr) {
     animateWidgetHoverHighlight(instance, *target, true);
   }
+  updateClockHoverIntent(instance, target);
+}
+
+// zynith: resting on the clock opens the control center at Home. One-shot timer armed only while
+// the clock is hovered and cancelled the moment the pointer leaves, so crossing the bar does
+// nothing and no polling or animation loop is involved.
+void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
+  instance.hoverIntentTimer.stop();
+  if (m_config == nullptr) {
+    return;
+  }
+  const auto& cc = m_config->config().controlCenter;
+  if (!cc.hoverOpen || target == nullptr || target->widgetType() != "clock") {
+    return;
+  }
+  if (PanelManager::instance().isOpenPanel("control-center")) {
+    return;
+  }
+  BarInstance* inst = &instance;
+  CompositorPlatform* platform = m_platform;
+  instance.hoverIntentTimer.start(
+      std::chrono::milliseconds(std::max<std::int32_t>(0, cc.hoverOpenDelayMs)), [inst, platform]() {
+        if (inst->hoverHighlightWidget == nullptr
+            || inst->hoverHighlightWidget->widgetType() != "clock"
+            || PanelManager::instance().isOpenPanel("control-center")) {
+          return;
+        }
+        openPanelAtBarPointer(
+            *inst, inst->lastPointerSx, inst->lastPointerSy, platform, inst->barConfig.name, "control-center", "home",
+            false
+        );
+      }
+  );
 }
 
 void Bar::animateWidgetHoverHighlight(BarInstance& instance, Widget& widget, bool hovered) {

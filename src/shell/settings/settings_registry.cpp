@@ -1382,7 +1382,33 @@ namespace settings {
       SliderSetting width =
           sliderFor(cfg.controlCenter.width, noctalia::config::schema::kControlCenterWidthRange, true);
       width.valueSuffix = "px";
-      entries.push_back(makeEntry(
+          entries.push_back(makeEntry(
+        SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-top-nav.label"),
+        tr("settings.schema.panels.control-center-top-nav.description"), {"control_center", "top_nav"},
+        ToggleSetting{cfg.controlCenter.topNav}, "sections top navigation row"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-hover-open.label"),
+        tr("settings.schema.panels.control-center-hover-open.description"), {"control_center", "hover_open"},
+        ToggleSetting{cfg.controlCenter.hoverOpen}, "hover clock open control center"
+    ));
+    {
+      auto e = makeEntry(
+          SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-hover-delay.label"),
+          tr("settings.schema.panels.control-center-hover-delay.description"),
+          {"control_center", "hover_open_delay_ms"},
+          StepperSetting{
+              .value = static_cast<int>(cfg.controlCenter.hoverOpenDelayMs),
+              .minValue = static_cast<int>(noctalia::config::schema::kHoverIntentRange.min.value()),
+              .maxValue = static_cast<int>(noctalia::config::schema::kHoverIntentRange.max.value()),
+              .step = static_cast<int>(noctalia::config::schema::kHoverIntentRange.step.value()),
+          },
+          "hover clock delay"
+      );
+      e.visibleWhen = [](const Config& c) { return c.controlCenter.hoverOpen; };
+      entries.push_back(std::move(e));
+    }
+    entries.push_back(makeEntry(
           SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-width.label"),
           tr("settings.schema.panels.control-center-width.description"), {"control_center", "width"}, std::move(width),
           "size dimension wide narrow"

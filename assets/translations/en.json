@@ -2419,6 +2419,18 @@
           "description": "Choose which tabs appear in Control Center; unchecked tabs are hidden",
           "label": "Control Center Tabs"
         },
+        "control-center-top-nav": {
+          "description": "Section buttons run along the top of the panel instead of a left rail",
+          "label": "Top Navigation"
+        },
+        "control-center-hover-open": {
+          "description": "Hovering the bar clock opens the Control Center at Home",
+          "label": "Open on Clock Hover"
+        },
+        "control-center-hover-delay": {
+          "description": "How long the pointer must rest on the clock first",
+          "label": "Hover Delay (ms)"
+        },
         "control-center-width": {
           "description": "Width of the Control Center panel in pixels (compact and no-sidebar modes scale down from this)",
           "label": "Control Center Width"

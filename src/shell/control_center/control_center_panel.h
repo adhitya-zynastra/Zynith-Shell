@@ -167,6 +167,7 @@ private:
 
   // Panel UI structure (rebuilt each create(), nulled in onClose())
   Flex* m_rootLayout = nullptr;
+  bool m_topNav = false; // zynith: sections along the top instead of the left rail
   Flex* m_sidebar = nullptr;
   ScrollView* m_sidebarScrollView = nullptr;
   ScrollViewState m_sidebarScrollState{};

@@ -221,6 +221,7 @@ void Widget::resolveGestureBindings(
 
   const std::string widgetContext = std::format("widget.{}", m_configName);
   // Named, not inlined: the span in Inputs borrows from it.
+  m_widgetType = std::string(widgetType);
   const auto typeDefaults = noctalia::bar::gestureDefaultsForType(widgetType, widgetConfig);
   m_gestureBindings.resolve(
       noctalia::bar::WidgetActionBindings::Inputs{

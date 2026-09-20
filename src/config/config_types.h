@@ -1590,6 +1590,11 @@ struct ControlCenterConfig {
   ControlCenterSidebarMode sidebarMode = ControlCenterSidebarMode::Compact;
   ControlCenterSidebarMode sidebarSectionMode = ControlCenterSidebarMode::Compact;
   std::int32_t width = kDefaultWidth; // full-sidebar logical width; compact/none modes scale down from this
+  // zynith: sections run along the top of the panel instead of a left rail.
+  bool topNav = false;
+  // zynith: hovering the bar clock opens the control center at Home after a short intent delay.
+  bool hoverOpen = false;
+  std::int32_t hoverOpenDelayMs = 350;
   bool showShortcutLabels = true;
   bool showSessionButton = true;
   CalendarTabConfig calendarTab;
