@@ -389,6 +389,32 @@ void ThumbnailService::evictIdleOverBudget() {
   }
 }
 
+void ThumbnailService::prefetch(const std::string& path, int targetPx) {
+  if (path.empty()) {
+    return;
+  }
+  const RequestKey key{.path = path, .targetPx = targetPx};
+  const auto existing = m_entries.find(key);
+  if (existing != m_entries.end()) {
+    // Already decoded, already failed, already owned, or already parked.
+    return;
+  }
+  CacheEntry& entry = m_entries[key];
+  if (m_activeSession != 0) {
+    entry.session = m_activeSession;
+  }
+  // Park it straight away: uploadPending() only accepts entries that someone
+  // holds or that are idle, and a prefetch has no owner by definition.
+  retireToIdle(key, entry);
+  evictIdleOverBudget();
+
+  if (m_decodePauseDepth > 0) {
+    entry.deferredDecode = true;
+    return;
+  }
+  enqueueDecodeIfNeeded(key);
+}
+
 ThumbnailService::SessionId
 ThumbnailService::beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries) {
   m_activeSession = m_nextSession++;

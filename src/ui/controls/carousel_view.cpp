@@ -248,6 +248,7 @@ void CarouselView::setFocusedIndex(std::size_t index, bool animated) {
 
 void CarouselView::resetTo(std::size_t index) {
   m_settleTimer.stop();
+  m_settleAnimating = false;
   setMoving(false);
   m_focusedIndex.reset();
   const std::size_t count = m_adapter == nullptr ? 0U : m_adapter->itemCount();
@@ -314,9 +315,17 @@ bool CarouselView::settleNow() {
   const float delta = target - m_scroll->scrollOffset();
   if (std::abs(delta) < 1.0F) {
     // Nothing left to travel: the carousel has landed.
+    m_settleAnimating = false;
     setMoving(false);
     return false;
   }
+  // The landing item is decided here, so motion is "over" for anything that
+  // depends on where we end up: the host can start preparing the focused card's
+  // display-quality texture now and have it ready before the settle finishes,
+  // instead of only starting once the animation has stopped.
+  m_settleAnimating = true;
+  setMoving(false);
+
   // ScrollView's own eased scroll: decelerating, no overshoot, and the frame
   // clock stops with it.
   m_settling = true;
@@ -326,7 +335,11 @@ bool CarouselView::settleNow() {
 }
 
 void CarouselView::onScrollChanged(float /*offset*/) {
-  setMoving(true);
+  // A settle animation is motion the user is no longer driving: it must not
+  // re-arm the "moving" state, or the work it was meant to unblock never starts.
+  if (!m_settleAnimating) {
+    setMoving(true);
+  }
   updateFocusFromOffset();
   if (!m_settling) {
     armSettle();

@@ -158,6 +158,9 @@ private:
   std::function<void(std::size_t)> m_onActivate;
   std::function<void(bool)> m_onMotionChanged;
   bool m_moving = false;
+  // True while the post-fling settle animation is running (motion the user is no
+  // longer driving).
+  bool m_settleAnimating = false;
 
   // Layout snapshot, used by hit-testing and the settle step without re-measuring.
   std::size_t m_itemCount = 0;

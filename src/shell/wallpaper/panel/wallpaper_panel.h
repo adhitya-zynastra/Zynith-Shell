@@ -127,6 +127,10 @@ private:
   [[nodiscard]] bool carouselMode() const;
   // Index of the wallpaper currently applied, or kNoVisibleSelection.
   [[nodiscard]] std::size_t indexOfCurrentWallpaper() const;
+  // Makes the browsable collection resident for this session (see kBrowseThumbnailPx).
+  void prefetchSessionThumbnails();
+  // Keeps the display-quality window around the focus, leaning the way the user is moving.
+  void updatePromotionWindow();
   [[nodiscard]] InputArea* browseFocusArea() const;
   [[nodiscard]] bool browseOwnsFocus(const InputArea* area) const;
   void resetSelection();
@@ -204,6 +208,10 @@ private:
   bool m_pendingInitialFocus = false;
   // True while this panel holds the thumbnail service's decode gate closed.
   bool m_decodeGateHeld = false;
+  long m_lastPromotionFocus = -1;
+  long m_promotionLo = 0;
+  long m_promotionHi = -1;
+  int m_promotionDirection = 1;
   // Thumbnail session owned by this browser while it is on screen (0 = none).
   ThumbnailService::SessionId m_thumbnailSession = 0;
   // Guards against one gesture applying the same wallpaper twice.

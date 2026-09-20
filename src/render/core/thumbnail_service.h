@@ -98,6 +98,13 @@ public:
   // holds (refCount > 0) is untouched, and so is anything another component
   // parked. The desktop wallpaper is not affected at all — it lives in
   // SharedTextureCache, not here.
+  // Decode `path` now and park it in the idle set without taking ownership, so a
+  // later acquire() is a cache hit. Used to make a whole browsable collection
+  // resident up front at a cheap resolution: rapid scrolling then never waits
+  // for a decode. Subject to the same idle budget as everything else, so a huge
+  // library simply keeps the most recent prefetches.
+  void prefetch(const std::string& path, int targetPx);
+
   using SessionId = std::uint64_t;
   [[nodiscard]] SessionId beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries);
   void endSession(SessionId session);

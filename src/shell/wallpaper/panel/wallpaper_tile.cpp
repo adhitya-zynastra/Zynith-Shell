@@ -418,8 +418,44 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
     return;
   }
 
-  // Decode the thumbnail at the tile's physical display size so it stays crisp
-  // under ui_scale / fractional scaling instead of upscaling the 192px default.
+  // Browsing mode holds one cheap resolution for every card and, for the focused
+  // card, a sharper one *in addition*. Switching sizes by releasing the old one
+  // made every newly focused card blank while the sharper decode was pending —
+  // during a fast flick that is a wall of placeholders. Both are held, and the
+  // browse texture is drawn until the promoted one is actually ready.
+  if (m_browsePx > 0) {
+    if (m_thumbTargetPx != m_browsePx) {
+      if (m_thumbTargetPx > 0) {
+        m_thumbnails->release(m_thumbPath, m_thumbTargetPx);
+      }
+      (void)m_thumbnails->acquire(m_thumbPath, m_browsePx);
+      m_thumbTargetPx = m_browsePx;
+    }
+
+    const int wantPromoted = (m_promoted && m_promotedPx > m_browsePx) ? m_promotedPx : 0;
+    if (wantPromoted != m_promotedHeldPx) {
+      if (m_promotedHeldPx > 0) {
+        m_thumbnails->release(m_thumbPath, m_promotedHeldPx);
+      }
+      m_promotedHeldPx = 0;
+      if (wantPromoted > 0) {
+        (void)m_thumbnails->acquire(m_thumbPath, wantPromoted);
+        m_promotedHeldPx = wantPromoted;
+      }
+    }
+
+    TextureHandle shown{};
+    if (m_promotedHeldPx > 0) {
+      shown = m_thumbnails->peek(m_thumbPath, m_promotedHeldPx);
+    }
+    if (shown.id == 0) {
+      shown = m_thumbnails->peek(m_thumbPath, m_thumbTargetPx);
+    }
+    applyThumbnailTexture(renderer, shown);
+    return;
+  }
+
+  // Grid mode: one texture sized from the tile, as before.
   const int targetPx = thumbnailTargetPx(renderer);
   if (targetPx > 0 && targetPx != m_thumbTargetPx) {
     if (m_thumbTargetPx > 0) {
@@ -452,14 +488,49 @@ void WallpaperTile::refreshThumbnail(Renderer& renderer) {
 }
 
 void WallpaperTile::releaseThumbnail() {
-  if (!m_thumbPath.empty() && m_thumbnails != nullptr && m_thumbTargetPx > 0) {
-    m_thumbnails->release(m_thumbPath, m_thumbTargetPx);
+  if (!m_thumbPath.empty() && m_thumbnails != nullptr) {
+    if (m_thumbTargetPx > 0) {
+      m_thumbnails->release(m_thumbPath, m_thumbTargetPx);
+    }
+    if (m_promotedHeldPx > 0) {
+      m_thumbnails->release(m_thumbPath, m_promotedHeldPx);
+    }
   }
   m_thumbPath.clear();
   m_thumbTargetPx = 0;
+  m_promotedHeldPx = 0;
 }
 
+void WallpaperTile::applyThumbnailTexture(Renderer& renderer, TextureHandle handle) {
+  if (handle.id != 0) {
+    m_loadingThumbnail = false;
+    m_thumb->setExternalTexture(renderer, handle);
+    m_thumb->setVisible(true);
+    if (m_loadingGlyph != nullptr) {
+      m_loadingGlyph->setVisible(false);
+    }
+    return;
+  }
+  m_loadingThumbnail = true;
+  m_thumb->clear(renderer);
+  m_thumb->setVisible(false);
+  if (m_loadingGlyph != nullptr) {
+    m_loadingGlyph->setVisible(true);
+  }
+}
+
+void WallpaperTile::setBrowseThumbnailPx(int px) { m_browsePx = std::max(0, px); }
+
+void WallpaperTile::setPromotedThumbnailPx(int px) { m_promotedPx = std::max(0, px); }
+
+void WallpaperTile::setPromoted(bool promoted) { m_promoted = promoted; }
+
 int WallpaperTile::thumbnailTargetPx(const Renderer& renderer) const {
+  // A fixed browse size keeps a whole collection affordable to hold resident;
+  // the focused card asks for a sharper one.
+  if (m_browsePx > 0) {
+    return m_promoted && m_promotedPx > m_browsePx ? m_promotedPx : m_browsePx;
+  }
   const float scale = std::max(1.0F, renderer.renderScale());
   const float basis = std::max(m_cellWidth, m_cellHeight);
   if (basis <= 0.0F) {

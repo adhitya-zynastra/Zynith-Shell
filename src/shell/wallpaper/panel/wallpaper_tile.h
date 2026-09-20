@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/core/texture_handle.h"
 #include "render/scene/input_area.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 
@@ -48,6 +49,19 @@ public:
   void clearEntry(Renderer& renderer);
   void refreshThumbnail(Renderer& renderer);
 
+  // Fixed thumbnail long-edge for browsing, instead of sizing from the cell.
+  // The carousel draws large cards but browses a whole collection, so every card
+  // uses one cheap resolution and only the focused one is promoted (below).
+  void setBrowseThumbnailPx(int px);
+  // Promoted (display-quality) resolution, used when this tile is inside the
+  // promotion window. The browse texture keeps showing until the promoted one is
+  // decoded, so focusing never blanks a card.
+  void setPromotedThumbnailPx(int px);
+  // Whether this tile should hold the display-quality representation. Driven by
+  // the host's promotion window, not by selection: the cards on either side of
+  // the focus are large enough that a preview-resolution texture is visibly soft.
+  void setPromoted(bool promoted);
+
   void setSelected(bool selected);
   void setCurrent(bool current);
   void setHoveredVisual(bool hovered);
@@ -73,6 +87,7 @@ private:
   void layoutThumbOverlays();
   void doLayout(Renderer& renderer) override;
   void releaseThumbnail();
+  void applyThumbnailTexture(Renderer& renderer, TextureHandle handle);
   // Thumbnail long-edge in physical pixels for this tile's current display size.
   [[nodiscard]] int thumbnailTargetPx(const Renderer& renderer) const;
 
@@ -103,6 +118,10 @@ private:
   bool m_loadingThumbnail = false;
   std::string m_thumbPath;
   int m_thumbTargetPx = 0;
+  int m_browsePx = 0;
+  int m_promotedHeldPx = 0;
+  bool m_promoted = false;
+  int m_promotedPx = 0;
   float m_thumbScale = 1.0F;
   float m_thumbScaleTarget = 1.0F;
   std::uint32_t m_thumbScaleAnimId = 0;

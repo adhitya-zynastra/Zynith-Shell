@@ -64,8 +64,24 @@ namespace {
   // Browsing session idle budget. Sized so a sweep back and forth across the
   // visible neighbourhood re-uses textures instead of re-decoding: ~1.4 MB per
   // 762 px preview, so this holds roughly 45 of them. Released on close.
-  constexpr std::size_t kBrowseSessionIdleBytes = 64U * 1024U * 1024U;
-  constexpr std::size_t kBrowseSessionIdleEntries = 64;
+  // Session working set. The whole browsable collection is made resident at a
+  // cheap browse resolution so fast scrolling never waits for a decode; only the
+  // focused card is promoted to a sharp one. ~370 KB per browse thumbnail, so
+  // this ceiling holds roughly 350 of them, and a larger library simply keeps
+  // the most recently prefetched ones.
+  constexpr int kBrowseThumbnailPx = 384;
+  constexpr int kFocusedThumbnailPx = 768;
+  constexpr std::size_t kBrowseSessionIdleBytes = 128U * 1024U * 1024U;
+  constexpr std::size_t kBrowseSessionIdleEntries = 512;
+  // Upper bound on how many entries one session prefetches, whatever the library
+  // size. Ordered outward from the focused item so the useful ones land first.
+  constexpr std::size_t kMaxPrefetchEntries = 360;
+  // Cards within this window of the focus hold the display-quality texture. The
+  // focused card draws ~753 px wide, its immediate neighbours ~640 px, so a
+  // preview-resolution texture is visibly soft on all of them. Leaning the
+  // window in the direction of travel means the next card is already sharp.
+  constexpr long kPromotionAhead = 3;
+  constexpr long kPromotionBehind = 1;
   // A second activation of the same wallpaper inside this window is treated as
   // one gesture (double-click), not two applies.
   constexpr auto kReapplyGuard = std::chrono::milliseconds(600);
@@ -291,9 +307,28 @@ public:
 
   [[nodiscard]] std::size_t itemCount() const override { return m_entries == nullptr ? 0U : m_entries->size(); }
 
+  // Indices that should hold the display-quality texture (inclusive).
+  void setPromotedRange(long lo, long hi) {
+    m_promotedLo = lo;
+    m_promotedHi = hi;
+  }
+
+  void setBrowseThumbnailSizes(int browsePx, int promotedPx) {
+    m_browsePx = browsePx;
+    m_promotedPx = promotedPx;
+    for (WallpaperTile* tile : m_pool) {
+      if (tile != nullptr) {
+        tile->setBrowseThumbnailPx(browsePx);
+        tile->setPromotedThumbnailPx(promotedPx);
+      }
+    }
+  }
+
   [[nodiscard]] std::unique_ptr<Node> createTile() override {
     auto tile = std::make_unique<WallpaperTile>(0.0F, 0.0F, m_scale);
     tile->setThumbnailService(m_thumbnails);
+    tile->setBrowseThumbnailPx(m_browsePx);
+    tile->setPromotedThumbnailPx(m_promotedPx);
     tile->setOnStarClick([this](const WallpaperEntry& entry) {
       if (m_onStarToggle) {
         m_onStarToggle(entry);
@@ -318,6 +353,8 @@ public:
         wt->setFavoriteState(false, std::nullopt);
       }
     }
+    const auto signedIndex = static_cast<long>(index);
+    wt->setPromoted(m_promotedPx > 0 && signedIndex >= m_promotedLo && signedIndex <= m_promotedHi);
     wt->setSelected(selected);
     wt->setCurrent(
         m_entries != nullptr
@@ -378,6 +415,10 @@ private:
   ConfigService* m_config = nullptr;
 
   std::vector<WallpaperTile*> m_pool;
+  int m_browsePx = 0;
+  int m_promotedPx = 0;
+  long m_promotedLo = 0;
+  long m_promotedHi = -1;
   ActivateCallback m_onActivate;
   StarCallback m_onStarToggle;
 };
@@ -799,6 +840,7 @@ void WallpaperPanel::create() {
       }
       // Focus only: the wallpaper is applied on an explicit click or Enter.
       m_selectedVisibleIndex = (idx.has_value() && *idx < m_visibleEntries.size()) ? *idx : kNoVisibleSelection;
+      updatePromotionWindow();
       syncThemeControls();
       m_dirty = true;
       PanelManager::instance().refresh();
@@ -816,6 +858,8 @@ void WallpaperPanel::create() {
         m_thumbnails->resumeDecodes();
       }
     });
+    m_adapter->setBrowseThumbnailSizes(kBrowseThumbnailPx, kFocusedThumbnailPx);
+    m_adapter->setPromotedRange(0, static_cast<long>(kPromotionAhead));
     m_carousel = static_cast<CarouselView*>(root->addChild(std::move(carousel)));
   } else {
     root->addChild(
@@ -1558,6 +1602,83 @@ void WallpaperPanel::applyFilter() {
   }
 }
 
+void WallpaperPanel::updatePromotionWindow() {
+  if (m_adapter == nullptr || m_thumbnails == nullptr || !m_carouselMode || m_visibleEntries.empty()
+      || !hasVisibleSelection()) {
+    return;
+  }
+  const auto focus = static_cast<long>(m_selectedVisibleIndex);
+
+  // Which way is the user travelling? The window leans that way so the next
+  // cards are already display-quality when they arrive at the centre, and the
+  // ones left behind give their textures back.
+  if (focus != m_lastPromotionFocus) {
+    if (m_lastPromotionFocus >= 0) {
+      m_promotionDirection = focus >= m_lastPromotionFocus ? 1 : -1;
+    }
+    m_lastPromotionFocus = focus;
+  }
+
+  const long behind = kPromotionBehind;
+  const long ahead = kPromotionAhead;
+  const long lo = focus - (m_promotionDirection >= 0 ? behind : ahead);
+  const long hi = focus + (m_promotionDirection >= 0 ? ahead : behind);
+  const bool windowMoved = lo != m_promotionLo || hi != m_promotionHi;
+  m_promotionLo = lo;
+  m_promotionHi = hi;
+  m_adapter->setPromotedRange(lo, hi);
+  if (windowMoved && m_carousel != nullptr) {
+    // Bound tiles cache their promotion state, so the window change has to reach
+    // them: rebinding is just a thumbnail re-evaluation for the few live tiles.
+    m_carousel->notifyDataChanged();
+  }
+
+  // Predictive: queue the display-quality decode for the window before those
+  // cards reach the centre. Anything outside is simply not requested; its
+  // texture ages out of the session's idle set.
+  const auto count = static_cast<long>(m_visibleEntries.size());
+  for (long i = lo; i <= hi; ++i) {
+    if (i < 0 || i >= count) {
+      continue;
+    }
+    const WallpaperEntry& entry = m_visibleEntries[static_cast<std::size_t>(i)];
+    if (!entry.isDir) {
+      m_thumbnails->prefetch(entry.absPath.string(), kFocusedThumbnailPx);
+    }
+  }
+}
+
+void WallpaperPanel::prefetchSessionThumbnails() {
+  if (m_thumbnails == nullptr || m_visibleEntries.empty() || !m_carouselMode) {
+    return;
+  }
+  // Walk outward from the focused item so the neighbourhood is ready first and a
+  // fast flick in either direction stays instant.
+  const std::size_t count = m_visibleEntries.size();
+  const std::size_t centre = hasVisibleSelection() ? m_selectedVisibleIndex : 0;
+  std::size_t queued = 0;
+  for (std::size_t step = 0; step < count && queued < kMaxPrefetchEntries; ++step) {
+    for (const long dir : {1L, -1L}) {
+      if (step == 0 && dir < 0) {
+        continue; // centre once
+      }
+      const long idx = static_cast<long>(centre) + dir * static_cast<long>(step);
+      if (idx < 0 || idx >= static_cast<long>(count)) {
+        continue;
+      }
+      const WallpaperEntry& entry = m_visibleEntries[static_cast<std::size_t>(idx)];
+      if (entry.isDir) {
+        continue;
+      }
+      m_thumbnails->prefetch(entry.absPath.string(), kBrowseThumbnailPx);
+      if (++queued >= kMaxPrefetchEntries) {
+        break;
+      }
+    }
+  }
+  kLog.debug("browse session: prefetching {} of {} entries at {} px", queued, count, kBrowseThumbnailPx);
+}
+
 void WallpaperPanel::rebindGrid(bool resetScroll) {
   if (m_adapter != nullptr) {
     m_adapter->setCurrentWallpaperPath(currentWallpaperPathForSelection());
@@ -1574,6 +1695,7 @@ void WallpaperPanel::rebindGrid(bool resetScroll) {
       m_carousel->resetTo(current == kNoVisibleSelection ? 0U : current);
       if (initialFocus) {
         m_pendingInitialFocus = false;
+        prefetchSessionThumbnails();
       }
     } else if (hasVisibleSelection()) {
       m_carousel->setFocusedIndex(m_selectedVisibleIndex, /*animated=*/false);
