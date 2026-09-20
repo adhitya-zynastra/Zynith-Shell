@@ -55,8 +55,21 @@ public:
   void onClose() override;
   [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
 
+  // Grid mode is one compact panel. Carousel mode is two regions on one
+  // surface: the same compact control card, and a full-width cinematic band
+  // under it. The surface spans the output (fillsWidth) and draws no card of
+  // its own (hasDecoration false), so only the control card reads as a panel.
   [[nodiscard]] float preferredWidth() const override { return scaled(980.0F); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(700.0F); }
+  [[nodiscard]] float preferredHeight() const override { return scaled(carouselMode() ? 840.0F : 700.0F); }
+  [[nodiscard]] bool fillsWidth() const noexcept override { return carouselMode(); }
+  // Full height too, so the band centres in the canvas under the control card
+  // instead of hugging it, and the composition adapts to any output.
+  [[nodiscard]] bool fillsHeight() const noexcept override { return carouselMode(); }
+  [[nodiscard]] bool hasDecoration() const override { return !carouselMode(); }
+  [[nodiscard]] bool wantsModalBackdrop() const override { return carouselMode(); }
+  [[nodiscard]] std::string panelScreenPosition() const override {
+    return carouselMode() ? std::string("top_center") : Panel::panelScreenPosition();
+  }
   [[nodiscard]] PanelPlacement panelPlacement() const noexcept override;
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
@@ -108,6 +121,9 @@ private:
   [[nodiscard]] static const char* sortModeTooltipKey(SortMode mode);
   void applyColorWallpaper();
   void rebindGrid(bool resetScroll = false);
+  [[nodiscard]] bool carouselMode() const;
+  // Index of the wallpaper currently applied, or kNoVisibleSelection.
+  [[nodiscard]] std::size_t indexOfCurrentWallpaper() const;
   [[nodiscard]] InputArea* browseFocusArea() const;
   [[nodiscard]] bool browseOwnsFocus(const InputArea* area) const;
   void resetSelection();
@@ -131,6 +147,8 @@ private:
   // UI nodes (owned by the root flex tree).
   Flex* m_rootLayout = nullptr;
   Flex* m_toolbar = nullptr;
+  // Carousel mode only: the compact card that holds the menu controls.
+  Flex* m_menuCard = nullptr;
   Flex* m_favoritesOptionsColumn = nullptr;
   Label* m_title = nullptr;
   Button* m_backButton = nullptr;
@@ -178,6 +196,11 @@ private:
   bool m_syncingGridSelectionVisual = false;
   bool m_gridKeyboardActive = false;
   bool m_carouselMode = false;
+  // Set on open, consumed by the first rebind that has entries: the browse
+  // surface starts on the wallpaper in use, not on whatever was scanned first.
+  bool m_pendingInitialFocus = false;
+  // True while this panel holds the thumbnail service's decode gate closed.
+  bool m_decodeGateHeld = false;
   std::vector<std::string> m_favoritePaletteDetailValues;
   std::vector<PaletteSource> m_paletteSourceOrder;
   static constexpr std::size_t kNoVisibleSelection = std::numeric_limits<std::size_t>::max();

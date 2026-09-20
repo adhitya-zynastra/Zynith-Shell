@@ -17,17 +17,26 @@ namespace {
   // nearest item. One shot on the shared event-loop timer: nothing runs while the
   // carousel is idle.
   constexpr std::chrono::milliseconds kSettleDelay{90};
-  // Depth curve for neighbours.
-  constexpr float kMinItemScale = 0.74F;
-  constexpr float kMinItemOpacity = 0.42F;
-  constexpr float kOpacityFalloff = 1.35F;
-  constexpr float kSinkRatio = 0.05F;
+  // ── The orbit ─────────────────────────────────────────────────────────────
+  // Angular spacing between neighbouring items. Wide enough that the outer
+  // cards visibly turn away, shallow enough to avoid a fairground wheel.
+  constexpr float kAngleStepRad = 0.3665F; // 21 degrees
+  // The arc is normalised over this many items per side, so the depth curve
+  // (and therefore scale/opacity/sink) is stable whatever the viewport shows.
+  constexpr float kArcHalfSpanItems = 3.0F;
+  // Far-edge appearance.
+  constexpr float kMinItemScale = 0.52F;
+  // < 1 makes the first neighbour recede decisively instead of shadowing the focus.
+  constexpr float kScaleFalloffExp = 0.6F;
+  constexpr float kSinkFalloffExp = 0.55F;
+  constexpr float kMinItemOpacity = 0.26F;
+  // How far the far edge of the arc sinks, as a fraction of the focused height.
+  constexpr float kSinkRatio = 0.38F;
+  // Below this drawn scale a card is noise rather than a preview: the arc ends.
+  constexpr float kLegibleScale = 0.42F;
+  // Hard ceiling on the working set, whatever the geometry asks for.
+  constexpr std::size_t kMaxPerSide = 3;
   constexpr std::size_t kMaxPoolSize = 16;
-
-  float smoothstep(float t) noexcept {
-    const float c = std::clamp(t, 0.0F, 1.0F);
-    return c * c * (3.0F - 2.0F * c);
-  }
 
 } // namespace
 
@@ -181,6 +190,36 @@ void CarouselView::setOnFocusChanged(std::function<void(std::optional<std::size_
 
 void CarouselView::setOnActivate(std::function<void(std::size_t)> callback) { m_onActivate = std::move(callback); }
 
+void CarouselView::setOnMotionChanged(std::function<void(bool)> callback) { m_onMotionChanged = std::move(callback); }
+
+void CarouselView::setMoving(bool moving) {
+  if (m_moving == moving) {
+    return;
+  }
+  m_moving = moving;
+  if (m_onMotionChanged) {
+    m_onMotionChanged(moving);
+  }
+}
+
+CarouselView::PathSample CarouselView::samplePath(float u) const noexcept {
+  const float theta = u * kAngleStepRad;
+  const float thetaMax = kArcHalfSpanItems * kAngleStepRad;
+  const float depthSpan = 1.0F - std::cos(thetaMax);
+  const float depth = depthSpan <= 0.0F ? 0.0F : std::clamp((1.0F - std::cos(theta)) / depthSpan, 0.0F, 1.0F);
+
+  PathSample sample;
+  sample.depth = depth;
+  sample.centreX = m_viewportWidth * 0.5F + m_orbitRadius * std::sin(theta);
+  // The sink follows a gentler exponent than scale, so the arc is legible right
+  // next to the focus instead of only at the far edge.
+  sample.centreY = m_apexCentreY + m_sink * std::pow(depth, kSinkFalloffExp);
+  // Near neighbours stay close to full size; the fall-off accelerates outward.
+  sample.scale = 1.0F - (1.0F - kMinItemScale) * std::pow(depth, kScaleFalloffExp);
+  sample.opacity = 1.0F - (1.0F - kMinItemOpacity) * depth;
+  return sample;
+}
+
 float CarouselView::offsetForIndex(std::size_t index) const noexcept {
   return static_cast<float>(index) * m_stride;
 }
@@ -201,21 +240,25 @@ void CarouselView::setFocusedIndex(std::size_t index, bool animated) {
   }
 }
 
-void CarouselView::resetToStart() {
+void CarouselView::resetTo(std::size_t index) {
   m_settleTimer.stop();
+  setMoving(false);
   m_focusedIndex.reset();
+  const std::size_t count = m_adapter == nullptr ? 0U : m_adapter->itemCount();
   if (m_scroll != nullptr) {
-    m_scroll->setScrollOffset(0.0F);
+    m_scroll->setScrollOffset(count == 0 ? 0.0F : offsetForIndex(std::min(index, count - 1)));
   }
   notifyDataChanged();
-  // Land focus on the first item so Enter has a target straight away. Focus is
-  // still only focus: nothing is applied until the item is explicitly activated.
-  if (m_adapter != nullptr && m_adapter->itemCount() > 0) {
-    setFocusedIndex(0, /*animated=*/false);
+  // Land focus straight away so Enter has a target. Focus is still only focus:
+  // nothing is applied until the item is explicitly activated.
+  if (count > 0) {
+    setFocusedIndex(std::min(index, count - 1), /*animated=*/false);
   } else if (m_onFocusChanged) {
     m_onFocusChanged(std::nullopt);
   }
 }
+
+void CarouselView::resetToStart() { resetTo(0); }
 
 std::size_t CarouselView::nearestIndexToCentre() const noexcept {
   if (m_itemCount == 0 || m_stride <= 0.0F || m_scroll == nullptr) {
@@ -247,26 +290,37 @@ void CarouselView::updateFocusFromOffset() {
 }
 
 void CarouselView::armSettle() {
-  m_settleTimer.start(kSettleDelay, [this]() { settleNow(); });
+  m_settleTimer.start(kSettleDelay, [this]() {
+    if (!settleNow()) {
+      return;
+    }
+    // A settle animation is running: check again when it has stopped emitting.
+    armSettle();
+  });
 }
 
-void CarouselView::settleNow() {
+bool CarouselView::settleNow() {
   if (m_scroll == nullptr || m_itemCount == 0 || m_stride <= 0.0F) {
-    return;
+    setMoving(false);
+    return false;
   }
   const float target = offsetForIndex(nearestIndexToCentre());
   const float delta = target - m_scroll->scrollOffset();
   if (std::abs(delta) < 1.0F) {
-    return;
+    // Nothing left to travel: the carousel has landed.
+    setMoving(false);
+    return false;
   }
   // ScrollView's own eased scroll: decelerating, no overshoot, and the frame
   // clock stops with it.
   m_settling = true;
   m_scroll->scrollBy(delta);
   m_settling = false;
+  return true;
 }
 
 void CarouselView::onScrollChanged(float /*offset*/) {
+  setMoving(true);
   updateFocusFromOffset();
   if (!m_settling) {
     armSettle();
@@ -275,28 +329,47 @@ void CarouselView::onScrollChanged(float /*offset*/) {
 }
 
 std::optional<std::size_t> CarouselView::indexAt(float localX, float localY) const noexcept {
-  if (m_itemCount == 0 || m_stride <= 0.0F) {
-    return std::nullopt;
+  // Front-to-back over what was actually drawn: overlapping cards resolve the
+  // way they are painted, so the focused card always wins its own area.
+  const SlotGeometry* best = nullptr;
+  for (const SlotGeometry& slot : m_slotGeometry) {
+    if (std::abs(localX - slot.centreX) > slot.halfWidth || std::abs(localY - slot.centreY) > slot.halfHeight) {
+      continue;
+    }
+    if (best == nullptr || slot.depth < best->depth) {
+      best = &slot;
+    }
   }
-  const float bandTop = (m_viewportHeight - m_cellHeight) * 0.5F;
-  if (localY < bandTop - m_cellHeight * 0.1F || localY > bandTop + m_cellHeight * 1.1F) {
-    return std::nullopt;
+  return best == nullptr ? std::nullopt : std::optional<std::size_t>{best->index};
+}
+
+bool CarouselView::slotRectForIndex(std::size_t index, float& outX, float& outY, float& outW, float& outH)
+    const noexcept {
+  for (const SlotGeometry& slot : m_slotGeometry) {
+    if (slot.index != index) {
+      continue;
+    }
+    outW = slot.halfWidth * 2.0F;
+    outH = slot.halfHeight * 2.0F;
+    outX = slot.centreX - slot.halfWidth;
+    outY = slot.centreY - slot.halfHeight;
+    return true;
   }
-  const float centreX = localX - m_leadPadding - m_cellWidth * 0.5F;
-  const auto raw = static_cast<long>(std::lround(centreX / m_stride));
-  if (raw < 0 || raw >= static_cast<long>(m_itemCount)) {
-    return std::nullopt;
-  }
-  return static_cast<std::size_t>(raw);
+  return false;
 }
 
 void CarouselView::onPointerMotion(float localX, float localY) {
   const auto idx = indexAt(localX, localY);
   std::optional<std::size_t> overlayIdx;
   if (idx.has_value() && m_adapter != nullptr && m_focusedIndex.has_value() && *idx == *m_focusedIndex) {
-    const float cellX = m_leadPadding + static_cast<float>(*idx) * m_stride;
-    const float cellY = (m_viewportHeight - m_cellHeight) * 0.5F;
-    if (m_adapter->overlayHitTest(*idx, localX - cellX, localY - cellY, m_cellWidth, m_cellHeight)) {
+    float x = 0.0F;
+    float y = 0.0F;
+    float w = 0.0F;
+    float h = 0.0F;
+    if (slotRectForIndex(*idx, x, y, w, h)
+        && m_adapter->overlayHitTest(*idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
+                                     (localY - y) / std::max(0.01F, h) * m_cellHeightResolved,
+                                     m_cellWidthResolved, m_cellHeightResolved)) {
       overlayIdx = idx;
     }
   }
@@ -329,9 +402,14 @@ void CarouselView::onPointerPress(float localX, float localY) {
     return;
   }
 
-  const float cellX = m_leadPadding + static_cast<float>(*idx) * m_stride;
-  const float cellY = (m_viewportHeight - m_cellHeight) * 0.5F;
-  if (m_adapter->onPointerPress(*idx, localX - cellX, localY - cellY, m_cellWidth, m_cellHeight)) {
+  float x = 0.0F;
+  float y = 0.0F;
+  float w = 0.0F;
+  float h = 0.0F;
+  if (slotRectForIndex(*idx, x, y, w, h)
+      && m_adapter->onPointerPress(*idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
+                                   (localY - y) / std::max(0.01F, h) * m_cellHeightResolved, m_cellWidthResolved,
+                                   m_cellHeightResolved)) {
     notifyDataChanged();
     return;
   }
@@ -355,23 +433,52 @@ void CarouselView::doLayout(Renderer& renderer) {
   m_viewportWidth = std::max(0.0F, width());
   m_viewportHeight = std::max(0.0F, height());
 
-  // Fit the requested cell into the viewport without distorting it: whichever axis
-  // binds first shrinks both, so the focused item is as large as the body allows.
+  // ── Fit the focused card into the body ───────────────────────────────────
+  // The sunk far edge never reaches below the focused card's own bottom with
+  // the current curve, so the body only has to hold the focused card itself.
+  // Fitting keeps the aspect: whichever axis binds first shrinks both.
   const float maxCellW = std::max(1.0F, m_viewportWidth * 0.86F);
   const float maxCellH = std::max(1.0F, m_viewportHeight * 0.96F);
   const float fit = std::min({1.0F, maxCellW / m_cellWidth, maxCellH / m_cellHeight});
   const float cellW = std::max(1.0F, m_cellWidth * fit);
   const float cellH = std::max(1.0F, m_cellHeight * fit);
+  m_cellWidthResolved = cellW;
+  m_cellHeightResolved = cellH;
+
+  // ── Resolve the orbit ────────────────────────────────────────────────────
+  // Rx is chosen so travel near the focus matches the scroll axis: d(x)/d(u) at
+  // u = 0 is Rx * kAngleStepRad, which must equal one stride.
   m_stride = std::max(1.0F, cellW * m_strideRatio);
-  m_leadPadding = std::max(0.0F, (m_viewportWidth - cellW) * 0.5F);
+  m_orbitRadius = m_stride / kAngleStepRad;
+  m_sink = cellH * kSinkRatio;
+  m_apexCentreY = (m_viewportHeight - cellH) * 0.5F + cellH * 0.5F - m_sink * 0.5F;
+
+  // How much of the arc this viewport can actually carry: walk outward until a
+  // card is either illegible or completely outside the viewport. Resource cost
+  // and composition therefore follow the geometry instead of a magic number.
+  std::size_t perSide = 0;
+  for (std::size_t n = 1; n <= kMaxPerSide; ++n) {
+    const PathSample sample = samplePath(static_cast<float>(n));
+    if (sample.scale < kLegibleScale) {
+      break;
+    }
+    if (sample.centreX - cellW * sample.scale * 0.5F >= m_viewportWidth) {
+      break;
+    }
+    perSide = n;
+  }
+  m_visiblePerSide = perSide;
+
+  m_scroll->setScrollWheelStep(m_stride);
+
+  // The scroll axis stays linear — logical position x stride — and the curve is
+  // applied when drawing. One detent is still exactly one item.
+  const float lead = std::max(0.0F, (m_viewportWidth - cellW) * 0.5F);
+  m_leadPadding = lead;
   m_virtualWidth = m_itemCount == 0
       ? m_viewportWidth
-      : (2.0F * m_leadPadding + cellW + static_cast<float>(m_itemCount - 1) * m_stride);
-
+      : (2.0F * lead + cellW + static_cast<float>(m_itemCount - 1) * m_stride);
   m_canvas->setVirtualSize(m_virtualWidth, m_viewportHeight);
-  // One wheel detent travels one item: the step is animated, not a jump, so the
-  // motion still reads as scrolling rather than snapping.
-  m_scroll->setScrollWheelStep(m_stride);
 
   if (m_pendingFocusScroll) {
     m_pendingFocusScroll = false;
@@ -390,15 +497,13 @@ void CarouselView::doLayout(Renderer& renderer) {
     }
   }
 
-  // Visible window: what the viewport can show around the centre, plus preload.
   const float offset = m_scroll->scrollOffset();
-  const auto span = static_cast<long>(std::ceil((m_viewportWidth * 0.5F) / m_stride))
-      + static_cast<long>(m_preloadCount) + 1;
-  const auto centre = static_cast<long>(std::lround(offset / m_stride));
-  const long firstIdx = std::max<long>(0, centre - span);
-  const long lastIdx = m_itemCount == 0
-      ? -1
-      : std::min<long>(centre + span, static_cast<long>(m_itemCount) - 1);
+  const float focusPosition = m_stride <= 0.0F ? 0.0F : offset / m_stride;
+  const auto centre = static_cast<long>(std::lround(focusPosition));
+  const auto reach = static_cast<long>(m_visiblePerSide + m_preloadCount);
+  const long firstIdx = std::max<long>(0, centre - reach);
+  const long lastIdx =
+      m_itemCount == 0 ? -1 : std::min<long>(centre + reach, static_cast<long>(m_itemCount) - 1);
   const std::size_t desiredPoolSize = lastIdx < firstIdx
       ? 0U
       : std::min<std::size_t>(kMaxPoolSize, static_cast<std::size_t>(lastIdx - firstIdx + 1));
@@ -434,7 +539,8 @@ void CarouselView::doLayout(Renderer& renderer) {
 
   const std::size_t poolSize = m_pool.size();
   std::vector<bool> slotActive(poolSize, false);
-  const float cellY = (m_viewportHeight - cellH) * 0.5F;
+  m_slotGeometry.clear();
+  m_slotGeometry.reserve(poolSize);
 
   if (poolSize > 0 && lastIdx >= firstIdx) {
     for (long i = firstIdx; i <= lastIdx; ++i) {
@@ -449,8 +555,11 @@ void CarouselView::doLayout(Renderer& renderer) {
       }
       slotActive[slot] = true;
 
-      const float x = m_leadPadding + static_cast<float>(index) * m_stride;
-      tile->setPosition(x, cellY);
+      // One logical coordinate drives everything below.
+      const float u = static_cast<float>(index) - focusPosition;
+      const PathSample sample = samplePath(u);
+      const bool onArc = std::abs(u) <= static_cast<float>(m_visiblePerSide) + 0.5F;
+
       tile->setSize(cellW, cellH);
 
       const bool focused = m_focusedIndex.has_value() && *m_focusedIndex == index;
@@ -471,28 +580,35 @@ void CarouselView::doLayout(Renderer& renderer) {
         m_slotBoundOverlayHovered[slot] = overlayHovered;
       }
 
-      // Depth: distance from the viewport centre in stride units drives scale,
-      // opacity, a small sink and paint order. Recomputed only when the offset
-      // changes, never on a clock of its own.
-      const float distance = std::abs(static_cast<float>(index) * m_stride - offset) / m_stride;
-      const float t = smoothstep(std::min(1.0F, distance));
-      const float itemScale = 1.0F - (1.0F - kMinItemScale) * t;
-      const float itemOpacity =
-          1.0F - (1.0F - kMinItemOpacity) * std::clamp(distance / kOpacityFalloff, 0.0F, 1.0F);
-      tile->setScale(itemScale);
-      tile->setOpacity(itemOpacity);
-      tile->setPosition(x, cellY + cellH * kSinkRatio * t);
-      tile->setZIndex(static_cast<std::int32_t>(100.0F - std::min(90.0F, distance * 10.0F)));
-      tile->setVisible(true);
+      // Canvas coordinates: the scroll view translates the canvas by -offset,
+      // so the viewport-relative sample is shifted back by the offset here.
+      const float centreX = offset + sample.centreX;
+      tile->setPosition(centreX - cellW * 0.5F, sample.centreY - cellH * 0.5F);
+      tile->setScale(sample.scale);
+      tile->setOpacity(sample.opacity);
+      tile->setZIndex(static_cast<std::int32_t>(std::lround((1.0F - sample.depth) * 1000.0F)));
+      tile->setVisible(onArc);
       tile->layout(renderer);
 
       InputArea* tooltipArea = m_poolTooltipAreas[slot];
+      const float halfW = cellW * sample.scale * 0.5F;
+      const float halfH = cellH * sample.scale * 0.5F;
       if (tooltipArea != nullptr) {
-        const float visibleW = cellW * itemScale;
-        const float visibleH = cellH * itemScale;
-        tooltipArea->setPosition(x + (cellW - visibleW) * 0.5F, cellY + (cellH - visibleH) * 0.5F);
-        tooltipArea->setFrameSize(visibleW, visibleH);
-        tooltipArea->setVisible(true);
+        tooltipArea->setPosition(centreX - halfW, sample.centreY - halfH);
+        tooltipArea->setFrameSize(halfW * 2.0F, halfH * 2.0F);
+        tooltipArea->setVisible(onArc);
+      }
+      if (onArc) {
+        m_slotGeometry.push_back(
+            SlotGeometry{
+                .index = index,
+                .centreX = centreX,
+                .centreY = sample.centreY,
+                .halfWidth = halfW,
+                .halfHeight = halfH,
+                .depth = sample.depth,
+            }
+        );
       }
     }
   }

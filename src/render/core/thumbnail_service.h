@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -75,9 +76,29 @@ public:
   // Non-owning lookup used while refreshing an already-acquired thumbnail.
   [[nodiscard]] TextureHandle peek(const std::string& path, int targetPx = kDefaultTargetPx) const;
 
-  // Releases one acquire() owner. The texture is unloaded only when the last
-  // owner releases it.
+  // Releases one acquire() owner. When the last owner releases it the entry
+  // does not die immediately: it moves to a small bounded idle set (LRU, capped
+  // by texture bytes and count) so a consumer that scrolls back over content it
+  // just left re-acquires the existing texture instead of decoding it again.
+  // Idle entries own no consumer state and are evicted oldest-first.
   void release(const std::string& path, int targetPx = kDefaultTargetPx);
+
+  // Drops every idle (zero-owner) entry and its texture. Consumers call this
+  // when their surface closes so nothing is retained once nobody is browsing.
+  void trimIdle();
+
+  // Decode gate. While paused, acquire() still ref-counts and still returns
+  // anything already decoded (including idle-set hits), but a miss only records
+  // the intent instead of queueing work. resumeDecodes() queues what is still
+  // wanted. A surface that flings through content uses this so a fast traversal
+  // decodes what it lands on, not every frame it passed through. Calls nest.
+  void pauseDecodes();
+  void resumeDecodes();
+  [[nodiscard]] bool decodesPaused() const noexcept { return m_decodePauseDepth > 0; }
+
+  // Diagnostics: how much the idle set currently holds.
+  [[nodiscard]] std::size_t idleCount() const noexcept { return m_idleOrder.size(); }
+  [[nodiscard]] std::size_t idleBytes() const noexcept { return m_idleBytes; }
 
   // Uploads decoded pixmaps to textures. Must run on the main thread with the
   // owning render context current.
@@ -125,7 +146,25 @@ private:
     TextureHandle handle;
     std::size_t refCount = 0;
     bool failed = false;
+    // Texture footprint, used as the idle set's eviction budget.
+    std::size_t bytes = 0;
+    // Valid only while refCount == 0: position in m_idleOrder (oldest first).
+    std::list<RequestKey>::iterator idleIt;
+    bool idle = false;
+    // An acquire() wanted this while the decode gate was closed.
+    bool deferredDecode = false;
   };
+
+  // Idle-set budget: enough to cover a browse surface's working set plus the
+  // few items just scrolled past, and small enough to stay irrelevant next to
+  // the shell's baseline RSS.
+  static constexpr std::size_t kMaxIdleBytes = 24U * 1024U * 1024U;
+  static constexpr std::size_t kMaxIdleEntries = 24;
+
+  void dropEntry(std::unordered_map<RequestKey, CacheEntry, RequestKeyHash>::iterator it);
+  void retireToIdle(const RequestKey& key, CacheEntry& entry);
+  void reviveFromIdle(const RequestKey& key, CacheEntry& entry);
+  void evictIdleOverBudget();
 
   struct PendingListener {
     PendingUploadCallback callback;
@@ -152,6 +191,10 @@ private:
   // Main thread only state.
   TextureManager* m_textureManager = nullptr;
   std::unordered_map<RequestKey, CacheEntry, RequestKeyHash> m_entries;
+  // Oldest first; every element is an m_entries key with refCount == 0.
+  std::list<RequestKey> m_idleOrder;
+  std::size_t m_idleBytes = 0;
+  int m_decodePauseDepth = 0;
   std::unordered_map<std::uint64_t, PendingListener> m_pendingListeners;
   std::unordered_map<std::uint64_t, ReadyListener> m_readyListeners;
   std::uint64_t m_nextListenerId = 1;

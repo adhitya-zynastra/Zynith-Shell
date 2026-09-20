@@ -59,8 +59,12 @@ namespace {
   constexpr float kTileAspect = 0.78F; // height / width, leaves room for label under widescreen thumb
   // Carousel: focused item width as a fraction of the panel, and centre-to-centre spacing
   // as a fraction of that width (< 1 makes neighbours overlap behind the focused item).
-  constexpr float kCarouselCellWidthRatio = 0.60F;
-  constexpr float kCarouselStrideRatio = 0.62F;
+  // Width of the compact control card in carousel mode: the panel's own width
+  // before the carousel existed, so the menu keeps exactly its old footprint.
+  constexpr float kMenuCardWidth = 1000.0F;
+  // Focused card width as a fraction of the full-width carousel band.
+  constexpr float kCarouselCellWidthRatio = 0.40F;
+  constexpr float kCarouselStrideRatio = 0.66F;
 
   [[nodiscard]] std::size_t themeModeSegmentIndex(ThemeMode mode) {
     switch (mode) {
@@ -393,6 +397,11 @@ WallpaperPanel::~WallpaperPanel() {
 }
 
 PanelPlacement WallpaperPanel::panelPlacement() const noexcept {
+  // The carousel band spans the output, which only floating surfaces can do
+  // (an attached panel is sized to its bar anchor).
+  if (carouselMode()) {
+    return PanelPlacement::Floating;
+  }
   return m_config == nullptr ? PanelPlacement::Attached : m_config->config().shell.panel.wallpaperPlacement;
 }
 
@@ -402,7 +411,9 @@ void WallpaperPanel::create() {
   auto root = ui::column({
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      // Carousel mode deliberately separates the control card from the content
+      // band; grid mode keeps the tight panel spacing it always had.
+      .gap = (carouselMode() ? Style::spaceLg * 2.0F : Style::spaceSm) * scale,
   });
 
   auto toolbar = ui::row({
@@ -591,7 +602,31 @@ void WallpaperPanel::create() {
       })
   );
 
-  root->addChild(std::move(toolbar));
+  // Carousel mode splits the browser into two surfaces: this compact control
+  // card (the menu the panel always had, at its original width) and, below it,
+  // the full-width carousel. The card is drawn here because the panel surface
+  // itself is undecorated in this mode.
+  Flex* menuHost = m_rootLayout;
+  if (carouselMode()) {
+    auto menuRow = ui::row({
+        .align = FlexAlign::Start,
+        .justify = FlexJustify::Center,
+        .fillWidth = true,
+    });
+    auto menuCard = ui::column({
+        .out = &m_menuCard,
+        .align = FlexAlign::Stretch,
+        .gap = Style::spaceSm * scale,
+        .padding = Style::spaceMd * scale,
+        .radius = std::max(Style::scaledRadiusXl(scale), 16.0F * scale),
+        .width = kMenuCardWidth * scale,
+    });
+    menuCard->setCardStyle(scale, panelCardOpacity(), true);
+    menuHost = static_cast<Flex*>(menuRow->addChild(std::move(menuCard)));
+    m_rootLayout->addChild(std::move(menuRow));
+  }
+
+  menuHost->addChild(std::move(toolbar));
 
   const float favoritesControlHeight = Style::controlHeightSm * scale;
   const float favoritesLabelFontSize = Style::fontSizeCaption * scale;
@@ -717,7 +752,7 @@ void WallpaperPanel::create() {
       })
   );
 
-  root->addChild(std::move(favoritesOptions));
+  menuHost->addChild(std::move(favoritesOptions));
 
   // ── Body: virtualized scrolling grid ──────────────────────────────────
   m_adapter = std::make_unique<WallpaperGridAdapter>(scale);
@@ -737,7 +772,7 @@ void WallpaperPanel::create() {
     }
   });
 
-  m_carouselMode = m_config != nullptr && m_config->config().wallpaper.carousel;
+  m_carouselMode = carouselMode();
 
   if (m_carouselMode) {
     // Cinematic browse surface: one dominant wallpaper at the centre, neighbours
@@ -759,6 +794,19 @@ void WallpaperPanel::create() {
       syncThemeControls();
       m_dirty = true;
       PanelManager::instance().refresh();
+    });
+    // While the carousel is in motion, hold thumbnail decodes: a fling then
+    // costs the handful of images it lands on instead of every one it passed.
+    carousel->setOnMotionChanged([this](bool moving) {
+      if (m_thumbnails == nullptr || m_decodeGateHeld == moving) {
+        return;
+      }
+      m_decodeGateHeld = moving;
+      if (moving) {
+        m_thumbnails->pauseDecodes();
+      } else {
+        m_thumbnails->resumeDecodes();
+      }
     });
     m_carousel = static_cast<CarouselView*>(root->addChild(std::move(carousel)));
   } else {
@@ -903,6 +951,9 @@ void WallpaperPanel::doUpdate(Renderer& renderer) {
 }
 
 void WallpaperPanel::onPanelCardOpacityChanged(float opacity) {
+  if (m_menuCard != nullptr) {
+    m_menuCard->setCardStyle(contentScale(), opacity, true);
+  }
   if (m_filterInput != nullptr) {
     m_filterInput->setSurfaceOpacity(opacity);
   }
@@ -931,6 +982,7 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
     m_flattenToggle->setCheckedImmediate(m_flatten);
   }
   m_navStack.clear();
+  m_pendingInitialFocus = true;
   populateMonitorChoices();
   syncSortButtonGlyph();
   reseedRandomSort();
@@ -958,10 +1010,21 @@ void WallpaperPanel::onClose() {
     m_carousel->setAdapter(nullptr);
   }
   m_adapter.reset();
+  // Never leave the shared decode gate closed behind us.
+  if (m_decodeGateHeld && m_thumbnails != nullptr) {
+    m_thumbnails->resumeDecodes();
+  }
+  m_decodeGateHeld = false;
+  // Tiles have released their thumbnails by now; drop what the shared service
+  // was holding idle for fast back-scrolling so nothing survives the panel.
+  if (m_thumbnails != nullptr) {
+    m_thumbnails->trimIdle();
+  }
   m_thumbnailPendingSub.disconnect();
 
   m_rootLayout = nullptr;
   m_toolbar = nullptr;
+  m_menuCard = nullptr;
   m_favoritesOptionsColumn = nullptr;
   m_title = nullptr;
   m_backButton = nullptr;
@@ -982,11 +1045,30 @@ void WallpaperPanel::onClose() {
   m_loadingBox = nullptr;
   m_spinner = nullptr;
   m_scanPending = false;
+  m_pendingInitialFocus = false;
 
   clearReleasedRoot();
   m_lastWidth = 0.0F;
   m_lastHeight = 0.0F;
   m_thumbnailRefreshPending = false;
+}
+
+bool WallpaperPanel::carouselMode() const {
+  return m_config != nullptr && m_config->config().wallpaper.carousel;
+}
+
+std::size_t WallpaperPanel::indexOfCurrentWallpaper() const {
+  const std::string current = currentWallpaperPathForSelection();
+  if (current.empty()) {
+    return kNoVisibleSelection;
+  }
+  for (std::size_t i = 0; i < m_visibleEntries.size(); ++i) {
+    const WallpaperEntry& entry = m_visibleEntries[i];
+    if (!entry.isDir && entry.absPath.string() == current) {
+      return i;
+    }
+  }
+  return kNoVisibleSelection;
 }
 
 InputArea* WallpaperPanel::browseFocusArea() const {
@@ -1459,8 +1541,17 @@ void WallpaperPanel::rebindGrid(bool resetScroll) {
   }
   if (m_carousel != nullptr) {
     m_carousel->notifyDataChanged();
-    if (resetScroll || m_visibleEntries.empty()) {
-      m_carousel->resetToStart();
+    const bool initialFocus = m_pendingInitialFocus && !m_visibleEntries.empty();
+    if (initialFocus || resetScroll || m_visibleEntries.empty() || !hasVisibleSelection()) {
+      // Open on the wallpaper that is actually in use, so the browser says
+      // "this is what you are running" before the user touches anything. The
+      // scan is async, so the first rebind usually has nothing to focus yet —
+      // hence the one-shot flag rather than a plain "on open" reset.
+      const std::size_t current = indexOfCurrentWallpaper();
+      m_carousel->resetTo(current == kNoVisibleSelection ? 0U : current);
+      if (initialFocus) {
+        m_pendingInitialFocus = false;
+      }
     } else if (hasVisibleSelection()) {
       m_carousel->setFocusedIndex(m_selectedVisibleIndex, /*animated=*/false);
     }

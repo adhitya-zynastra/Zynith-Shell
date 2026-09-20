@@ -280,9 +280,19 @@ TextureHandle ThumbnailService::acquire(const std::string& path, int targetPx) {
 
   const RequestKey key{.path = path, .targetPx = targetPx};
   CacheEntry& entry = m_entries[key];
+  if (entry.idle) {
+    // Was waiting in the idle set: take it back, no decode, no upload.
+    reviveFromIdle(key, entry);
+  }
   ++entry.refCount;
   if (entry.handle.id != 0 || entry.failed) {
     return entry.handle;
+  }
+
+  if (m_decodePauseDepth > 0) {
+    // Mid-fling: remember what is wanted and decide when the motion stops.
+    entry.deferredDecode = true;
+    return {};
   }
 
   enqueueDecodeIfNeeded(key);
@@ -313,6 +323,43 @@ void ThumbnailService::release(const std::string& path, int targetPx) {
     return;
   }
 
+  // A decoded texture goes to the idle set (bounded, LRU) so re-acquiring it is
+  // free. Anything without a usable texture — failed, or still being decoded —
+  // has nothing worth keeping, so it dies now and its job is canceled.
+  if (entry.handle.id != 0 && !entry.failed) {
+    retireToIdle(key, entry);
+    evictIdleOverBudget();
+    return;
+  }
+
+  dropEntry(it);
+}
+
+void ThumbnailService::retireToIdle(const RequestKey& key, CacheEntry& entry) {
+  if (entry.idle) {
+    return;
+  }
+  m_idleOrder.push_back(key);
+  entry.idleIt = std::prev(m_idleOrder.end());
+  entry.idle = true;
+  m_idleBytes += entry.bytes;
+}
+
+void ThumbnailService::reviveFromIdle(const RequestKey& /*key*/, CacheEntry& entry) {
+  if (!entry.idle) {
+    return;
+  }
+  m_idleOrder.erase(entry.idleIt);
+  entry.idle = false;
+  m_idleBytes -= std::min(m_idleBytes, entry.bytes);
+}
+
+void ThumbnailService::dropEntry(std::unordered_map<RequestKey, CacheEntry, RequestKeyHash>::iterator it) {
+  const RequestKey key = it->first;
+  CacheEntry& entry = it->second;
+  if (entry.idle) {
+    reviveFromIdle(key, entry);
+  }
   if (entry.handle.id != 0 && m_textureManager != nullptr) {
     m_textureManager->unload(entry.handle);
   }
@@ -322,6 +369,53 @@ void ThumbnailService::release(const std::string& path, int targetPx) {
   if (m_inFlight.contains(key)) {
     m_canceled.insert(key);
   }
+}
+
+void ThumbnailService::evictIdleOverBudget() {
+  while (!m_idleOrder.empty() && (m_idleBytes > kMaxIdleBytes || m_idleOrder.size() > kMaxIdleEntries)) {
+    const RequestKey oldest = m_idleOrder.front();
+    const auto it = m_entries.find(oldest);
+    if (it == m_entries.end()) {
+      m_idleOrder.pop_front();
+      continue;
+    }
+    dropEntry(it);
+  }
+}
+
+void ThumbnailService::pauseDecodes() { ++m_decodePauseDepth; }
+
+void ThumbnailService::resumeDecodes() {
+  if (m_decodePauseDepth > 0) {
+    --m_decodePauseDepth;
+  }
+  if (m_decodePauseDepth > 0) {
+    return;
+  }
+  // Queue only what someone still holds and still lacks: everything the fling
+  // merely passed through has been released by now and never costs a decode.
+  for (auto& [key, entry] : m_entries) {
+    if (!entry.deferredDecode) {
+      continue;
+    }
+    entry.deferredDecode = false;
+    if (entry.refCount > 0 && entry.handle.id == 0 && !entry.failed) {
+      enqueueDecodeIfNeeded(key);
+    }
+  }
+}
+
+void ThumbnailService::trimIdle() {
+  while (!m_idleOrder.empty()) {
+    const RequestKey oldest = m_idleOrder.front();
+    const auto it = m_entries.find(oldest);
+    if (it == m_entries.end()) {
+      m_idleOrder.pop_front();
+      continue;
+    }
+    dropEntry(it);
+  }
+  m_idleBytes = 0;
 }
 
 void ThumbnailService::enqueueDecodeIfNeeded(const RequestKey& key) {
@@ -364,7 +458,7 @@ bool ThumbnailService::uploadPending(TextureManager& textures) {
     }
 
     auto entryIt = m_entries.find(job.key);
-    if (entryIt == m_entries.end() || entryIt->second.refCount == 0) {
+    if (entryIt == m_entries.end() || (entryIt->second.refCount == 0 && !entryIt->second.idle)) {
       continue;
     }
     if (job.failed || job.rgba.empty() || job.width <= 0 || job.height <= 0) {
@@ -386,6 +480,11 @@ bool ThumbnailService::uploadPending(TextureManager& textures) {
     }
     entryIt->second.handle = handle;
     entryIt->second.failed = false;
+    const auto bytes = static_cast<std::size_t>(job.width) * static_cast<std::size_t>(job.height) * 4U;
+    if (entryIt->second.idle) {
+      m_idleBytes += bytes - std::min(m_idleBytes, entryIt->second.bytes);
+    }
+    entryIt->second.bytes = bytes;
     changed = true;
     notifyReady(job.key, handle);
   }
@@ -395,6 +494,10 @@ bool ThumbnailService::uploadPending(TextureManager& textures) {
 void ThumbnailService::invalidateGpuResources(TextureManager& textures) {
   m_textureManager = &textures;
 
+  // Idle entries exist only to save a decode; after a context loss there is
+  // nothing left to save, so they go rather than linger with dead handles.
+  trimIdle();
+
   std::vector<RequestKey> liveKeys;
   liveKeys.reserve(m_entries.size());
   for (auto& [key, entry] : m_entries) {
@@ -403,6 +506,7 @@ void ThumbnailService::invalidateGpuResources(TextureManager& textures) {
     }
     entry.handle = {};
     entry.failed = false;
+    entry.bytes = 0;
     if (entry.refCount > 0) {
       liveKeys.push_back(key);
     }
@@ -418,7 +522,10 @@ void ThumbnailService::abandonGpuResources() noexcept {
     (void)key;
     entry.handle = {};
     entry.failed = false;
+    entry.bytes = 0;
   }
+  m_idleOrder.clear();
+  m_idleBytes = 0;
   m_textureManager = nullptr;
 }
 
@@ -471,6 +578,8 @@ void ThumbnailService::deleteAllTextures() {
     }
   }
   m_entries.clear();
+  m_idleOrder.clear();
+  m_idleBytes = 0;
 }
 
 void ThumbnailService::notifyPendingUpload() {
