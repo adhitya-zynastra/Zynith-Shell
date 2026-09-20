@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <deque>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -35,9 +36,18 @@ private:
   struct Slot {
     std::uint64_t id;
     Callback callback;
+    // Disconnected while a dispatch was in flight. The callable is *kept* until
+    // the dispatch unwinds: a slot can be disconnected by its own callback, and
+    // destroying the std::function while it runs would pull the closure out
+    // from under it.
+    bool dead = false;
   };
   struct State {
-    std::vector<Slot> slots;
+    // Deque, not vector: addresses stay valid when a callback connects new
+    // slots mid-dispatch, so emit() can invoke the stored callable directly
+    // rather than copying it (that copy was a heap allocation per slot per
+    // emit, and this signal carries palette updates).
+    std::deque<Slot> slots;
     std::uint64_t nextId = 0;
     // Non-zero while emit() is dispatching (nested emits are counted).
     int dispatchDepth = 0;
@@ -76,9 +86,10 @@ public:
             std::find_if(slots.begin(), slots.end(), [id = m_id](const Slot& slot) { return slot.id == id; });
         if (it != slots.end()) {
           if (state->dispatchDepth > 0) {
-            // A dispatch is walking this list: tombstone so the walk skips it
-            // and keeps its position. Reaped when the dispatch unwinds.
-            it->callback = nullptr;
+            // A dispatch is walking this list: mark it so the walk skips it and
+            // keeps its position. The callable stays alive until the dispatch
+            // unwinds (it may be the one currently executing).
+            it->dead = true;
           } else {
             slots.erase(it);
           }
@@ -101,7 +112,7 @@ public:
 
   [[nodiscard]] ScopedConnection connect(Callback callback) {
     const auto id = ++m_state->nextId;
-    m_state->slots.push_back({id, std::move(callback)});
+    m_state->slots.push_back(Slot{.id = id, .callback = std::move(callback), .dead = false});
     return ScopedConnection{std::weak_ptr<State>(m_state), id};
   }
 
@@ -115,20 +126,19 @@ public:
     // deliberately not called until the next emit.
     const std::size_t count = state->slots.size();
     for (std::size_t i = 0; i < count && i < state->slots.size(); ++i) {
-      // Re-read here: an earlier callback may have tombstoned this slot by
-      // destroying its owner, and the vector may have grown (reallocated).
-      if (!state->slots[i].callback) {
+      // Re-read each step: an earlier callback may have marked this slot dead by
+      // destroying its owner. Deque storage means the element itself never moves,
+      // so the callable can be invoked in place.
+      Slot& slot = state->slots[i];
+      if (slot.dead || !slot.callback) {
         continue;
       }
-      // Copy before invoking: the callback may connect new slots and
-      // reallocate the vector out from under us.
-      Callback callback = state->slots[i].callback;
-      callback(args...);
+      slot.callback(args...);
     }
 
     if (--state->dispatchDepth == 0) {
       auto& slots = state->slots;
-      slots.erase(std::remove_if(slots.begin(), slots.end(), [](const Slot& s) { return !s.callback; }), slots.end());
+      std::erase_if(slots, [](const Slot& s) { return s.dead || !s.callback; });
     }
   }
 

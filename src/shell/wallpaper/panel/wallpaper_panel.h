@@ -6,6 +6,7 @@
 #include "shell/panel/panel.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -203,6 +204,11 @@ private:
   bool m_pendingInitialFocus = false;
   // True while this panel holds the thumbnail service's decode gate closed.
   bool m_decodeGateHeld = false;
+  // Thumbnail session owned by this browser while it is on screen (0 = none).
+  ThumbnailService::SessionId m_thumbnailSession = 0;
+  // Guards against one gesture applying the same wallpaper twice.
+  std::string m_lastAppliedPath;
+  std::chrono::steady_clock::time_point m_lastAppliedAt{};
   std::vector<std::string> m_favoritePaletteDetailValues;
   std::vector<PaletteSource> m_paletteSourceOrder;
   static constexpr std::size_t kNoVisibleSelection = std::numeric_limits<std::size_t>::max();

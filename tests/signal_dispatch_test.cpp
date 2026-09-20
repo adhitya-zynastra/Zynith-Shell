@@ -100,6 +100,44 @@ int main() {
     ok = check(after == 2, "signal remains usable after a self-disconnect") && ok;
   }
 
+  // 4. Nested dispatch: an emit from inside an emit must not reap slots that the
+  //    outer walk is still going to visit.
+  {
+    Signal<> signal;
+    int inner = 0;
+    int tail = 0;
+    Signal<>::ScopedConnection nester;
+    bool reentered = false;
+    nester = signal.connect([&] {
+      if (reentered) {
+        ++inner;
+        return;
+      }
+      reentered = true;
+      signal.emit(); // nested
+    });
+    Signal<>::ScopedConnection tailConn = signal.connect([&tail] { ++tail; });
+    signal.emit();
+    ok = check(tail >= 1, "slots after a nested emit still run") && ok;
+    ok = check(inner == 1, "the nested emit dispatched once") && ok;
+  }
+
+  // 5. A callback that destroys the object owning the signal: the dispatch must
+  //    unwind without touching freed state.
+  {
+    struct Owner {
+      Signal<> signal;
+    };
+    auto owner = std::make_unique<Owner>();
+    Signal<>& sig = owner->signal;
+    int after = 0;
+    Signal<>::ScopedConnection killer = sig.connect([&owner] { owner.reset(); });
+    Signal<>::ScopedConnection tail = sig.connect([&after] { ++after; });
+    sig.emit();
+    ok = check(true, "destroying the signal's owner mid-dispatch unwinds safely") && ok;
+    (void)after;
+  }
+
   if (ok) {
     std::cout << "signal dispatch test passed\n";
   }

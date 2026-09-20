@@ -43,6 +43,9 @@ private:
     Id id = 0;
     const void* owner = nullptr;
     bool respectMotionEnabled = true;
+    // Cancelled while a tick was walking the list. The callables are kept until
+    // the tick unwinds — an animation can be cancelled by its own setter.
+    bool dead = false;
     Animation animation;
   };
 
@@ -57,8 +60,9 @@ private:
   int m_tickDepth = 0;
   Id m_nextId = 1;
 
-  // Marks an entry dead instead of erasing it, so a cancel that happens inside
-  // a tick cannot move the elements the tick is iterating.
+  // Marks an entry dead instead of erasing it, so a cancel inside a tick cannot
+  // move the elements the tick is iterating, and never destroys a callable that
+  // is currently running.
   static void killEntry(Entry& entry);
 
   Id animateInternal(

@@ -283,6 +283,10 @@ TextureHandle ThumbnailService::acquire(const std::string& path, int targetPx) {
   if (entry.idle) {
     // Was waiting in the idle set: take it back, no decode, no upload.
     reviveFromIdle(key, entry);
+    ++m_stats.idleHits;
+  }
+  if (m_activeSession != 0) {
+    entry.session = m_activeSession;
   }
   ++entry.refCount;
   if (entry.handle.id != 0 || entry.failed) {
@@ -343,6 +347,7 @@ void ThumbnailService::retireToIdle(const RequestKey& key, CacheEntry& entry) {
   entry.idleIt = std::prev(m_idleOrder.end());
   entry.idle = true;
   m_idleBytes += entry.bytes;
+  m_stats.peakIdleBytes = std::max(m_stats.peakIdleBytes, m_idleBytes);
 }
 
 void ThumbnailService::reviveFromIdle(const RequestKey& /*key*/, CacheEntry& entry) {
@@ -372,15 +377,51 @@ void ThumbnailService::dropEntry(std::unordered_map<RequestKey, CacheEntry, Requ
 }
 
 void ThumbnailService::evictIdleOverBudget() {
-  while (!m_idleOrder.empty() && (m_idleBytes > kMaxIdleBytes || m_idleOrder.size() > kMaxIdleEntries)) {
+  while (!m_idleOrder.empty() && (m_idleBytes > m_idleBudgetBytes || m_idleOrder.size() > m_idleBudgetEntries)) {
     const RequestKey oldest = m_idleOrder.front();
     const auto it = m_entries.find(oldest);
     if (it == m_entries.end()) {
       m_idleOrder.pop_front();
       continue;
     }
+    ++m_stats.evictions;
     dropEntry(it);
   }
+}
+
+ThumbnailService::SessionId
+ThumbnailService::beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries) {
+  m_activeSession = m_nextSession++;
+  m_idleBudgetBytes = std::max(kMaxIdleBytes, idleBudgetBytes);
+  m_idleBudgetEntries = std::max(kMaxIdleEntries, idleBudgetEntries);
+  return m_activeSession;
+}
+
+void ThumbnailService::endSession(SessionId session) {
+  if (session != 0 && m_activeSession == session) {
+    m_activeSession = 0;
+  }
+  // Back to the base budget first, then drop this session's own leftovers.
+  m_idleBudgetBytes = kMaxIdleBytes;
+  m_idleBudgetEntries = kMaxIdleEntries;
+
+  std::vector<RequestKey> doomed;
+  doomed.reserve(m_idleOrder.size());
+  for (const RequestKey& key : m_idleOrder) {
+    const auto it = m_entries.find(key);
+    // Only entries this session parked. Anything another component parked keeps
+    // its own tag and survives; anything still held is not idle at all.
+    if (it != m_entries.end() && it->second.session == session) {
+      doomed.push_back(key);
+    }
+  }
+  for (const RequestKey& key : doomed) {
+    const auto it = m_entries.find(key);
+    if (it != m_entries.end()) {
+      dropEntry(it);
+    }
+  }
+  evictIdleOverBudget();
 }
 
 void ThumbnailService::pauseDecodes() { ++m_decodePauseDepth; }
@@ -419,6 +460,7 @@ void ThumbnailService::trimIdle() {
 }
 
 void ThumbnailService::enqueueDecodeIfNeeded(const RequestKey& key) {
+  ++m_stats.decodes;
   std::scoped_lock lock(m_queueMutex);
   m_canceled.erase(key);
   if (m_inFlight.contains(key)) {

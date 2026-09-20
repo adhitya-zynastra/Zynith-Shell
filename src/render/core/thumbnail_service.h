@@ -83,9 +83,33 @@ public:
   // Idle entries own no consumer state and are evicted oldest-first.
   void release(const std::string& path, int targetPx = kDefaultTargetPx);
 
-  // Drops every idle (zero-owner) entry and its texture. Consumers call this
-  // when their surface closes so nothing is retained once nobody is browsing.
+  // Drops every idle (zero-owner) entry and its texture, whoever parked it.
   void trimIdle();
+
+  // ── Browsing sessions ────────────────────────────────────────────────────
+  // A surface that browses a large library (the wallpaper carousel) opens a
+  // session for as long as it is on screen. While one is open the idle set may
+  // grow to `idleBudgetBytes`, so sweeping back and forth over content reuses
+  // textures instead of re-decoding them; a user can cross 20+ items a second
+  // and must not trigger a decode storm.
+  //
+  // Entries acquired during a session are tagged with it. endSession() drops
+  // only the *idle* entries carrying that tag: anything another component still
+  // holds (refCount > 0) is untouched, and so is anything another component
+  // parked. The desktop wallpaper is not affected at all — it lives in
+  // SharedTextureCache, not here.
+  using SessionId = std::uint64_t;
+  [[nodiscard]] SessionId beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries);
+  void endSession(SessionId session);
+
+  struct Stats {
+    std::size_t decodes = 0;    // images sent to a worker
+    std::size_t idleHits = 0;   // re-acquired from the idle set (decode avoided)
+    std::size_t evictions = 0;  // idle entries dropped for budget
+    std::size_t peakIdleBytes = 0;
+  };
+  [[nodiscard]] const Stats& stats() const noexcept { return m_stats; }
+  void resetStats() noexcept { m_stats = Stats{}; }
 
   // Decode gate. While paused, acquire() still ref-counts and still returns
   // anything already decoded (including idle-set hits), but a miss only records
@@ -153,6 +177,8 @@ private:
     bool idle = false;
     // An acquire() wanted this while the decode gate was closed.
     bool deferredDecode = false;
+    // Session that last acquired this entry (0 = none/outside a session).
+    SessionId session = 0;
   };
 
   // Idle-set budget: enough to cover a browse surface's working set plus the
@@ -195,6 +221,12 @@ private:
   std::list<RequestKey> m_idleOrder;
   std::size_t m_idleBytes = 0;
   int m_decodePauseDepth = 0;
+  // Effective idle budget: the base above, or a session's while one is open.
+  std::size_t m_idleBudgetBytes = kMaxIdleBytes;
+  std::size_t m_idleBudgetEntries = kMaxIdleEntries;
+  SessionId m_activeSession = 0;
+  SessionId m_nextSession = 1;
+  Stats m_stats;
   std::unordered_map<std::uint64_t, PendingListener> m_pendingListeners;
   std::unordered_map<std::uint64_t, ReadyListener> m_readyListeners;
   std::uint64_t m_nextListenerId = 1;

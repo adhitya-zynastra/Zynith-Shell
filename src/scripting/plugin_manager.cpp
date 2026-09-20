@@ -297,7 +297,12 @@ namespace scripting {
     }
     registry.setSources(std::move(roots));
     registry.setEnabledFilter(std::move(enabled));
-    registry.scan();
+    // ensureScanned(), not scan(): the setters above invalidate only when the
+    // roots or the enabled set actually changed. This runs on every config
+    // apply — including a wallpaper apply — and an unconditional rescan re-walks
+    // the plugin dirs and re-parses every manifest for nothing. Installing or
+    // updating plugins still forces a rescan explicitly where files change.
+    registry.ensureScanned();
   }
 
   std::optional<PluginSourceConfig> PluginManager::findSource(std::string_view name) const {

@@ -32,11 +32,21 @@ namespace scripting {
   }
 
   void PluginRegistry::setSources(std::vector<std::filesystem::path> sourceRoots) {
+    // Config is re-applied on every settings write (a wallpaper apply is one),
+    // and the roots are almost always identical. Rescanning then re-walks the
+    // plugin directories and re-parses every manifest for nothing — it showed up
+    // as three full rescans inside a single wallpaper apply.
+    if (sourceRoots == m_sourceRoots) {
+      return;
+    }
     m_sourceRoots = std::move(sourceRoots);
     m_scanned = false;
   }
 
   void PluginRegistry::setEnabledFilter(std::optional<std::unordered_set<std::string>> enabled) {
+    if (enabled == m_enabledFilter) {
+      return;
+    }
     m_enabledFilter = std::move(enabled);
     m_scanned = false;
   }

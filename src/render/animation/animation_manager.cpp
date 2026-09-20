@@ -85,9 +85,11 @@ AnimationManager::Id AnimationManager::animateInternal(
 }
 
 void AnimationManager::killEntry(Entry& entry) {
+  // Keep the callables: this can be called from inside the very setter that is
+  // running (a node destroyed by its own animation). They die with the entry
+  // when the tick reaps it.
+  entry.dead = true;
   entry.animation.finished = true;
-  entry.animation.setter = nullptr;
-  entry.animation.onComplete = nullptr;
   entry.owner = nullptr;
 }
 
@@ -128,10 +130,9 @@ void AnimationManager::reduceMotion() {
     }
     const float endValue = m_animations[i].animation.endValue;
     if (m_animations[i].animation.setter) {
-      auto setter = m_animations[i].animation.setter;
-      setter(endValue);
+      m_animations[i].animation.setter(endValue);
     }
-    if (i >= m_animations.size() || m_animations[i].animation.finished) {
+    if (i >= m_animations.size() || m_animations[i].dead || m_animations[i].animation.finished) {
       continue; // cancelled by its own setter
     }
     auto& anim = m_animations[i].animation;
@@ -207,23 +208,25 @@ void AnimationManager::tick(float /*deltaMs*/) {
     const float value = m_animations[i].animation.startValue
         + (m_animations[i].animation.endValue - m_animations[i].animation.startValue) * easedT;
 
+    // Invoked in place: the vector cannot move during a tick (additions are
+    // parked in m_pending, cancels only mark entries dead), so no copy of the
+    // callable is needed — that copy was a heap allocation per animation per
+    // frame.
     if (m_animations[i].animation.setter) {
-      // Copy the callable before invoking: it may cancel itself, and a dead
-      // entry's std::function is cleared while it would otherwise be running.
-      auto setter = m_animations[i].animation.setter;
-      setter(value);
+      m_animations[i].animation.setter(value);
     }
 
     // Re-read: the setter may have marked this entry dead (node destroyed, or an
     // explicit cancel), in which case its completion must not fire.
-    if (finished && !m_animations.empty() && i < m_animations.size() && m_animations[i].animation.onComplete) {
+    if (finished && i < m_animations.size() && !m_animations[i].dead
+        && m_animations[i].animation.onComplete) {
       completedCallbacks.push_back(std::move(m_animations[i].animation.onComplete));
     }
   }
 
   --m_tickDepth;
 
-  std::erase_if(m_animations, [](const Entry& e) { return e.animation.finished; });
+  std::erase_if(m_animations, [](const Entry& e) { return e.animation.finished || e.dead; });
   if (!m_pending.empty()) {
     m_animations.insert(m_animations.end(), std::make_move_iterator(m_pending.begin()),
                         std::make_move_iterator(m_pending.end()));

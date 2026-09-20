@@ -61,6 +61,14 @@ namespace {
   // as a fraction of that width (< 1 makes neighbours overlap behind the focused item).
   // Width of the compact control card in carousel mode: the panel's own width
   // before the carousel existed, so the menu keeps exactly its old footprint.
+  // Browsing session idle budget. Sized so a sweep back and forth across the
+  // visible neighbourhood re-uses textures instead of re-decoding: ~1.4 MB per
+  // 762 px preview, so this holds roughly 45 of them. Released on close.
+  constexpr std::size_t kBrowseSessionIdleBytes = 64U * 1024U * 1024U;
+  constexpr std::size_t kBrowseSessionIdleEntries = 64;
+  // A second activation of the same wallpaper inside this window is treated as
+  // one gesture (double-click), not two applies.
+  constexpr auto kReapplyGuard = std::chrono::milliseconds(600);
   constexpr float kMenuCardWidth = 1000.0F;
   // Focused card width as a fraction of the full-width carousel band.
   constexpr float kCarouselCellWidthRatio = 0.40F;
@@ -983,6 +991,13 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   }
   m_navStack.clear();
   m_pendingInitialFocus = true;
+  // Browsing session: the carousel can cross 20+ wallpapers a second, so while
+  // it is open the shared thumbnail cache keeps a larger (still bounded) idle
+  // set. Everything this session parked is dropped again in onClose().
+  if (m_thumbnails != nullptr && m_thumbnailSession == 0) {
+    m_thumbnails->resetStats();
+    m_thumbnailSession = m_thumbnails->beginSession(kBrowseSessionIdleBytes, kBrowseSessionIdleEntries);
+  }
   populateMonitorChoices();
   syncSortButtonGlyph();
   reseedRandomSort();
@@ -1015,10 +1030,18 @@ void WallpaperPanel::onClose() {
     m_thumbnails->resumeDecodes();
   }
   m_decodeGateHeld = false;
-  // Tiles have released their thumbnails by now; drop what the shared service
-  // was holding idle for fast back-scrolling so nothing survives the panel.
-  if (m_thumbnails != nullptr) {
-    m_thumbnails->trimIdle();
+  // Tiles have released their thumbnails by now, so closing the session drops
+  // exactly what browsing parked — not what other surfaces (control center,
+  // file dialogs) left in the shared cache, and never the desktop wallpaper,
+  // which lives in SharedTextureCache rather than here.
+  if (m_thumbnails != nullptr && m_thumbnailSession != 0) {
+    const auto& stats = m_thumbnails->stats();
+    kLog.debug(
+        "browse session: {} decodes, {} cache hits, {} evictions, peak idle {:.1f} MB", stats.decodes,
+        stats.idleHits, stats.evictions, static_cast<double>(stats.peakIdleBytes) / (1024.0 * 1024.0)
+    );
+    m_thumbnails->endSession(m_thumbnailSession);
+    m_thumbnailSession = 0;
   }
   m_thumbnailPendingSub.disconnect();
 
@@ -1988,6 +2011,17 @@ void WallpaperPanel::applyWallpaperFromEntry(const WallpaperEntry& entry) {
   }
 
   const std::string path = entry.absPath.string();
+
+  // An accidental double-click would otherwise run palette extraction and a
+  // wallpaper transition twice for the same image, stacking two transitions.
+  // Deliberate re-application still works — the guard only spans one gesture.
+  const auto now = std::chrono::steady_clock::now();
+  if (path == m_lastAppliedPath && now - m_lastAppliedAt < kReapplyGuard) {
+    kLog.debug("ignoring repeat apply of {} within the double-click guard", path);
+    return;
+  }
+  m_lastAppliedPath = path;
+  m_lastAppliedAt = now;
   applyWallpaperPath(path, favoriteThemeToApply(path));
   kLog.info(
       "applied wallpaper {} to {}", path,
