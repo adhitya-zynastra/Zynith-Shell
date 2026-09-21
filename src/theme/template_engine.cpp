@@ -1602,6 +1602,18 @@ namespace noctalia::theme {
     markMultiClientGatedEntries(entries);
 
     bool ok = true;
+
+    // Two templates can carry the identical post_hook: the builtin gtk3 and gtk4 entries both run
+    // assets/templates/gtk/apply.sh, which rewrites *both* gtk.css files in a single pass (which is
+    // also why they are pinned hook_async = false). Executing it once per template means running the
+    // same script twice for every palette change, and each run spawns a subprocess tree. A rendered
+    // hook command therefore runs at most once per apply pass.
+    //
+    // Keyed on the RENDERED text, not the raw string: two templates may share a hook template that
+    // expands differently (different mode, different config_dir), and those are genuinely different
+    // commands that must both run.
+    std::unordered_set<std::string> ranPostHooks;
+
     for (const ParsedTemplateEntry& entry : entries) {
       if (cancelRequested()) {
         return ok;
@@ -1649,13 +1661,18 @@ namespace noctalia::theme {
         }
       }
 
-      auto runHook = [&](const std::string& hook, bool async) {
+      auto runHook = [&](const std::string& hook, bool async, bool dedupePerPass) {
         if (hook.empty() || cancelRequested()) {
           return;
         }
 
         const auto hookRendered = EngineImpl(m_themeData, renderOptions).render(hook);
         if (hookRendered.errorCount != 0 || hookRendered.text.empty()) {
+          return;
+        }
+
+        // An identical command already executed in this pass did the work for this entry too.
+        if (dedupePerPass && !ranPostHooks.insert(hookRendered.text).second) {
           return;
         }
 
@@ -1707,7 +1724,7 @@ namespace noctalia::theme {
 
       const bool hasOutputs = !effectiveOutputs.empty();
       if (hasOutputs)
-        runHook(entry.preHook, /*async=*/false);
+        runHook(entry.preHook, /*async=*/false, /*dedupePerPass=*/false);
 
       bool outputsOk = true;
       for (const std::string& outputPath : effectiveOutputs) {
@@ -1749,7 +1766,7 @@ namespace noctalia::theme {
         if (!entry.hookAsync && !entry.postHook.empty() && renderOptions.hookRunner != nullptr) {
           renderOptions.hookRunner->waitIdle();
         }
-        runHook(entry.postHook, /*async=*/entry.hookAsync);
+        runHook(entry.postHook, /*async=*/entry.hookAsync, /*dedupePerPass=*/true);
       }
     }
 
