@@ -1526,6 +1526,13 @@
           "up": "Up",
           "up-left": "Up Left",
           "up-right": "Up Right"
+        },
+        "motion-preset": {
+          "instant": "Instant",
+          "fast": "Fast",
+          "default": "Default",
+          "smooth": "Smooth",
+          "cinematic": "Cinematic"
         }
       },
       "theme": {
@@ -1776,6 +1783,26 @@
         "wallpaper-generation-scheme": {
           "description": "Choose how wallpaper colors are converted into a palette",
           "label": "Wallpaper Generation Scheme"
+        },
+        "motion-preset": {
+          "label": "Motion Preset",
+          "description": "Overall shape of compositor animations. The per-category adjustments below trim the preset rather than replacing it."
+        },
+        "motion-open": {
+          "label": "Window Open",
+          "description": "Duration of the window-open animation, as a percentage of the preset's baseline."
+        },
+        "motion-close": {
+          "label": "Window Close",
+          "description": "Duration of the window-close animation, as a percentage of the preset's baseline."
+        },
+        "motion-movement": {
+          "label": "Window Movement",
+          "description": "Duration of window movement, resize and workspace switching, as a percentage of the preset's baseline."
+        },
+        "motion-overview": {
+          "label": "Overview",
+          "description": "Duration of the overview open and close animation, as a percentage of the preset's baseline."
         }
       },
       "backdrop": {

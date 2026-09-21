@@ -598,6 +598,37 @@ namespace settings {
         tr("settings.schema.appearance.animation-speed.description"), {"shell", "animation", "speed"},
         sliderFor(cfg.shell.animation.speed, noctalia::config::schema::kAnimationSpeedRange, false), "motion"
     ));
+    // Compositor-side motion lives in the same group as the shell's own, so "how fast does the
+    // desktop feel" is one place rather than two settings surfaces that can disagree.
+    entries.push_back(makeEntry(
+        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-preset.label"),
+        tr("settings.schema.appearance.motion-preset.description"), {"shell", "animation", "preset"},
+        enumSelect(kMotionPresets, cfg.shell.animation.preset), "motion preset niri animation curve duration"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-open.label"),
+        tr("settings.schema.appearance.motion-open.description"), {"shell", "animation", "niri_open"},
+        sliderFor(cfg.shell.animation.niriOpen, noctalia::config::schema::kMotionTrimRange, true),
+        "motion niri window open"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-close.label"),
+        tr("settings.schema.appearance.motion-close.description"), {"shell", "animation", "niri_close"},
+        sliderFor(cfg.shell.animation.niriClose, noctalia::config::schema::kMotionTrimRange, true),
+        "motion niri window close"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-movement.label"),
+        tr("settings.schema.appearance.motion-movement.description"), {"shell", "animation", "niri_movement"},
+        sliderFor(cfg.shell.animation.niriMovement, noctalia::config::schema::kMotionTrimRange, true),
+        "motion niri window movement resize workspace"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-overview.label"),
+        tr("settings.schema.appearance.motion-overview.description"), {"shell", "animation", "niri_overview"},
+        sliderFor(cfg.shell.animation.niriOverview, noctalia::config::schema::kMotionTrimRange, true),
+        "motion niri overview"
+    ));
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "borders", tr("settings.schema.appearance.button-borders.label"),
         tr("settings.schema.appearance.button-borders.description"), {"shell", "button_borders"},

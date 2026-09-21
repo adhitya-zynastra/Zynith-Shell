@@ -1260,6 +1260,11 @@ namespace noctalia::config::schema {
       static const Schema<ShellConfig::AnimationConfig> s = {
           field(&ShellConfig::AnimationConfig::enabled, "enabled"),
           field(&ShellConfig::AnimationConfig::speed, "speed", kAnimationSpeedRange),
+          enumField(&ShellConfig::AnimationConfig::preset, "preset", kMotionPresets),
+          field(&ShellConfig::AnimationConfig::niriOpen, "niri_open", kMotionTrimRange),
+          field(&ShellConfig::AnimationConfig::niriClose, "niri_close", kMotionTrimRange),
+          field(&ShellConfig::AnimationConfig::niriMovement, "niri_movement", kMotionTrimRange),
+          field(&ShellConfig::AnimationConfig::niriOverview, "niri_overview", kMotionTrimRange),
       };
       return s;
     }

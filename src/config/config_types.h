@@ -809,6 +809,25 @@ constexpr EnumOption<PasswordMaskStyle> kPasswordMaskStyles[] = {
     {PasswordMaskStyle::RandomIcons, "random", "settings.options.shell.password-style.random-icons"},
 };
 
+// Motion presets. Each names a coherent set of niri animation durations and curves; the
+// per-category trims in AnimationConfig adjust a preset rather than replacing it.
+// Smooth is the Phase 2 baseline and its timings are deliberately not altered.
+enum class MotionPreset : std::uint8_t {
+  Instant = 0,
+  Fast = 1,
+  Default = 2,
+  Smooth = 3,
+  Cinematic = 4,
+};
+
+constexpr EnumOption<MotionPreset> kMotionPresets[] = {
+    {MotionPreset::Instant, "instant", "settings.options.shell.motion-preset.instant"},
+    {MotionPreset::Fast, "fast", "settings.options.shell.motion-preset.fast"},
+    {MotionPreset::Default, "default", "settings.options.shell.motion-preset.default"},
+    {MotionPreset::Smooth, "smooth", "settings.options.shell.motion-preset.smooth"},
+    {MotionPreset::Cinematic, "cinematic", "settings.options.shell.motion-preset.cinematic"},
+};
+
 enum class ShadowDirection : std::uint8_t {
   Center = 0,
   Down = 1,
@@ -956,6 +975,18 @@ struct ShellConfig {
   struct AnimationConfig {
     bool enabled = true;
     float speed = 1.0F;
+
+    // Compositor-side motion. `speed` above governs Noctalia's own surfaces; these govern the
+    // niri animation config Zynith generates, so the two halves of "how fast does the desktop
+    // feel" live in one table with one owner instead of in a separate settings surface.
+    //
+    // The trims are percentages of the preset's baseline durations, per niri animation category.
+    // 100 is the preset unmodified; the preset is the shape, the trims are the adjustment.
+    MotionPreset preset = MotionPreset::Smooth;
+    std::int32_t niriOpen = 100;
+    std::int32_t niriClose = 100;
+    std::int32_t niriMovement = 100;
+    std::int32_t niriOverview = 100;
 
     bool operator==(const AnimationConfig&) const = default;
   };
