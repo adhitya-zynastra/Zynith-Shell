@@ -2668,7 +2668,14 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
             .context = context,
             .sourceBarName = inst->barConfig.name
         };
-        if (activation == Widget::PanelActivation::Open) {
+        // zynith: the pointer rested on the time cluster long enough to open the control center,
+        // then clicked it. That click is the one the hover pre-empted, so it confirms the panel
+        // (retargeting to the clicked section) rather than toggling it shut.
+        const bool confirmsHoverOpen = activation == Widget::PanelActivation::Toggle
+            && inst->hoverOpenedControlCenter && panelId == "control-center"
+            && PanelManager::instance().isOpenPanel(panelId);
+        inst->hoverOpenedControlCenter = false;
+        if (activation == Widget::PanelActivation::Open || confirmsHoverOpen) {
           PanelManager::instance().openPanel(std::string(panelId), request);
         } else {
           PanelManager::instance().togglePanel(std::string(panelId), request);
@@ -2941,13 +2948,11 @@ void Bar::updateWidgetHoverHighlight(BarInstance& instance, InputArea* hoveredAr
 // nothing and no polling or animation loop is involved.
 void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
   instance.hoverIntentTimer.stop();
-  if (m_config == nullptr) {
+  if (m_config == nullptr || target == nullptr) {
+    instance.hoverOpenedControlCenter = false;
     return;
   }
   const auto& cc = m_config->config().controlCenter;
-  if (!cc.hoverOpen || target == nullptr) {
-    return;
-  }
   // The clock may share a capsule group (Zynith puts the clock and the audio
   // visualiser in one cluster), and the cluster reads as a single control:
   // resting anywhere on it counts, not only on the clock widget itself.
@@ -2967,9 +2972,10 @@ void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
     }
   }
   if (!targetIsClock && !targetInClockGroup) {
+    instance.hoverOpenedControlCenter = false; // left the time cluster
     return;
   }
-  if (PanelManager::instance().isOpenPanel("control-center")) {
+  if (!cc.hoverOpen || PanelManager::instance().isOpenPanel("control-center")) {
     return;
   }
   BarInstance* inst = &instance;
@@ -2988,6 +2994,7 @@ void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
             *inst, inst->lastPointerSx, inst->lastPointerSy, platform, inst->barConfig.name, "control-center", "home",
             false
         );
+        inst->hoverOpenedControlCenter = PanelManager::instance().isOpenPanel("control-center");
       }
   );
 }

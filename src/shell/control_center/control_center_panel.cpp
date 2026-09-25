@@ -3,6 +3,7 @@
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/input/key_modifiers.h"
 #include "dbus/mpris/mpris_service.h"
 #include "i18n/i18n.h"
 #include "notification/notification_manager.h"
@@ -18,6 +19,7 @@
 #include "ui/builders.h"
 #include "ui/controls/roving_list_nav.h"
 #include "ui/controls/scroll_view.h"
+#include "ui/responsive.h"
 #include "ui/scroll_into_view.h"
 #include "ui/split_pane_focus.h"
 
@@ -28,6 +30,7 @@
 #include <optional>
 #include <string_view>
 #include <wayland-client-protocol.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 using namespace control_center;
 
@@ -103,6 +106,9 @@ bool ControlCenterPanel::dismissTransientUi() {
 
 void ControlCenterPanel::create() {
   const float scale = contentScale();
+  // Frame rhythm: the gaps and padding that give the panel its breathing room scale with the
+  // configured density. Each tab's internal spacing is its own and is not touched here.
+  const float density = m_config != nullptr ? layoutDensityFactor(m_config->config().controlCenter.density) : 1.0F;
   const ControlCenterSidebarMode sidebarMode = sidebarModeForOpen(pendingOpenContext());
   m_topNav = m_config != nullptr && m_config->config().controlCenter.topNav;
   // zynith top nav: icon-only buttons in a row above the content (no scroll rail needed).
@@ -117,7 +123,7 @@ void ControlCenterPanel::create() {
   const ui::FlexProps rootProps{
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
-      .gap = Style::panelPadding * scale,
+      .gap = ui::responsive::space(Style::panelPadding, density, scale),
       .padding = 0.0F,
   };
   auto rootLayout = m_topNav ? ui::column(rootProps) : ui::row(rootProps);
@@ -128,7 +134,7 @@ void ControlCenterPanel::create() {
         .align = m_topNav ? FlexAlign::Center : FlexAlign::Start,
         .justify = m_topNav ? FlexJustify::Center : FlexJustify::Start,
         .gap = 0.0F,
-        .padding = (m_topNav ? Style::spaceXs : Style::spaceMd) * scale,
+        .padding = ui::responsive::space(m_topNav ? Style::spaceXs : Style::spaceMd, density, scale),
         .fillWidth = m_topNav,
         .fillHeight = !m_topNav,
         .configure = [this, scale](Flex& flex) {
@@ -236,7 +242,7 @@ void ControlCenterPanel::create() {
   auto content = ui::column({
       .out = &m_content,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceMd * scale,
+      .gap = ui::responsive::space(Style::spaceMd, density, scale),
       .clipChildren = true,
       .flexGrow = 4.0F,
   });
@@ -440,6 +446,24 @@ bool ControlCenterPanel::isContextActive(std::string_view context) const {
 }
 
 bool ControlCenterPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
+  // Section cycling, browser-tab style: Ctrl+Tab / Ctrl+Shift+Tab and Ctrl+PageDown / Ctrl+PageUp.
+  // Plain Tab stays with focus traversal below. Goes through the same path as a wheel over the
+  // navigation, so a held chord retargets the section morph rather than queueing transitions.
+  if (pressed && !preedit && (modifiers & KeyMod::Ctrl) != 0 && (modifiers & (KeyMod::Alt | KeyMod::Super)) == 0) {
+    int direction = 0;
+    if (sym == XKB_KEY_Tab) {
+      direction = (modifiers & KeyMod::Shift) != 0 ? -1 : 1;
+    } else if (sym == XKB_KEY_ISO_Left_Tab || sym == XKB_KEY_Prior) {
+      direction = -1;
+    } else if (sym == XKB_KEY_Next) {
+      direction = 1;
+    }
+    if (direction != 0) {
+      selectAdjacentVisibleTab(direction);
+      return true;
+    }
+  }
+
   if (!m_showSidebar || m_sidebarNav == nullptr || m_sidebarScrollView == nullptr || m_content == nullptr) {
     return false;
   }

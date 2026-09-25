@@ -75,6 +75,9 @@ struct BarInstance {
   bool pointerInside = false;
   // zynith: hover-intent for the clock -> control center (one-shot, armed only while hovering).
   Timer hoverIntentTimer;
+  // zynith: set when that timer opened the control center and cleared once the pointer leaves the
+  // time cluster. A click that lands in between confirms the open instead of toggling it shut.
+  bool hoverOpenedControlCenter = false;
   float lastPointerSx = 0.0F;
   float lastPointerSy = 0.0F;
   std::size_t attachedPopupCount = 0;

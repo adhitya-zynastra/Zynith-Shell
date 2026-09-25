@@ -1558,8 +1558,10 @@ void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest requ
         closePanel();
         return;
       }
-      // Panels placed near the clicked widget must fully reopen so geometry
-      // and bar decoration track the new anchor.
+      // A near-click panel goes through openPanel(), which retargets an open panel in place
+      // (Panel::retargetOpen) rather than rebuilding it: the content moves to the new context and
+      // the outer surface stays where it opened. This is what makes bar-widget routing into the
+      // Control Center read as navigation instead of a close-and-reopen.
       if (request.hasAnchorPosition && openNearClickEnabled(m_activePanel, panelId, m_config)) {
         openPanel(panelId, request);
         return;
