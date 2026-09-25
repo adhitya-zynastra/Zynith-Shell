@@ -22,6 +22,7 @@
 #include "ui/controls/carousel_view.h"
 #include "ui/dialogs/color_picker_dialog.h"
 #include "ui/palette.h"
+#include "ui/responsive.h"
 #include "ui/style.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
@@ -86,8 +87,13 @@ namespace {
   // one gesture (double-click), not two applies.
   constexpr auto kReapplyGuard = std::chrono::milliseconds(600);
   constexpr float kMenuCardWidth = 1000.0F;
-  // Focused card width as a fraction of the full-width carousel band.
-  constexpr float kCarouselCellWidthRatio = 0.40F;
+  // Focused-card sizing. The preference comes from [wallpaper].carousel_card_width; these bound it.
+  // kCarouselMaxBandFraction is the pre-responsive 40 % of the band: on anything up to the laptop's
+  // width the card is capped there, which keeps the old composition (outer pair showing), and the
+  // 760 px default sits just under it at 1920 px. Only wider bands leave the card at its preference.
+  constexpr float kCarouselMinCardWidth = 320.0F;
+  constexpr float kCarouselMaxCardWidth = 1400.0F;
+  constexpr float kCarouselMaxBandFraction = 0.40F;
   constexpr float kCarouselStrideRatio = 0.66F;
 
   [[nodiscard]] std::size_t themeModeSegmentIndex(ThemeMode mode) {
@@ -974,10 +980,18 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
     m_grid->setCellHeight(kMinTileWidth * contentScale() * kTileAspect);
   }
 
-  // The carousel's focused item scales with the panel, so it stays dominant at any
-  // panel size while its neighbours stay partially visible at the edges.
+  // The focused card is sized from a preference, not as a fraction of the band: the band only
+  // bounds it. So a wider output keeps the card the same size and the carousel resolves more
+  // visible neighbours (ui/controls/carousel_geometry.h), while a narrow one shrinks the card
+  // rather than the arc. Resolved here, on layout, never per frame.
   if (m_carousel != nullptr) {
-    const float cellW = std::clamp(width * kCarouselCellWidthRatio, 220.0F, std::max(220.0F, width - 48.0F));
+    const float preferred = m_config != nullptr
+        ? static_cast<float>(m_config->config().wallpaper.carouselCardWidth)
+        : 760.0F;
+    const float cellW = ui::responsive::resolve(
+        {.min = kCarouselMinCardWidth, .preferred = preferred, .max = kCarouselMaxCardWidth}, width,
+        contentScale(), kCarouselMaxBandFraction
+    );
     // The view shrinks this to fit its own body height, keeping the aspect.
     m_carousel->setCellSize(cellW, cellW * kTileAspect);
   }

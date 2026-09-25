@@ -1151,6 +1151,7 @@ if build_tests
     'niri_config_fragments',
     'glass_surface',
     'zynith_config_ownership',
+    'responsive_layout',
     'app_identity',
     'audio_glyphs',
     'audio_route_selection',

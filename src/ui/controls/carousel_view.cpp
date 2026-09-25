@@ -1,6 +1,7 @@
 #include "ui/controls/carousel_view.h"
 
 #include "render/scene/input_area.h"
+#include "ui/controls/carousel_geometry.h"
 #include "ui/controls/scroll_view.h"
 #include "ui/style.h"
 
@@ -18,25 +19,13 @@ namespace {
   // carousel is idle.
   constexpr std::chrono::milliseconds kSettleDelay{90};
   // ── The orbit ─────────────────────────────────────────────────────────────
-  // Angular spacing between neighbouring items. Wide enough that the outer
-  // cards visibly turn away, shallow enough to avoid a fairground wheel.
-  constexpr float kAngleStepRad = 0.3665F; // 21 degrees
-  // The arc is normalised over this many items per side, so the depth curve
-  // (and therefore scale/opacity/sink) is stable whatever the viewport shows.
-  constexpr float kArcHalfSpanItems = 3.0F;
-  // Far-edge appearance.
-  constexpr float kMinItemScale = 0.52F;
-  // < 1 makes the first neighbour recede decisively instead of shadowing the focus.
-  constexpr float kScaleFalloffExp = 0.6F;
+  // Arc shape and the responsive fit live in ui/controls/carousel_geometry.h.
   constexpr float kSinkFalloffExp = 0.55F;
   constexpr float kMinItemOpacity = 0.26F;
   // How far the far edge of the arc sinks, as a fraction of the focused height.
   constexpr float kSinkRatio = 0.38F;
-  // Below this drawn scale a card is noise rather than a preview: the arc ends.
-  constexpr float kLegibleScale = 0.42F;
-  // Hard ceiling on the working set, whatever the geometry asks for.
-  constexpr std::size_t kMaxPerSide = 3;
-  constexpr std::size_t kMaxPoolSize = 16;
+  // Enough slots for the widest arc plus the preload reach on both sides.
+  constexpr std::size_t kMaxPoolSize = 2 * (ui::carousel::kMaxPerSide + 4) + 1;
   // Paint order: cards span 0..kFocusZIndex by depth, the hit-test overlay sits above.
   constexpr std::int32_t kFocusZIndex = 1000;
   constexpr std::int32_t kOverlayZIndex = 5000;
@@ -209,10 +198,8 @@ void CarouselView::setMoving(bool moving) {
 }
 
 CarouselView::PathSample CarouselView::samplePath(float u) const noexcept {
-  const float theta = u * kAngleStepRad;
-  const float thetaMax = kArcHalfSpanItems * kAngleStepRad;
-  const float depthSpan = 1.0F - std::cos(thetaMax);
-  const float depth = depthSpan <= 0.0F ? 0.0F : std::clamp((1.0F - std::cos(theta)) / depthSpan, 0.0F, 1.0F);
+  const float theta = u * m_angleStep;
+  const float depth = ui::carousel::depthAt(theta);
 
   PathSample sample;
   sample.depth = depth;
@@ -221,7 +208,7 @@ CarouselView::PathSample CarouselView::samplePath(float u) const noexcept {
   // next to the focus instead of only at the far edge.
   sample.centreY = m_apexCentreY + m_sink * std::pow(depth, kSinkFalloffExp);
   // Near neighbours stay close to full size; the fall-off accelerates outward.
-  sample.scale = 1.0F - (1.0F - kMinItemScale) * std::pow(depth, kScaleFalloffExp);
+  sample.scale = ui::carousel::scaleAt(depth);
   sample.opacity = 1.0F - (1.0F - kMinItemOpacity) * depth;
   return sample;
 }
@@ -444,6 +431,13 @@ void CarouselView::onPointerPress(float localX, float localY) {
 
 void CarouselView::onPointerRelease(float /*localX*/, float /*localY*/) {}
 
+void CarouselView::resolveArc(float cellW) noexcept {
+  const auto fit = ui::carousel::fitArc(m_viewportWidth, cellW, m_stride);
+  m_visiblePerSide = fit.perSide;
+  m_angleStep = fit.angleStep;
+  m_orbitRadius = m_stride / m_angleStep;
+}
+
 void CarouselView::doLayout(Renderer& renderer) {
   if (m_adapter == nullptr || m_scroll == nullptr || m_canvas == nullptr || m_inputArea == nullptr) {
     Flex::doLayout(renderer);
@@ -468,27 +462,11 @@ void CarouselView::doLayout(Renderer& renderer) {
 
   // ── Resolve the orbit ────────────────────────────────────────────────────
   // Rx is chosen so travel near the focus matches the scroll axis: d(x)/d(u) at
-  // u = 0 is Rx * kAngleStepRad, which must equal one stride.
+  // u = 0 is Rx * angleStep, which must equal one stride.
   m_stride = std::max(1.0F, cellW * m_strideRatio);
-  m_orbitRadius = m_stride / kAngleStepRad;
   m_sink = cellH * kSinkRatio;
   m_apexCentreY = (m_viewportHeight - cellH) * 0.5F + cellH * 0.5F - m_sink * 0.5F;
-
-  // How much of the arc this viewport can actually carry: walk outward until a
-  // card is either illegible or completely outside the viewport. Resource cost
-  // and composition therefore follow the geometry instead of a magic number.
-  std::size_t perSide = 0;
-  for (std::size_t n = 1; n <= kMaxPerSide; ++n) {
-    const PathSample sample = samplePath(static_cast<float>(n));
-    if (sample.scale < kLegibleScale) {
-      break;
-    }
-    if (sample.centreX - cellW * sample.scale * 0.5F >= m_viewportWidth) {
-      break;
-    }
-    perSide = n;
-  }
-  m_visiblePerSide = perSide;
+  resolveArc(cellW);
 
   m_scroll->setScrollWheelStep(m_stride);
 

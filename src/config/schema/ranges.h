@@ -23,6 +23,8 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kMotionTrimRange{50, 200, 5};
   // Glass: blur strength is an intent-level 0-100 scale mapped onto niri's global blur passes/offset.
   inline constexpr Range<std::int64_t> kGlassBlurStrengthRange{0, 100, 5};
+  // Wallpaper browser: preferred focused-card width in logical px (resolved against the display).
+  inline constexpr Range<std::int64_t> kCarouselCardWidthRange{400, 1400, 20};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
   inline constexpr Range<std::int64_t> kControlCenterWidthRange{600, 1200, 10};
   inline constexpr Range<std::int64_t> kScreenCornersSizeRange{1, 100, 1};

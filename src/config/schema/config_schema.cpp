@@ -489,6 +489,7 @@ namespace noctalia::config::schema {
         field(&ControlCenterConfig::topNav, "top_nav"),
         field(&ControlCenterConfig::hoverOpen, "hover_open"),
         field(&ControlCenterConfig::hoverOpenDelayMs, "hover_open_delay_ms", kHoverIntentRange),
+        enumField(&ControlCenterConfig::density, "density", kLayoutDensities),
         field(&ControlCenterConfig::showShortcutLabels, "show_shortcut_labels"),
         field(&ControlCenterConfig::showSessionButton, "show_session_button"),
         field(&ControlCenterConfig::hiddenTabs, "hidden_tabs"),
@@ -1643,6 +1644,7 @@ namespace noctalia::config::schema {
         pathStringField(&WallpaperConfig::directoryDark, "directory_dark"),
         field(&WallpaperConfig::perMonitorDirectories, "per_monitor_directories"),
         field(&WallpaperConfig::carousel, "carousel"),
+        field(&WallpaperConfig::carouselCardWidth, "carousel_card_width", kCarouselCardWidthRange),
         subTable(&WallpaperConfig::automation, "automation", wallpaperAutomationSchema()),
         namedMap<WallpaperConfig, WallpaperMonitorOverride>(
             &WallpaperConfig::monitorOverrides, "monitor", wallpaperMonitorSchema(),

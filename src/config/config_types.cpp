@@ -205,6 +205,18 @@ float panelCardOpacityForTransparencyMode(PanelTransparencyMode mode, float pane
   return 1.0F;
 }
 
+float layoutDensityFactor(LayoutDensity density) noexcept {
+  switch (density) {
+  case LayoutDensity::Compact:
+    return 0.75F;
+  case LayoutDensity::Comfortable:
+    return 1.0F;
+  case LayoutDensity::Spacious:
+    return 1.35F;
+  }
+  return 1.0F;
+}
+
 float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept {
   switch (mode) {
   case PanelTransparencyMode::Solid:

@@ -98,6 +98,8 @@ private:
     float depth = 0.0F; // 0 at the focus, 1 at the far edge of the arc
   };
   [[nodiscard]] PathSample samplePath(float u) const noexcept;
+  // Resolves visible-per-side, angle step and orbit radius for the current viewport and cell width.
+  void resolveArc(float cellW) noexcept;
 
   // Where a bound slot was drawn, in canvas coordinates. Hit-testing walks this
   // front-to-back, so overlapping cards resolve exactly as they are painted.
@@ -148,6 +150,9 @@ private:
   float m_cellWidthResolved = 0.0F;
   float m_cellHeightResolved = 0.0F;
   std::size_t m_visiblePerSide = 2;
+  // Angle between neighbouring cards, resolved per layout by resolveArc() so a wider viewport
+  // spreads the same arc over more cards. 21 degrees at 1920 px with a 760 px card.
+  float m_angleStep = 0.3665F;
   std::size_t m_preloadCount = 1;
   std::uint32_t m_itemCursorShape = 0;
 

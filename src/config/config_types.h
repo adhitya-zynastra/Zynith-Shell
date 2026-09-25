@@ -526,6 +526,10 @@ struct WallpaperConfig {
   std::vector<WallpaperMonitorOverride> monitorOverrides;
   // zynith: browse wallpapers as a centred horizontal carousel instead of a grid.
   bool carousel = false;
+  // zynith: preferred width of the focused carousel card, in logical px before the UI scale. The
+  // resolved width is clamped to the available band, and how many neighbours are visible follows
+  // from it and the output width — so a wider monitor shows more cards rather than bigger ones.
+  std::int32_t carouselCardWidth = 760;
 
   bool operator==(const WallpaperConfig&) const = default;
 };
@@ -934,6 +938,23 @@ constexpr EnumOption<GlassBorderRole> kGlassBorderRoles[] = {
 [[nodiscard]] float
 panelCardOpacityForTransparencyMode(PanelTransparencyMode mode, float panelBackgroundOpacity) noexcept;
 [[nodiscard]] float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mode) noexcept;
+
+// Zynith responsive layout: how much breathing room a surface's frame gets. Resolved to a plain
+// spacing multiplier (layoutDensityFactor) so the UI layer consumes a number, not config types.
+// Comfortable is 1.0 — the spacing surfaces had before density existed.
+enum class LayoutDensity : std::uint8_t {
+  Compact = 0,
+  Comfortable = 1,
+  Spacious = 2,
+};
+
+constexpr EnumOption<LayoutDensity> kLayoutDensities[] = {
+    {LayoutDensity::Compact, "compact", "settings.options.shell.layout-density.compact"},
+    {LayoutDensity::Comfortable, "comfortable", "settings.options.shell.layout-density.comfortable"},
+    {LayoutDensity::Spacious, "spacious", "settings.options.shell.layout-density.spacious"},
+};
+
+[[nodiscard]] float layoutDensityFactor(LayoutDensity density) noexcept;
 
 enum class PanelPlacement : std::uint8_t {
   Attached = 0,
@@ -1684,6 +1705,8 @@ struct ControlCenterConfig {
   // zynith: hovering the bar clock opens the control center at Home after a short intent delay.
   bool hoverOpen = false;
   std::int32_t hoverOpenDelayMs = 350;
+  // zynith: spacing of the control center's frame (outer rhythm, navigation, content gaps).
+  LayoutDensity density = LayoutDensity::Comfortable;
   bool showShortcutLabels = true;
   bool showSessionButton = true;
   CalendarTabConfig calendarTab;
