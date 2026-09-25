@@ -133,8 +133,11 @@ void SoundPlayer::playBuffer(const std::string& name, const std::shared_ptr<cons
 
   removeFinished();
 
+  // A cue that is still playing is not started again: a burst of notifications or held volume keys
+  // is one sound and one PipeWire stream, not a chord of them.
   for (const auto& active : m_active) {
     if (!active->finished && active->buffer.get() == buffer.get()) {
+      kLog.debug("sound \"{}\": still playing, not restarted", name);
       return;
     }
   }
@@ -181,6 +184,7 @@ void SoundPlayer::playBuffer(const std::string& name, const std::shared_ptr<cons
   }
 
   m_active.push_back(std::move(active));
+  kLog.debug("sound \"{}\": playing ({} stream(s) active)", name, m_active.size());
 }
 
 void SoundPlayer::setVolume(float volume) { m_volume = std::clamp(volume, 0.0F, 1.0F); }

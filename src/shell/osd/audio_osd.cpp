@@ -140,10 +140,10 @@ void AudioOsd::showInput(std::uint32_t sourceId, float volume, bool muted, bool 
   if (playFeedback && m_soundPlayer != nullptr) {
     const bool muteChanged = muted != m_lastSourceMuted;
     if (muteChanged) {
-      if (!muted) {
-        m_soundPlayer->play("mute");
-        m_lastSoundAt = now;
-      }
+      // zynith: unlike the sink, muting the microphone does not silence the speakers, so the cue is
+      // audible both ways — and a microphone going mute is exactly the state worth confirming.
+      m_soundPlayer->play("mute");
+      m_lastSoundAt = now;
     } else if (!muted && now - m_lastSoundAt >= kVolumeSoundCooldown) {
       m_soundPlayer->play("volume-change");
       m_lastSoundAt = now;

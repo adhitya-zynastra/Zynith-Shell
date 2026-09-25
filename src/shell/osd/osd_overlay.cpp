@@ -12,6 +12,7 @@
 #include "render/render_context.h"
 #include "render/scene/node.h"
 #include "shell/surface/edge_inset.h"
+#include "shell/surface/glass.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -28,7 +29,7 @@ namespace {
   // How long a value OSD stays on screen after the last change. Pinned, not
   // derived from the motion tiers: this is a dwell time, not an animation, and
   // it was tuned by hand (Phase 4).
-  constexpr int kHideDelayMs = 1400;
+  constexpr int kDefaultHoldMs = 1400;
 
   enum class OsdRevealDir { FromLeft, FromRight, FromTop, FromBottom };
 
@@ -88,6 +89,28 @@ namespace {
       return 0.97F;
     }
     return std::clamp(config->config().osd.backgroundOpacity, 0.0F, 1.0F);
+  }
+
+  // How long the OSD stays after the last event before fading. Every event restarts it, so a burst
+  // extends one hold rather than queueing several.
+  [[nodiscard]] int osdHoldMs(const ConfigService* config) {
+    return config != nullptr ? std::clamp(config->config().osd.durationMs, 600, 5000) : kDefaultHoldMs;
+  }
+
+  // zynith: the OSD's surface decisions — tint, border colour, blur gate — come from the shared glass
+  // model like every other translucent surface. [osd].background_opacity and [osd].border remain the
+  // single owners of this surface's fill alpha and border switch (ADR-0016: reuse keys that already
+  // mean the right thing).
+  [[nodiscard]] shell::glass::SurfaceStyle osdSurfaceStyle(const ConfigService* config, float opacity) {
+    if (config == nullptr) {
+      return {
+          .fill = colorSpecFromRole(ColorRole::Surface, opacity),
+          .border = true,
+          .borderColor = colorSpecFromRole(ColorRole::Outline),
+          .blur = true,
+      };
+    }
+    return shell::glass::panelSurface(config->config(), opacity);
   }
 
   [[nodiscard]] bool isVerticalOrientation(const std::string& orientation) { return orientation == "vertical"; }
@@ -641,7 +664,7 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
 
   const float cardX = cardBaseX(w, cw);
   const float cardY = cardBaseYForPosition(m_lastPosition, h, ch);
-  const float backgroundOpacity = osdBackgroundOpacity(m_config);
+  const shell::glass::SurfaceStyle surfaceStyle = osdSurfaceStyle(m_config, osdBackgroundOpacity(m_config));
   const bool drawBorder = m_config == nullptr || m_config->config().osd.border;
   const float border = drawBorder ? Style::borderWidth * s : 0.0F;
 
@@ -650,10 +673,10 @@ void OsdOverlay::buildScene(Instance& inst, std::uint32_t width, std::uint32_t h
           .out = &inst.background,
           .width = cw,
           .height = ch,
-          .configure = [cardX, cardY, cw, ch, s, border, backgroundOpacity](Box& box) {
+          .configure = [cardX, cardY, cw, ch, s, border, surfaceStyle](Box& box) {
             box.setCardStyle();
-            box.setFill(colorSpecFromRole(ColorRole::Surface, backgroundOpacity));
-            box.setBorder(colorSpecFromRole(ColorRole::Outline), border);
+            box.setFill(surfaceStyle.fill);
+            box.setBorder(surfaceStyle.borderColor, border);
             box.setRadius(osdCardRadius(cw, ch, s));
             box.setPosition(cardX, cardY);
             box.setZIndex(0);
@@ -853,8 +876,9 @@ void OsdOverlay::updateBlurRegion(Instance& inst) const {
   if (inst.surface == nullptr || inst.background == nullptr || inst.sceneRoot == nullptr) {
     return;
   }
-  if (!inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0
-      && !inst.holdTimer.active()) {
+  const bool idle = !inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0
+      && !inst.holdTimer.active();
+  if (idle || !osdSurfaceStyle(m_config, osdBackgroundOpacity(m_config)).blur) {
     inst.surface->clearBlurRegion();
     return;
   }
@@ -958,7 +982,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
   }
 
   // zynith: hold with an event-loop timer (no frames while the OSD just sits there).
-  inst.holdTimer.start(std::chrono::milliseconds(kHideDelayMs), [this, &inst]() {
+  inst.holdTimer.start(std::chrono::milliseconds(osdHoldMs(m_config)), [this, &inst]() {
         inst.hideAnimId = inst.animations.animate(
             1.0F, 0.0F, Style::animNormal, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
             [this, &inst]() {

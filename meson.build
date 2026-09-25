@@ -1152,6 +1152,7 @@ if build_tests
     'glass_surface',
     'zynith_config_ownership',
     'responsive_layout',
+    'transient_ui_config',
     'app_identity',
     'audio_glyphs',
     'audio_route_selection',

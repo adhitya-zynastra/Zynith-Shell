@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
+#include "core/log.h"
 #include "core/input/key_modifiers.h"
 #include "core/input/key_symbols.h"
 #include "core/input/keybind_matcher.h"
@@ -26,6 +27,7 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -34,6 +36,8 @@
 #include <tuple>
 
 namespace {
+
+  constexpr Logger kLog("launcher");
 
   constexpr std::size_t kRowOverscan = 3;
   // Minimum trimmed query length before prefixed opt-in providers join the global search.
@@ -113,12 +117,32 @@ namespace {
     bool showIcons = true;
     bool showAppOriginIndicator = true;
     bool compact = false;
+    // zynith: the redesigned presentation ([shell.launcher].style = "zynith"). Classic leaves these
+    // at their defaults and renders exactly as it did before the style existed.
+    bool zynith = false;
+    float iconSize = kIconSizeDefault; // unscaled
+    float density = 1.0F;              // layoutDensityFactor of [shell.launcher].density
     std::optional<ColorSpec> appIconColorizeTint;
     std::optional<ColorSpec> listItemBackground;
   };
 
   [[nodiscard]] float launcherIconSize(const LauncherListStyle& style) {
+    if (style.zynith) {
+      return (style.compact ? style.iconSize * 0.75F : style.iconSize) * style.scale;
+    }
     return (style.compact ? kIconSizeCompact : kIconSizeDefault) * style.scale;
+  }
+
+  // Row padding. Zynith rows breathe with the configured density; classic keeps its fixed rhythm.
+  [[nodiscard]] float launcherRowPaddingY(const LauncherListStyle& style) {
+    if (style.zynith) {
+      return (style.compact ? Style::spaceXs : Style::spaceSm) * style.density * style.scale;
+    }
+    return (style.compact ? Style::spaceXs * 0.5F : Style::spaceXs) * style.scale;
+  }
+
+  [[nodiscard]] float launcherRowPaddingX(const LauncherListStyle& style) {
+    return (style.zynith ? Style::spaceMd * style.density : Style::spaceSm) * style.scale;
   }
 
   [[nodiscard]] float stableLabelHeight(const TextMetrics& metrics) { return std::round(metrics.bottom - metrics.top); }
@@ -134,7 +158,7 @@ namespace {
   }
 
   [[nodiscard]] float launcherRowHeight(Renderer& renderer, const LauncherListStyle& style) {
-    const float paddingY = (style.compact ? Style::spaceXs * 0.5F : Style::spaceXs) * style.scale;
+    const float paddingY = launcherRowPaddingY(style);
     const float textHeight = launcherTextStackHeight(renderer, style);
     if (!style.showIcons) {
       return std::ceil(textHeight + paddingY * 2.0F);
@@ -143,7 +167,7 @@ namespace {
   }
 
   [[nodiscard]] float launcherRowHeightEstimate(const LauncherListStyle& style) {
-    const float paddingY = (style.compact ? Style::spaceXs * 0.5F : Style::spaceXs) * style.scale;
+    const float paddingY = launcherRowPaddingY(style);
     const float bodySize = Style::fontSizeBody * style.scale;
     const float captionSize = Style::fontSizeCaption * style.scale;
     const float textHeight = bodySize + (style.compact ? 0.0F : captionSize);
@@ -186,6 +210,11 @@ namespace {
       style.showIcons = launcher.showIcons;
       style.showAppOriginIndicator = launcher.showAppOriginIndicator;
       style.compact = launcher.compact;
+      style.zynith = launcher.style == LauncherStyle::Zynith;
+      if (style.zynith) {
+        style.iconSize = static_cast<float>(launcher.iconSize);
+        style.density = layoutDensityFactor(launcher.density);
+      }
       style.appIconColorizeTint = effectiveShellAppIconColorizationTint(config->config().shell);
       if (config->config().shell.panel.listItemBackground) {
         style.listItemBackground = colorSpecFromRole(ColorRole::SurfaceVariant, cardOpacity);
@@ -200,13 +229,12 @@ namespace {
         : m_style(style), m_asyncTextures(asyncTextures) {
       const float iconSize = launcherIconSize(m_style);
       const float gap = (m_style.compact ? Style::spaceSm : Style::spaceMd) * m_style.scale;
-      const float paddingV = (m_style.compact ? Style::spaceXs * 0.5F : Style::spaceXs) * m_style.scale;
       auto row = ui::row(
           {.out = &m_row,
            .align = FlexAlign::Center,
            .gap = gap,
-           .paddingV = paddingV,
-           .paddingH = Style::spaceSm * m_style.scale,
+           .paddingV = launcherRowPaddingY(m_style),
+           .paddingH = launcherRowPaddingX(m_style),
            .radius = std::max(Style::scaledRadiusLg(m_style.scale), 10.0F * m_style.scale)}
       );
       addChild(std::move(row));
@@ -296,6 +324,18 @@ namespace {
               .visible = false,
           })
       );
+
+      // zynith: the selected row says what Enter will do, instead of shouting in solid primary.
+      m_row->addChild(
+          ui::glyph({
+              .out = &m_enterGlyph,
+              .glyph = "corner-down-left",
+              .glyphSize = Style::fontSizeBody * m_style.scale,
+              .color = colorSpecFromRole(ColorRole::Primary),
+              .visible = false,
+              .participatesInLayout = false,
+          })
+      );
     }
 
     void setListStyle(LauncherListStyle style) { m_style = style; }
@@ -348,8 +388,13 @@ namespace {
       }
 
       const float gap = (m_style.compact ? Style::spaceSm : Style::spaceMd) * m_style.scale;
-      const float horizontalPad = Style::spaceSm * m_style.scale * 2.0F;
+      const float horizontalPad = launcherRowPaddingX(m_style) * 2.0F;
       const float leadingWidth = showLeadingVisual ? iconSize + gap : 0.0F;
+      const bool showEnter = m_style.zynith && m_selected;
+      m_enterGlyph->setGlyphSize(Style::fontSizeBody * m_style.scale);
+      m_enterGlyph->setVisible(showEnter);
+      m_enterGlyph->setParticipatesInLayout(showEnter);
+      const float enterWidth = showEnter ? Style::fontSizeBody * m_style.scale + gap : 0.0F;
       const float pinnedWidth = result.pinned ? Style::fontSizeBody * m_style.scale + gap : 0.0F;
       m_pinnedGlyph->setGlyphSize(Style::fontSizeBody * m_style.scale);
       m_pinnedGlyph->setVisible(result.pinned);
@@ -362,7 +407,8 @@ namespace {
       m_originGlyph->setVisible(hasOrigin);
       m_originGlyph->setParticipatesInLayout(hasOrigin);
       const float originWidth = hasOrigin ? Style::fontSizeBody * m_style.scale + gap : 0.0F;
-      const float textWidth = std::max(0.0F, width - leadingWidth - pinnedWidth - originWidth - horizontalPad);
+      const float textWidth =
+          std::max(0.0F, width - leadingWidth - pinnedWidth - originWidth - enterWidth - horizontalPad);
       m_title->setText(singleLinePreview(result.title));
       m_title->setMaxWidth(textWidth);
 
@@ -412,6 +458,10 @@ namespace {
 
   private:
     void applyVisualState() {
+      if (m_style.zynith) {
+        applyZynithVisualState();
+        return;
+      }
       if (m_selected) {
         m_row->setFill(colorSpecFromRole(ColorRole::Primary));
       } else if (m_hovered) {
@@ -438,6 +488,34 @@ namespace {
       m_originGlyph->setColor(mutedForeground);
     }
 
+    // Zynith selection: a primary-tinted fill with a hairline primary edge, text kept at full
+    // contrast. The selection reads as "here" rather than as a filled button, and it stays legible
+    // on any wallpaper-derived palette because the text never sits on solid primary.
+    void applyZynithVisualState() {
+      if (m_selected) {
+        m_row->setFill(colorSpecFromRole(ColorRole::Primary, 0.16F));
+      } else if (m_hovered) {
+        m_row->setFill(colorSpecFromRole(ColorRole::OnSurface, 0.06F));
+      } else {
+        m_row->setFill(m_style.listItemBackground.value_or(clearColorSpec()));
+      }
+      if (m_reorderTarget) {
+        m_row->setBorder(colorSpecFromRole(ColorRole::Primary), Style::focusRingWidth);
+      } else if (m_selected) {
+        m_row->setBorder(colorSpecFromRole(ColorRole::Primary, 0.55F), Style::borderWidth * m_style.scale);
+      } else {
+        m_row->clearBorder();
+      }
+      const ColorSpec foreground = colorSpecFromRole(ColorRole::OnSurface);
+      const ColorSpec muted = colorSpecFromRole(ColorRole::OnSurfaceVariant);
+      m_badgeLabel->setColor(foreground);
+      m_glyph->setColor(m_selected ? colorSpecFromRole(ColorRole::Primary) : foreground);
+      m_title->setColor(foreground);
+      m_subtitle->setColor(muted);
+      m_pinnedGlyph->setColor(muted);
+      m_originGlyph->setColor(muted);
+    }
+
     LauncherListStyle m_style{};
     float m_rowHeight = 0.0F;
     bool m_selected = false;
@@ -451,6 +529,7 @@ namespace {
     Label* m_subtitle = nullptr;
     Glyph* m_pinnedGlyph = nullptr;
     Glyph* m_originGlyph = nullptr;
+    Glyph* m_enterGlyph = nullptr;
     AsyncTextureCache* m_asyncTextures = nullptr;
     std::string m_iconPath;
     std::string m_fallbackGlyph;
@@ -1053,25 +1132,104 @@ void LauncherPanel::setScopedProvider(std::string_view providerId, std::string_v
   }
 }
 
+float LauncherPanel::preferredWidth() const {
+  if (zynithStyle()) {
+    return scaled(static_cast<float>(m_config->config().shell.launcher.width));
+  }
+  return scaled(560.0F);
+}
+
+float LauncherPanel::preferredHeight() const {
+  if (zynithStyle()) {
+    return scaled(static_cast<float>(m_config->config().shell.launcher.height));
+  }
+  return scaled(500.0F);
+}
+
+bool LauncherPanel::zynithStyle() const noexcept {
+  return m_config != nullptr && m_config->config().shell.launcher.style == LauncherStyle::Zynith;
+}
+
+std::unique_ptr<Flex> LauncherPanel::buildKeyHints(float scale) const {
+  // Keyboard affordances, quiet enough to ignore once learned: a keycap and a word each.
+  auto bar = ui::row({
+      .align = FlexAlign::Center,
+      .justify = FlexJustify::Center,
+      .gap = Style::spaceLg * scale,
+      .fillWidth = true,
+  });
+  const auto keycap = [scale](std::string_view glyph, std::string_view text) {
+    auto cap = ui::row({
+        .align = FlexAlign::Center,
+        .gap = Style::spaceXs * 0.5F * scale,
+        .paddingV = Style::spaceXs * 0.5F * scale,
+        .paddingH = Style::spaceXs * scale,
+        .fill = colorSpecFromRole(ColorRole::OnSurface, 0.08F),
+        .radius = Style::scaledRadiusSm(scale),
+    });
+    if (!glyph.empty()) {
+      cap->addChild(ui::glyph({
+          .glyph = std::string(glyph),
+          .glyphSize = Style::fontSizeMini * scale,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+      }));
+    }
+    if (!text.empty()) {
+      cap->addChild(ui::label({
+          .text = std::string(text),
+          .fontSize = Style::fontSizeMini * scale,
+          .fontWeight = FontWeight::SemiBold,
+          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+      }));
+    }
+    return cap;
+  };
+  const auto hint = [&](std::unique_ptr<Flex> cap, const std::string& label) {
+    auto item = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
+    item->addChild(std::move(cap));
+    item->addChild(ui::label({
+        .text = label,
+        .fontSize = Style::fontSizeMini * scale,
+        .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+    }));
+    bar->addChild(std::move(item));
+  };
+  hint(keycap("arrows-up-down", ""), i18n::tr("launcher.hints.navigate"));
+  hint(keycap("corner-down-left", ""), i18n::tr("launcher.hints.open"));
+  hint(keycap("corner-down-left", "Shift"), i18n::tr("launcher.hints.actions"));
+  if (m_config != nullptr && m_config->config().shell.launcher.categories) {
+    hint(keycap("", "F6"), i18n::tr("launcher.hints.categories"));
+  }
+  hint(keycap("", "Esc"), i18n::tr("launcher.hints.close"));
+  return bar;
+}
+
 void LauncherPanel::create() {
   m_launcherRowHeight = 0.0F;
   const float scale = contentScale();
+  const bool zynith = zynithStyle();
   auto container = ui::column({
       .out = &m_container,
       .align = FlexAlign::Stretch,
-      .gap = Style::spaceSm * scale,
+      .gap = (zynith ? Style::spaceMd : Style::spaceSm) * scale,
   });
 
-  container->addChild(
+  // Zynith: a taller, frameless field inside a tinted card with a search glyph and a primary
+  // hairline — the one element that is always focused, so it carries the focus colour. Classic:
+  // the stock framed input.
+  const float searchHeight = (zynith ? Style::controlHeightLg * 1.15F : Style::controlHeight) * scale;
+  auto input =
       ui::input({
           .out = &m_input,
           .placeholder = m_scopedPlaceholder.empty() ? i18n::tr("launcher.search-placeholder") : m_scopedPlaceholder,
-          .fontSize = Style::fontSizeBody * scale,
-          .controlHeight = Style::controlHeight * scale,
-          .horizontalPadding = Style::spaceMd * scale,
+          .fontSize = (zynith ? Style::fontSizeTitle : Style::fontSizeBody) * scale,
+          .controlHeight = searchHeight,
+          .horizontalPadding = (zynith ? 0.0F : Style::spaceMd) * scale,
           .clearButtonEnabled = true,
           .lineEditing = true,
+          .frameVisible = !zynith,
           .surfaceOpacity = panelCardOpacity(),
+          .flexGrow = zynith ? 1.0F : 0.0F,
           .onChange =
               [this](const std::string& text) {
                 onInputChanged(text);
@@ -1085,8 +1243,30 @@ void LauncherPanel::create() {
               },
           .onSubmit = [this](const std::string& /*text*/) { activateSelected(); },
           .onKeyEvent = [this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); },
-      })
-  );
+      });
+  if (zynith) {
+    auto searchBar = ui::row({
+        .out = &m_searchBar,
+        .align = FlexAlign::Center,
+        .gap = Style::spaceSm * scale,
+        .paddingH = Style::spaceMd * scale,
+        .fill = colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()),
+        .radius = Style::scaledRadiusXl(scale),
+        .border = colorSpecFromRole(ColorRole::Primary, 0.45F),
+        .borderWidth = Style::borderWidth * scale,
+        .fillWidth = true,
+        .height = searchHeight,
+    });
+    searchBar->addChild(ui::glyph({
+        .glyph = "search",
+        .glyphSize = Style::fontSizeTitle * scale,
+        .color = colorSpecFromRole(ColorRole::Primary),
+    }));
+    searchBar->addChild(std::move(input));
+    container->addChild(std::move(searchBar));
+  } else {
+    container->addChild(std::move(input));
+  }
 
   container->addChild(
       ui::segmented({
@@ -1141,7 +1321,7 @@ void LauncherPanel::create() {
           .cellHeight = launcherRowHeightEstimate(initialStyle),
           .squareCells = false,
           .columnGap = 0.0F,
-          .rowGap = Style::spaceXs * scale,
+          .rowGap = Style::spaceXs * initialStyle.density * scale,
           .overscanRows = kRowOverscan,
           .itemCursorShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER,
           .adapter = m_listAdapter.get(),
@@ -1206,6 +1386,10 @@ void LauncherPanel::create() {
   );
 
   container->addChild(std::move(body));
+
+  if (zynith && m_config != nullptr && m_config->config().shell.launcher.keyHints) {
+    container->addChild(buildKeyHints(scale));
+  }
 
   setRoot(std::move(container));
 
@@ -1278,7 +1462,7 @@ void LauncherPanel::syncLauncherViewLayout(Renderer* renderer) {
   } else {
     m_grid->setColumns(1);
     m_grid->setColumnGap(0.0F);
-    m_grid->setRowGap(Style::spaceXs * scale);
+    m_grid->setRowGap(Style::spaceXs * style.density * scale);
     const float listCellHeight =
         renderer != nullptr ? launcherRowHeight(*renderer, style) : launcherRowHeightEstimate(style);
     m_grid->setCellHeight(listCellHeight);
@@ -1350,6 +1534,9 @@ void LauncherPanel::updateLauncherGridMetrics(Renderer& renderer) {
 void LauncherPanel::onPanelCardOpacityChanged(float opacity) {
   if (m_input != nullptr) {
     m_input->setSurfaceOpacity(opacity);
+  }
+  if (m_searchBar != nullptr) {
+    m_searchBar->setFill(colorSpecFromRole(ColorRole::SurfaceVariant, opacity));
   }
   if (m_categoryFilter != nullptr) {
     m_categoryFilter->setSurfaceOpacity(opacity);
@@ -1442,6 +1629,7 @@ void LauncherPanel::onClose() {
   // The scene tree (and all nodes) is destroyed by PanelManager after onClose().
   m_container = nullptr;
   m_input = nullptr;
+  m_searchBar = nullptr;
   m_categoryFilter = nullptr;
   m_body = nullptr;
   m_grid = nullptr;
@@ -1539,6 +1727,17 @@ bool LauncherPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, 
 }
 
 void LauncherPanel::onInputChanged(const std::string& text) {
+  // Providers answer synchronously on every keystroke, so this is the latency a query adds to
+  // typing. Logged at debug level for the performance record.
+  struct QueryTiming {
+    const std::vector<LauncherResult>* results;
+    std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+    ~QueryTiming() {
+      const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+      kLog.debug("query: {} result(s) in {:.2f} ms", results->size(), ms);
+    }
+  } timing{.results = &m_results};
+
   const auto desktopVersion = desktopEntriesVersion();
   if (desktopVersion != m_desktopEntriesVersion) {
     m_iconResolver.invalidateMissingCache();

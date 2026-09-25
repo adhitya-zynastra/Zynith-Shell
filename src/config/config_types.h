@@ -743,6 +743,7 @@ struct OsdConfig {
   float scale = 1.0F;
   float backgroundOpacity = 0.97F;
   bool border = true; // outline around OSD popup cards
+  std::int32_t durationMs = 1400; // on-screen hold after the last event, before the fade
   int offsetX = 20;
   int offsetY = 8;
   std::vector<std::string> monitors;
@@ -956,6 +957,18 @@ constexpr EnumOption<LayoutDensity> kLayoutDensities[] = {
 
 [[nodiscard]] float layoutDensityFactor(LayoutDensity density) noexcept;
 
+// Zynith launcher presentation. Zynith is the default; Classic is the pre-redesign launcher, kept
+// selectable and pixel-identical, so the redesign is a preset rather than a one-way replacement.
+enum class LauncherStyle : std::uint8_t {
+  Zynith = 0,
+  Classic = 1,
+};
+
+constexpr EnumOption<LauncherStyle> kLauncherStyles[] = {
+    {LauncherStyle::Zynith, "zynith", "settings.options.shell.launcher-style.zynith"},
+    {LauncherStyle::Classic, "classic", "settings.options.shell.launcher-style.classic"},
+};
+
 enum class PanelPlacement : std::uint8_t {
   Attached = 0,
   Floating = 1,
@@ -1103,6 +1116,13 @@ struct ShellConfig {
     /// When true, refresh currency exchange rates from libqalculate's online sources.
     bool fetchExchangeRates = true;
     std::string providerPrefix = "/";
+    // Zynith presentation (style = zynith). Classic ignores these and keeps its fixed geometry.
+    LauncherStyle style = LauncherStyle::Zynith;
+    std::int32_t width = 640;     // logical px, before UI scale; the host clamps to the output
+    std::int32_t height = 540;    // logical px, before UI scale
+    std::int32_t iconSize = 32;   // result icon, logical px
+    LayoutDensity density = LayoutDensity::Comfortable;
+    bool keyHints = true;         // footer with the keyboard affordances
     /// Paste shortcut after a copy-style launcher activation (calculator, emoji, …).
     ClipboardAutoPasteMode autoPaste = ClipboardAutoPasteMode::Auto;
 

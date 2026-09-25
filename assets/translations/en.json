@@ -781,7 +781,14 @@
         "title": "Windows"
       }
     },
-    "search-placeholder": "Search applications…"
+    "search-placeholder": "Search applications…",
+    "hints": {
+      "navigate": "Navigate",
+      "open": "Open",
+      "actions": "Actions",
+      "categories": "Categories",
+      "close": "Close"
+    }
   },
   "location": {
     "errors": {
@@ -1348,7 +1355,8 @@
         "widgets": "Widgets",
         "window-switcher": "Window Switcher",
         "glass": "Glass",
-        "wallpaper-browser": "Wallpaper Browser"
+        "wallpaper-browser": "Wallpaper Browser",
+        "sounds": "Sounds"
       },
       "sections": {
         "accessibility": "Accessibility",
@@ -1549,6 +1557,10 @@
           "compact": "Compact",
           "comfortable": "Comfortable",
           "spacious": "Spacious"
+        },
+        "launcher-style": {
+          "zynith": "Zynith",
+          "classic": "Classic"
         }
       },
       "theme": {
@@ -3409,6 +3421,34 @@
         "card-width": {
           "label": "Card Size",
           "description": "Preferred width of the focused wallpaper. Wider displays show more neighbouring wallpapers rather than bigger ones; smaller displays shrink the card to fit."
+        },
+        "launcher-style": {
+          "label": "Launcher Style",
+          "description": "Zynith is the redesigned launcher; Classic is the previous one, unchanged. Applies the next time the launcher opens."
+        },
+        "launcher-width": {
+          "label": "Launcher Width",
+          "description": "Width of the launcher. It never grows past the display."
+        },
+        "launcher-height": {
+          "label": "Launcher Height",
+          "description": "Height of the launcher, including the search bar and hints."
+        },
+        "launcher-icon-size": {
+          "label": "Result Icon Size",
+          "description": "Size of application icons in the result list."
+        },
+        "launcher-density": {
+          "label": "Result Density",
+          "description": "Breathing room around and between results."
+        },
+        "launcher-key-hints": {
+          "label": "Keyboard Hints",
+          "description": "Show the keyboard shortcuts along the bottom of the launcher."
+        },
+        "osd-duration": {
+          "label": "Display Duration",
+          "description": "How long the on-screen display stays after the last change before it fades. Each new change restarts it."
         }
       }
     },

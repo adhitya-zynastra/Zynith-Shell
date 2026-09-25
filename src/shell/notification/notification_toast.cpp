@@ -16,6 +16,7 @@
 #include "render/render_target.h"
 #include "render/scene/input_area.h"
 #include "shell/surface/edge_inset.h"
+#include "shell/surface/glass.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -57,6 +58,11 @@ namespace {
   constexpr float kNotificationIconReferenceSize = 36.0F;
   constexpr float kTopProgressInset = Style::spaceMd;
   constexpr auto kExitFallbackGrace = std::chrono::milliseconds(50);
+
+  // One radius for the card and its blur region. They used to differ — the card clamped to 16 px,
+  // the blur region did not — so at a corner-radius scale below 1 the blur showed past the card's
+  // rounded corners.
+  float toastCardRadius(float scale) { return std::max(Style::scaledRadiusXl(scale), 16.0F * scale); }
 
   float notificationIconRadius(float iconSize, float localScale = 1.0F) {
     const float baseRadius = Style::radiusMd * (iconSize / kNotificationIconReferenceSize);
@@ -2241,12 +2247,13 @@ void NotificationToast::updateInputRegion(Instance& inst) const {
     const int rw = std::max(1, static_cast<int>(std::ceil(card.cardNode->width())));
     const int rh = std::max(1, static_cast<int>(std::ceil(card.cardNode->height())));
     rects.push_back({rx, ry, rw, rh});
-    auto strips = Surface::tessellateRoundedRect(rx, ry, rw, rh, Style::scaledRadiusXl(notificationUiScale(m_config)));
+    auto strips = Surface::tessellateRoundedRect(rx, ry, rw, rh, toastCardRadius(notificationUiScale(m_config)));
     blurRects.insert(blurRects.end(), strips.begin(), strips.end());
   }
 
   inst.surface->setInputRegion(rects);
-  if (blurRects.empty()) {
+  const float bgAlpha = m_config != nullptr ? m_config->config().notification.backgroundOpacity : 0.97F;
+  if (blurRects.empty() || (m_config != nullptr && !shell::glass::blurEnabled(m_config->config(), bgAlpha))) {
     inst.surface->clearBlurRegion();
   } else {
     inst.surface->setBlurRegion(blurRects);
@@ -2312,6 +2319,12 @@ InputArea* NotificationToast::buildCard(
   *outCardForeground = foreground.get();
 
   const float bgAlpha = m_config != nullptr ? m_config->config().notification.backgroundOpacity : 0.97F;
+  // zynith: tint and border colour from the shared glass model; [notification].background_opacity
+  // and .border stay the owners of this card's alpha and border switch.
+  const ColorSpec cardFill = m_config != nullptr ? shell::glass::panelSurface(m_config->config(), bgAlpha).fill
+                                                 : colorSpecFromRole(ColorRole::Surface, bgAlpha);
+  const ColorSpec cardBorder = m_config != nullptr ? shell::glass::panelSurface(m_config->config(), bgAlpha).borderColor
+                                                   : colorSpecFromRole(ColorRole::Outline);
   const bool hasBorder = m_config == nullptr || m_config->config().notification.border;
   const float borderWidth =
       hasBorder ? (entry.urgency == Urgency::Critical ? Style::emphasizedBorderWidth : Style::borderWidth) : 0.0F;
@@ -2428,11 +2441,22 @@ InputArea* NotificationToast::buildCard(
   }
 
   if (!iconAssigned) {
+    // zynith: no app icon — the glyph sits on the same accent disc the OSD uses, so the two
+    // transient surfaces read as one family.
+    iconSlot->addChild(ui::box({
+        .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
+        .width = iconSize,
+        .height = iconSize,
+        .configure = [iconSize](Box& box) {
+          box.setRadius(iconSize * 0.5F);
+          box.setPosition(0.0F, 0.0F);
+        },
+    }));
     iconSlot->addChild(
         ui::glyph({
             .glyph = "bell",
             .glyphSize = iconGlyphSize,
-            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+            .color = colorSpecFromRole(ColorRole::Primary),
             .configure = [iconSize, &renderer](Glyph& glyph) {
               glyph.measure(renderer);
               glyph.setPosition(
@@ -2650,14 +2674,12 @@ InputArea* NotificationToast::buildCard(
       ui::box({
           .width = cardW,
           .height = cardHeight,
-          .configure = [scale, bgAlpha, borderWidth, urgency = entry.urgency](Box& box) {
+          .configure = [scale, cardFill, cardBorder, borderWidth, urgency = entry.urgency](Box& box) {
             box.setCardStyle();
             // zynith: floating glass card, same silhouette language as the OSD/power menu.
-            box.setRadius(std::max(Style::scaledRadiusXl(scale), 16.0F * scale));
-            box.setFill(colorSpecFromRole(ColorRole::Surface, bgAlpha));
-            box.setBorder(
-                colorSpecFromRole(urgency == Urgency::Critical ? ColorRole::Error : ColorRole::Outline), borderWidth
-            );
+            box.setRadius(toastCardRadius(scale));
+            box.setFill(cardFill);
+            box.setBorder(urgency == Urgency::Critical ? colorSpecFromRole(ColorRole::Error) : cardBorder, borderWidth);
           },
       })
   );

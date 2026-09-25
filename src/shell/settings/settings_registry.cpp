@@ -1340,8 +1340,63 @@ namespace settings {
         tr("settings.schema.panels.launcher-categories.description"), {"shell", "launcher", "categories"},
         ToggleSetting{cfg.shell.launcher.categories}, "launcher categories filter"
     ));
+    // Launcher appearance lives in Personalization (ADR-0017): style, size, density, hints, and the
+    // existing icon/grid/compact toggles. Providers, pins, categories and sorting stay in Launcher.
     entries.push_back(makeEntry(
-        SettingsSection::Launcher, "launcher", tr("settings.schema.panels.launcher-show-icons.label"),
+        SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-style.label"),
+        tr("settings.schema.personalization.launcher-style.description"), {"shell", "launcher", "style"},
+        asSegmented(enumSelect(kLauncherStyles, cfg.shell.launcher.style)), "launcher style zynith classic design"
+    ));
+    {
+      const auto zynithOnly = [](const Config& c) { return c.shell.launcher.style == LauncherStyle::Zynith; };
+      SliderSetting width =
+          sliderFor(cfg.shell.launcher.width, noctalia::config::schema::kLauncherWidthRange, true);
+      width.valueSuffix = "px";
+      auto widthEntry = makeEntry(
+          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-width.label"),
+          tr("settings.schema.personalization.launcher-width.description"), {"shell", "launcher", "width"},
+          std::move(width), "launcher size width wide"
+      );
+      widthEntry.visibleWhen = zynithOnly;
+      entries.push_back(std::move(widthEntry));
+      SliderSetting height =
+          sliderFor(cfg.shell.launcher.height, noctalia::config::schema::kLauncherHeightRange, true);
+      height.valueSuffix = "px";
+      auto heightEntry = makeEntry(
+          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-height.label"),
+          tr("settings.schema.personalization.launcher-height.description"), {"shell", "launcher", "height"},
+          std::move(height), "launcher size height tall"
+      );
+      heightEntry.visibleWhen = zynithOnly;
+      entries.push_back(std::move(heightEntry));
+      SliderSetting icon =
+          sliderFor(cfg.shell.launcher.iconSize, noctalia::config::schema::kLauncherIconSizeRange, true);
+      icon.valueSuffix = "px";
+      auto iconEntry = makeEntry(
+          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-icon-size.label"),
+          tr("settings.schema.personalization.launcher-icon-size.description"), {"shell", "launcher", "icon_size"},
+          std::move(icon), "launcher icon size"
+      );
+      iconEntry.visibleWhen = zynithOnly;
+      entries.push_back(std::move(iconEntry));
+      auto densityEntry = makeEntry(
+          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-density.label"),
+          tr("settings.schema.personalization.launcher-density.description"), {"shell", "launcher", "density"},
+          asSegmented(enumSelect(kLayoutDensities, cfg.shell.launcher.density)),
+          "launcher density spacing rows compact spacious"
+      );
+      densityEntry.visibleWhen = zynithOnly;
+      entries.push_back(std::move(densityEntry));
+      auto hintsEntry = makeEntry(
+          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-key-hints.label"),
+          tr("settings.schema.personalization.launcher-key-hints.description"), {"shell", "launcher", "key_hints"},
+          ToggleSetting{cfg.shell.launcher.keyHints}, "launcher keyboard hints footer shortcuts"
+      );
+      hintsEntry.visibleWhen = zynithOnly;
+      entries.push_back(std::move(hintsEntry));
+    }
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "launcher", tr("settings.schema.panels.launcher-show-icons.label"),
         tr("settings.schema.panels.launcher-show-icons.description"), {"shell", "launcher", "show_icons"},
         ToggleSetting{cfg.shell.launcher.showIcons}, "launcher app icons hide"
     ));
@@ -1352,7 +1407,7 @@ namespace settings {
         "launcher app origin indicator"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Launcher, "launcher", tr("settings.schema.panels.launcher-app-grid.label"),
+        SettingsSection::Personalization, "launcher", tr("settings.schema.panels.launcher-app-grid.label"),
         tr("settings.schema.panels.launcher-app-grid.description"), {"shell", "launcher", "app_grid"},
         ToggleSetting{cfg.shell.launcher.appGrid}, "launcher app grid icons view"
     ));
@@ -1362,7 +1417,7 @@ namespace settings {
         ToggleSetting{cfg.shell.launcher.showAppActions}, "launcher app actions show"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Launcher, "launcher", tr("settings.schema.panels.launcher-compact.label"),
+        SettingsSection::Personalization, "launcher", tr("settings.schema.panels.launcher-compact.label"),
         tr("settings.schema.panels.launcher-compact.description"), {"shell", "launcher", "compact"},
         ToggleSetting{cfg.shell.launcher.compact}, "launcher compact rows dense"
     ));
@@ -2097,7 +2152,7 @@ namespace settings {
     ));
     const std::size_t osdGatedStart = entries.size();
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-orientation.label"),
+        SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-orientation.label"),
         tr("settings.schema.shell.osd-orientation.description"), {"osd", "orientation"},
         asSegmented(plainSelect(
             {{"horizontal", "settings.options.orientation.horizontal"},
@@ -2139,7 +2194,7 @@ namespace settings {
         "hud overlay volume brightness vertical slider"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-scale.label"),
+        SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-scale.label"),
         tr("settings.schema.shell.osd-scale.description"), {"osd", "scale"},
         sliderFor(cfg.osd.scale, noctalia::config::schema::kScaleRange, false),
         "hud overlay volume brightness size scale multiplier"
@@ -2157,14 +2212,26 @@ namespace settings {
         "hud overlay vertical margin"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-background-opacity.label"),
+        SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-background-opacity.label"),
         tr("settings.schema.shell.osd-background-opacity.description"), {"osd", "background_opacity"},
         sliderFor(cfg.osd.backgroundOpacity, noctalia::config::schema::kUnitRange, false), "hud overlay popup opacity"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-border.label"),
+        SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-border.label"),
         tr("settings.schema.shell.osd-border.description"), {"osd", "border"}, ToggleSetting{cfg.osd.border},
         "outline border"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "osd", tr("settings.schema.personalization.osd-duration.label"),
+        tr("settings.schema.personalization.osd-duration.description"), {"osd", "duration_ms"},
+        StepperSetting{
+            .value = static_cast<int>(cfg.osd.durationMs),
+            .minValue = static_cast<int>(noctalia::config::schema::kOsdDurationRange.min.value()),
+            .maxValue = static_cast<int>(noctalia::config::schema::kOsdDurationRange.max.value()),
+            .step = static_cast<int>(noctalia::config::schema::kOsdDurationRange.step.value()),
+            .valueSuffix = "ms",
+        },
+        "hud overlay duration hold time seconds"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-monitors.label"),
@@ -2812,17 +2879,17 @@ namespace settings {
         ToggleSetting{cfg.audio.enableOverdrive}, "volume"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Services, "audio", tr("settings.schema.services.shell-sounds.label"),
+        SettingsSection::Personalization, "sounds", tr("settings.schema.services.shell-sounds.label"),
         tr("settings.schema.services.shell-sounds.description"), {"audio", "enable_sounds"},
         ToggleSetting{cfg.audio.enableSounds}, "sound"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Services, "audio", tr("settings.schema.services.sound-volume.label"),
+        SettingsSection::Personalization, "sounds", tr("settings.schema.services.sound-volume.label"),
         tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
         sliderFor(cfg.audio.soundVolume, noctalia::config::schema::kUnitRange, false), "sound"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Services, "audio", tr("settings.schema.services.volume-change-sound.label"),
+        SettingsSection::Personalization, "sounds", tr("settings.schema.services.volume-change-sound.label"),
         tr("settings.schema.services.volume-change-sound.description"), {"audio", "volume_change_sound"},
         TextSetting{
             .value = cfg.audio.volumeChangeSound,
@@ -2833,7 +2900,7 @@ namespace settings {
         "sound path file", true
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Services, "audio", tr("settings.schema.services.mute-sound.label"),
+        SettingsSection::Personalization, "sounds", tr("settings.schema.services.mute-sound.label"),
         tr("settings.schema.services.mute-sound.description"), {"audio", "mute_sound"},
         TextSetting{
             .value = cfg.audio.muteSound,
@@ -2844,7 +2911,7 @@ namespace settings {
         "sound path file", true
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Services, "audio", tr("settings.schema.services.notification-sound.label"),
+        SettingsSection::Personalization, "sounds", tr("settings.schema.services.notification-sound.label"),
         tr("settings.schema.services.notification-sound.description"), {"audio", "notification_sound"},
         TextSetting{
             .value = cfg.audio.notificationSound,
@@ -3076,7 +3143,7 @@ namespace settings {
         "toast popup placement anchor"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.scale.label"),
+        SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.scale.label"),
         tr("settings.schema.notifications.scale.description"), {"notification", "scale"},
         sliderFor(cfg.notification.scale, noctalia::config::schema::kScaleRange, false), "toast size scale"
     ));
@@ -3105,12 +3172,12 @@ namespace settings {
         "maximum on-screen toasts count limit"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.toast-opacity.label"),
+        SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.toast-opacity.label"),
         tr("settings.schema.notifications.toast-opacity.description"), {"notification", "background_opacity"},
         sliderFor(cfg.notification.backgroundOpacity, noctalia::config::schema::kUnitRange, false), "popup"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.border.label"),
+        SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.border.label"),
         tr("settings.schema.notifications.border.description"), {"notification", "border"},
         ToggleSetting{cfg.notification.border}, "outline border"
     ));

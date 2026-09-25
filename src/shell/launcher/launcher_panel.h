@@ -53,8 +53,8 @@ public:
   // supports auto-paste. The host schedules virtual-keyboard paste (clipboard path).
   void setCopiedActivationCallback(std::function<void()> callback) { m_onCopiedActivation = std::move(callback); }
 
-  [[nodiscard]] float preferredWidth() const override { return scaled(560.0F); }
-  [[nodiscard]] float preferredHeight() const override { return scaled(500.0F); }
+  [[nodiscard]] float preferredWidth() const override;
+  [[nodiscard]] float preferredHeight() const override;
   [[nodiscard]] LayerShellKeyboard keyboardMode() const override { return LayerShellKeyboard::Exclusive; }
   [[nodiscard]] InputArea* initialFocusArea() const override;
   [[nodiscard]] bool handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) override;
@@ -101,6 +101,9 @@ private:
   void applyPinnedApplicationOrder();
   void reorderPinnedApplication(std::string_view sourcePath, std::string_view targetPath);
   [[nodiscard]] bool shouldTrackUsage() const;
+  // zynith: [shell.launcher].style = zynith. Read at create(), so a style switch lands on the next open.
+  [[nodiscard]] bool zynithStyle() const noexcept;
+  [[nodiscard]] std::unique_ptr<Flex> buildKeyHints(float scale) const;
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;
@@ -110,6 +113,7 @@ private:
 
   Flex* m_container = nullptr;
   Input* m_input = nullptr;
+  Flex* m_searchBar = nullptr; // zynith: glyph + frameless input on a tinted card
   Segmented* m_categoryFilter = nullptr;
   Flex* m_body = nullptr;
   VirtualGridView* m_grid = nullptr;
