@@ -83,7 +83,8 @@ namespace settings {
       return defaultKeybindSet(action);
     }
 
-    constexpr std::array<SettingsSectionDescriptor, 22> kSettingsSections{{
+    constexpr std::array<SettingsSectionDescriptor, 23> kSettingsSections{{
+        {SettingsSection::ZynithCorner, "zynith-corner", "sparkles"},
         {SettingsSection::Appearance, "appearance", "adjustments-horizontal"},
         {SettingsSection::Wallpaper, "wallpaper", "paint"},
         {SettingsSection::Templates, "templates", "color-swatch"},
@@ -589,42 +590,42 @@ namespace settings {
         ToggleSetting{cfg.accessibility.highContrast}, "accessibility high contrast visually impaired"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.animations.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.animations.label"),
         tr("settings.schema.appearance.animations.description"), {"shell", "animation", "enabled"},
         ToggleSetting{cfg.shell.animation.enabled}, "motion"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.animation-speed.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.animation-speed.label"),
         tr("settings.schema.appearance.animation-speed.description"), {"shell", "animation", "speed"},
         sliderFor(cfg.shell.animation.speed, noctalia::config::schema::kAnimationSpeedRange, false), "motion"
     ));
     // Compositor-side motion lives in the same group as the shell's own, so "how fast does the
     // desktop feel" is one place rather than two settings surfaces that can disagree.
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-preset.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-preset.label"),
         tr("settings.schema.appearance.motion-preset.description"), {"shell", "animation", "preset"},
         enumSelect(kMotionPresets, cfg.shell.animation.preset), "motion preset niri animation curve duration"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-open.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-open.label"),
         tr("settings.schema.appearance.motion-open.description"), {"shell", "animation", "niri_open"},
         sliderFor(cfg.shell.animation.niriOpen, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window open"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-close.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-close.label"),
         tr("settings.schema.appearance.motion-close.description"), {"shell", "animation", "niri_close"},
         sliderFor(cfg.shell.animation.niriClose, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window close"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-movement.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-movement.label"),
         tr("settings.schema.appearance.motion-movement.description"), {"shell", "animation", "niri_movement"},
         sliderFor(cfg.shell.animation.niriMovement, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window movement resize workspace"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Appearance, "motion", tr("settings.schema.appearance.motion-overview.label"),
+        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-overview.label"),
         tr("settings.schema.appearance.motion-overview.description"), {"shell", "animation", "niri_overview"},
         sliderFor(cfg.shell.animation.niriOverview, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri overview"
@@ -1167,21 +1168,90 @@ namespace settings {
         "floating detached panel layer shell z-order input method popup fullscreen"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "effects", tr("settings.schema.panels.transparency-mode.label"),
+        SettingsSection::ZynithCorner, "glass", tr("settings.schema.panels.transparency-mode.label"),
         tr("settings.schema.panels.transparency-mode.description"), {"shell", "panel", "transparency_mode"},
         asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
         "glass opacity alpha translucent cards blur"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "effects", tr("settings.schema.panels.borders.label"),
+        SettingsSection::ZynithCorner, "glass", tr("settings.schema.panels.borders.label"),
         tr("settings.schema.panels.borders.description"), {"shell", "panel", "borders"},
         ToggleSetting{cfg.shell.panel.borders}, "outline border shell edge"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Panels, "effects", tr("settings.schema.shared.shadow.label"),
+        SettingsSection::ZynithCorner, "glass", tr("settings.schema.shared.shadow.label"),
         tr("settings.schema.panels.shadow.description"), {"shell", "panel", "shadow"},
         ToggleSetting{cfg.shell.panel.shadow}, "shadow depth"
     ));
+    // Zynith glass: only the properties the moved panel keys could not already express.
+    {
+      const SettingVisibility customOpacity = [](const Config& c) {
+        return c.shell.panel.transparencyMode == PanelTransparencyMode::Custom;
+      };
+      const SettingVisibility tintOn = [](const Config& c) { return c.shell.glass.tint; };
+      const SettingVisibility bordersOn = [](const Config& c) { return c.shell.panel.borders; };
+      const SettingVisibility blurOn = [](const Config& c) { return c.shell.glass.blur; };
+
+      auto opacity = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.opacity.label"),
+          tr("settings.schema.glass.opacity.description"), {"shell", "glass", "opacity"},
+          sliderFor(cfg.shell.glass.opacity, noctalia::config::schema::kUnitRange, false),
+          "glass opacity transparency alpha custom"
+      );
+      opacity.visibleWhen = customOpacity;
+      entries.push_back(std::move(opacity));
+
+      entries.push_back(makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.blur.label"),
+          tr("settings.schema.glass.blur.description"), {"shell", "glass", "blur"},
+          ToggleSetting{cfg.shell.glass.blur}, "glass blur frosted background effect"
+      ));
+      auto strength = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.blur-strength.label"),
+          tr("settings.schema.glass.blur-strength.description"), {"shell", "glass", "blur_strength"},
+          sliderFor(cfg.shell.glass.blurStrength, noctalia::config::schema::kGlassBlurStrengthRange, true),
+          "glass blur strength radius niri"
+      );
+      strength.visibleWhen = blurOn;
+      entries.push_back(std::move(strength));
+
+      entries.push_back(makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint.label"),
+          tr("settings.schema.glass.tint.description"), {"shell", "glass", "tint"},
+          ToggleSetting{cfg.shell.glass.tint}, "glass tint colour wallpaper accent"
+      ));
+      auto tintRole = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint-role.label"),
+          tr("settings.schema.glass.tint-role.description"), {"shell", "glass", "tint_role"},
+          enumSelect(kGlassTintRoles, cfg.shell.glass.tintRole), "glass tint colour role"
+      );
+      tintRole.visibleWhen = tintOn;
+      entries.push_back(std::move(tintRole));
+      auto tintStrength = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint-strength.label"),
+          tr("settings.schema.glass.tint-strength.description"), {"shell", "glass", "tint_strength"},
+          sliderFor(cfg.shell.glass.tintStrength, noctalia::config::schema::kUnitRange, false),
+          "glass tint strength amount"
+      );
+      tintStrength.visibleWhen = tintOn;
+      entries.push_back(std::move(tintStrength));
+
+      auto borderRole = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.border-role.label"),
+          tr("settings.schema.glass.border-role.description"), {"shell", "glass", "border_role"},
+          enumSelect(kGlassBorderRoles, cfg.shell.glass.borderRole), "glass border outline colour"
+      );
+      borderRole.visibleWhen = bordersOn;
+      entries.push_back(std::move(borderRole));
+      auto borderOpacity = makeEntry(
+          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.border-opacity.label"),
+          tr("settings.schema.glass.border-opacity.description"), {"shell", "glass", "border_opacity"},
+          sliderFor(cfg.shell.glass.borderOpacity, noctalia::config::schema::kUnitRange, false),
+          "glass border outline opacity"
+      );
+      borderOpacity.visibleWhen = bordersOn;
+      entries.push_back(std::move(borderOpacity));
+    }
     entries.push_back(makeEntry(
         SettingsSection::Panels, "effects", tr("settings.schema.panels.list-item-background.label"),
         tr("settings.schema.panels.list-item-background.description"), {"shell", "panel", "list_item_background"},

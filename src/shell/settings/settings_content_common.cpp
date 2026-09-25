@@ -334,6 +334,7 @@ namespace settings {
     case SettingsSection::Niri:
     case SettingsSection::Bar:
     case SettingsSection::Plugins:
+    case SettingsSection::ZynithCorner:
       return false;
     }
     return false;
@@ -369,6 +370,7 @@ namespace settings {
     case SettingsSection::Niri:
     case SettingsSection::Bar:
     case SettingsSection::Plugins:
+    case SettingsSection::ZynithCorner:
       return {};
     }
     return {};

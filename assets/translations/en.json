@@ -1346,7 +1346,8 @@
         "weather": "Weather",
         "widget-list": "Widget List",
         "widgets": "Widgets",
-        "window-switcher": "Window Switcher"
+        "window-switcher": "Window Switcher",
+        "glass": "Glass"
       },
       "sections": {
         "accessibility": "Accessibility",
@@ -1373,7 +1374,8 @@
         "shell": "Shell",
         "system": "System",
         "templates": "Templates",
-        "wallpaper": "Wallpaper"
+        "wallpaper": "Wallpaper",
+        "zynith-corner": "Zynith Corner"
       }
     },
     "notifications": {
@@ -1510,7 +1512,8 @@
         "panel-transparency": {
           "glass": "Glass",
           "soft": "Soft",
-          "solid": "Solid"
+          "solid": "Solid",
+          "custom": "Custom"
         },
         "password-style": {
           "filled-circles": "Filled Circles",
@@ -1533,6 +1536,13 @@
           "default": "Default",
           "smooth": "Smooth",
           "cinematic": "Cinematic"
+        },
+        "glass-role": {
+          "primary": "Primary",
+          "secondary": "Secondary",
+          "tertiary": "Tertiary",
+          "surface-variant": "Surface Variant",
+          "outline": "Outline"
         }
       },
       "theme": {
@@ -3345,6 +3355,40 @@
         "transitions": {
           "description": "Effects available when changing wallpaper (one is picked at random per change)",
           "label": "Transition Effects"
+        }
+      },
+      "glass": {
+        "opacity": {
+          "label": "Opacity",
+          "description": "How opaque glass surfaces are. Only used when Transparency is set to Custom."
+        },
+        "blur": {
+          "label": "Blur",
+          "description": "Blur whatever is behind translucent shell surfaces. Nothing is blurred behind a fully opaque surface."
+        },
+        "blur-strength": {
+          "label": "Blur Strength",
+          "description": "How strongly the compositor blurs behind glass. Applies to every blurred surface, windows included."
+        },
+        "tint": {
+          "label": "Tint",
+          "description": "Mix a colour from the wallpaper palette into glass surfaces."
+        },
+        "tint-role": {
+          "label": "Tint Colour",
+          "description": "Which palette colour tints the glass. Follows the wallpaper like every other palette colour."
+        },
+        "tint-strength": {
+          "label": "Tint Strength",
+          "description": "How much of the tint colour is mixed in."
+        },
+        "border-role": {
+          "label": "Border Colour",
+          "description": "Which palette colour draws the outline of glass surfaces."
+        },
+        "border-opacity": {
+          "label": "Border Opacity",
+          "description": "Opacity of the outline, relative to the surface itself."
         }
       }
     },

@@ -1150,6 +1150,7 @@ if build_tests
     'morph_transition',
     'niri_config_fragments',
     'glass_surface',
+    'zynith_config_ownership',
     'app_identity',
     'audio_glyphs',
     'audio_route_selection',
