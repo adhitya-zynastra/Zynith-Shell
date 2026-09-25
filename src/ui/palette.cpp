@@ -93,6 +93,14 @@ ColorSpec fixedColorSpec(const Color& color) noexcept {
 
 Color resolveColorSpec(const ColorSpec& color) noexcept {
   Color resolved = color.role.has_value() ? colorForRole(*color.role) : color.fixed;
+  if (color.tint.has_value() && color.tintStrength > 0.0F) {
+    // Straight RGB mix, keeping the base colour's alpha: a tint changes hue, never opacity.
+    const Color tint = colorForRole(*color.tint);
+    const float t = std::clamp(color.tintStrength, 0.0F, 1.0F);
+    resolved.r += (tint.r - resolved.r) * t;
+    resolved.g += (tint.g - resolved.g) * t;
+    resolved.b += (tint.b - resolved.b) * t;
+  }
   resolved.a *= color.alpha;
   return resolved;
 }

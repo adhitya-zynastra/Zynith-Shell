@@ -19,6 +19,8 @@ namespace noctalia::config::schema {
   inline constexpr Range<float> kAnimationSpeedRange{0.1F, 4.0F, 0.05F};
   // Per-category trim on a motion preset, as a percentage of its baseline. 100 = preset unmodified.
   inline constexpr Range<std::int64_t> kMotionTrimRange{0, 200, 5};
+  // Glass: blur strength is an intent-level 0-100 scale mapped onto niri's global blur passes/offset.
+  inline constexpr Range<std::int64_t> kGlassBlurStrengthRange{0, 100, 5};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
   inline constexpr Range<std::int64_t> kControlCenterWidthRange{600, 1200, 10};
   inline constexpr Range<std::int64_t> kScreenCornersSizeRange{1, 100, 1};

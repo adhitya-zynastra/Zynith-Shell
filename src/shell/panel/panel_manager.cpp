@@ -2314,6 +2314,16 @@ void PanelManager::applyPanelCompositorBlur(
     m_surface->clearBlurRegion();
     return;
   }
+  // Glass: no blur when it is switched off, and none behind an opaque fill — there it is compositor
+  // work nobody can see. Previously every decorated panel requested blur, Solid mode included.
+  if (m_config != nullptr) {
+    const float fill =
+        m_attachedToBar ? m_attachedBackgroundOpacity : shell::panel_surface::backgroundOpacity(m_config);
+    if (!shell::glass::blurEnabled(m_config->config(), fill)) {
+      m_surface->clearBlurRegion();
+      return;
+    }
+  }
 
   if (blurTraceEnabled()) {
     kLog.debug(
@@ -2467,9 +2477,10 @@ void PanelManager::onConfigReloaded() {
   if (!m_attachedToBar && m_bgNode != nullptr) {
     auto* bg = static_cast<Box*>(m_bgNode);
     bg->setPanelStyle(m_config->config().shell.panel.borders);
-    bg->setFill(colorSpecFromRole(ColorRole::Surface, panelBackgroundOpacity));
-    if (m_config->config().shell.panel.borders) {
-      bg->setBorder(colorSpecFromRole(ColorRole::Outline, panelBackgroundOpacity), Style::borderWidth);
+    const auto glassStyle = shell::glass::panelSurface(m_config->config(), panelBackgroundOpacity);
+    bg->setFill(glassStyle.fill);
+    if (glassStyle.border) {
+      bg->setBorder(glassStyle.borderColor, Style::borderWidth);
     }
   }
   if (m_panelShadowNode != nullptr) {
@@ -2583,9 +2594,10 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
         // Fill (opacity-dependent) is applied via applyAttachedDecorationStyle() below.
       } else {
         const float backgroundOpacity = shell::panel_surface::backgroundOpacity(m_config);
-        bg->setFill(colorSpecFromRole(ColorRole::Surface, backgroundOpacity));
+        const auto glassStyle = shell::glass::panelSurface(m_config->config(), backgroundOpacity);
+        bg->setFill(glassStyle.fill);
         if (panelBorders) {
-          bg->setBorder(colorSpecFromRole(ColorRole::Outline, backgroundOpacity), Style::borderWidth);
+          bg->setBorder(glassStyle.borderColor, Style::borderWidth);
         }
       }
       m_bgNode = sceneParent->addChild(std::move(bg));

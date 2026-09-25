@@ -338,9 +338,10 @@ void PersistentPanelHost::buildScene(Instance& instance, std::uint32_t width, st
   if (hasDecoration) {
     auto bg = ui::box({});
     bg->setPanelStyle(m_config->config().shell.panel.borders);
-    bg->setFill(colorSpecFromRole(ColorRole::Surface, backgroundOpacity));
-    if (m_config->config().shell.panel.borders) {
-      bg->setBorder(colorSpecFromRole(ColorRole::Outline, backgroundOpacity), Style::borderWidth);
+    const auto glassStyle = shell::glass::panelSurface(m_config->config(), backgroundOpacity);
+    bg->setFill(glassStyle.fill);
+    if (glassStyle.border) {
+      bg->setBorder(glassStyle.borderColor, Style::borderWidth);
     }
     instance.bgNode = static_cast<Box*>(instance.sceneRoot->addChild(std::move(bg)));
   }
@@ -619,9 +620,10 @@ void PersistentPanelHost::onConfigReloaded() {
     instance->panel->setPanelCardOpacity(shell::panel_surface::cardOpacity(m_config, backgroundOpacity));
     if (instance->bgNode != nullptr) {
       instance->bgNode->setPanelStyle(m_config->config().shell.panel.borders);
-      instance->bgNode->setFill(colorSpecFromRole(ColorRole::Surface, backgroundOpacity));
-      if (m_config->config().shell.panel.borders) {
-        instance->bgNode->setBorder(colorSpecFromRole(ColorRole::Outline, backgroundOpacity), Style::borderWidth);
+      const auto glassStyle = shell::glass::panelSurface(m_config->config(), backgroundOpacity);
+      instance->bgNode->setFill(glassStyle.fill);
+      if (glassStyle.border) {
+        instance->bgNode->setBorder(glassStyle.borderColor, Style::borderWidth);
       }
     }
     if (instance->surface != nullptr) {

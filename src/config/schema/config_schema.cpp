@@ -1269,6 +1269,20 @@ namespace noctalia::config::schema {
       return s;
     }
 
+    const Schema<ShellConfig::GlassConfig>& shellGlassSchema() {
+      static const Schema<ShellConfig::GlassConfig> s = {
+          field(&ShellConfig::GlassConfig::opacity, "opacity", kUnitRange),
+          field(&ShellConfig::GlassConfig::blur, "blur"),
+          field(&ShellConfig::GlassConfig::blurStrength, "blur_strength", kGlassBlurStrengthRange),
+          field(&ShellConfig::GlassConfig::tint, "tint"),
+          enumField(&ShellConfig::GlassConfig::tintRole, "tint_role", kGlassTintRoles),
+          field(&ShellConfig::GlassConfig::tintStrength, "tint_strength", kUnitRange),
+          enumField(&ShellConfig::GlassConfig::borderRole, "border_role", kGlassBorderRoles),
+          field(&ShellConfig::GlassConfig::borderOpacity, "border_opacity", kUnitRange),
+      };
+      return s;
+    }
+
     const Schema<ShellConfig::ShadowConfig>& shellShadowSchema() {
       static const Schema<ShellConfig::ShadowConfig> s = {
           enumField(&ShellConfig::ShadowConfig::direction, "direction", kShadowDirections),
@@ -1597,6 +1611,7 @@ namespace noctalia::config::schema {
         field(&ShellConfig::clipboardImageActionCommand, "clipboard_image_action_command"),
         pathStringField(&ShellConfig::avatarPath, "avatar_path"),
         subTable(&ShellConfig::animation, "animation", shellAnimationSchema()),
+        subTable(&ShellConfig::glass, "glass", shellGlassSchema()),
         subTable(&ShellConfig::shadow, "shadow", shellShadowSchema()),
         subTable(&ShellConfig::panel, "panel", shellPanelSchema()),
         subTable(&ShellConfig::launcher, "launcher", shellLauncherSchema()),

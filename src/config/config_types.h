@@ -885,12 +885,50 @@ enum class PanelTransparencyMode : std::uint8_t {
   Solid = 0,
   Soft = 1,
   Glass = 2,
+  // Zynith: fill opacity comes from [shell.glass].opacity instead of a fixed step. The three
+  // named modes stay the coarse presets; custom is what unlocks the slider.
+  Custom = 3,
 };
 
 constexpr EnumOption<PanelTransparencyMode> kPanelTransparencyModes[] = {
     {PanelTransparencyMode::Solid, "solid", "settings.options.shell.panel-transparency.solid"},
     {PanelTransparencyMode::Soft, "soft", "settings.options.shell.panel-transparency.soft"},
     {PanelTransparencyMode::Glass, "glass", "settings.options.shell.panel-transparency.glass"},
+    {PanelTransparencyMode::Custom, "custom", "settings.options.shell.panel-transparency.custom"},
+};
+
+// Zynith glass: which palette role tints a translucent surface, and which draws its border.
+// Deliberately a curated subset of ColorRole — the On* roles are text colours and make no
+// sense as a tint, so they are not offered. Each maps 1:1 onto a ColorRole, so a tint follows
+// the wallpaper-derived palette exactly like every other role does.
+enum class GlassTintRole : std::uint8_t {
+  Primary = 0,
+  Secondary = 1,
+  Tertiary = 2,
+  SurfaceVariant = 3,
+};
+
+constexpr EnumOption<GlassTintRole> kGlassTintRoles[] = {
+    {GlassTintRole::Primary, "primary", "settings.options.shell.glass-role.primary"},
+    {GlassTintRole::Secondary, "secondary", "settings.options.shell.glass-role.secondary"},
+    {GlassTintRole::Tertiary, "tertiary", "settings.options.shell.glass-role.tertiary"},
+    {GlassTintRole::SurfaceVariant, "surface_variant", "settings.options.shell.glass-role.surface-variant"},
+};
+
+enum class GlassBorderRole : std::uint8_t {
+  Outline = 0,
+  Primary = 1,
+  Secondary = 2,
+  Tertiary = 3,
+  SurfaceVariant = 4,
+};
+
+constexpr EnumOption<GlassBorderRole> kGlassBorderRoles[] = {
+    {GlassBorderRole::Outline, "outline", "settings.options.shell.glass-role.outline"},
+    {GlassBorderRole::Primary, "primary", "settings.options.shell.glass-role.primary"},
+    {GlassBorderRole::Secondary, "secondary", "settings.options.shell.glass-role.secondary"},
+    {GlassBorderRole::Tertiary, "tertiary", "settings.options.shell.glass-role.tertiary"},
+    {GlassBorderRole::SurfaceVariant, "surface_variant", "settings.options.shell.glass-role.surface-variant"},
 };
 
 [[nodiscard]] float
@@ -1130,6 +1168,24 @@ struct ShellConfig {
   bool polkitAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
+
+  // Zynith glass: the shared surface model. Consumed by panel surfaces today; other surfaces
+  // (bar, OSD, notifications, dock) keep their own opacity keys until they migrate onto it.
+  // Border and shadow on/off stay owned by [shell.panel].borders / .shadow — glass adds only
+  // what those keys could not already express, so no property has two owners.
+  struct GlassConfig {
+    float opacity = 0.55F;       // fill alpha; used only when shell.panel.transparency_mode = "custom"
+    bool blur = true;            // request compositor blur behind translucent shell surfaces
+    std::int32_t blurStrength = 50; // 0-100, compositor-global; 50 reproduces niri passes 3 / offset 4.0
+    bool tint = false;
+    GlassTintRole tintRole = GlassTintRole::Primary;
+    float tintStrength = 0.10F;  // 0-1 mix of the tint role into the surface fill
+    GlassBorderRole borderRole = GlassBorderRole::Outline;
+    float borderOpacity = 1.0F;  // relative to the fill opacity, as the border has always been
+
+    bool operator==(const GlassConfig&) const = default;
+  };
+  GlassConfig glass;
   std::string avatarPath;
   bool settingsShowAdvanced = true;
   bool settingsWindowTranslucent = false;

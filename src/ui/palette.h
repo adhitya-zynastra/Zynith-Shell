@@ -59,10 +59,16 @@ struct ColorSpec {
   std::optional<ColorRole> role;
   Color fixed = clearColor();
   float alpha = 1.0F;
+  // Zynith glass: blend another palette role into the base colour, 0..1. Kept as a role rather
+  // than a pre-mixed fixed colour so a tinted surface follows the wallpaper-derived palette on
+  // every theme change, the same way an untinted role does. No effect unless tintStrength > 0.
+  std::optional<ColorRole> tint;
+  float tintStrength = 0.0F;
 };
 
 constexpr bool operator==(const ColorSpec& a, const ColorSpec& b) noexcept {
-  return a.role == b.role && a.fixed == b.fixed && a.alpha == b.alpha;
+  return a.role == b.role && a.fixed == b.fixed && a.alpha == b.alpha && a.tint == b.tint
+      && a.tintStrength == b.tintStrength;
 }
 
 [[nodiscard]] constexpr ColorSpec clearColorSpec() noexcept {
@@ -72,6 +78,14 @@ constexpr bool operator==(const ColorSpec& a, const ColorSpec& b) noexcept {
 // Multiplies a spec's alpha, keeping any color role intact so theme switches still resolve.
 // Distinct from withAlpha(Color, float) in render/core/color.h, which replaces the alpha of an
 // already-resolved color and therefore cannot preserve the role.
+// Returns `color` with a palette-role tint mixed in at `strength` (clamped to 0..1).
+[[nodiscard]] constexpr ColorSpec withTint(const ColorSpec& color, ColorRole tint, float strength) noexcept {
+  ColorSpec out = color;
+  out.tint = tint;
+  out.tintStrength = std::clamp(strength, 0.0F, 1.0F);
+  return out;
+}
+
 [[nodiscard]] constexpr ColorSpec scaleAlpha(const ColorSpec& color, float factor) noexcept {
   ColorSpec out = color;
   out.alpha = std::clamp(out.alpha * std::clamp(factor, 0.0F, 1.0F), 0.0F, 1.0F);

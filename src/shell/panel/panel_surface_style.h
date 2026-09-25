@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "shell/surface/glass.h"
 #include "shell/surface/shadow.h"
 
 #include <algorithm>
@@ -41,16 +42,14 @@ namespace shell::panel_surface {
     return std::max(0.1F, configService->config().accessibility.uiScale);
   }
 
+  // Opacity decisions now live in the shared glass model; these stay as the panel-facing names
+  // so the two panel hosts did not each have to be rewritten.
   [[nodiscard]] inline float backgroundOpacity(const ConfigService* configService) noexcept {
-    const auto mode =
-        configService != nullptr ? configService->config().shell.panel.transparencyMode : PanelTransparencyMode::Solid;
-    return detachedPanelBackgroundOpacityForTransparencyMode(mode);
+    return shell::glass::fillOpacity(configService);
   }
 
   [[nodiscard]] inline float cardOpacity(const ConfigService* configService, float panelBackgroundOpacity) noexcept {
-    const auto mode =
-        configService != nullptr ? configService->config().shell.panel.transparencyMode : PanelTransparencyMode::Solid;
-    return panelCardOpacityForTransparencyMode(mode, panelBackgroundOpacity);
+    return shell::glass::cardOpacity(configService, panelBackgroundOpacity);
   }
 
 } // namespace shell::panel_surface

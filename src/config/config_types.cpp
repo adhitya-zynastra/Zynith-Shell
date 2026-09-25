@@ -197,6 +197,10 @@ float panelCardOpacityForTransparencyMode(PanelTransparencyMode mode, float pane
     return std::clamp(backgroundOpacity + 0.08F, 0.82F, 0.92F);
   case PanelTransparencyMode::Glass:
     return std::clamp(backgroundOpacity + 0.10F, 0.62F, 0.75F);
+  case PanelTransparencyMode::Custom:
+    // Cards sit one step more opaque than their panel, as in the named modes, but without the
+    // fixed band: a custom opacity is honoured rather than snapped back into a preset's range.
+    return std::clamp(backgroundOpacity + 0.10F, backgroundOpacity, 1.0F);
   }
   return 1.0F;
 }
@@ -208,6 +212,7 @@ float detachedPanelBackgroundOpacityForTransparencyMode(PanelTransparencyMode mo
   case PanelTransparencyMode::Soft:
     return 0.80F;
   case PanelTransparencyMode::Glass:
+  case PanelTransparencyMode::Custom: // the real value comes from [shell.glass].opacity; see shell::glass
     return 0.55F;
   }
   return 1.0F;
