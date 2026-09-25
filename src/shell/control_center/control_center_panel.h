@@ -1,6 +1,7 @@
 #pragma once
 
 #include "render/animation/animation_manager.h"
+#include "render/animation/morph_transition.h"
 #include "shell/control_center/control_center_services.h"
 #include "shell/control_center/tab.h"
 #include "shell/control_center/tabs/audio_tab.h"
@@ -148,7 +149,9 @@ private:
   void layoutTabContainers(float bodyWidth, float bodyHeight);
   void layoutFullSidebarWidth(Renderer& renderer);
   void resetTabContainerTransforms();
-  void startTabTransition(TabId from, TabId to);
+  // `carry` is the outgoing content's live offset when a switch interrupts another,
+  // so the new leg continues from where the content actually is. 0 for a fresh switch.
+  void startTabTransition(TabId from, TabId to, float carry);
   void finishTabTransition();
   void applyTabTransitionLayout();
   [[nodiscard]] int visibleTabOrdinal(TabId tab) const;
@@ -195,12 +198,11 @@ private:
   bool m_hasPowerServices = false;
   bool m_mprisRefreshScheduled = false;
   std::chrono::steady_clock::time_point m_lastMprisRefreshAt;
-  AnimationManager::Id m_tabTransitionAnimId = 0;
+  // Section navigation runs on the shared morph primitive rather than bespoke bookkeeping;
+  // the visual behaviour (travel, direction, interruption carry-over) is unchanged and lives
+  // in layoutTabContainers. Only the outgoing tab id is extra state the primitive does not
+  // carry, because it is about what is being morphed rather than about the morph.
+  MorphTransition m_tabMorph;
   TabId m_tabTransitionOutgoing = TabId::Home;
-  float m_tabTransitionProgress = 1.0F;
-  // Offset the outgoing content starts from (non-zero when a switch interrupts another).
-  float m_tabTransitionOutgoingStart = 0.0F;
-  int m_tabTransitionDirection = 1;
-  bool m_tabTransitionActive = false;
   bool m_firstOpenAfterCreate = false;
 };

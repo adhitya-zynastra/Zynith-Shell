@@ -395,7 +395,7 @@ void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height)
     m_tabs[idx]->layout(renderer, bodyWidth, bodyContentHeight);
   };
 
-  if (m_tabTransitionActive) {
+  if (m_tabMorph.active()) {
     layoutTab(m_tabTransitionOutgoing);
   }
   layoutTab(m_activeTab);
@@ -457,11 +457,9 @@ bool ControlCenterPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifi
 }
 
 void ControlCenterPanel::onClose() {
-  if (m_tabTransitionAnimId != 0 && m_animations != nullptr) {
-    m_animations->cancel(m_tabTransitionAnimId);
-    m_tabTransitionAnimId = 0;
-  }
-  m_tabTransitionActive = false;
+  // Closing mid-transition drops the leg; the primitive's cancel is idempotent and safe
+  // to call whether or not one is running.
+  m_tabMorph.cancel();
   m_activeTab = TabId::Home;
   for (auto& tab : m_tabs) {
     tab->setActive(false);
@@ -647,24 +645,26 @@ void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) 
     float offsetY = 0.0F;
     float opacity = 1.0F;
     const auto tabId = static_cast<TabId>(i);
-    if (m_tabTransitionActive && travel > 0.0F) {
-      const auto direction = static_cast<float>(m_tabTransitionDirection);
+    if (m_tabMorph.active() && travel > 0.0F) {
+      const auto direction = static_cast<float>(m_tabMorph.direction());
+      const float progress = m_tabMorph.progress();
       if (tabId == m_tabTransitionOutgoing) {
         // An interrupted switch leaves the outgoing content part-way; continue
-        // from where it actually is rather than snapping it back.
-        const float from = m_tabTransitionOutgoingStart;
+        // from where it actually is rather than snapping it back. That carried
+        // offset is what MorphTransition holds for us.
+        const float from = m_tabMorph.carry();
         const float to = -direction * travel;
-        offsetY = from + (to - from) * m_tabTransitionProgress;
-        opacity = std::max(0.0F, 1.0F - m_tabTransitionProgress);
+        offsetY = from + (to - from) * progress;
+        opacity = std::max(0.0F, 1.0F - progress);
       } else if (tabId == m_activeTab) {
-        offsetY = direction * travel * (1.0F - m_tabTransitionProgress);
-        opacity = m_tabTransitionProgress;
+        offsetY = direction * travel * (1.0F - progress);
+        opacity = progress;
       }
     }
 
     container->setPosition(0.0F, offsetY);
     container->setOpacity(opacity);
-    if (m_tabTransitionActive) {
+    if (m_tabMorph.active()) {
       container->setZIndex(tabId == m_activeTab ? 1 : 0);
     } else {
       container->setZIndex(0);
@@ -704,20 +704,18 @@ void ControlCenterPanel::applyTabTransitionLayout() {
   layoutTabContainers(m_tabBodies->width(), m_tabBodies->height());
 }
 
-void ControlCenterPanel::startTabTransition(TabId from, TabId to) {
+void ControlCenterPanel::startTabTransition(TabId from, TabId to, float carry) {
   if (m_animations == nullptr || m_tabBodies == nullptr) {
     applyTabContainerVisibility(to);
     resetTabContainerTransforms();
     return;
   }
 
-  m_tabTransitionActive = true;
   m_tabTransitionOutgoing = from;
-  m_tabTransitionProgress = 0.0F;
 
   const int fromOrdinal = visibleTabOrdinal(from);
   const int toOrdinal = visibleTabOrdinal(to);
-  m_tabTransitionDirection = toOrdinal >= fromOrdinal ? 1 : -1;
+  const int direction = toOrdinal >= fromOrdinal ? 1 : -1;
 
   for (const auto& meta : kTabs) {
     const std::size_t idx = tabIndex(meta.id);
@@ -728,30 +726,29 @@ void ControlCenterPanel::startTabTransition(TabId from, TabId to) {
     m_tabContainers[idx]->setVisible(show);
   }
 
-  applyTabTransitionLayout();
-  PanelManager::instance().requestLayout();
-  PanelManager::instance().requestRedraw();
-  PanelManager::instance().requestFrameTick();
-
-  m_tabTransitionAnimId = m_animations->animate(
-      0.0F, 1.0F, static_cast<float>(Style::animNormal), Easing::EaseOutQuint,
-      [this](float progress) {
-        m_tabTransitionProgress = progress;
+  // start() must precede the first layout pass: layoutTabContainers reads progress and
+  // direction off the morph, so the pre-animation frame has to see the new leg's state.
+  m_tabMorph.bind(m_animations, m_tabBodies);
+  m_tabMorph.start(
+      direction, carry, static_cast<float>(Style::animNormal), Easing::EaseOutQuint,
+      [this](float) {
         applyTabTransitionLayout();
         PanelManager::instance().requestRedraw();
       },
       [this]() {
-        m_tabTransitionAnimId = 0;
         finishTabTransition();
         PanelManager::instance().requestLayout();
         PanelManager::instance().requestRedraw();
-      },
-      m_tabBodies
+      }
   );
+
+  applyTabTransitionLayout();
+  PanelManager::instance().requestLayout();
+  PanelManager::instance().requestRedraw();
+  PanelManager::instance().requestFrameTick();
 }
 
 void ControlCenterPanel::finishTabTransition() {
-  m_tabTransitionActive = false;
   resetTabContainerTransforms();
   applyTabContainerVisibility(m_activeTab);
 }
@@ -809,15 +806,15 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   // actually sits, so the next transition continues from there.
   float interruptedOffset = 0.0F;
   bool interrupted = false;
-  if (m_tabTransitionAnimId != 0 && m_animations != nullptr) {
+  if (m_tabMorph.active()) {
+    // Read the live offset BEFORE cancelling: this is the visual state the next leg
+    // carries in, and it is the whole reason a reversal does not snap back.
     const std::size_t incomingIdx = tabIndex(m_activeTab);
     if (m_tabContainers[incomingIdx] != nullptr) {
       interruptedOffset = m_tabContainers[incomingIdx]->y();
       interrupted = true;
     }
-    m_animations->cancel(m_tabTransitionAnimId);
-    m_tabTransitionAnimId = 0;
-    m_tabTransitionActive = false;
+    m_tabMorph.cancel();
     applyTabContainerVisibility(m_activeTab);
   }
 
@@ -829,10 +826,9 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   updateTabChrome(tab);
 
   if (tabChanged && animated && m_animations != nullptr && m_tabBodies != nullptr) {
-    m_tabTransitionOutgoingStart = interrupted ? interruptedOffset : 0.0F;
-    startTabTransition(previousTab, tab);
+    startTabTransition(previousTab, tab, interrupted ? interruptedOffset : 0.0F);
   } else {
-    m_tabTransitionActive = false;
+    m_tabMorph.cancel();
     applyTabContainerVisibility(tab);
     resetTabContainerTransforms();
   }
