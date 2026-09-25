@@ -1347,7 +1347,8 @@
         "widget-list": "Widget List",
         "widgets": "Widgets",
         "window-switcher": "Window Switcher",
-        "glass": "Glass"
+        "glass": "Glass",
+        "wallpaper-browser": "Wallpaper Browser"
       },
       "sections": {
         "accessibility": "Accessibility",
@@ -1375,7 +1376,7 @@
         "system": "System",
         "templates": "Templates",
         "wallpaper": "Wallpaper",
-        "zynith-corner": "Zynith Corner"
+        "personalization": "Personalization"
       }
     },
     "notifications": {
@@ -1543,6 +1544,11 @@
           "tertiary": "Tertiary",
           "surface-variant": "Surface Variant",
           "outline": "Outline"
+        },
+        "layout-density": {
+          "compact": "Compact",
+          "comfortable": "Comfortable",
+          "spacious": "Spacious"
         }
       },
       "theme": {
@@ -3389,6 +3395,20 @@
         "border-opacity": {
           "label": "Border Opacity",
           "description": "Opacity of the outline, relative to the surface itself."
+        }
+      },
+      "personalization": {
+        "cc-density": {
+          "label": "Density",
+          "description": "Breathing room in the Control Center's frame: the spacing around and between its navigation and content. Takes effect the next time it opens."
+        },
+        "carousel": {
+          "label": "Cinematic Carousel",
+          "description": "Browse wallpapers as a curved carousel instead of a grid. Applies after the shell restarts."
+        },
+        "card-width": {
+          "label": "Card Size",
+          "description": "Preferred width of the focused wallpaper. Wider displays show more neighbouring wallpapers rather than bigger ones; smaller displays shrink the card to fit."
         }
       }
     },

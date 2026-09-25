@@ -84,7 +84,7 @@ namespace settings {
     }
 
     constexpr std::array<SettingsSectionDescriptor, 23> kSettingsSections{{
-        {SettingsSection::ZynithCorner, "zynith-corner", "sparkles"},
+        {SettingsSection::Personalization, "personalization", "brush"},
         {SettingsSection::Appearance, "appearance", "adjustments-horizontal"},
         {SettingsSection::Wallpaper, "wallpaper", "paint"},
         {SettingsSection::Templates, "templates", "color-swatch"},
@@ -590,42 +590,42 @@ namespace settings {
         ToggleSetting{cfg.accessibility.highContrast}, "accessibility high contrast visually impaired"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.animations.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.animations.label"),
         tr("settings.schema.appearance.animations.description"), {"shell", "animation", "enabled"},
         ToggleSetting{cfg.shell.animation.enabled}, "motion"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.animation-speed.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.animation-speed.label"),
         tr("settings.schema.appearance.animation-speed.description"), {"shell", "animation", "speed"},
         sliderFor(cfg.shell.animation.speed, noctalia::config::schema::kAnimationSpeedRange, false), "motion"
     ));
     // Compositor-side motion lives in the same group as the shell's own, so "how fast does the
     // desktop feel" is one place rather than two settings surfaces that can disagree.
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-preset.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-preset.label"),
         tr("settings.schema.appearance.motion-preset.description"), {"shell", "animation", "preset"},
         enumSelect(kMotionPresets, cfg.shell.animation.preset), "motion preset niri animation curve duration"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-open.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-open.label"),
         tr("settings.schema.appearance.motion-open.description"), {"shell", "animation", "niri_open"},
         sliderFor(cfg.shell.animation.niriOpen, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window open"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-close.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-close.label"),
         tr("settings.schema.appearance.motion-close.description"), {"shell", "animation", "niri_close"},
         sliderFor(cfg.shell.animation.niriClose, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window close"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-movement.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-movement.label"),
         tr("settings.schema.appearance.motion-movement.description"), {"shell", "animation", "niri_movement"},
         sliderFor(cfg.shell.animation.niriMovement, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri window movement resize workspace"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "motion", tr("settings.schema.appearance.motion-overview.label"),
+        SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-overview.label"),
         tr("settings.schema.appearance.motion-overview.description"), {"shell", "animation", "niri_overview"},
         sliderFor(cfg.shell.animation.niriOverview, noctalia::config::schema::kMotionTrimRange, true),
         "motion niri overview"
@@ -1168,18 +1168,18 @@ namespace settings {
         "floating detached panel layer shell z-order input method popup fullscreen"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "glass", tr("settings.schema.panels.transparency-mode.label"),
+        SettingsSection::Personalization, "glass", tr("settings.schema.panels.transparency-mode.label"),
         tr("settings.schema.panels.transparency-mode.description"), {"shell", "panel", "transparency_mode"},
         asSegmented(enumSelect(kPanelTransparencyModes, cfg.shell.panel.transparencyMode)),
         "glass opacity alpha translucent cards blur"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "glass", tr("settings.schema.panels.borders.label"),
+        SettingsSection::Personalization, "glass", tr("settings.schema.panels.borders.label"),
         tr("settings.schema.panels.borders.description"), {"shell", "panel", "borders"},
         ToggleSetting{cfg.shell.panel.borders}, "outline border shell edge"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ZynithCorner, "glass", tr("settings.schema.shared.shadow.label"),
+        SettingsSection::Personalization, "glass", tr("settings.schema.shared.shadow.label"),
         tr("settings.schema.panels.shadow.description"), {"shell", "panel", "shadow"},
         ToggleSetting{cfg.shell.panel.shadow}, "shadow depth"
     ));
@@ -1193,7 +1193,7 @@ namespace settings {
       const SettingVisibility blurOn = [](const Config& c) { return c.shell.glass.blur; };
 
       auto opacity = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.opacity.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.opacity.label"),
           tr("settings.schema.glass.opacity.description"), {"shell", "glass", "opacity"},
           sliderFor(cfg.shell.glass.opacity, noctalia::config::schema::kUnitRange, false),
           "glass opacity transparency alpha custom"
@@ -1202,12 +1202,12 @@ namespace settings {
       entries.push_back(std::move(opacity));
 
       entries.push_back(makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.blur.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.blur.label"),
           tr("settings.schema.glass.blur.description"), {"shell", "glass", "blur"},
           ToggleSetting{cfg.shell.glass.blur}, "glass blur frosted background effect"
       ));
       auto strength = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.blur-strength.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.blur-strength.label"),
           tr("settings.schema.glass.blur-strength.description"), {"shell", "glass", "blur_strength"},
           sliderFor(cfg.shell.glass.blurStrength, noctalia::config::schema::kGlassBlurStrengthRange, true),
           "glass blur strength radius niri"
@@ -1216,19 +1216,19 @@ namespace settings {
       entries.push_back(std::move(strength));
 
       entries.push_back(makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint.label"),
           tr("settings.schema.glass.tint.description"), {"shell", "glass", "tint"},
           ToggleSetting{cfg.shell.glass.tint}, "glass tint colour wallpaper accent"
       ));
       auto tintRole = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint-role.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint-role.label"),
           tr("settings.schema.glass.tint-role.description"), {"shell", "glass", "tint_role"},
           enumSelect(kGlassTintRoles, cfg.shell.glass.tintRole), "glass tint colour role"
       );
       tintRole.visibleWhen = tintOn;
       entries.push_back(std::move(tintRole));
       auto tintStrength = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.tint-strength.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint-strength.label"),
           tr("settings.schema.glass.tint-strength.description"), {"shell", "glass", "tint_strength"},
           sliderFor(cfg.shell.glass.tintStrength, noctalia::config::schema::kUnitRange, false),
           "glass tint strength amount"
@@ -1237,14 +1237,14 @@ namespace settings {
       entries.push_back(std::move(tintStrength));
 
       auto borderRole = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.border-role.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.border-role.label"),
           tr("settings.schema.glass.border-role.description"), {"shell", "glass", "border_role"},
           enumSelect(kGlassBorderRoles, cfg.shell.glass.borderRole), "glass border outline colour"
       );
       borderRole.visibleWhen = bordersOn;
       entries.push_back(std::move(borderRole));
       auto borderOpacity = makeEntry(
-          SettingsSection::ZynithCorner, "glass", tr("settings.schema.glass.border-opacity.label"),
+          SettingsSection::Personalization, "glass", tr("settings.schema.glass.border-opacity.label"),
           tr("settings.schema.glass.border-opacity.description"), {"shell", "glass", "border_opacity"},
           sliderFor(cfg.shell.glass.borderOpacity, noctalia::config::schema::kUnitRange, false),
           "glass border outline opacity"
@@ -1479,23 +1479,25 @@ namespace settings {
         "settings.schema.panels.open-near-click-control-center.description", cfg.shell.panel.openNearClickControlCenter,
         &ShellConfig::PanelConfig::controlCenterPlacement, &ShellConfig::PanelConfig::controlCenterPosition
     ));
-    {
-      SliderSetting width =
-          sliderFor(cfg.controlCenter.width, noctalia::config::schema::kControlCenterWidthRange, true);
-      width.valueSuffix = "px";
-          entries.push_back(makeEntry(
-        SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-top-nav.label"),
+    // Control Center appearance and the wallpaper browser's layout: how a shell surface looks and
+    // behaves, so they sit in Personalization beside motion and glass. The feature sections keep
+    // functional options (tabs, shortcuts, sidebar modes, placement). Moved, never copied.
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "control-center",
+        tr("settings.schema.panels.control-center-top-nav.label"),
         tr("settings.schema.panels.control-center-top-nav.description"), {"control_center", "top_nav"},
         ToggleSetting{cfg.controlCenter.topNav}, "sections top navigation row"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-hover-open.label"),
+        SettingsSection::Personalization, "control-center",
+        tr("settings.schema.panels.control-center-hover-open.label"),
         tr("settings.schema.panels.control-center-hover-open.description"), {"control_center", "hover_open"},
         ToggleSetting{cfg.controlCenter.hoverOpen}, "hover clock open control center"
     ));
     {
       auto e = makeEntry(
-          SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-hover-delay.label"),
+          SettingsSection::Personalization, "control-center",
+          tr("settings.schema.panels.control-center-hover-delay.label"),
           tr("settings.schema.panels.control-center-hover-delay.description"),
           {"control_center", "hover_open_delay_ms"},
           StepperSetting{
@@ -1509,11 +1511,38 @@ namespace settings {
       e.visibleWhen = [](const Config& c) { return c.controlCenter.hoverOpen; };
       entries.push_back(std::move(e));
     }
-    entries.push_back(makeEntry(
-          SettingsSection::ControlCenter, "layout", tr("settings.schema.panels.control-center-width.label"),
+    {
+      SliderSetting width =
+          sliderFor(cfg.controlCenter.width, noctalia::config::schema::kControlCenterWidthRange, true);
+      width.valueSuffix = "px";
+      entries.push_back(makeEntry(
+          SettingsSection::Personalization, "control-center", tr("settings.schema.panels.control-center-width.label"),
           tr("settings.schema.panels.control-center-width.description"), {"control_center", "width"}, std::move(width),
           "size dimension wide narrow"
       ));
+    }
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "control-center", tr("settings.schema.personalization.cc-density.label"),
+        tr("settings.schema.personalization.cc-density.description"), {"control_center", "density"},
+        asSegmented(enumSelect(kLayoutDensities, cfg.controlCenter.density)),
+        "control center density spacing padding compact spacious"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "wallpaper-browser", tr("settings.schema.personalization.carousel.label"),
+        tr("settings.schema.personalization.carousel.description"), {"wallpaper", "carousel"},
+        ToggleSetting{cfg.wallpaper.carousel}, "wallpaper carousel browser cinematic grid"
+    ));
+    {
+      auto cardSlider =
+          sliderFor(cfg.wallpaper.carouselCardWidth, noctalia::config::schema::kCarouselCardWidthRange, true);
+      cardSlider.valueSuffix = "px";
+      auto cardWidth = makeEntry(
+          SettingsSection::Personalization, "wallpaper-browser", tr("settings.schema.personalization.card-width.label"),
+          tr("settings.schema.personalization.card-width.description"), {"wallpaper", "carousel_card_width"},
+          std::move(cardSlider), "wallpaper carousel card size width"
+      );
+      cardWidth.visibleWhen = [](const Config& c) { return c.wallpaper.carousel; };
+      entries.push_back(std::move(cardWidth));
     }
     entries.push_back(makeEntry(
         SettingsSection::ControlCenter, "navigation", tr("settings.schema.panels.control-center-sidebar.label"),

@@ -46,10 +46,13 @@ namespace settings {
     Niri,
     Bar,
     Plugins,
-    // Zynith Corner: Zynith's own appearance and behaviour customization (motion, glass, and the
-    // later per-surface groups). Appended rather than inserted so existing values do not shift;
-    // its place at the top of the sidebar comes from the descriptor order, not the enum.
-    ZynithCorner,
+    // Personalization: appearance and behaviour customization of the desktop shell — motion, glass,
+    // Control Center, wallpaper browser, and later per-surface groups. Deliberately a generic
+    // category, not a product-branded area: a future system-wide settings hub is expected to hold it
+    // as one category among many (see the settings information-architecture doc). Appended rather
+    // than inserted so existing values do not shift; its sidebar position comes from the descriptor
+    // order, not the enum.
+    Personalization,
   };
 
   struct SettingsSectionDescriptor {
