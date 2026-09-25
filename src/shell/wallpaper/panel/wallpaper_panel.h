@@ -212,6 +212,8 @@ private:
   long m_promotionLo = 0;
   long m_promotionHi = -1;
   int m_promotionDirection = 1;
+  // Arc width the promotion window was last derived from; a relayout that changes it re-derives.
+  std::size_t m_promotionSide = 0;
   // Thumbnail session owned by this browser while it is on screen (0 = none).
   ThumbnailService::SessionId m_thumbnailSession = 0;
   // Guards against one gesture applying the same wallpaper twice.

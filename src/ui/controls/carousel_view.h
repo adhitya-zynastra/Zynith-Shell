@@ -71,6 +71,8 @@ public:
   // until the motion lands somewhere.
   void setOnMotionChanged(std::function<void(bool)> callback);
   [[nodiscard]] bool moving() const noexcept { return m_moving; }
+  // Cards drawn on each side of the focus at the current geometry (resolved on layout).
+  [[nodiscard]] std::size_t visiblePerSide() const noexcept { return m_visiblePerSide; }
   // Fired on an explicit click on the already-focused item (Enter is the host's).
   void setOnActivate(std::function<void(std::size_t)> callback);
 

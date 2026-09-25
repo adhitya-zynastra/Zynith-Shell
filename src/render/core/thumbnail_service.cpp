@@ -486,12 +486,14 @@ void ThumbnailService::trimIdle() {
 }
 
 void ThumbnailService::enqueueDecodeIfNeeded(const RequestKey& key) {
-  ++m_stats.decodes;
   std::scoped_lock lock(m_queueMutex);
   m_canceled.erase(key);
   if (m_inFlight.contains(key)) {
     return;
   }
+  // Counted here, not on entry: a second request for a key already in flight (a tile acquiring
+  // what a prefetch queued a moment earlier) sends nothing to a worker.
+  ++m_stats.decodes;
   m_inFlight.insert(key);
   m_jobQueue.push_back(key);
   m_queueCv.notify_one();

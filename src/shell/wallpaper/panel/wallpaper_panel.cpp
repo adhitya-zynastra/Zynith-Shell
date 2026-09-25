@@ -77,12 +77,13 @@ namespace {
   // Upper bound on how many entries one session prefetches, whatever the library
   // size. Ordered outward from the focused item so the useful ones land first.
   constexpr std::size_t kMaxPrefetchEntries = 360;
-  // Cards within this window of the focus hold the display-quality texture. The
-  // focused card draws ~753 px wide, its immediate neighbours ~640 px, so a
-  // preview-resolution texture is visibly soft on all of them. Leaning the
-  // window in the direction of travel means the next card is already sharp.
-  constexpr long kPromotionAhead = 3;
-  constexpr long kPromotionBehind = 1;
+  // Cards within the promotion window hold the display-quality texture: every card the arc
+  // shows (a preview is visibly soft at the 475-760 px they draw at), plus this many past the
+  // leading edge, so the next card is already sharp when it arrives. The arc widens with the
+  // output (carousel_geometry.h), so the window is derived per update, not fixed.
+  constexpr long kPromotionLead = 1;
+  // Before the carousel has laid out once.
+  constexpr long kPromotionFallbackSide = 2;
   // A second activation of the same wallpaper inside this window is treated as
   // one gesture (double-click), not two applies.
   constexpr auto kReapplyGuard = std::chrono::milliseconds(600);
@@ -865,7 +866,9 @@ void WallpaperPanel::create() {
       }
     });
     m_adapter->setBrowseThumbnailSizes(kBrowseThumbnailPx, kFocusedThumbnailPx);
-    m_adapter->setPromotedRange(0, static_cast<long>(kPromotionAhead));
+    // No promoted range until the initial focus resolves (see updatePromotionWindow): seeding one,
+    // or deriving it from the provisional focus, decoded display-tier textures for the first few
+    // entries on every open, whether or not they were on screen.
     m_carousel = static_cast<CarouselView*>(root->addChild(std::move(carousel)));
   } else {
     root->addChild(
@@ -999,6 +1002,14 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
   m_dirty = false;
+
+  // The arc is resolved by the layout above. If it widened or narrowed (first layout on a wide
+  // output, output change, card-size setting), re-derive the display-tier window now rather than
+  // at the next navigation. Compared first, so steady-state layouts do nothing here.
+  if (m_carousel != nullptr && m_carousel->visiblePerSide() != m_promotionSide) {
+    m_promotionSide = m_carousel->visiblePerSide();
+    updatePromotionWindow();
+  }
 }
 
 void WallpaperPanel::doUpdate(Renderer& renderer) {
@@ -1617,8 +1628,10 @@ void WallpaperPanel::applyFilter() {
 }
 
 void WallpaperPanel::updatePromotionWindow() {
+  // While the initial focus is pending, the carousel reports a provisional focus (index 0) as the
+  // entries arrive; rebindGrid derives the window once the real one (the wallpaper in use) lands.
   if (m_adapter == nullptr || m_thumbnails == nullptr || !m_carouselMode || m_visibleEntries.empty()
-      || !hasVisibleSelection()) {
+      || !hasVisibleSelection() || m_pendingInitialFocus) {
     return;
   }
   const auto focus = static_cast<long>(m_selectedVisibleIndex);
@@ -1633,8 +1646,9 @@ void WallpaperPanel::updatePromotionWindow() {
     m_lastPromotionFocus = focus;
   }
 
-  const long behind = kPromotionBehind;
-  const long ahead = kPromotionAhead;
+  const std::size_t perSide = m_carousel != nullptr ? m_carousel->visiblePerSide() : 0;
+  const long behind = perSide > 0 ? static_cast<long>(perSide) : kPromotionFallbackSide;
+  const long ahead = behind + kPromotionLead;
   const long lo = focus - (m_promotionDirection >= 0 ? behind : ahead);
   const long hi = focus + (m_promotionDirection >= 0 ? ahead : behind);
   const bool windowMoved = lo != m_promotionLo || hi != m_promotionHi;
@@ -1709,6 +1723,7 @@ void WallpaperPanel::rebindGrid(bool resetScroll) {
       m_carousel->resetTo(current == kNoVisibleSelection ? 0U : current);
       if (initialFocus) {
         m_pendingInitialFocus = false;
+        updatePromotionWindow();
         prefetchSessionThumbnails();
       }
     } else if (hasVisibleSelection()) {
