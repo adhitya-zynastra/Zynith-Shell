@@ -16,6 +16,9 @@
 #include "dbus/idle/screensaver_poll_source.h"
 #include "dbus/idle/screensaver_service.h"
 #include "dbus/logind/logind_service.h"
+#include "compositors/compositor_detect.h"
+#include "compositors/niri/niri_config_fragments.h"
+#include "compositors/niri/niri_fragment_writer.h"
 #include "dbus/modem/modem_manager_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
@@ -473,10 +476,28 @@ void Application::initStyleThemeAndWayland() {
   std::signal(SIGTERM, signal_handler);
   std::signal(SIGINT, signal_handler);
 
+  // Zynith owns the niri fragments generated from [shell.animation] and [shell.glass] (ADR-0015).
+  // Only under niri: generating niri configuration while running on another compositor would be
+  // writing into a config tree nothing is reading.
+  if (compositors::isNiri()) {
+    const std::filesystem::path rice = FileUtils::expandXdgBaseDir("$XDG_CONFIG_HOME/niri/rice");
+    m_niriAnimationsWriter = std::make_unique<NiriFragmentWriter>(rice / "animations.kdl", "niri-motion");
+    m_niriGlassWriter = std::make_unique<NiriFragmentWriter>(rice / "glass.kdl", "niri-glass");
+  }
+
+  // One global speed and one preset shape both halves of the desktop's motion: the shell's own
+  // surfaces here, and niri's through the generated animations.kdl.
   auto applyMotionConfig = [this]() {
+    const auto& animation = m_configService.config().shell.animation;
     auto& motion = MotionService::instance();
-    motion.setSpeed(m_configService.config().shell.animation.speed);
-    motion.setEnabled(m_configService.config().shell.animation.enabled);
+    motion.setSpeed(niri_fragments::effectiveShellSpeed(animation));
+    motion.setEnabled(animation.enabled);
+    if (m_niriAnimationsWriter != nullptr) {
+      m_niriAnimationsWriter->submit(niri_fragments::renderAnimations(animation));
+    }
+    if (m_niriGlassWriter != nullptr) {
+      m_niriGlassWriter->submit(niri_fragments::renderGlass(m_configService.config().shell.glass));
+    }
   };
   auto applyStyleConfig = [this, lastCornerRadiusScale = std::numeric_limits<float>::quiet_NaN()]() mutable {
     const float corner = m_configService.config().shell.cornerRadiusScale;

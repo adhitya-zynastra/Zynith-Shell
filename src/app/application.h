@@ -6,6 +6,7 @@
 #include "calendar/calendar_service.h"
 #include "capture/screenshot_service.h"
 #include "compositors/compositor_platform.h"
+#include "compositors/niri/niri_fragment_writer.h"
 #include "compositors/workspace_alert_service.h"
 #include "config/config_poll_source.h"
 #include "config/config_service.h"
@@ -245,6 +246,9 @@ private:
   LockKeysService m_lockKeysService;
   NotificationManager m_notificationManager;
   CalendarService m_calendarService;
+  // Shell-generated niri configuration fragments (ADR-0015). Null when not running under niri.
+  std::unique_ptr<NiriFragmentWriter> m_niriAnimationsWriter;
+  std::unique_ptr<NiriFragmentWriter> m_niriGlassWriter;
   std::unique_ptr<SessionBus> m_bus;
   std::unique_ptr<SystemBus> m_systemBus;
   std::unique_ptr<LogindService> m_logindService;

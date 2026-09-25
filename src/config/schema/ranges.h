@@ -18,7 +18,9 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kHoverIntentRange{0, 2000, 50};   // clock hover-open delay (ms)
   inline constexpr Range<float> kAnimationSpeedRange{0.1F, 4.0F, 0.05F};
   // Per-category trim on a motion preset, as a percentage of its baseline. 100 = preset unmodified.
-  inline constexpr Range<std::int64_t> kMotionTrimRange{0, 200, 5};
+  // Floor of 50, not 0: niri durations are derived as base / (factor * trim), so a 0 % trim divides
+  // by zero. 50 matches the range the retired Motion plugin enforced.
+  inline constexpr Range<std::int64_t> kMotionTrimRange{50, 200, 5};
   // Glass: blur strength is an intent-level 0-100 scale mapped onto niri's global blur passes/offset.
   inline constexpr Range<std::int64_t> kGlassBlurStrengthRange{0, 100, 5};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
