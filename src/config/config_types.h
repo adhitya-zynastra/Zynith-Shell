@@ -124,6 +124,17 @@ struct BarDeadZoneConfig {
   bool operator==(const BarDeadZoneConfig&) const = default;
 };
 
+// zynith: the coordinate space a surface is positioned in — a bar and every panel attached to it, or
+// the OSD.
+//   Workspace — the area left after other surfaces' reserved zones (the compositor's usable area);
+//               a centred bar is centred between, e.g., a left bar and the right edge.
+//   Output    — the whole output; a centred bar is centred on the screen. Only meaningful for a bar
+//               that reserves no space itself (a reserving bar needs its exclusive zone).
+enum class PositionReference : std::uint8_t {
+  Workspace = 0,
+  Output = 1,
+};
+
 struct BarConfig {
   // Gesture -> action bindings applied to every widget on this bar, overriding widget-type
   // defaults and overridden in turn by `[widget.<name>.actions]`. See widget_action.h.
@@ -137,6 +148,8 @@ struct BarConfig {
 
   [[nodiscard]] constexpr bool isAutoHideEnabled() const noexcept { return autoHide || smartAutoHide; }
   bool reserveSpace = true;  // reserve compositor exclusive zone; applies with or without auto_hide
+  // See PositionReference; ignored while reserve_space is on.
+  PositionReference reference = PositionReference::Workspace;
   std::string layer = "top"; // top | overlay; attached panels use the same layer
   std::int32_t thickness = Style::barThicknessDefault;
   float backgroundOpacity = 1.0F;
@@ -744,6 +757,8 @@ struct OsdConfig {
   float backgroundOpacity = 0.97F;
   bool border = true; // outline around OSD popup cards
   std::int32_t durationMs = 1400; // on-screen hold after the last event, before the fade
+  // zynith: what "centre" means for the OSD — see PositionReference. Match the bar it sits near.
+  PositionReference reference = PositionReference::Workspace;
   int offsetX = 20;
   int offsetY = 8;
   std::vector<std::string> monitors;
@@ -949,6 +964,15 @@ enum class LayoutDensity : std::uint8_t {
   Spacious = 2,
 };
 
+constexpr EnumOption<PositionReference> kPositionReferences[] = {
+    {PositionReference::Workspace, "workspace", "settings.options.bar.reference.workspace"},
+    {PositionReference::Output, "output", "settings.options.bar.reference.output"},
+};
+
+[[nodiscard]] constexpr bool barUsesOutputReference(const BarConfig& bar) noexcept {
+  return !bar.reserveSpace && bar.reference == PositionReference::Output;
+}
+
 constexpr EnumOption<LayoutDensity> kLayoutDensities[] = {
     {LayoutDensity::Compact, "compact", "settings.options.shell.layout-density.compact"},
     {LayoutDensity::Comfortable, "comfortable", "settings.options.shell.layout-density.comfortable"},
@@ -1122,7 +1146,6 @@ struct ShellConfig {
     std::int32_t height = 540;    // logical px, before UI scale
     std::int32_t iconSize = 32;   // result icon, logical px
     LayoutDensity density = LayoutDensity::Comfortable;
-    bool keyHints = true;         // footer with the keyboard affordances
     /// Paste shortcut after a copy-style launcher activation (calculator, emoji, …).
     ClipboardAutoPasteMode autoPaste = ClipboardAutoPasteMode::Auto;
 
@@ -1727,6 +1750,9 @@ struct ControlCenterConfig {
   std::int32_t hoverOpenDelayMs = 350;
   // zynith: spacing of the control center's frame (outer rhythm, navigation, content gaps).
   LayoutDensity density = LayoutDensity::Comfortable;
+  // zynith: the bar a Control Center opened without a source bar (shortcut, IPC) attaches to.
+  // Empty = the first enabled bar. A click on a bar widget always uses the bar that was clicked.
+  std::string anchorBar;
   bool showShortcutLabels = true;
   bool showSessionButton = true;
   CalendarTabConfig calendarTab;

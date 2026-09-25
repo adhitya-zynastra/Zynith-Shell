@@ -975,11 +975,15 @@ void Application::initWidgetControllersAndCallbacks() {
       .sysmon = m_systemMonitor.get(),
       .scriptDeps = desktopWidgetScriptDeps,
   };
+  // The lock screen host alone gets the session runner: its session_actions widget is the lock
+  // screen's power controls, and the desktop has the power menu for that.
+  DesktopWidgetRuntimeServices lockscreenWidgetRuntime = desktopWidgetRuntime;
+  lockscreenWidgetRuntime.sessionActions = &m_sessionActionRunner;
   const DesktopWidgetServices lockscreenWidgetServices{
       .wayland = m_wayland,
       .config = &m_configService,
       .renderContext = &m_renderContext,
-      .runtime = desktopWidgetRuntime,
+      .runtime = lockscreenWidgetRuntime,
       .textureCache = &m_sharedTextureCache,
   };
   const DesktopWidgetServices desktopWidgetServices{

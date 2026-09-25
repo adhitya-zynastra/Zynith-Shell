@@ -546,7 +546,10 @@ void OsdOverlay::ensureSurfaces() {
         .anchor = anchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = 0,
+        // zynith: output reference (-1) centres on the screen, workspace (0) within the usable area —
+        // the same model as bars and their panels, so an OSD over a screen-centred bar lines up.
+        .exclusiveZone =
+            (m_config != nullptr && m_config->config().osd.reference == PositionReference::Output) ? -1 : 0,
         .marginTop = margins.top,
         .marginRight = margins.right,
         .marginBottom = margins.bottom,
@@ -984,7 +987,7 @@ void OsdOverlay::animateInstance(Instance& inst) {
   // zynith: hold with an event-loop timer (no frames while the OSD just sits there).
   inst.holdTimer.start(std::chrono::milliseconds(osdHoldMs(m_config)), [this, &inst]() {
         inst.hideAnimId = inst.animations.animate(
-            1.0F, 0.0F, Style::animNormal, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
+            1.0F, 0.0F, Style::animExit, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
             [this, &inst]() {
               inst.hideAnimId = 0;
               inst.visible = false;

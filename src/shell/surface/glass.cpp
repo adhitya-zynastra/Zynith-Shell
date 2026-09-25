@@ -60,6 +60,14 @@ namespace shell::glass {
     return config.shell.glass.blur && fillOpacity < 1.0F;
   }
 
+  ColorSpec tinted(const Config& config, const ColorSpec& fill) noexcept {
+    const auto& glass = config.shell.glass;
+    if (glass.tint && glass.tintStrength > 0.0F) {
+      return withTint(fill, toColorRole(glass.tintRole), glass.tintStrength);
+    }
+    return fill;
+  }
+
   SurfaceStyle panelSurface(const Config& config, float fillOpacity) noexcept {
     const auto& glass = config.shell.glass;
     SurfaceStyle out;

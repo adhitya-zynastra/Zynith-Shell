@@ -660,12 +660,16 @@ void LockSurface::setPromptState(
       && m_authenticating == authenticating) {
     return;
   }
+  const bool newError = error && !m_error;
   m_user = std::move(user);
   m_password = std::move(password);
   m_status = std::move(status);
   m_error = error;
   m_authenticating = authenticating;
   requestUpdate();
+  if (newError) {
+    shakeLoginPanel();
+  }
 }
 
 void LockSurface::setKeyboardIndicators(
@@ -1315,6 +1319,31 @@ void LockSurface::updateCopy() {
 // Visual state only. Everything here is driven by m_animations (the surface's existing
 // frame-clock animation manager): no timers of our own, no threads, no polling, and it
 // honours the global animation speed / reduced-motion settings.
+
+// zynith: a rejected password gets a short, damped horizontal shake of the pill — the one motion on
+// the lock screen that answers the user directly. Presentation only: it runs after PAM has already
+// answered and touches nothing but the pill's position. One animation on the surface's manager,
+// ~360 ms, restored exactly on completion (or cancelled by the next shake).
+void LockSurface::shakeLoginPanel() {
+  if (m_loginPanel == nullptr || !m_loginPanel->visible()) {
+    return;
+  }
+  m_animations.cancelForOwner(&m_shakeOwner);
+  Flex* panel = m_loginPanel;
+  const float baseX = panel->x();
+  const float baseY = panel->y();
+  const float amplitude = 10.0F * m_regularContentScale;
+  m_animations.animate(
+      0.0F, 1.0F, 360.0F, Easing::Linear,
+      [panel, baseX, baseY, amplitude](float t) {
+        // Three swings decaying to rest: sin over 3 periods under a (1 - t)^2 envelope.
+        const float envelope = (1.0F - t) * (1.0F - t);
+        panel->setPosition(baseX + amplitude * envelope * std::sin(t * 6.0F * 3.14159265F), baseY);
+      },
+      [panel, baseX, baseY]() { panel->setPosition(baseX, baseY); }, &m_shakeOwner
+  );
+  requestRedraw();
+}
 
 void LockSurface::fadeNode(Node* node, float to, float durationMs, float delayMs, Easing easing) {
   if (node == nullptr) {

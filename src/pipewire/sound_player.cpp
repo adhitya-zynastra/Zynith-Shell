@@ -1,5 +1,7 @@
 #include "pipewire/sound_player.h"
 
+#include "core/deferred_call.h"
+
 #include "core/log.h"
 
 #include <algorithm>
@@ -13,6 +15,10 @@
 #include <spa/utils/result.h>
 
 namespace {
+
+  // Retriggers of one cue closer than this coalesce: fast enough to follow a burst, slow enough not to
+  // turn it into a machine gun.
+  constexpr auto kRetriggerMin = std::chrono::milliseconds(150);
 
   constexpr Logger kLog("sound");
   constexpr float kUiSoundGamma = 2.2F;
@@ -111,6 +117,17 @@ void SoundPlayer::play(const std::string& name) {
   playBuffer(name, it->second);
 }
 
+void SoundPlayer::play(const std::string& name, std::function<void()> onFinished) {
+  const auto it = m_buffers.find(name);
+  if (it == m_buffers.end()) {
+    if (onFinished) {
+      DeferredCall::callLater(std::move(onFinished));
+    }
+    return;
+  }
+  playBuffer(name, it->second, std::move(onFinished));
+}
+
 void SoundPlayer::playPluginSound(std::uint64_t ownerId, const std::string& name) {
   const auto ownerIt = m_pluginBuffers.find(ownerId);
   if (ownerIt == m_pluginBuffers.end()) {
@@ -126,25 +143,51 @@ void SoundPlayer::playPluginSound(std::uint64_t ownerId, const std::string& name
   playBuffer(name, soundIt->second);
 }
 
-void SoundPlayer::playBuffer(const std::string& name, const std::shared_ptr<const SoundBuffer>& buffer) {
+void SoundPlayer::playBuffer(
+    const std::string& name, const std::shared_ptr<const SoundBuffer>& buffer, std::function<void()> onFinished
+) {
+  const auto giveUp = [&onFinished]() {
+    if (onFinished) {
+      DeferredCall::callLater(std::move(onFinished));
+    }
+  };
   if (m_loop == nullptr || m_volume <= 0.0F || buffer->samples.empty()) {
+    giveUp();
     return;
   }
 
   removeFinished();
 
-  // A cue that is still playing is not started again: a burst of notifications or held volume keys
-  // is one sound and one PipeWire stream, not a chord of them.
-  for (const auto& active : m_active) {
-    if (!active->finished && active->buffer.get() == buffer.get()) {
-      kLog.debug("sound \"{}\": still playing, not restarted", name);
-      return;
+  // One stream per cue. A burst of notifications or held volume keys used to be dropped while the
+  // previous play was still sounding — so the chime often belonged to an older event, or to none.
+  // Now the playing stream is rewound, which keeps the sound in step with the newest event without
+  // stacking a chord. Retriggers inside kRetriggerMin coalesce; a stream already draining (its last
+  // quantum queued) cannot be rewound, so a new one starts — overlapping by at most that quantum.
+  const auto now = std::chrono::steady_clock::now();
+  if (!onFinished) {
+    for (const auto& active : m_active) {
+      if (active->finished || active->buffer.get() != buffer.get() || active->onFinished) {
+        continue;
+      }
+      if (now - active->startedAt < kRetriggerMin) {
+        kLog.debug("sound \"{}\": coalesced into the play started {} ms ago", name,
+                   std::chrono::duration_cast<std::chrono::milliseconds>(now - active->startedAt).count());
+        return;
+      }
+      if (!active->draining) {
+        active->cursor = 0;
+        active->startedAt = now;
+        kLog.debug("sound \"{}\": retriggered", name);
+        return;
+      }
     }
   }
 
   auto active = std::make_unique<ActiveStream>();
   active->owner = this;
   active->buffer = buffer;
+  active->startedAt = now;
+  active->onFinished = std::move(onFinished);
   active->listener = new spa_hook{};
   spa_zero(*active->listener);
 
@@ -156,6 +199,9 @@ void SoundPlayer::playBuffer(const std::string& name, const std::shared_ptr<cons
   if (active->stream == nullptr) {
     delete active->listener;
     kLog.warn("failed to create stream for sound \"{}\"", name);
+    if (active->onFinished) {
+      DeferredCall::callLater(std::move(active->onFinished));
+    }
     return;
   }
 
@@ -180,6 +226,9 @@ void SoundPlayer::playBuffer(const std::string& name, const std::shared_ptr<cons
     spa_hook_remove(active->listener);
     delete active->listener;
     pw_stream_destroy(active->stream);
+    if (active->onFinished) {
+      DeferredCall::callLater(std::move(active->onFinished));
+    }
     return;
   }
 
@@ -232,6 +281,13 @@ void SoundPlayer::processStream(ActiveStream& streamState) {
   if (pwBuffer == nullptr) {
     return;
   }
+  if (!streamState.firstBufferLogged) {
+    // How long a new stream takes to be asked for audio: the latency a cue adds to its event.
+    streamState.firstBufferLogged = true;
+    kLog.debug("sound stream: first buffer {} ms after play",
+               std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()
+                                                                     - streamState.startedAt).count());
+  }
 
   spa_buffer* spaBuffer = pwBuffer->buffer;
   spa_data& data = spaBuffer->datas[0];
@@ -269,7 +325,15 @@ void SoundPlayer::processStream(ActiveStream& streamState) {
   }
 }
 
-void SoundPlayer::markFinished(ActiveStream& streamState) { streamState.finished = true; }
+void SoundPlayer::markFinished(ActiveStream& streamState) {
+  streamState.finished = true;
+  // Deferred: this runs inside a PipeWire stream callback, and the continuation may itself talk to
+  // PipeWire (a mute). One shot — the callable is moved out.
+  if (streamState.onFinished) {
+    DeferredCall::callLater(std::move(streamState.onFinished));
+    streamState.onFinished = nullptr;
+  }
+}
 
 void SoundPlayer::removeFinished() {
   std::erase_if(m_active, [](const std::unique_ptr<ActiveStream>& active) {

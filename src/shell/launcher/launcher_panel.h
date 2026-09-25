@@ -103,7 +103,6 @@ private:
   [[nodiscard]] bool shouldTrackUsage() const;
   // zynith: [shell.launcher].style = zynith. Read at create(), so a style switch lands on the next open.
   [[nodiscard]] bool zynithStyle() const noexcept;
-  [[nodiscard]] std::unique_ptr<Flex> buildKeyHints(float scale) const;
 
   std::vector<std::unique_ptr<LauncherProvider>> m_providers;
   std::vector<LauncherResult> m_results;

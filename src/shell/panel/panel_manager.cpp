@@ -179,7 +179,8 @@ namespace {
   // monitor), still return a resolved bar so openPanel can use a center-screen
   // floating layout via attached-panel availability.
   std::optional<BarConfig> resolvePanelBarConfig(
-      ConfigService* configService, CompositorPlatform* platform, wl_output* output, std::string_view barName = {}
+      ConfigService* configService, CompositorPlatform* platform, wl_output* output, std::string_view barName = {},
+      std::string_view panelId = {}
   ) {
     if (configService == nullptr || configService->config().bars.empty()) {
       return BarConfig{};
@@ -187,7 +188,15 @@ namespace {
 
     const auto& bars = configService->config().bars;
     const std::string_view panelAnchorBar = configService->config().shell.panelAnchorBar;
-    const std::string_view effectiveName = !panelAnchorBar.empty() ? panelAnchorBar : barName;
+    // zynith: a panel opened without a source bar (a shortcut, IPC) uses the bar configured for it —
+    // the Control Center's anchor_bar — instead of whichever bar happens to be first. A click on a
+    // bar still attaches to that bar; shell.panel_anchor_bar still overrides both.
+    std::string_view fallbackName;
+    if (barName.empty() && panelId == "control-center") {
+      fallbackName = configService->config().controlCenter.anchorBar;
+    }
+    const std::string_view effectiveName =
+        !panelAnchorBar.empty() ? panelAnchorBar : (!barName.empty() ? barName : fallbackName);
 
     const WaylandOutput* wlOutput = nullptr;
     if (platform != nullptr && output != nullptr) {
@@ -579,8 +588,12 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   // Already open, same panel, same output: let it move to the new context in
   // place. Tearing it down and rebuilding would replay the opening animation
   // for what the user experiences as navigation inside an open panel.
+  // zynith: only when the request comes from the bar the panel hangs from (or from no bar). A click on
+  // a different bar's widget moves the panel to that bar — its anchor and position reference — rather
+  // than switching sections inside a panel attached somewhere else.
+  const bool sameSourceBar = request.sourceBarName.empty() || request.sourceBarName == m_sourceBarName;
   if (isOpen() && !m_closing && m_activePanel != nullptr && m_activePanelId == panelId
-      && m_output == request.output && m_activePanel->retargetOpen(request.context)) {
+      && m_output == request.output && sameSourceBar && m_activePanel->retargetOpen(request.context)) {
     requestLayout();
     requestRedraw();
     return;
@@ -600,7 +613,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     return;
   }
 
-  auto barConfigOpt = resolvePanelBarConfig(m_config, m_platform, request.output, request.sourceBarName);
+  auto barConfigOpt = resolvePanelBarConfig(m_config, m_platform, request.output, request.sourceBarName, panelId);
   if (!barConfigOpt.has_value()) {
     return;
   }
@@ -1036,7 +1049,11 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       const auto centeredY = barTop + (barBottom - barTop - static_cast<std::int32_t>(panelHeight)) / 2;
       const auto desiredY =
           static_cast<std::int32_t>(std::lround(request.anchorY - static_cast<float>(panelHeight) * 0.5F));
-      visualY = useAnchorForAttached ? std::clamp(desiredY, minY, maxY) : centeredY;
+      // zynith: follow the click only when the panel fits along its bar. A panel longer than the bar
+      // (a Control Center on a short, centred bar) has no room to move: clamping pinned it to the bar's
+      // start edge, so it hung off one side. It is centred on the bar instead.
+      const bool fitsAlongBar = maxY > minY;
+      visualY = useAnchorForAttached && fitsAlongBar ? std::clamp(desiredY, minY, maxY) : centeredY;
       visualX = barIsLeft ? barRight - panelOverlap : barLeft - static_cast<std::int32_t>(panelWidth) + panelOverlap;
     } else {
       const auto minX = barLeft + totalStartInset;
@@ -1044,7 +1061,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
       const auto centeredX = barLeft + (barRight - barLeft - static_cast<std::int32_t>(panelWidth)) / 2;
       const auto desiredX =
           static_cast<std::int32_t>(std::lround(request.anchorX - static_cast<float>(panelWidth) * 0.5F));
-      visualX = useAnchorForAttached ? std::clamp(desiredX, minX, maxX) : centeredX;
+      const bool fitsAlongBar = maxX > minX; // see the vertical case above
+      visualX = useAnchorForAttached && fitsAlongBar ? std::clamp(desiredX, minX, maxX) : centeredX;
       visualY = barIsBottom ? barTop - static_cast<std::int32_t>(panelHeight) + panelOverlap : barBottom - panelOverlap;
     }
 
@@ -1148,7 +1166,9 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         .anchor = attachedAnchor,
         .width = surfaceWidth,
         .height = surfaceHeight,
-        .exclusiveZone = 0,
+        // zynith: same coordinate space as the bar it hangs from — full output (-1) when the bar is on
+        // the output reference, the usable area (0) otherwise — so bar and panel always agree.
+        .exclusiveZone = barUsesOutputReference(barConfig) ? -1 : 0,
         .marginTop = attachedMarginTop,
         .marginRight = attachedMarginRight,
         .marginBottom = attachedMarginBottom,
@@ -1348,7 +1368,7 @@ void PanelManager::hideModalBackdrop() {
   }
   m_modalBackdropClosing = true;
   // Matches the detached panel close (animNormal, ease-in), then the veil is released.
-  m_modalBackdrop->fadeTo(0.0F, Style::animNormal, Easing::EaseInQuad, [this]() {
+  m_modalBackdrop->fadeTo(0.0F, Style::animExit, Easing::EaseInQuad, [this]() {
     DeferredCall::callLater([this]() {
       if (m_modalBackdropClosing) {
         m_modalBackdrop.reset();
@@ -1454,7 +1474,7 @@ void PanelManager::closePanel(bool animateClose) {
     } else {
       m_animations.cancelForOwner(m_sceneRoot.get());
       m_animations.animate(
-          m_detachedRevealProgress, 0.0F, Style::animNormal, Easing::EaseInQuad,
+          m_detachedRevealProgress, 0.0F, Style::animExit, Easing::EaseInQuad,
           [this](float v) { applyDetachedReveal(v); },
           [this, gen]() {
             DeferredCall::callLater([this, gen]() {
@@ -2403,7 +2423,9 @@ void PanelManager::applyAttachedDecorationStyle() {
 
   if (m_bgNode != nullptr) {
     auto* bg = static_cast<Box*>(m_bgNode);
-    bg->setFill(colorSpecFromRole(ColorRole::Surface, m_attachedBackgroundOpacity));
+    // Same tint as the bar it hangs from (Bar::applyBackgroundPalette), so the two stay one surface.
+    const ColorSpec fill = colorSpecFromRole(ColorRole::Surface, m_attachedBackgroundOpacity);
+    bg->setFill(m_config != nullptr ? shell::glass::tinted(m_config->config(), fill) : fill);
   }
 
   if (m_panelShadowNode != nullptr && m_config != nullptr) {
@@ -2509,7 +2531,7 @@ void PanelManager::onConfigReloaded() {
     return;
   }
 
-  const auto barConfigOpt = resolvePanelBarConfig(m_config, m_platform, m_output, m_sourceBarName);
+  const auto barConfigOpt = resolvePanelBarConfig(m_config, m_platform, m_output, m_sourceBarName, m_activePanelId);
   if (!barConfigOpt.has_value()) {
     return;
   }

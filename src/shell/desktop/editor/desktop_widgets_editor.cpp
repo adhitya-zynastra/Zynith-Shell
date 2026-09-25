@@ -1079,7 +1079,7 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
                                   return state != nullptr && !lockscreen_login_box::isLoginBoxWidget(*state);
                                 });
 
-  const auto typeOptions = desktop_settings::desktopWidgetTypeOptions();
+  const auto typeOptions = desktop_settings::desktopWidgetTypeOptions(m_profile.showLockscreenLoginPreview);
   std::vector<std::string> typeLabels;
   typeLabels.reserve(typeOptions.size());
   std::size_t selectedTypeIndex = 0;
@@ -1146,7 +1146,8 @@ void DesktopWidgetsEditor::rebuildScene(OverlaySurface& surface) {
                       .controlHeight = Style::controlHeightSm,
                       .onSelectionChanged =
                           [this](std::size_t index, std::string_view) {
-                            const auto options = desktop_settings::desktopWidgetTypeOptions();
+                            const auto options =
+                                desktop_settings::desktopWidgetTypeOptions(m_profile.showLockscreenLoginPreview);
                             if (index < options.size()) {
                               m_addWidgetType = options[index].value;
                             }

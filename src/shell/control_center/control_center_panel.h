@@ -28,6 +28,7 @@
 class BluetoothAgent;
 class BluetoothService;
 class BrightnessService;
+class Box;
 class Button;
 class CompositorPlatform;
 class ConfigService;
@@ -147,6 +148,8 @@ private:
   void updateTabChrome(TabId tab);
   void applyTabContainerVisibility(TabId activeTab);
   void layoutTabContainers(float bodyWidth, float bodyHeight);
+  void layoutNavIndicator();
+  void styleNavButton(Button* button, bool active) const;
   void layoutFullSidebarWidth(Renderer& renderer);
   void resetTabContainerTransforms();
   // `carry` is the outgoing content's live offset when a switch interrupts another,
@@ -185,6 +188,18 @@ private:
   Button* m_closeButton = nullptr;
   Flex* m_tabBodies = nullptr;
   std::array<Button*, kTabCount> m_tabButtons{};
+  // zynith morph: one selection indicator shared by every section. It is the element that survives a
+  // section switch — it moves and resizes from the old tab's button to the new one — so the switch
+  // reads as this panel reconfiguring, not as one page replacing another.
+  Box* m_navIndicator = nullptr;
+  struct IndicatorRect {
+    float x = 0.0F;
+    float y = 0.0F;
+    float w = 0.0F;
+    float h = 0.0F;
+  };
+  IndicatorRect m_indicatorFrom;
+  bool m_indicatorPlaced = false;
   std::array<Flex*, kTabCount> m_tabContainers{};
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Home;

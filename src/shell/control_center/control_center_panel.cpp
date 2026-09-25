@@ -36,8 +36,6 @@ using namespace control_center;
 
 namespace {
 
-  // How far content travels while transitioning between sections (logical px).
-  constexpr float kTabTransitionTravel = 34.0F;
 
   constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
   // Full-height cards need room for rounded-rect AA before the tab viewport clips them.
@@ -187,6 +185,18 @@ void ControlCenterPanel::create() {
     }
     sidebarNav->setGap(Style::spaceXs * scale);
     m_sidebarNav = sidebarNav.get();
+    sidebarNav->addChild(ui::box({
+        .out = &m_navIndicator,
+        .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
+        .configure = [scale](Box& box) {
+          box.setBorder(colorSpecFromRole(ColorRole::Primary, 0.5F), Style::borderWidth * scale);
+          box.setRadius(Style::scaledRadiusLg(scale));
+          box.setParticipatesInLayout(false);
+          box.setHitTestVisible(false);
+          box.setZIndex(-1);
+        },
+    }));
+    m_indicatorPlaced = false;
 
     for (const auto& tab : kTabs) {
       const std::size_t idx = tabIndex(tab.id);
@@ -494,6 +504,8 @@ void ControlCenterPanel::onClose() {
   m_sidebarScrollView = nullptr;
   m_sidebarScrollState = {};
   m_sidebarNav = nullptr;
+  m_navIndicator = nullptr;
+  m_indicatorPlaced = false;
   m_sidebarScrollArea = nullptr;
   m_content = nullptr;
   m_contentDismissArea = nullptr;
@@ -620,7 +632,7 @@ void ControlCenterPanel::updateTabChrome(TabId tab) {
     }
     if (m_tabButtons[idx] != nullptr) {
       m_tabButtons[idx]->setVisible(tabEnabled);
-      m_tabButtons[idx]->setVariant(meta.id == tab ? ButtonVariant::TabActive : ButtonVariant::Tab);
+      styleNavButton(m_tabButtons[idx], meta.id == tab);
     }
     if (meta.id == tab && m_contentTitle != nullptr) {
       m_contentTitle->setText(i18n::tr(meta.titleKey));
@@ -652,11 +664,13 @@ void ControlCenterPanel::applyTabContainerVisibility(TabId activeTab) {
 }
 
 void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) {
-  // Content settles into place over a short distance instead of flying a whole
-  // body height: a full-height slide reads as the panel re-opening, which is
-  // exactly what section navigation must not look like.
-  const float travel =
-      bodyHeight > 0.0F ? std::min(bodyHeight * 0.10F, kTabTransitionTravel * contentScale()) : 0.0F;
+  // zynith morph. Content never travels: the outgoing section settles slightly inward as it
+  // dissolves and the incoming one resolves from a slight overscale onto the same frame, both about
+  // the top centre so the header line stays put. Continuity is carried by what does not change — the
+  // frame, the header — and by the one element that transforms between the two states, the nav
+  // indicator (layoutNavIndicator). The carry is the leaving section's reveal when a switch is
+  // interrupted, so reversals continue from what is on screen.
+  constexpr float kMorphScale = 0.03F;
   const float contentHeight = tabContentHeight(bodyHeight);
   for (std::size_t i = 0; i < kTabCount; ++i) {
     auto* container = m_tabContainers[i];
@@ -666,27 +680,24 @@ void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) 
 
     container->setSize(bodyWidth, contentHeight);
 
-    float offsetY = 0.0F;
+    float scale = 1.0F;
     float opacity = 1.0F;
     const auto tabId = static_cast<TabId>(i);
-    if (m_tabMorph.active() && travel > 0.0F) {
-      const auto direction = static_cast<float>(m_tabMorph.direction());
+    if (m_tabMorph.active() && bodyHeight > 0.0F) {
       const float progress = m_tabMorph.progress();
       if (tabId == m_tabTransitionOutgoing) {
-        // An interrupted switch leaves the outgoing content part-way; continue
-        // from where it actually is rather than snapping it back. That carried
-        // offset is what MorphTransition holds for us.
-        const float from = m_tabMorph.carry();
-        const float to = -direction * travel;
-        offsetY = from + (to - from) * progress;
-        opacity = std::max(0.0F, 1.0F - progress);
+        const float reveal = std::clamp(m_tabMorph.carry(), 0.0F, 1.0F) * (1.0F - progress);
+        opacity = reveal;
+        scale = 1.0F - kMorphScale * (1.0F - reveal);
       } else if (tabId == m_activeTab) {
-        offsetY = direction * travel * (1.0F - progress);
         opacity = progress;
+        scale = 1.0F + kMorphScale * (1.0F - progress);
       }
     }
 
-    container->setPosition(0.0F, offsetY);
+    container->setPosition(0.0F, 0.0F);
+    container->setTransformOrigin(bodyWidth * 0.5F, 0.0F);
+    container->setScale(scale);
     container->setOpacity(opacity);
     if (m_tabMorph.active()) {
       container->setZIndex(tabId == m_activeTab ? 1 : 0);
@@ -694,6 +705,7 @@ void ControlCenterPanel::layoutTabContainers(float bodyWidth, float bodyHeight) 
       container->setZIndex(0);
     }
   }
+  layoutNavIndicator();
 }
 
 void ControlCenterPanel::resetTabContainerTransforms() {
@@ -702,9 +714,52 @@ void ControlCenterPanel::resetTabContainerTransforms() {
       continue;
     }
     container->setPosition(0.0F, 0.0F);
+    container->setScale(1.0F);
     container->setOpacity(1.0F);
     container->setZIndex(0);
   }
+  layoutNavIndicator();
+}
+
+void ControlCenterPanel::styleNavButton(Button* button, bool active) const {
+  if (button == nullptr) {
+    return;
+  }
+  // The indicator carries the selection fill; buttons stay clear so it can move between them.
+  Button::ButtonPalette colors;
+  const ColorSpec label = colorSpecFromRole(active ? ColorRole::Primary : ColorRole::OnSurfaceVariant);
+  colors.normal = {.bg = clearColorSpec(), .border = clearColorSpec(), .label = label};
+  colors.hover = {
+      .bg = active ? clearColorSpec() : colorSpecFromRole(ColorRole::OnSurface, 0.06F),
+      .border = clearColorSpec(),
+      .label = active ? label : colorSpecFromRole(ColorRole::OnSurface),
+  };
+  colors.pressed = colors.hover;
+  colors.disabled = colors.normal;
+  button->setCustomPalette(colors);
+}
+
+void ControlCenterPanel::layoutNavIndicator() {
+  if (m_navIndicator == nullptr) {
+    return;
+  }
+  Button* target = m_tabButtons[tabIndex(m_activeTab)];
+  if (target == nullptr || !target->visible() || target->width() <= 0.0F) {
+    m_navIndicator->setVisible(false);
+    return;
+  }
+  IndicatorRect to{target->x(), target->y(), target->width(), target->height()};
+  IndicatorRect rect = to;
+  if (m_tabMorph.active() && m_indicatorFrom.w > 0.0F) {
+    const float p = m_tabMorph.progress();
+    const auto mix = [p](float a, float b) { return a + (b - a) * p; };
+    rect = {mix(m_indicatorFrom.x, to.x), mix(m_indicatorFrom.y, to.y), mix(m_indicatorFrom.w, to.w),
+            mix(m_indicatorFrom.h, to.h)};
+  }
+  m_navIndicator->setVisible(true);
+  m_navIndicator->setPosition(rect.x, rect.y);
+  m_navIndicator->setSize(rect.w, rect.h);
+  m_indicatorPlaced = true;
 }
 
 int ControlCenterPanel::visibleTabOrdinal(TabId tab) const {
@@ -736,6 +791,13 @@ void ControlCenterPanel::startTabTransition(TabId from, TabId to, float carry) {
   }
 
   m_tabTransitionOutgoing = from;
+  // The indicator leaves from wherever it is drawn right now — mid-flight after an interruption —
+  // which is what makes a burst of switches one continuous motion instead of a queue.
+  if (m_navIndicator != nullptr && m_indicatorPlaced) {
+    m_indicatorFrom = {m_navIndicator->x(), m_navIndicator->y(), m_navIndicator->width(), m_navIndicator->height()};
+  } else if (Button* fromButton = m_tabButtons[tabIndex(from)]; fromButton != nullptr) {
+    m_indicatorFrom = {fromButton->x(), fromButton->y(), fromButton->width(), fromButton->height()};
+  }
 
   const int fromOrdinal = visibleTabOrdinal(from);
   const int toOrdinal = visibleTabOrdinal(to);
@@ -835,7 +897,7 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
     // carries in, and it is the whole reason a reversal does not snap back.
     const std::size_t incomingIdx = tabIndex(m_activeTab);
     if (m_tabContainers[incomingIdx] != nullptr) {
-      interruptedOffset = m_tabContainers[incomingIdx]->y();
+      interruptedOffset = m_tabContainers[incomingIdx]->opacity(); // its reveal, 0..1
       interrupted = true;
     }
     m_tabMorph.cancel();
@@ -850,7 +912,7 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   updateTabChrome(tab);
 
   if (tabChanged && animated && m_animations != nullptr && m_tabBodies != nullptr) {
-    startTabTransition(previousTab, tab, interrupted ? interruptedOffset : 0.0F);
+    startTabTransition(previousTab, tab, interrupted ? interruptedOffset : 1.0F);
   } else {
     m_tabMorph.cancel();
     applyTabContainerVisibility(tab);

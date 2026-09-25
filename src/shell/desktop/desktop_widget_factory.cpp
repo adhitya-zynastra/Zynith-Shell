@@ -6,6 +6,7 @@
 #include "scripting/plugin_runtime_context.h"
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_button_widget.h"
+#include "shell/desktop/widgets/desktop_session_actions_widget.h"
 #include "shell/desktop/widgets/desktop_calendar_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 #include "shell/desktop/widgets/desktop_fancy_audio_visualizer_widget.h"
@@ -185,7 +186,7 @@ namespace {
 DesktopWidgetFactory::DesktopWidgetFactory(DesktopWidgetRuntimeServices services)
     : m_calendar(services.calendar), m_pipewire(services.pipewire), m_pipewireSpectrum(services.pipewireSpectrum),
       m_weather(services.weather), m_mpris(services.mpris), m_httpClient(services.httpClient),
-      m_sysmon(services.sysmon), m_scriptDeps(services.scriptDeps) {}
+      m_sysmon(services.sysmon), m_sessionActions(services.sessionActions), m_scriptDeps(services.scriptDeps) {}
 
 std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
     const std::string& type, const std::unordered_map<std::string, WidgetSettingValue>& settings, float contentScale
@@ -329,6 +330,24 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         .shadow = getBoolSetting(settings, "shadow", true),
     });
     applyCommonSettings(*widget, settings);
+    widget->setContentScale(contentScale);
+    return widget;
+  }
+
+  if (type == "session_actions") {
+    if (m_sessionActions == nullptr) {
+      return nullptr; // lock screen only
+    }
+    const auto& configured = m_scriptDeps.configService != nullptr
+        ? m_scriptDeps.configService->config().shell.session.actions
+        : defaultSessionPanelActions();
+    auto widget = std::make_unique<DesktopSessionActionsWidget>(
+        DesktopSessionActionsWidget::Options{
+            .vertical = getBoolSetting(settings, "vertical", false),
+            .showLabels = getBoolSetting(settings, "show_labels", false),
+        },
+        m_sessionActions, DesktopSessionActionsWidget::lockScreenActions(configured)
+    );
     widget->setContentScale(contentScale);
     return widget;
   }

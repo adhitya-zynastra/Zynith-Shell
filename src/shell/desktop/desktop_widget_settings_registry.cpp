@@ -27,6 +27,7 @@ namespace desktop_settings {
         {.type = "fancy_audio_visualizer", .labelKey = "desktop-widgets.editor.types.fancy-audio-visualizer"},
         {.type = "label", .labelKey = "desktop-widgets.editor.types.label"},
         {.type = "media_player", .labelKey = "desktop-widgets.editor.types.media-player"},
+        {.type = "session_actions", .labelKey = "desktop-widgets.editor.types.session-actions", .lockscreenOnly = true},
         {.type = "sticker", .labelKey = "desktop-widgets.editor.types.sticker"},
         {.type = "sysmon", .labelKey = "desktop-widgets.editor.types.system-monitor"},
         {.type = "volume", .labelKey = "desktop-widgets.editor.types.volume"},
@@ -132,10 +133,13 @@ namespace desktop_settings {
 
   const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs() { return kDesktopWidgetTypeSpecs; }
 
-  std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions() {
+  std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions(bool lockscreen) {
     std::vector<DesktopWidgetTypeOption> options;
     options.reserve(kDesktopWidgetTypeSpecs.size());
     for (const auto& spec : kDesktopWidgetTypeSpecs) {
+      if (spec.lockscreenOnly && !lockscreen) {
+        continue;
+      }
       options.push_back(DesktopWidgetTypeOption{.value = std::string(spec.type), .label = i18n::tr(spec.labelKey)});
     }
 
@@ -168,6 +172,24 @@ namespace desktop_settings {
     return std::string(type);
   }
 
+  // zynith: which edge or corner a widget keeps its distance to when the output's size changes.
+  // "free" is the historical behaviour: the position scales with the output.
+  WidgetSettingSpec anchorSpec() {
+    return selectSpec(
+        "anchor", "free",
+        {{"free", "desktop-widgets.editor.settings.anchor-free"},
+         {"top_left", "desktop-widgets.editor.settings.anchor-top-left"},
+         {"top", "desktop-widgets.editor.settings.anchor-top"},
+         {"top_right", "desktop-widgets.editor.settings.anchor-top-right"},
+         {"left", "desktop-widgets.editor.settings.anchor-left"},
+         {"center", "desktop-widgets.editor.settings.anchor-center"},
+         {"right", "desktop-widgets.editor.settings.anchor-right"},
+         {"bottom_left", "desktop-widgets.editor.settings.anchor-bottom-left"},
+         {"bottom", "desktop-widgets.editor.settings.anchor-bottom"},
+         {"bottom_right", "desktop-widgets.editor.settings.anchor-bottom-right"}}
+    );
+  }
+
   std::vector<WidgetSettingSpec> commonDesktopWidgetSettingSpecs(std::string_view type) {
     if (type == "login_box") {
       auto bgColor = colorSpec("background_color", "surface_variant");
@@ -180,8 +202,8 @@ namespace desktop_settings {
       };
     }
 
-    if (type == "button") {
-      return {};
+    if (type == "button" || type == "session_actions") {
+      return {anchorSpec()};
     }
 
     const WidgetSettingVisibility backgroundOn{"background", {"true"}};
@@ -200,6 +222,7 @@ namespace desktop_settings {
     bgOpacity.visibleWhen = backgroundOn;
 
     return {
+        anchorSpec(),
         boolSpec("background", backgroundDefault),
         std::move(bgColor),
         std::move(bgOpacity),
@@ -340,6 +363,9 @@ namespace desktop_settings {
       add(doubleSpec("opacity", 1.0, 0.0, 1.0, 0.01));
       add(fontFamilySpec());
       add(boolSpec("shadow", true));
+    } else if (type == "session_actions") {
+      add(boolSpec("vertical", false));
+      add(boolSpec("show_labels", false));
     } else if (type == "button") {
       add(boolSpec("background", true));
       add(glyphSpec("glyph", "heart"));

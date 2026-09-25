@@ -129,6 +129,7 @@ private:
   // lockfade helpers
   void playEntrance();
   void syncPromptPresentation();
+  void shakeLoginPanel();
   void fadeNode(Node* node, float to, float durationMs, float delayMs, Easing easing);
 
   ext_session_lock_surface_v1* m_lockSurface = nullptr;
@@ -144,6 +145,8 @@ private:
   Box* m_tintOverlay = nullptr;
   Box* m_backdrop = nullptr;
   Flex* m_loginPanel = nullptr;
+  // zynith: owner token for the failed-auth shake, so it never cancels the pill's own fades.
+  const char m_shakeOwner = 0;
   Flex* m_infoRow = nullptr;
   Flex* m_mediaBlock = nullptr;
   Image* m_mediaArt = nullptr;

@@ -1150,60 +1150,6 @@ bool LauncherPanel::zynithStyle() const noexcept {
   return m_config != nullptr && m_config->config().shell.launcher.style == LauncherStyle::Zynith;
 }
 
-std::unique_ptr<Flex> LauncherPanel::buildKeyHints(float scale) const {
-  // Keyboard affordances, quiet enough to ignore once learned: a keycap and a word each.
-  auto bar = ui::row({
-      .align = FlexAlign::Center,
-      .justify = FlexJustify::Center,
-      .gap = Style::spaceLg * scale,
-      .fillWidth = true,
-  });
-  const auto keycap = [scale](std::string_view glyph, std::string_view text) {
-    auto cap = ui::row({
-        .align = FlexAlign::Center,
-        .gap = Style::spaceXs * 0.5F * scale,
-        .paddingV = Style::spaceXs * 0.5F * scale,
-        .paddingH = Style::spaceXs * scale,
-        .fill = colorSpecFromRole(ColorRole::OnSurface, 0.08F),
-        .radius = Style::scaledRadiusSm(scale),
-    });
-    if (!glyph.empty()) {
-      cap->addChild(ui::glyph({
-          .glyph = std::string(glyph),
-          .glyphSize = Style::fontSizeMini * scale,
-          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-      }));
-    }
-    if (!text.empty()) {
-      cap->addChild(ui::label({
-          .text = std::string(text),
-          .fontSize = Style::fontSizeMini * scale,
-          .fontWeight = FontWeight::SemiBold,
-          .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-      }));
-    }
-    return cap;
-  };
-  const auto hint = [&](std::unique_ptr<Flex> cap, const std::string& label) {
-    auto item = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
-    item->addChild(std::move(cap));
-    item->addChild(ui::label({
-        .text = label,
-        .fontSize = Style::fontSizeMini * scale,
-        .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
-    }));
-    bar->addChild(std::move(item));
-  };
-  hint(keycap("arrows-up-down", ""), i18n::tr("launcher.hints.navigate"));
-  hint(keycap("corner-down-left", ""), i18n::tr("launcher.hints.open"));
-  hint(keycap("corner-down-left", "Shift"), i18n::tr("launcher.hints.actions"));
-  if (m_config != nullptr && m_config->config().shell.launcher.categories) {
-    hint(keycap("", "F6"), i18n::tr("launcher.hints.categories"));
-  }
-  hint(keycap("", "Esc"), i18n::tr("launcher.hints.close"));
-  return bar;
-}
-
 void LauncherPanel::create() {
   m_launcherRowHeight = 0.0F;
   const float scale = contentScale();
@@ -1332,7 +1278,15 @@ void LauncherPanel::create() {
                   m_selectedIndex = *idx;
                 }
               },
-          .configure = [](VirtualGridView& grid) { grid.setFillWidth(true); },
+          .configure =
+              [zynith](VirtualGridView& grid) {
+                grid.setFillWidth(true);
+                // zynith: the list scrolls by wheel, keys and drag; a permanent bar beside it is only
+                // clutter at this size. Classic keeps its scrollbar.
+                if (zynith) {
+                  grid.scrollView().setScrollbarVisible(false);
+                }
+              },
       })
   );
 
@@ -1386,10 +1340,6 @@ void LauncherPanel::create() {
   );
 
   container->addChild(std::move(body));
-
-  if (zynith && m_config != nullptr && m_config->config().shell.launcher.keyHints) {
-    container->addChild(buildKeyHints(scale));
-  }
 
   setRoot(std::move(container));
 

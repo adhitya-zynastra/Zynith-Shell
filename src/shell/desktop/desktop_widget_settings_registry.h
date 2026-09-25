@@ -21,6 +21,7 @@ namespace desktop_settings {
   struct DesktopWidgetTypeSpec {
     std::string_view type;
     std::string_view labelKey;
+    bool lockscreenOnly = false; // offered only by the lock screen editor
   };
 
   // One pickable widget type for the editor: built-in types (label translated)
@@ -31,7 +32,7 @@ namespace desktop_settings {
   };
 
   [[nodiscard]] const std::vector<DesktopWidgetTypeSpec>& desktopWidgetTypeSpecs();
-  [[nodiscard]] std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions();
+  [[nodiscard]] std::vector<DesktopWidgetTypeOption> desktopWidgetTypeOptions(bool lockscreen = false);
   [[nodiscard]] std::string desktopWidgetTypeLabel(std::string_view type);
   [[nodiscard]] std::vector<settings::WidgetSettingSpec> desktopWidgetSettingSpecs(std::string_view type);
   [[nodiscard]] std::vector<settings::WidgetSettingSpec> commonDesktopWidgetSettingSpecs(std::string_view type = {});

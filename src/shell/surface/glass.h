@@ -40,6 +40,11 @@ namespace shell::glass {
   // The style for a panel-class surface at the given fill opacity.
   [[nodiscard]] SurfaceStyle panelSurface(const Config& config, float fillOpacity) noexcept;
 
+  // The glass tint applied to any fill, for surfaces that own their alpha elsewhere — the bar
+  // ([bar].background_opacity) and panels attached to it — so tint reaches them without giving
+  // opacity a second owner.
+  [[nodiscard]] ColorSpec tinted(const Config& config, const ColorSpec& fill) noexcept;
+
   [[nodiscard]] ColorRole toColorRole(GlassTintRole role) noexcept;
   [[nodiscard]] ColorRole toColorRole(GlassBorderRole role) noexcept;
 

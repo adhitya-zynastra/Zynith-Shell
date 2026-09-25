@@ -1456,6 +1456,15 @@ void Application::initBrightnessAndPipewire() {
       }
     };
     applySoundConfig();
+    // zynith: the mute cue plays before the mute — after it, the sink it plays through is silent.
+    // SoundPlayer runs the continuation when the cue has drained, or at once when sounds are off.
+    m_pipewireService->setMuteCueHook([this](std::function<void()> applyMute) {
+      if (m_soundPlayer != nullptr && m_configService.config().audio.enableSounds && m_soundPlayer->has("mute")) {
+        m_soundPlayer->play("mute", std::move(applyMute));
+      } else {
+        applyMute();
+      }
+    });
     m_configService.addReloadCallback(
         [this, applySoundConfig]() {
           if (m_configService.lastChange().audio) {

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace desktop_widgets {
@@ -15,6 +16,33 @@ namespace desktop_widgets {
   inline void widgetNodeScale(const DesktopWidgetState& state, float& outScaleX, float& outScaleY) {
     outScaleX = state.flipX ? -1.0F : 1.0F;
     outScaleY = state.flipY ? -1.0F : 1.0F;
+  }
+
+  // zynith: responsive placement. A widget's position was stored against placementWidth x Height;
+  // on a different output size, a "free" widget scales with the output (the historical behaviour),
+  // while an anchored one keeps its distance to the anchored edge or corner — so a visualizer on the
+  // right edge stays on the right edge of an ultrawide instead of drifting inward.
+  inline void rescaleToOutput(DesktopWidgetState& widget, float width, float height) {
+    std::string anchor = "free";
+    if (const auto it = widget.settings.find("anchor"); it != widget.settings.end()) {
+      if (const auto* value = std::get_if<std::string>(&it->second)) {
+        anchor = *value;
+      }
+    }
+    if (anchor == "free" || anchor.empty()) {
+      widget.cx *= width / widget.placementWidth;
+      widget.cy *= height / widget.placementHeight;
+      return;
+    }
+    const float dw = width - widget.placementWidth;
+    const float dh = height - widget.placementHeight;
+    const bool right = anchor.ends_with("right");
+    const bool left = anchor.ends_with("left");
+    const bool top = anchor.starts_with("top");
+    const bool bottom = anchor.starts_with("bottom");
+    // Left/top keep their offset from 0; right/bottom from the far edge; the rest from the centre.
+    widget.cx += right ? dw : (left ? 0.0F : dw * 0.5F);
+    widget.cy += bottom ? dh : (top ? 0.0F : dh * 0.5F);
   }
 
   inline std::string outputKey(const WaylandOutput& output) {
@@ -99,8 +127,7 @@ namespace desktop_widgets {
           continue;
         }
 
-        widget.cx *= width / widget.placementWidth;
-        widget.cy *= height / widget.placementHeight;
+        rescaleToOutput(widget, width, height);
         widget.placementWidth = width;
         widget.placementHeight = height;
         changed = true;

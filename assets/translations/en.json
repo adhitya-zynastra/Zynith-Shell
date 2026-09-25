@@ -664,7 +664,19 @@
         "visualization-mode-wave": "Wave",
         "visualization-mode-wave-rings": "Wave + Rings",
         "wave-thickness": "Wave Thickness",
-        "widget-section": "Widget"
+        "widget-section": "Widget",
+        "anchor": "Anchor",
+        "anchor-free": "Free (scales with the screen)",
+        "anchor-top-left": "Top left",
+        "anchor-top": "Top",
+        "anchor-top-right": "Top right",
+        "anchor-left": "Left",
+        "anchor-center": "Center",
+        "anchor-right": "Right",
+        "anchor-bottom-left": "Bottom left",
+        "anchor-bottom": "Bottom",
+        "anchor-bottom-right": "Bottom right",
+        "show-labels": "Show labels"
       },
       "state": {
         "grid": "Grid"
@@ -683,7 +695,8 @@
         "sticker": "Sticker",
         "system-monitor": "System Monitor",
         "volume": "Volume",
-        "weather": "Weather"
+        "weather": "Weather",
+        "session-actions": "Power Controls"
       }
     },
     "media": {
@@ -781,14 +794,7 @@
         "title": "Windows"
       }
     },
-    "search-placeholder": "Search applications…",
-    "hints": {
-      "navigate": "Navigate",
-      "open": "Open",
-      "actions": "Actions",
-      "categories": "Categories",
-      "close": "Close"
-    }
+    "search-placeholder": "Search applications…"
   },
   "location": {
     "errors": {
@@ -814,7 +820,10 @@
     "password-placeholder": "Password",
     "ready": "Type your password and press Enter.",
     "unlocked": "Unlocked",
-    "waiting": "Waiting for lock confirmation…"
+    "waiting": "Waiting for lock confirmation…",
+    "session": {
+      "confirm": "Press again to {action}"
+    }
   },
   "notifications": {
     "actions": {
@@ -1426,6 +1435,10 @@
           "off": "Off",
           "on": "On",
           "smart": "Smart"
+        },
+        "reference": {
+          "workspace": "Workspace",
+          "output": "Screen"
         }
       },
       "clipboard": {
@@ -1440,7 +1453,8 @@
           "compact": "Compact",
           "full": "Full",
           "none": "None"
-        }
+        },
+        "anchor-bar-first": "First bar"
       },
       "dock-launcher-position": {
         "end": "End",
@@ -2002,6 +2016,10 @@
         "widget-spacing": {
           "description": "Space between bar widgets",
           "label": "Widget Spacing"
+        },
+        "reference": {
+          "label": "Position Reference",
+          "description": "What “centred” is measured against. Screen: the whole output. Workspace: the area left after other bars and docks reserve their space. Panels opened from this bar use the same reference."
         }
       },
       "desktop": {
@@ -2459,7 +2477,7 @@
       },
       "panels": {
         "borders": {
-          "description": "Draw an outline on floating panels",
+          "description": "Outline floating panels. Panels attached to a bar have no outline, so they read as part of it.",
           "label": "Borders"
         },
         "control-center-sidebar": {
@@ -2683,8 +2701,12 @@
           "description": "Cast the global surface shadow from panel surfaces"
         },
         "transparency-mode": {
-          "description": "Panel glass style, including floating panel opacity and card translucency",
+          "description": "Glass style of floating panels — launcher, wallpaper browser, power menu, settings sheets. Panels attached to a bar take that bar's opacity.",
           "label": "Transparency"
+        },
+        "control-center-anchor-bar": {
+          "label": "Anchor Bar",
+          "description": "The bar a Control Center opened by shortcut attaches to. Clicking a bar widget always opens it at that bar."
         }
       },
       "power": {
@@ -3378,7 +3400,7 @@
       "glass": {
         "opacity": {
           "label": "Opacity",
-          "description": "How opaque glass surfaces are. Only used when Transparency is set to Custom."
+          "description": "How opaque floating panels are when Transparency is Custom. The OSD, notifications and bars keep their own opacity settings."
         },
         "blur": {
           "label": "Blur",
@@ -3390,7 +3412,7 @@
         },
         "tint": {
           "label": "Tint",
-          "description": "Mix a colour from the wallpaper palette into glass surfaces."
+          "description": "Mix a colour from the wallpaper palette into every glass surface: bars and their panels, floating panels, the OSD and notifications."
         },
         "tint-role": {
           "label": "Tint Colour",
@@ -3402,7 +3424,7 @@
         },
         "border-role": {
           "label": "Border Colour",
-          "description": "Which palette colour draws the outline of glass surfaces."
+          "description": "Which palette colour outlines floating panels, the OSD and notifications."
         },
         "border-opacity": {
           "label": "Border Opacity",
@@ -3416,7 +3438,7 @@
         },
         "carousel": {
           "label": "Cinematic Carousel",
-          "description": "Browse wallpapers as a curved carousel instead of a grid. Applies after the shell restarts."
+          "description": "Browse wallpapers as a curved carousel instead of a grid. Applies the next time the browser opens."
         },
         "card-width": {
           "label": "Card Size",
@@ -3442,13 +3464,14 @@
           "label": "Result Density",
           "description": "Breathing room around and between results."
         },
-        "launcher-key-hints": {
-          "label": "Keyboard Hints",
-          "description": "Show the keyboard shortcuts along the bottom of the launcher."
-        },
         "osd-duration": {
           "label": "Display Duration",
           "description": "How long the on-screen display stays after the last change before it fades. Each new change restarts it."
+        }
+      },
+      "osd": {
+        "reference": {
+          "description": "What a centred OSD is centred on: the whole screen, or the area left after bars reserve their space. Match the bar it appears near."
         }
       }
     },

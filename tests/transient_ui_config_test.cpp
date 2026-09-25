@@ -41,9 +41,13 @@ int main() {
     expect(launcher.width == 640 && launcher.height == 540, "default launcher geometry");
     expect(launcher.iconSize == 32, "default result icon size");
     expect(launcher.density == LayoutDensity::Comfortable, "default density is the neutral one");
-    expect(launcher.keyHints, "key hints on by default");
     const OsdConfig osd;
     expect(osd.durationMs == 1400, "the OSD hold defaults to the pre-configurable 1.4 s");
+    expect(osd.reference == PositionReference::Workspace, "OSD keeps the workspace reference unless asked");
+    expect(ControlCenterConfig{}.anchorBar.empty(), "no anchor bar: the first enabled bar, as before");
+    const BarConfig bar;
+    expect(bar.reference == PositionReference::Workspace && !barUsesOutputReference(bar),
+           "bars keep the workspace reference unless asked");
   }
 
   const std::filesystem::path root =
@@ -56,10 +60,13 @@ int main() {
       "width = 2000\n"     // above the ceiling: clamped to 1200
       "icon_size = 10\n"   // below the floor: clamped to 20
       "density = \"spacious\"\n"
-      "key_hints = false\n"
       "\n"
       "[osd]\n"
       "duration_ms = 100\n" // below the floor: clamped to 600
+      "reference = \"output\"\n"
+      "\n"
+      "[control_center]\n"
+      "anchor_bar = \"Time\"\n"
   );
   ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
   ::setenv("XDG_STATE_HOME", (root / "state").c_str(), 1);
@@ -73,9 +80,10 @@ int main() {
     expect(launcher().width == 1200, "launcher width is clamped to its range");
     expect(launcher().iconSize == 20, "icon size is clamped to its range");
     expect(launcher().density == LayoutDensity::Spacious, "density is read");
-    expect(!launcher().keyHints, "key hints can be turned off");
     expect(launcher().height == 540, "an absent key keeps its default");
     expect(config.config().osd.durationMs == 600, "OSD duration is clamped to its floor");
+    expect(config.config().osd.reference == PositionReference::Output, "OSD position reference is read");
+    expect(config.config().controlCenter.anchorBar == "Time", "Control Center anchor bar is read");
 
     // --- a GUI override wins, and reset falls back to the preset ------------------------------
     expect(config.setOverride({"shell", "launcher", "style"}, std::string("zynith")), "set style override");

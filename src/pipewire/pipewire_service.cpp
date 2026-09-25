@@ -2150,6 +2150,40 @@ void PipeWireService::setMuted(bool muted) {
   if (sink == nullptr) {
     return;
   }
+  // A pending cue-then-mute is superseded by any newer request. Unmuting a sink the cue has not muted
+  // yet is exactly that cancellation, and nothing else.
+  if (m_muteCuePending) {
+    m_muteCuePending = false;
+    ++m_muteCueGeneration;
+    if (!muted) {
+      return;
+    }
+  }
+  if (muted && !sink->muted && m_muteCueHook) {
+    const std::uint64_t generation = ++m_muteCueGeneration;
+    m_muteCuePending = true;
+    m_muteCueHook([this, generation]() {
+      if (!m_muteCuePending || generation != m_muteCueGeneration) {
+        return; // cancelled by a newer request
+      }
+      m_muteCuePending = false;
+      applyOutputMuted(true);
+    });
+    return;
+  }
+  applyOutputMuted(muted);
+}
+
+bool PipeWireService::outputMuteEffective() const {
+  const auto* sink = defaultSink();
+  return m_muteCuePending || (sink != nullptr && sink->muted);
+}
+
+void PipeWireService::applyOutputMuted(bool muted) {
+  const auto* sink = defaultSink();
+  if (sink == nullptr) {
+    return;
+  }
   const std::uint32_t sinkId = sink->id;
   const float previewVolume = sink->volume;
   setNodeMuted(sinkId, muted);
@@ -2312,7 +2346,7 @@ void PipeWireService::registerIpc(IpcService& ipc, const ConfigService& config) 
     const auto* sink = defaultSink();
     if (!sink)
       return "error: no default output\n";
-    setMuted(!sink->muted);
+    setMuted(!outputMuteEffective());
     return "ok\n";
   });
 

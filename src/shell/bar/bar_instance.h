@@ -78,6 +78,10 @@ struct BarInstance {
   // zynith: set when that timer opened the control center and cleared once the pointer leaves the
   // time cluster. A click that lands in between confirms the open instead of toggling it shut.
   bool hoverOpenedControlCenter = false;
+  // zynith: the bar's background as a palette-role spec with the glass tint applied, captured on
+  // build/reload (Bar::syncBackgroundFill) and resolved live on every palette change.
+  ColorSpec backgroundFill{};
+  bool backgroundFillSet = false;
   float lastPointerSx = 0.0F;
   float lastPointerSy = 0.0F;
   std::size_t attachedPopupCount = 0;

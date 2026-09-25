@@ -9,6 +9,7 @@ class MprisService;
 class PipeWireService;
 class PipeWireSpectrum;
 class RenderContext;
+class SessionActionRunner;
 class SharedTextureCache;
 class SystemMonitorService;
 class WaylandConnection;
@@ -35,6 +36,8 @@ struct DesktopWidgetRuntimeServices {
   MprisService* mpris = nullptr;
   HttpClient* httpClient = nullptr;
   SystemMonitorService* sysmon = nullptr;
+  // zynith: set only for the lock screen host, so the session_actions widget exists only there.
+  SessionActionRunner* sessionActions = nullptr;
   DesktopWidgetScriptDeps scriptDeps;
 };
 

@@ -122,6 +122,12 @@ public:
   // Convenience (operates on default sink/source)
   void setVolume(float volume);
   void setMuted(bool muted);
+  // zynith: a mute cue can only be heard before the sink is muted. When set, muting the output first
+  // calls this hook with a continuation; the hook plays the cue and runs the continuation when the
+  // cue has drained (or at once when sounds are off). A newer mute request cancels a pending one.
+  using MuteCueHook = std::function<void(std::function<void()> applyMute)>;
+  void setMuteCueHook(MuteCueHook hook) { m_muteCueHook = std::move(hook); }
+  [[nodiscard]] bool outputMuteEffective() const;
   void setMicVolume(float volume);
   void setMicMuted(bool muted);
   void emitVolumePreview(bool isInput, std::uint32_t id, float volume) const;
@@ -286,6 +292,10 @@ private:
   // while NodeData::targetObject is the node's own creation-time target property.
   std::unordered_map<std::uint32_t, std::string> m_metadataTargetObjects;
   std::vector<std::function<void()>> m_metadataCleanups;
+  MuteCueHook m_muteCueHook;
+  bool m_muteCuePending = false;
+  std::uint64_t m_muteCueGeneration = 0;
+  void applyOutputMuted(bool muted);
   std::string m_defaultSinkName;
   std::string m_defaultSourceName;
   AudioState m_state;

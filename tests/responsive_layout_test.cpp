@@ -6,11 +6,13 @@
 // the band can carry. Band widths are output width minus the panel's side margins (8 px each).
 
 #include "config/config_types.h"
+#include "shell/desktop/desktop_widget_layout.h"
 #include "ui/controls/carousel_geometry.h"
 #include "ui/responsive.h"
 
 #include <cmath>
 #include <iostream>
+#include <string>
 
 namespace {
 
@@ -128,6 +130,31 @@ int main() {
     const auto big = carouselFor(1904.0F, 1.0F, 1000.0F);
     check(near(big.cardWidth, 1904.0F * 0.40F), "a 1000 px preference is capped at 40 % of 1920");
     check(big.perSide <= 2, "a bigger card does not add neighbours");
+  }
+
+  // --- widget placement: free widgets scale, anchored widgets keep their edge distance -----------------
+  {
+    const auto placed = [](std::string anchor, float cx, float cy) {
+      DesktopWidgetState w;
+      w.cx = cx;
+      w.cy = cy;
+      w.placementWidth = 1920.0F;
+      w.placementHeight = 1200.0F;
+      if (!anchor.empty()) {
+        w.settings["anchor"] = anchor;
+      }
+      desktop_widgets::rescaleToOutput(w, 3440.0F, 1440.0F);
+      return w;
+    };
+    const auto free = placed("", 960.0F, 600.0F);
+    check(near(free.cx, 1720.0F) && near(free.cy, 720.0F), "free widgets scale with the output (historical)");
+    const auto right = placed("right", 1860.0F, 600.0F);
+    check(near(right.cx, 3380.0F), "right-anchored keeps its 60 px from the right edge");
+    check(near(right.cy, 720.0F), "right-anchored is vertically centred-relative");
+    const auto topLeft = placed("top_left", 100.0F, 80.0F);
+    check(near(topLeft.cx, 100.0F) && near(topLeft.cy, 80.0F), "top-left keeps its offset from the origin");
+    const auto bottom = placed("bottom", 960.0F, 1140.0F);
+    check(near(bottom.cx, 1720.0F) && near(bottom.cy, 1380.0F), "bottom keeps 60 px from the bottom, centred");
   }
 
   // --- degenerate input ------------------------------------------------------------------------------

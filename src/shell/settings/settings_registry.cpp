@@ -1340,7 +1340,7 @@ namespace settings {
         tr("settings.schema.panels.launcher-categories.description"), {"shell", "launcher", "categories"},
         ToggleSetting{cfg.shell.launcher.categories}, "launcher categories filter"
     ));
-    // Launcher appearance lives in Personalization (ADR-0017): style, size, density, hints, and the
+    // Launcher appearance lives in Personalization (ADR-0017): style, size, density, and the
     // existing icon/grid/compact toggles. Providers, pins, categories and sorting stay in Launcher.
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-style.label"),
@@ -1387,13 +1387,6 @@ namespace settings {
       );
       densityEntry.visibleWhen = zynithOnly;
       entries.push_back(std::move(densityEntry));
-      auto hintsEntry = makeEntry(
-          SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-key-hints.label"),
-          tr("settings.schema.personalization.launcher-key-hints.description"), {"shell", "launcher", "key_hints"},
-          ToggleSetting{cfg.shell.launcher.keyHints}, "launcher keyboard hints footer shortcuts"
-      );
-      hintsEntry.visibleWhen = zynithOnly;
-      entries.push_back(std::move(hintsEntry));
     }
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "launcher", tr("settings.schema.panels.launcher-show-icons.label"),
@@ -1598,6 +1591,20 @@ namespace settings {
       );
       cardWidth.visibleWhen = [](const Config& c) { return c.wallpaper.carousel; };
       entries.push_back(std::move(cardWidth));
+    }
+    {
+      // zynith: where a Control Center opened by shortcut or IPC attaches; bar clicks use their own bar.
+      std::vector<SelectOption> barOptions;
+      barOptions.push_back(SelectOption{"", tr("settings.options.control-center.anchor-bar-first")});
+      for (const auto& bar : cfg.bars) {
+        barOptions.push_back(SelectOption{bar.name, bar.name});
+      }
+      SelectSetting anchor{std::move(barOptions), cfg.controlCenter.anchorBar};
+      entries.push_back(makeEntry(
+          SettingsSection::ControlCenter, "navigation", tr("settings.schema.panels.control-center-anchor-bar.label"),
+          tr("settings.schema.panels.control-center-anchor-bar.description"), {"control_center", "anchor_bar"},
+          std::move(anchor), "control center anchor bar shortcut position attach"
+      ));
     }
     entries.push_back(makeEntry(
         SettingsSection::ControlCenter, "navigation", tr("settings.schema.panels.control-center-sidebar.label"),
@@ -2176,6 +2183,11 @@ namespace settings {
             cfg.osd.position
         ),
         "hud overlay volume brightness horizontal text"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Osd, "osd", tr("settings.schema.bar.reference.label"),
+        tr("settings.schema.osd.reference.description"), {"osd", "reference"},
+        asSegmented(enumSelect(kPositionReferences, cfg.osd.reference)), "hud overlay position reference screen center"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Osd, "osd", tr("settings.schema.shell.osd-position-vertical.label"),
@@ -3255,6 +3267,24 @@ namespace settings {
           tr("settings.schema.bar.reserve-space.description"), path("reserve_space"), ToggleSetting{bar.reserveSpace},
           "exclusive zone"
       ));
+      {
+        // zynith: which space "centred" means for this bar and the panels it opens.
+        auto e = makeEntry(
+            section, "general", tr("settings.schema.bar.reference.label"),
+            tr("settings.schema.bar.reference.description"), path("reference"),
+            asSegmented(enumSelect(kPositionReferences, bar.reference)), "position reference output workspace center"
+        );
+        const std::string barName = bar.name;
+        e.visibleWhen = [barName](const Config& c) {
+          for (const auto& b : c.bars) {
+            if (b.name == barName) {
+              return !b.reserveSpace;
+            }
+          }
+          return false;
+        };
+        entries.push_back(std::move(e));
+      }
       entries.push_back(makeEntry(
           section, "general", tr("settings.schema.bar.layer.label"), tr("settings.schema.bar.layer.description"),
           path("layer"),

@@ -1,4 +1,5 @@
 #include "shell/bar/bar.h"
+#include "shell/surface/glass.h"
 
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
@@ -724,7 +725,11 @@ namespace {
       }
     }
 
-    spec.exclusiveZone = barConfig.reserveSpace ? reservedBarExclusiveZone(barConfig, shadowConfig) : 0;
+    // zynith: a non-reserving bar on the output reference ignores other surfaces' reserved zones
+    // (-1), so "centred" means centred on the screen; on the workspace reference (0) the compositor
+    // places it within the usable area. Attached panels follow the same choice (PanelManager).
+    spec.exclusiveZone = barConfig.reserveSpace ? reservedBarExclusiveZone(barConfig, shadowConfig)
+                                                : (barUsesOutputReference(barConfig) ? -1 : 0);
     return spec;
   }
 
@@ -755,6 +760,7 @@ namespace {
         && a.autoHide == b.autoHide
         && a.smartAutoHide == b.smartAutoHide
         && a.reserveSpace == b.reserveSpace
+        && a.reference == b.reference
         && a.layer == b.layer
         && a.thickness == b.thickness
         // Corner radii feed the concave-corner bulge, which changes the surface size.
@@ -1979,7 +1985,7 @@ void Bar::syncBarExclusiveZone(BarInstance& instance) {
   }
   const std::int32_t zone = shouldReserveExclusiveZone(instance)
       ? reservedBarExclusiveZone(instance.barConfig, m_config->config().shell.shadow)
-      : 0;
+      : (barUsesOutputReference(instance.barConfig) ? -1 : 0);
   instance.surface->setExclusiveZone(zone);
 }
 
@@ -3046,7 +3052,7 @@ void Bar::updateAccordionExpansion(BarInstance& instance, InputArea* hoveredArea
       changed = true;
       instance.animations.cancelForOwner(run.shell);
       instance.animations.animate(
-          run.accordionProgress, want ? 1.0F : 0.0F, Style::animNormal, Easing::EaseOutCubic,
+          run.accordionProgress, want ? 1.0F : 0.0F, Style::animNormal, Easing::EaseOutQuint,
           [&run, surface = instance.surface.get()](float progress) {
             run.accordionProgress = progress;
             if (surface != nullptr) {
@@ -3112,6 +3118,7 @@ void Bar::rebuildInstanceContents(BarInstance& instance, const BarConfig& newCon
   populateWidgets(instance);
   attachWidgetsToSections(instance);
 
+  syncBackgroundFill(instance);
   applyBackgroundPalette(instance);
   syncBarSurfaceChrome(instance);
 
@@ -3140,12 +3147,22 @@ bool Bar::instanceNeedsFrameTick(const BarInstance& instance) {
       || widgetsNeedFrameTick(instance.endWidgets);
 }
 
+void Bar::syncBackgroundFill(BarInstance& instance) const {
+  const ColorSpec fill = colorSpecFromRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
+  instance.backgroundFill = m_config != nullptr ? shell::glass::tinted(m_config->config(), fill) : fill;
+  instance.backgroundFillSet = true;
+}
+
 void Bar::applyBackgroundPalette(BarInstance& instance) {
   if (instance.bg == nullptr) {
     return;
   }
   auto style = instance.bg->style();
-  style.fill = colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
+  // zynith: the glass tint reaches the bar too (captured in backgroundFill); its alpha stays
+  // [bar].background_opacity.
+  style.fill = instance.backgroundFillSet
+      ? resolveColorSpec(instance.backgroundFill)
+      : colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
   style.border = resolveColorSpec(instance.barConfig.border);
   style.borderWidth = instance.barConfig.borderWidth;
   instance.bg->setStyle(style);
@@ -3203,7 +3220,7 @@ void Bar::revealAutoHideBar(BarInstance& instance) {
   }
 
   instance.animations.animate(
-      current, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+      current, 1.0F, Style::animNormal, Easing::EaseOutQuint,
       [inst = &instance, this](float v) {
         inst->hideOpacity = v;
         syncBarSlideLayerTransform(*inst);
@@ -3273,7 +3290,7 @@ void Bar::startHideFadeOut(BarInstance& instance) {
   }
   const float current = instance.hideOpacity;
   instance.animations.animate(
-      current, 0.0F, Style::animNormal, Easing::EaseInQuad,
+      current, 0.0F, Style::animExit, Easing::EaseInQuad,
       [this, inst = &instance](float v) {
         inst->hideOpacity = v;
         syncBarSlideLayerTransform(*inst);
@@ -4076,7 +4093,7 @@ std::string Bar::setBarAutoHideIpc(std::string_view args) {
       const float current = instance.hideOpacity;
       instance.autoHideDisablePending = true;
       instance.animations.animate(
-          current, 1.0F, Style::animNormal, Easing::EaseOutCubic,
+          current, 1.0F, Style::animNormal, Easing::EaseOutQuint,
           [this, inst = &instance](float v) {
             inst->hideOpacity = v;
             syncBarSlideLayerTransform(*inst);

@@ -16,6 +16,11 @@ namespace Style {
   inline constexpr int animFast = 130;
   inline constexpr int animNormal = 300;
   inline constexpr int animSlow = 520;
+  // zynith motion language: things arrive on animNormal with a decelerating curve (EaseOutQuint) and
+  // leave on animExit with an accelerating one (EaseInQuad). An exit is about two thirds of an entrance
+  // — at the Cinematic preset an entrance still reads as deliberate, but nothing lingers once dismissed.
+  // Morphs between states of one surface use the entrance curve (see MorphTransition).
+  inline constexpr int animExit = 200;
 
   inline constexpr float radiusSm = 3.0F;
   inline constexpr float radiusMd = 6.0F;

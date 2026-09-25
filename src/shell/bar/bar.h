@@ -155,6 +155,7 @@ private:
   void reevaluateSmartAutoHide();
   void startHideFadeOut(BarInstance& instance);
   static void applyBackgroundPalette(BarInstance& instance);
+  void syncBackgroundFill(BarInstance& instance) const;
   [[nodiscard]] std::string showBarIpc(std::string_view args);
   [[nodiscard]] std::string hideBarIpc(std::string_view args);
   [[nodiscard]] std::string toggleBarIpc(std::string_view args);
