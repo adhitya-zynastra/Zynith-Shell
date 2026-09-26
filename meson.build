@@ -1161,6 +1161,7 @@ if build_tests
     'morph_transition',
     'motion_language',
     'process_hardening',
+    'template_capability',
     'design_tokens',
     'spatial_model',
     'niri_config_fragments',

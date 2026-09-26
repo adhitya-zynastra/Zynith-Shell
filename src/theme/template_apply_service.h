@@ -54,6 +54,7 @@ namespace noctalia::theme {
       // undo hooks run before this request's templates.
       std::vector<std::string> undoBuiltinIds;
       std::uint64_t generation = 0;
+      bool force = false; // an explicit re-apply: every hook re-runs even for unchanged outputs
     };
 
     [[nodiscard]] bool reapplyLast() const;

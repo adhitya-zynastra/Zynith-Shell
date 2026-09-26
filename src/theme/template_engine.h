@@ -41,6 +41,10 @@ namespace noctalia::theme {
       std::function<bool()> cancelRequested;
       std::string schemeType = "content";
       bool verbose = true;
+      // zynith: false (automatic applies) runs a post_hook only when one of its outputs changed on disk — the
+      // application already has an unchanged theme (the session's first apply usually re-renders last session's
+      // palette byte for byte). Forced applies (`templates-apply`) set it to re-run every hook.
+      bool rerunUnchangedHooks = false;
       std::shared_ptr<const toml::table> configTable;
       HookRunner* hookRunner = nullptr;
       std::uint64_t generation = 0;

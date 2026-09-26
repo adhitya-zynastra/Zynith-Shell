@@ -84,37 +84,46 @@ category = "terminal"
 name = "Wezterm"
 category = "terminal"
 
+# zynith: `requires_command` names the application a template themes. When none of the listed commands is on
+# PATH the template is skipped entirely (no output, no hook, no subprocess) and logged once per session.
+# GTK, Qt/KDE colour schemes are left ungated: every desktop has such applications.
 [templates.alacritty]
+requires_command = "alacritty"
 input_path = "./alacritty/alacritty.toml"
 output_path = "$XDG_CONFIG_HOME/alacritty/themes/noctalia.toml"
 post_hook = "bash '{{ config_dir }}/alacritty/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/alacritty/undo.sh'"
 
 [templates.btop]
+requires_command = "btop"
 input_path = "./btop/btop.theme"
 output_path = "$XDG_CONFIG_HOME/btop/themes/noctalia.theme"
 post_hook = "bash '{{ config_dir }}/btop/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/btop/undo.sh'"
 
 [templates.cava]
+requires_command = "cava"
 input_path = "./cava/cava.ini"
 output_path = "$XDG_CONFIG_HOME/cava/themes/noctalia"
 post_hook = "bash '{{ config_dir }}/cava/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/cava/undo.sh'"
 
 [templates.emacs]
+requires_command = ["emacsclient", "emacs"]
 input_path = "./emacs/emacs.el"
 output_path_dynamic = "bash '{{ config_dir }}/emacs/output-path.sh'"
 post_hook = "bash '{{ config_dir }}/emacs/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/emacs/undo.sh'"
 
 [templates.foot]
+requires_command = "foot"
 input_path = "./foot/foot"
 output_path = "$XDG_CONFIG_HOME/foot/themes/noctalia"
 post_hook = "bash '{{ config_dir }}/foot/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/foot/undo.sh'"
 
 [templates.ghostty]
+requires_command = "ghostty"
 input_path = "./ghostty/ghostty"
 output_path = "$XDG_CONFIG_HOME/ghostty/themes/noctalia"
 post_hook = "bash '{{ config_dir }}/ghostty/apply.sh'"
@@ -137,6 +146,7 @@ hook_async = false
 undo_hook = "bash '{{ config_dir }}/gtk/undo-gtk4.sh'"
 
 [templates.helix]
+requires_command = ["hx", "helix"]
 input_path = "./helix/helix.toml"
 output_path = "$XDG_CONFIG_HOME/helix/themes/noctalia.toml"
 undo_hook = "bash '{{ config_dir }}/helix/undo.sh'"
@@ -148,65 +158,76 @@ post_action = "kde-color-scheme"
 undo_hook = "bash '{{ config_dir }}/kde/undo.sh'"
 
 [templates.kitty]
+requires_command = "kitty"
 input_path = "./kitty/kitty.conf"
 output_path = "$XDG_CONFIG_HOME/kitty/themes/noctalia.conf"
 post_hook = "bash '{{ config_dir }}/kitty/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/kitty/undo.sh'"
 
 [templates.labwc]
+requires_command = "labwc"
 input_path = "./labwc/labwc.conf"
 output_path = "$XDG_CONFIG_HOME/labwc/noctalia.conf"
 post_hook = "bash '{{ config_dir }}/labwc/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/labwc/undo.sh'"
 
 [templates.niri]
+requires_command = "niri"
 input_path = "./niri/niri.kdl"
 output_path_dynamic = "bash '{{ config_dir }}/niri/apply.sh' output"
 post_hook = "bash '{{ config_dir }}/niri/apply.sh' apply"
 undo_hook = "bash '{{ config_dir }}/niri/undo.sh'"
 
 [templates.hyprland]
+requires_command = ["Hyprland", "hyprland"]
 input_path_dynamic = "bash '{{ config_dir }}/hyprland/apply.sh' input"
 output_path_dynamic = "bash '{{ config_dir }}/hyprland/apply.sh' output"
 post_hook = "bash '{{ config_dir }}/hyprland/apply.sh' apply"
 undo_hook = "bash '{{ config_dir }}/hyprland/undo.sh'"
 
 [templates.mango]
+requires_command = "mango"
 input_path = "./mango/mango.conf"
 output_path = "$XDG_CONFIG_HOME/mango/noctalia.conf"
 post_hook = "bash '{{ config_dir }}/mango/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/mango/undo.sh'"
 
 [templates.qt]
+requires_command = ["qt5ct", "qt6ct"]
 input_path = "./qt/qtct.conf"
 output_path = ["$XDG_CONFIG_HOME/qt5ct/colors/noctalia.conf", "$XDG_CONFIG_HOME/qt6ct/colors/noctalia.conf"]
 undo_hook = "bash '{{ config_dir }}/qt/undo.sh'"
 
 [templates.scroll]
+requires_command = "scroll"
 input_path = "./scroll/scroll"
 output_path = "$XDG_CONFIG_HOME/scroll/noctalia"
 post_hook = "bash '{{ config_dir }}/scroll/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/scroll/undo.sh'"
 
 [templates.sway]
+requires_command = "sway"
 input_path = "./sway/sway"
 output_path = "$XDG_CONFIG_HOME/sway/noctalia"
 post_hook = "bash '{{ config_dir }}/sway/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/sway/undo.sh'"
 
 [templates.umbriel]
+requires_command = "umbriel"
 input_path = "./umbriel/umbriel.toml"
 output_path = "$XDG_CONFIG_HOME/umbriel/noctalia.toml"
 post_hook = "bash '{{ config_dir }}/umbriel/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/umbriel/undo.sh'"
 
 [templates.starship]
+requires_command = "starship"
 input_path = "./starship/starship.toml"
 output_path = "$XDG_CACHE_HOME/noctalia/starship-palette.toml"
 post_hook = "bash '{{ config_dir }}/starship/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/starship/undo.sh'"
 
 [templates.wezterm]
+requires_command = "wezterm"
 input_path = "./wezterm/wezterm.toml"
 output_path = "$XDG_CONFIG_HOME/wezterm/colors/Noctalia.toml"
 post_hook = "bash '{{ config_dir }}/wezterm/apply.sh'"

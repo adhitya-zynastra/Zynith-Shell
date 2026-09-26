@@ -29,6 +29,9 @@
 #include <ranges>
 #include <regex>
 #include <sstream>
+#include <cstdlib>
+#include <unistd.h>
+#include <mutex>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -199,11 +202,79 @@ namespace noctalia::theme {
       std::string requiresPath;
       // When true, skip each output whose inferred client config root is missing.
       bool gateOutputsByClientRoot = false;
+      // zynith: `requires_command` — the entry targets an application; skip it entirely (no dynamic-path script,
+      // no render, no hook) when none of these commands is on PATH.
+      std::vector<std::string> requiresCommands;
       int index = 0;
       // False runs post_hook inline, after every background hook started so far has
       // finished. For entries whose hook must not overlap with another one.
       bool hookAsync = true;
     };
+
+    // zynith: capability checks. Template application runs off the main thread, so the per-session caches are
+    // guarded; each is a handful of entries.
+    std::mutex gCapabilityMutex;
+    std::unordered_map<std::string, bool> gCommandOnPath;
+    std::unordered_set<std::string> gLoggedOnce;
+
+    bool commandOnPath(const std::string& command) {
+      {
+        std::lock_guard lock(gCapabilityMutex);
+        if (const auto it = gCommandOnPath.find(command); it != gCommandOnPath.end()) {
+          return it->second;
+        }
+      }
+      bool found = false;
+      if (command.find('/') != std::string::npos) {
+        found = ::access(command.c_str(), X_OK) == 0;
+      } else if (const char* path = std::getenv("PATH"); path != nullptr) {
+        std::string_view rest(path);
+        while (!found && !rest.empty()) {
+          const auto colon = rest.find(':');
+          const std::string_view dir = rest.substr(0, colon);
+          rest = colon == std::string_view::npos ? std::string_view{} : rest.substr(colon + 1);
+          if (!dir.empty()) {
+            const std::string candidate = std::string(dir) + "/" + command;
+            found = ::access(candidate.c_str(), X_OK) == 0;
+          }
+        }
+      }
+      std::lock_guard lock(gCapabilityMutex);
+      gCommandOnPath[command] = found;
+      return found;
+    }
+
+    // Logs once per session per key: a missing application or an unusable output directory is reported when first
+    // seen, not on every palette change.
+    bool firstTime(const std::string& key) {
+      std::lock_guard lock(gCapabilityMutex);
+      return gLoggedOnce.insert(key).second;
+    }
+
+    // Why an output's directory cannot be used, or nullopt when it exists (or was just created). A path component
+    // that is a symlink to a missing target is named explicitly: that is the usual cause (stale dotfiles).
+    std::optional<std::string> outputDirectoryProblem(const std::filesystem::path& outputPath) {
+      const std::filesystem::path parent = outputPath.parent_path();
+      std::error_code ec;
+      if (parent.empty() || std::filesystem::is_directory(parent, ec)) {
+        return std::nullopt;
+      }
+      std::filesystem::path prefix;
+      for (const auto& part : parent) {
+        prefix /= part;
+        std::error_code linkEc;
+        if (std::filesystem::is_symlink(prefix, linkEc) && !std::filesystem::exists(prefix, linkEc)) {
+          std::error_code readEc;
+          const auto target = std::filesystem::read_symlink(prefix, readEc);
+          return prefix.string() + " is a symlink to a missing target (" + (readEc ? "?" : target.string()) + ")";
+        }
+      }
+      std::filesystem::create_directories(parent, ec);
+      if (ec) {
+        return "cannot create " + parent.string() + ": " + ec.message();
+      }
+      return std::nullopt;
+    }
 
     std::optional<std::filesystem::path> inferClientConfigRoot(const std::filesystem::path& outputPath) {
       std::vector<std::filesystem::path> parts;
@@ -1457,6 +1528,17 @@ namespace noctalia::theme {
         entry.index = static_cast<int>(index->get());
       if (const auto hookAsync = tpl.get_as<bool>("hook_async"))
         entry.hookAsync = hookAsync->get();
+      if (const auto* requiresNode = tpl.get("requires_command")) {
+        if (const auto one = requiresNode->value<std::string>()) {
+          entry.requiresCommands.push_back(*one);
+        } else if (const auto* many = requiresNode->as_array()) {
+          for (const auto& item : *many) {
+            if (const auto command = item.value<std::string>()) {
+              entry.requiresCommands.push_back(*command);
+            }
+          }
+        }
+      }
       return entry;
     }
 
@@ -1619,6 +1701,17 @@ namespace noctalia::theme {
         return ok;
       }
 
+      if (!entry.requiresCommands.empty()
+          && std::ranges::none_of(entry.requiresCommands, [](const std::string& c) { return commandOnPath(c); })) {
+        if (firstTime("requires:" + entry.name)) {
+          kLog.info(
+              "template {} skipped: {} not installed (checked again next session)", entry.name,
+              entry.requiresCommands.front()
+          );
+        }
+        continue;
+      }
+
       std::string closestColor;
       if (!entry.compareTo.empty() && !entry.colorsToCompare.empty()) {
         Options compareOptions = m_options;
@@ -1727,6 +1820,8 @@ namespace noctalia::theme {
         runHook(entry.preHook, /*async=*/false, /*dedupePerPass=*/false);
 
       bool outputsOk = true;
+      bool renderedAny = false;
+      bool changedAny = false;
       for (const std::string& outputPath : effectiveOutputs) {
         if (cancelRequested()) {
           return ok;
@@ -1734,6 +1829,15 @@ namespace noctalia::theme {
 
         if (shouldSkipTemplateOutput(entry, outputPath)) {
           kLog.debug("skipping template {} -> {} (client not installed)", entry.name, outputPath);
+          continue;
+        }
+
+        // An output whose directory cannot exist is an environment fact, not a failed apply: skip it (and its
+        // hook), say so once per session, and keep the rest of the palette update going.
+        if (const auto problem = outputDirectoryProblem(std::filesystem::path(outputPath))) {
+          if (firstTime("output:" + outputPath)) {
+            kLog.warn("template {} -> {} skipped: {}", entry.name, outputPath, *problem);
+          }
           continue;
         }
 
@@ -1751,13 +1855,18 @@ namespace noctalia::theme {
           ok = false;
           continue;
         }
+        renderedAny = true;
+        changedAny = changedAny || fileResult.wrote;
       }
 
       if (cancelRequested()) {
         return ok;
       }
 
-      if ((hasOutputs && outputsOk) || (!hasOutputs && (!entry.postHook.empty() || !entry.postAction.empty()))) {
+      // A hook exists to make an application pick up what was rendered: with every output skipped (not installed,
+      // unusable directory), there is nothing to pick up and no process to spawn.
+      if ((hasOutputs && outputsOk && renderedAny && (changedAny || m_options.rerunUnchangedHooks))
+          || (!hasOutputs && (!entry.postHook.empty() || !entry.postAction.empty()))) {
         if (!runPostAction()) {
           ok = false;
         }

@@ -498,6 +498,7 @@ Each template entry supports:
 - `index`
 - `hook_async`
 - `requires_path`
+- `requires_command`
 
 `output_path` accepts either a single string or an array of strings:
 
@@ -547,6 +548,8 @@ hook_async  = false
 ```
 
 `requires_path` is optional. When set, the entry is skipped unless that path already exists on disk. Use it for explicit install checks (for example a Flatpak data directory).
+
+`requires_command` is optional: a command name, or an array of alternatives (`["hx", "helix"]`). When none of them is on `PATH`, the whole entry is skipped — no dynamic-path command, no render, no hooks — and this is logged once per session. The built-in templates declare it for every application they theme. Independently, an output whose directory cannot be created (for example a symlink to a missing target) is skipped with one warning per session, and a `post_hook` runs only when at least one of its outputs was rendered.
 
 When several entries share the same `input_path` but write to different client config roots (for example Discord forks or VS Code vs VSCodium), the engine infers each output's client root and skips outputs whose root is missing. Single-app templates (one entry per input) still create missing directories as before.
 

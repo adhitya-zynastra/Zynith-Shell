@@ -485,6 +485,7 @@ namespace noctalia::theme {
       options.closestColor.clear();
       options.schemeType = schemeName.starts_with("m3-") ? schemeName.substr(3) : schemeName;
       options.verbose = true;
+      options.rerunUnchangedHooks = true; // an explicit CLI apply re-runs every hook
       ConfigService config;
       options.configTable = std::make_shared<toml::table>(config_export::serialize(config.config()));
       TemplateEngine engine(TemplateEngine::makeThemeData(palette), std::move(options));

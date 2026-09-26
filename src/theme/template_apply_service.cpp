@@ -192,6 +192,7 @@ namespace noctalia::theme {
       const GeneratedPalette& palette, std::string_view defaultMode, bool force, bool paletteChanged
   ) const {
     ApplyRequest request = makeRequest(palette, defaultMode);
+    request.force = force;
     bool queued = false;
     std::function<void()> undeliverable;
     {
@@ -296,6 +297,7 @@ namespace noctalia::theme {
     options.imagePath = request.imagePath;
     options.schemeType = request.schemeType;
     options.verbose = true;
+    options.rerunUnchangedHooks = request.force;
     options.cancelRequested = [this, generation = request.generation]() { return requestSuperseded(generation); };
     options.configTable = request.configTable;
     options.hookRunner = &hookRunner;
