@@ -2,6 +2,7 @@
 
 #include "render/animation/animation.h"
 #include "render/animation/animation_manager.h"
+#include "render/animation/motion_role.h"
 
 #include <functional>
 
@@ -62,6 +63,12 @@ public:
       std::function<void()> onSettle
   );
 
+  // The same, with timing chosen by a motion role (normally motion::Role::Morph) instead of a raw
+  // duration and curve; reduced motion then follows the role's policy.
+  void start(
+      int direction, float carry, motion::Role role, std::function<void(float)> onFrame, std::function<void()> onSettle
+  );
+
   // Stops the leg without running onSettle. Idempotent.
   void cancel();
 
@@ -71,6 +78,13 @@ public:
   [[nodiscard]] float carry() const noexcept { return m_carry; }
 
 private:
+  void startLeg(
+      int direction, float carry, std::function<void(float)> onFrame, std::function<void()> onSettle,
+      const std::function<AnimationManager::Id(
+          AnimationManager&, std::function<void(float)>, std::function<void()>, const void*
+      )>& launch
+  );
+
   AnimationManager* m_animations = nullptr;
   const void* m_owner = nullptr;
 

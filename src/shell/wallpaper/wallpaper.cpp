@@ -25,6 +25,7 @@
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "shell/surface/surface_role.h"
 
 #include <algorithm>
 #include <cctype>
@@ -1231,7 +1232,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = "noctalia-wallpaper",
-      .layer = LayerShellLayer::Background,
+      .layer = shell::surface::layer(shell::surface::Role::Scene),
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
       .width = 0,
       .height = 0,

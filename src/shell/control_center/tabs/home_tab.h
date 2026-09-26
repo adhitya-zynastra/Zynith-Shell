@@ -10,6 +10,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -69,6 +70,8 @@ private:
   struct CardOverlayOptions {
     bool keyboardFocus = true;
     bool pointerHitTest = true;
+    // Replaces the default hover treatment (the card's outline) when set.
+    std::function<void(bool)> onHover = nullptr;
   };
   InputArea* addCardOverlay(Flex& card, std::function<void()> onActivate);
   InputArea* addCardOverlay(Flex& card, std::function<void()> onActivate, CardOverlayOptions options);
@@ -84,6 +87,27 @@ private:
   void syncHeaderActions();
   bool resizeMediaArtToCard();
   void onPanelCardOpacityChanged(float opacity) override;
+
+  void openAvatarPicker();
+  // The avatar and its picker target; sets m_userAvatarArea / m_userAvatar.
+  std::unique_ptr<InputArea> buildAvatarArea(float avatarSize, float scale);
+  // Shortcut pads for both styles (reuses Shortcut instances across opens).
+  std::unique_ptr<GridView> buildShortcutGrid(float scale);
+
+  // zynith Home (the "zynith Home" section of home_tab.cpp): a composition instead of a grid of equal cards —
+  //   stage   the wallpaper as a lit scene; the time is the one focal readout, identity sits opposite
+  //   band    now playing, as one quiet embedded strip
+  //   chips   the shortcuts as a compact capsule grid
+  // It reuses the classic view's members and data paths (sync(), timers, wallpaper layers), so only
+  // construction, layout and styling differ.
+  std::unique_ptr<Flex> createZynith();
+  void layoutZynith(Renderer& renderer, float contentWidth, float bodyHeight);
+  void syncZynithFonts();
+  bool m_zynith = false;
+  Flex* m_stageRow = nullptr;
+  Flex* m_identity = nullptr;
+  Label* m_userName = nullptr;
+  Label* m_dateSeparator = nullptr;
 
   MprisService* m_mpris = nullptr;
   HttpClient* m_httpClient = nullptr;

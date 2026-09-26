@@ -24,6 +24,7 @@
 #include "ui/palette.h"
 #include "ui/responsive.h"
 #include "ui/style.h"
+#include "ui/tokens.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
@@ -674,7 +675,7 @@ void WallpaperPanel::create() {
         .align = FlexAlign::Stretch,
         .gap = Style::spaceSm * scale,
         .padding = Style::spaceMd * scale,
-        .radius = std::max(Style::scaledRadiusXl(scale), 16.0F * scale),
+        .radius = ui::tokens::radius(ui::tokens::Radius::Surface, scale),
         .width = kMenuCardWidth * scale,
     });
     menuCard->setCardStyle(scale, panelCardOpacity(), true);

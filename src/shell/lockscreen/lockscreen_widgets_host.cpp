@@ -71,15 +71,10 @@ void LockscreenWidgetsHost::reloadPluginWidgets(LockScreen& lockScreen) {
   if (!m_visible) {
     return;
   }
-  const auto before = m_instances.size();
-  std::erase_if(m_instances, [this](std::unique_ptr<WidgetInstance>& instance) {
-    if (!scripting::isPluginEntryOfKind(instance->state.type, scripting::PluginEntryKind::DesktopWidget)) {
-      return false;
-    }
-    detachFromSurface(*instance);
-    return true;
+  const std::size_t removed = removeInstances([](const WidgetInstance& instance) {
+    return scripting::isPluginEntryOfKind(instance.state.type, scripting::PluginEntryKind::DesktopWidget);
   });
-  if (m_instances.size() == before) {
+  if (removed == 0) {
     return;
   }
   syncSurfaces(lockScreen);
@@ -141,13 +136,9 @@ void LockscreenWidgetsHost::syncSurfaces(LockScreen& lockScreen) {
     return;
   }
 
-  std::erase_if(m_instances, [this](std::unique_ptr<WidgetInstance>& instance) {
-    const DesktopWidgetState* state = findStateById(m_snapshot, instance->state.id);
-    if (state == nullptr || !state->enabled) {
-      detachFromSurface(*instance);
-      return true;
-    }
-    return instance->surface == nullptr;
+  removeInstances([this](const WidgetInstance& instance) {
+    const DesktopWidgetState* state = findStateById(m_snapshot, instance.state.id);
+    return state == nullptr || !state->enabled || instance.surface == nullptr;
   });
 
   for (const auto& state : m_snapshot.widgets) {
@@ -157,26 +148,14 @@ void LockscreenWidgetsHost::syncSurfaces(LockScreen& lockScreen) {
 
     const WaylandOutput* output = desktop_widgets::resolveStateOutput(*m_wayland, state);
     if (output == nullptr) {
-      std::erase_if(m_instances, [this, &state](std::unique_ptr<WidgetInstance>& instance) {
-        if (instance->state.id == state.id) {
-          detachFromSurface(*instance);
-          return true;
-        }
-        return false;
-      });
+      removeInstances([&state](const WidgetInstance& instance) { return instance.state.id == state.id; });
       continue;
     }
 
     const std::string outputKey = desktop_widgets::outputKey(*output);
     LockSurface* surface = findSurfaceForOutput(lockScreen, outputKey);
     if (surface == nullptr) {
-      std::erase_if(m_instances, [this, &state](std::unique_ptr<WidgetInstance>& instance) {
-        if (instance->state.id == state.id) {
-          detachFromSurface(*instance);
-          return true;
-        }
-        return false;
-      });
+      removeInstances([&state](const WidgetInstance& instance) { return instance.state.id == state.id; });
       continue;
     }
 
@@ -191,11 +170,11 @@ void LockscreenWidgetsHost::syncSurfaces(LockScreen& lockScreen) {
         || existing->surface != surface;
 
     if (widgetDefinitionChanged) {
-      detachFromSurface(*existing);
-      std::erase_if(m_instances, [this, &state](std::unique_ptr<WidgetInstance>& instance) {
-        detachFromSurface(*instance);
-        return instance->state.id == state.id;
-      });
+      // zynith fix: upstream detached EVERY instance here (the predicate detached before testing the id)
+      // while std::erase_if was moving elements; the frame-tick re-sync inside detach then walked a
+      // moved-from null entry and crashed the shell. A settings change to any lock widget while the
+      // session was locked (a config reload) was enough, and it left the session locked with no UI.
+      removeInstances([&state](const WidgetInstance& instance) { return instance.state.id == state.id; });
       createInstance(state, *surface, *output);
       continue;
     }
@@ -295,13 +274,30 @@ void LockscreenWidgetsHost::attachToSurface(WidgetInstance& instance) {
   instance.surface->requestLayout();
 }
 
+std::size_t LockscreenWidgetsHost::removeInstances(const std::function<bool(const WidgetInstance&)>& shouldRemove) {
+  std::vector<const WidgetInstance*> doomed;
+  for (const auto& instance : m_instances) {
+    if (instance != nullptr && shouldRemove(*instance)) {
+      doomed.push_back(instance.get());
+    }
+  }
+  for (const auto& instance : m_instances) {
+    if (std::ranges::contains(doomed, instance.get())) {
+      detachFromSurface(*instance);
+    }
+  }
+  return std::erase_if(m_instances, [&doomed](const std::unique_ptr<WidgetInstance>& instance) {
+    return instance == nullptr || std::ranges::contains(doomed, instance.get());
+  });
+}
+
 void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
   if (surfacePtr == nullptr) {
     return;
   }
 
   const bool hasWidgets = std::ranges::any_of(m_instances, [&](const auto& instance) {
-    return instance->surface == surfacePtr && instance->widget != nullptr;
+    return instance != nullptr && instance->surface == surfacePtr && instance->widget != nullptr;
   });
   if (!hasWidgets) {
     surfacePtr->setFrameTickCallback(nullptr);
@@ -318,7 +314,7 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
 
     bool needsRedraw = false;
     for (auto& instance : host->m_instances) {
-      if (instance->surface != surfacePtr) {
+      if (instance == nullptr || instance->surface != surfacePtr) {
         continue;
       }
       instance->animations.tick(deltaMs);
@@ -327,7 +323,8 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
 
     bool needsContinuousRedraw = needsRedraw;
     for (auto& instance : host->m_instances) {
-      if (instance->surface != surfacePtr || instance->widget == nullptr || !instance->widget->needsFrameTick()) {
+      if (instance == nullptr || instance->surface != surfacePtr || instance->widget == nullptr
+          || !instance->widget->needsFrameTick()) {
         continue;
       }
       instance->widget->onFrameTick(deltaMs, renderer);

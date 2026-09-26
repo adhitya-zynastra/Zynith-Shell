@@ -18,6 +18,7 @@
 #include "ui/style.h"
 #include "wayland/surface.h"
 #include "wayland/wayland_connection.h"
+#include "shell/surface/surface_role.h"
 
 #include <algorithm>
 #include <cmath>
@@ -542,7 +543,7 @@ void OsdOverlay::ensureSurfaces() {
 
     auto surfaceConfig = LayerSurfaceConfig{
         .nameSpace = "noctalia-osd",
-        .layer = LayerShellLayer::Overlay,
+        .layer = shell::surface::layer(shell::surface::Role::Floating),
         .anchor = anchor,
         .width = surfaceWidth,
         .height = surfaceHeight,

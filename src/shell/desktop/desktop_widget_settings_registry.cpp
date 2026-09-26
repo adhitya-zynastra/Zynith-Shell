@@ -196,6 +196,7 @@ namespace desktop_settings {
       auto bgRadius = intSpec("background_radius", 12.0, 0.0, 32.0, 1.0);
       auto bgOpacity = doubleSpec("background_opacity", 0.88, 0.0, 1.0, 0.01);
       return {
+          anchorSpec(),
           std::move(bgColor),
           std::move(bgOpacity),
           std::move(bgRadius),
@@ -290,6 +291,25 @@ namespace desktop_settings {
       add(std::move(timezone));
       add(colorSpec("color", "on_surface"));
       add(fontFamilySpec());
+      auto weight = segmentedSpec(
+          "weight", "bold",
+          {{"light", "desktop-widgets.editor.settings.weight-light"},
+           {"regular", "desktop-widgets.editor.settings.weight-regular"},
+           {"bold", "desktop-widgets.editor.settings.weight-bold"}}
+      );
+      weight.visibleWhen = digitalOnly;
+      add(std::move(weight));
+      auto face = segmentedSpec(
+          "face", "custom",
+          {{"custom", "desktop-widgets.editor.settings.face-custom"},
+           {"display", "desktop-widgets.editor.settings.face-display"},
+           {"interface", "desktop-widgets.editor.settings.face-interface"}}
+      );
+      face.visibleWhen = digitalOnly;
+      add(std::move(face));
+      auto tabular = boolSpec("tabular", false);
+      tabular.visibleWhen = digitalOnly;
+      add(std::move(tabular));
       // Shadow is a text shadow on the digital label; analog mode has no shadow.
       auto shadow = boolSpec("shadow", true);
       shadow.visibleWhen = digitalOnly;

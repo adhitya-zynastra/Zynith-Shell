@@ -33,6 +33,7 @@ Use <IpcCommand command="bar-hide" /> when you want the bar to stay hidden until
 | Toggle clipboard | <IpcCommand command="panel-toggle clipboard" /> | Open or close clipboard history. |
 | Toggle wallpaper panel | <IpcCommand command="panel-toggle wallpaper" /> | Open or close wallpaper picker. |
 | Toggle control center | <IpcCommand command="panel-toggle control-center [tab]" /> | Open or close Control Center. Optional `tab` opens the tab inside control center by default (e.g. `noctalia msg panel-toggle control-center media`). |
+| Control Center style | <IpcCommand command="control-center-style-set zynith" /> | Persist `[control_center].style` (`zynith` or `classic`), as the Settings window does. Applies from the next open. |
 | Toggle plugin panel | <IpcCommand command="panel-toggle <author/plugin:entry> [context]" /> | Open or close a plugin `[[panel]]` entry (e.g. `noctalia msg panel-toggle noctalia/wallhaven:browser`). Optional `context` is passed to `onOpen`. |
 
 ## Dock
@@ -62,3 +63,5 @@ Use <IpcCommand command="bar-hide" /> when you want the bar to stay hidden until
 | Enter edit mode | <IpcCommand command="lockscreen-widgets-edit" /> | Edit lockscreen widget layout (session must be unlocked). |
 | Exit edit mode | <IpcCommand command="lockscreen-widgets-exit" /> | Leave lockscreen widget edit mode. |
 | Toggle edit mode | <IpcCommand command="lockscreen-widgets-toggle-edit" /> | Switch lockscreen widget edit mode on or off. |
+| Reset to preset | <IpcCommand command="lockscreen-widgets-reset" /> | Discard the saved layout overrides so the config-file layout applies again (editor closed, session unlocked). The discarded overrides are kept in `settings.toml.lockscreen_widgets.stash` next to `settings.toml`. |
+| Undo a reset | <IpcCommand command="lockscreen-widgets-restore" /> | Put the overrides saved by the last reset back (editor closed, session unlocked). |

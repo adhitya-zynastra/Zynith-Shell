@@ -103,6 +103,57 @@ int main() {
     expect(anim().preset == MotionPreset::Smooth, "a later preset change reaches the reset key");
   }
 
+  // --- lock screen layout: an editor save shadows the whole preset; reset returns to it ---------
+  // The editor stores its snapshot through setLockscreenWidgetsState, i.e. as settings.toml overrides
+  // that include widget_order. A widget missing from that order is dropped, so a layout saved before
+  // the preset gained a widget hides it for good — until lockscreen-widgets-reset clears the table.
+  {
+    const auto widget = [](std::string_view id, std::string_view type, int cy) {
+      return std::string("[lockscreen_widgets.widget.") + std::string(id) + "]\ntype = \"" + std::string(type)
+          + "\"\noutput = \"eDP-1\"\ncx = 960.0\ncy = " + std::to_string(cy)
+          + ".0\nbox_width = 200.0\nbox_height = 60.0\nrotation = 0.0\nplacement_width = 1920.0\n"
+            "placement_height = 1200.0\n\n";
+    };
+    writeFile(
+        root / "config" / "noctalia" / "lockscreen.toml",
+        "[lockscreen_widgets]\nenabled = true\nschema_version = 2\n"
+        "widget_order = [\"lockscreen-widget-0000000000000002\", \"lockscreen-widget-0000000000000013\"]\n\n"
+            + widget("lockscreen-widget-0000000000000002", "clock", 452)
+            + widget("lockscreen-widget-0000000000000013", "session_actions", 64)
+    );
+    ConfigService config;
+    const auto widgetCount = [&]() { return config.config().lockscreenWidgets.widgets.size(); };
+    expect(widgetCount() == 2, "the lock preset's two widgets are loaded");
+
+    LockscreenWidgetsConfig saved = config.config().lockscreenWidgets;
+    saved.widgets.pop_back(); // an older layout, saved before the preset had power controls
+    expect(config.setLockscreenWidgetsState(saved), "an editor-style save is stored");
+    expect(widgetCount() == 1, "the saved layout shadows the preset: the new widget is gone");
+    const LockscreenWidgetsConfig afterSave = config.config().lockscreenWidgets;
+
+    // Batch 7: the reset IPC parks the overrides before clearing them, and restore puts them back.
+    std::string error;
+    expect(config.stashOverrideTable("lockscreen_widgets", &error), "the overrides are stashed before a reset");
+    const std::filesystem::path stash = settingsToml.string() + ".lockscreen_widgets.stash";
+    expect(std::filesystem::exists(stash), "the stash is a sidecar next to settings.toml");
+
+    expect(config.clearOverride({"lockscreen_widgets"}), "reset clears the lock layout overrides");
+    expect(widgetCount() == 2, "after reset the preset's widgets are back");
+    expect(readFile(settingsToml).find("lockscreen_widgets") == std::string::npos,
+           "reset leaves no lock layout in settings.toml");
+    expect(!config.clearOverride({"lockscreen_widgets"}), "a second reset reports nothing to clear");
+    expect(!config.stashOverrideTable("lockscreen_widgets", &error) && error.empty(),
+           "with nothing to stash, stash reports false without an error (the earlier stash is kept)");
+
+    expect(config.restoreStashedOverrideTable("lockscreen_widgets", &error), "restore succeeds");
+    expect(widgetCount() == 1, "restore brings the saved layout back (it shadows the preset again)");
+    expect(config.config().lockscreenWidgets == afterSave, "the restored layout equals the one that was reset");
+
+    std::filesystem::remove(stash);
+    expect(!config.restoreStashedOverrideTable("lockscreen_widgets", &error) && !error.empty(),
+           "restore without a stash fails with a reason");
+  }
+
   std::filesystem::remove_all(root);
   if (failures == 0) {
     std::cout << "zynith config ownership test passed\n";

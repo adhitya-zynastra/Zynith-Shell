@@ -1,5 +1,6 @@
-// Zynith transient UI configuration: the launcher style and geometry keys and the OSD hold, through
-// the same layering as every other Zynith key (defaults -> rice.toml -> settings.toml overrides).
+// Zynith transient UI configuration: the launcher and Control Center styles, the launcher geometry keys,
+// the display font and the OSD hold, through the same layering as every other Zynith key
+// (defaults -> rice.toml -> settings.toml overrides).
 //
 // Defaults must be the designed Zynith launcher; a preset must be able to select the classic one;
 // out-of-range geometry is clamped by the schema (silently — upstream parser behaviour, recorded in
@@ -45,6 +46,8 @@ int main() {
     expect(osd.durationMs == 1400, "the OSD hold defaults to the pre-configurable 1.4 s");
     expect(osd.reference == PositionReference::Workspace, "OSD keeps the workspace reference unless asked");
     expect(ControlCenterConfig{}.anchorBar.empty(), "no anchor bar: the first enabled bar, as before");
+    expect(ControlCenterConfig{}.style == ControlCenterStyle::Zynith, "the Zynith Control Center is the default");
+    expect(ShellConfig{}.displayFontFamily.empty(), "no display face: display text uses the interface font");
     const BarConfig bar;
     expect(bar.reference == PositionReference::Workspace && !barUsesOutputReference(bar),
            "bars keep the workspace reference unless asked");
@@ -67,6 +70,10 @@ int main() {
       "\n"
       "[control_center]\n"
       "anchor_bar = \"Time\"\n"
+      "style = \"classic\"\n"
+      "\n"
+      "[shell]\n"
+      "display_font_family = \"Space Grotesk\"\n"
   );
   ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
   ::setenv("XDG_STATE_HOME", (root / "state").c_str(), 1);
@@ -84,12 +91,19 @@ int main() {
     expect(config.config().osd.durationMs == 600, "OSD duration is clamped to its floor");
     expect(config.config().osd.reference == PositionReference::Output, "OSD position reference is read");
     expect(config.config().controlCenter.anchorBar == "Time", "Control Center anchor bar is read");
+    expect(config.config().controlCenter.style == ControlCenterStyle::Classic,
+           "a preset can select the classic Control Center");
+    expect(config.config().shell.displayFontFamily == "Space Grotesk", "the display font family is read");
 
     // --- a GUI override wins, and reset falls back to the preset ------------------------------
     expect(config.setOverride({"shell", "launcher", "style"}, std::string("zynith")), "set style override");
     expect(launcher().style == LauncherStyle::Zynith, "the override wins");
     expect(config.clearOverride({"shell", "launcher", "style"}), "reset the style override");
     expect(launcher().style == LauncherStyle::Classic, "after reset the preset's classic style is back");
+    expect(config.setOverride({"control_center", "style"}, std::string("zynith")), "set CC style override");
+    expect(config.config().controlCenter.style == ControlCenterStyle::Zynith, "the CC style override wins");
+    expect(config.clearOverride({"control_center", "style"}), "reset the CC style override");
+    expect(config.config().controlCenter.style == ControlCenterStyle::Classic, "CC style reset falls back to the preset");
   }
 
   std::filesystem::remove_all(root);

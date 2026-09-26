@@ -80,6 +80,7 @@ namespace noctalia::cli {
                                                                             "logout", "reboot",  "shutdown"};
   inline constexpr std::array<std::string_view, 2> kMsgTaskbarCycleDirectionChoices{"next", "prev"};
   inline constexpr std::array<std::string_view, 3> kMsgThemeModeSetModeChoices{"dark", "light", "auto"};
+  inline constexpr std::array<std::string_view, 2> kMsgControlCenterStyleSetChoices{"zynith", "classic"};
   inline constexpr std::array<std::string_view, 2> kMsgWorkspaceSwitchDirectionChoices{"next", "prev"};
 
   inline constexpr std::array kMsgBarAutoHideSetPositionals{
@@ -205,6 +206,9 @@ namespace noctalia::cli {
   };
   inline constexpr std::array kMsgTaskbarCyclePositionals{
       Positional{"direction", {}, kMsgTaskbarCycleDirectionChoices, true, false, false},
+  };
+  inline constexpr std::array kMsgControlCenterStyleSetPositionals{
+      Positional{"style", {}, kMsgControlCenterStyleSetChoices, true, false, false},
   };
   inline constexpr std::array kMsgThemeModeSetPositionals{
       Positional{"mode", {}, kMsgThemeModeSetModeChoices, true, false, false},
@@ -373,6 +377,10 @@ namespace noctalia::cli {
         kMsgColorSchemeSetSubcommands,
         false
     };
+    inline constexpr Command controlCenterStyleSet{
+        "control-center-style-set", "Set the Control Center style in settings.toml (zynith or classic)", {}, {}, {},
+        kMsgControlCenterStyleSetPositionals, {}, false
+    };
     inline constexpr Command configReload{"config-reload", "Reload the config file", {}, {}, {}, {}, {}, false};
     inline constexpr Command desktopWidgetsEdit{
         "desktop-widgets-edit", "Open the desktop widgets editor", {}, {}, {}, {}, {}, false
@@ -470,6 +478,14 @@ namespace noctalia::cli {
     };
     inline constexpr Command lockscreenWidgetsExit{
         "lockscreen-widgets-exit", "Close the lockscreen widgets editor", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command lockscreenWidgetsReset{
+        "lockscreen-widgets-reset", "Discard lockscreen widget layout overrides and use the preset", {}, {}, {}, {}, {},
+        false
+    };
+    inline constexpr Command lockscreenWidgetsRestore{
+        "lockscreen-widgets-restore", "Restore the lockscreen widget overrides saved by the last reset", {}, {}, {}, {},
+        {}, false
     };
     inline constexpr Command lockscreenWidgetsToggleEdit{
         "lockscreen-widgets-toggle-edit", "Toggle lockscreen widgets edit mode", {}, {}, {}, {}, {}, false
@@ -845,6 +861,7 @@ namespace noctalia::cli {
       msg::clipboardText,
       msg::colorSchemeGet,
       msg::colorSchemeSet,
+      msg::controlCenterStyleSet,
       msg::configReload,
       msg::desktopWidgetsEdit,
       msg::desktopWidgetsExit,
@@ -868,6 +885,8 @@ namespace noctalia::cli {
       msg::keyboardLayoutCycle,
       msg::lockscreenWidgetsEdit,
       msg::lockscreenWidgetsExit,
+      msg::lockscreenWidgetsReset,
+      msg::lockscreenWidgetsRestore,
       msg::lockscreenWidgetsToggleEdit,
       msg::logLevelSet,
       msg::logLevelStatus,

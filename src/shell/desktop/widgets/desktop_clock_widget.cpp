@@ -1,5 +1,8 @@
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 
+#include "render/text/font_spec.h"
+#include "ui/typography.h"
+
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
@@ -209,7 +212,42 @@ DesktopClockWidget::Style DesktopClockWidget::styleFromSetting(std::string_view 
 DesktopClockWidget::DesktopClockWidget(Options options)
     : m_style(options.style), m_format(std::move(options.format)), m_color(options.color), m_shadow(options.shadow),
       m_showCircle(options.showCircle), m_timezone(std::move(options.timezone)), m_centerText(options.centerText),
+      m_weight(options.weight), m_typeface(options.face), m_tabular(options.tabular),
       m_showsSeconds(m_style == Style::Analog || formatShowsSeconds(m_format)) {}
+
+DesktopClockWidget::Options::Face DesktopClockWidget::faceFromSetting(std::string_view value) {
+  if (value == "display") {
+    return Options::Face::Display;
+  }
+  if (value == "interface") {
+    return Options::Face::Interface;
+  }
+  return Options::Face::Custom;
+}
+
+namespace {
+  // The family string the digital label uses: the widget's own family, or a shell type face, plus the
+  // tabular-figures request when asked (font_spec syntax, split by the text renderer).
+  std::string clockFamily(DesktopClockWidget::Options::Face face, bool tabular, const std::string& custom) {
+    std::string family;
+    switch (face) {
+    case DesktopClockWidget::Options::Face::Display:
+      family = ui::type::family(ui::type::Face::Display);
+      break;
+    case DesktopClockWidget::Options::Face::Interface:
+      family = ui::type::family(ui::type::Face::Interface);
+      break;
+    case DesktopClockWidget::Options::Face::Custom:
+      family = custom.empty() && tabular ? ui::type::family(ui::type::Face::Interface) : custom;
+      break;
+    }
+    if (tabular && !family.empty()) {
+      family.append(font_spec::kFeatureSeparator);
+      family.append("tnum=1");
+    }
+    return family;
+  }
+} // namespace
 
 void DesktopClockWidget::create() {
   auto rootNode = ui::node({});
@@ -219,7 +257,7 @@ void DesktopClockWidget::create() {
   auto label = ui::label({
       .out = &m_label,
       .fontSize = clockFontSize(contentScale()),
-      .fontWeight = FontWeight::Bold,
+      .fontWeight = m_weight,
       .color = m_color,
   });
   m_digitalRoot->addChild(std::move(label));
@@ -472,6 +510,9 @@ bool DesktopClockWidget::applySetting(
     }
     return false;
   }
+  if (key == "weight" || key == "face" || key == "tabular") {
+    return false; // the host rebuilds the widget
+  }
   if (key == "timezone") {
     if (const auto* v = std::get_if<std::string>(&value)) {
       m_timezone = *v;
@@ -539,7 +580,7 @@ bool DesktopClockWidget::applySetting(
 
 void DesktopClockWidget::onFontFamilyChanged(const std::string& family, Renderer& /*renderer*/) {
   if (m_label != nullptr) {
-    m_label->setFontFamily(family);
+    m_label->setFontFamily(clockFamily(m_typeface, m_tabular, family));
   }
 }
 
@@ -565,6 +606,7 @@ void DesktopClockWidget::updateStableDigitalWidth(Renderer& renderer, const std:
   }
 
   const float fontSize = clockFontSize(contentScale());
+  const std::string metricsFamily = clockFamily(m_typeface, m_tabular, m_fontFamily);
 
   // Re-pick the widest digit only when the font identity (size or family) changes.
   if (fontSize != m_metricsFontSize || m_fontFamily != m_metricsFontFamily) {
@@ -574,7 +616,7 @@ void DesktopClockWidget::updateStableDigitalWidth(Renderer& renderer, const std:
     for (char digit = '0'; digit <= '9'; ++digit) {
       const std::string glyph(1, digit);
       const float advance =
-          renderer.measureText(glyph, fontSize, FontWeight::Bold, 0.0F, 0, TextAlign::Start, m_fontFamily).width;
+          renderer.measureText(glyph, fontSize, m_weight, 0.0F, 0, TextAlign::Start, metricsFamily).width;
       if (advance > widest) {
         widest = advance;
         m_widestDigit = digit;
@@ -597,7 +639,7 @@ void DesktopClockWidget::updateStableDigitalWidth(Renderer& renderer, const std:
   m_stableSample = sample;
 
   const float width =
-      renderer.measureText(sample, fontSize, FontWeight::Bold, 0.0F, 0, TextAlign::Start, m_fontFamily).width;
+      renderer.measureText(sample, fontSize, m_weight, 0.0F, 0, TextAlign::Start, metricsFamily).width;
   if (std::abs(width - m_stableWidth) > 0.5F) {
     m_stableWidth = width;
     m_label->setMinWidth(m_stableWidth);

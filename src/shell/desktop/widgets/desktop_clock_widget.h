@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render/core/renderer.h"
 #include "shell/desktop/desktop_widget.h"
 #include "ui/palette.h"
 
@@ -25,9 +26,19 @@ public:
     bool showCircle = true;
     bool centerText = true;
     std::string timezone;
+    // zynith: display clocks read better light; bold stays the default.
+    FontWeight weight = FontWeight::Bold;
+    // zynith: which typeface role the digits use. Custom = the widget's own font_family (default,
+    // unchanged behaviour); Display / Interface = the shell's type roles (ui::type), so a clock follows
+    // [shell] display_font_family / font_family without naming a font.
+    enum class Face : std::uint8_t { Custom, Display, Interface };
+    Face face = Face::Custom;
+    // Digits of equal width, so the time does not shift as it changes (OpenType tnum).
+    bool tabular = false;
   };
 
   explicit DesktopClockWidget(Options options);
+  [[nodiscard]] static Options::Face faceFromSetting(std::string_view value);
 
   void create() override;
   [[nodiscard]] bool wantsSecondTicks() const override;
@@ -62,6 +73,9 @@ private:
   bool m_showCircle;
   std::string m_timezone;
   bool m_centerText = true;
+  FontWeight m_weight = FontWeight::Bold;
+  Options::Face m_typeface = Options::Face::Custom;
+  bool m_tabular = false;
   bool m_showsSeconds = false;
   Label* m_label = nullptr;
   Node* m_digitalRoot = nullptr;

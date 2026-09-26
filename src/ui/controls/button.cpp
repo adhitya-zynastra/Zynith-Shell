@@ -682,8 +682,9 @@ void Button::applyVisualState() {
     animationManager()->cancel(m_animId);
   }
 
+  // Hover, press and selection states are the Focus motion role (a short decelerating crossfade).
   m_animId = animationManager()->animate(
-      0.0F, 1.0F, Style::animFast, Easing::EaseOutCubic,
+      motion::Role::Focus, 0.0F, 1.0F,
       [this](float t) {
         applyColors(
             lerpColor(m_fromBg, m_targetBg, t), lerpColor(m_fromBorder, m_targetBorder, t),

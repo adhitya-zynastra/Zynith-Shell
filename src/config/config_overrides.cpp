@@ -2066,6 +2066,75 @@ bool ConfigService::resetBarLaneOverride(const std::vector<std::string>& lanePat
   return commitOverrideTable(std::move(next), changed);
 }
 
+namespace {
+  std::string overrideStashPath(const std::string& overridesPath, std::string_view section) {
+    return overridesPath + "." + std::string(section) + ".stash";
+  }
+} // namespace
+
+bool ConfigService::stashOverrideTable(std::string_view section, std::string* error) {
+  if (error != nullptr) {
+    error->clear();
+  }
+  if (m_overridesPath.empty()) {
+    if (error != nullptr) {
+      *error = "settings not writable";
+    }
+    return false;
+  }
+  const auto* table = m_overridesTable.get_as<toml::table>(section);
+  if (table == nullptr || table->empty()) {
+    return false;
+  }
+  toml::table out;
+  out.insert_or_assign(section, *table);
+  std::ostringstream text;
+  text << "# Saved by noctalia before [" << section << "] overrides were reset. Not read as configuration.\n";
+  text << toml::toml_formatter{out, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
+  const std::string path = overrideStashPath(m_overridesPath, section);
+  if (!text.good() || !writeTextFileAtomic(path, text.str())) {
+    if (error != nullptr) {
+      *error = "could not write " + path;
+    }
+    return false;
+  }
+  return true;
+}
+
+bool ConfigService::restoreStashedOverrideTable(std::string_view section, std::string* error) {
+  const auto fail = [error](std::string message) {
+    if (error != nullptr) {
+      *error = std::move(message);
+    }
+    return false;
+  };
+  if (m_overridesPath.empty()) {
+    return fail("settings not writable");
+  }
+  const std::string path = overrideStashPath(m_overridesPath, section);
+  std::error_code ec;
+  if (!std::filesystem::exists(path, ec)) {
+    return fail("nothing to restore (" + path + " does not exist)");
+  }
+  toml::table parsed;
+  try {
+    parsed = toml::parse_file(path);
+  } catch (const toml::parse_error& e) {
+    return fail(std::string("cannot parse ") + path + ": " + std::string(e.description()));
+  }
+  const auto* table = parsed.get_as<toml::table>(section);
+  if (table == nullptr) {
+    return fail(path + " has no [" + std::string(section) + "] table");
+  }
+  toml::table next = m_overridesTable;
+  next.insert_or_assign(section, *table);
+  bool changed = false;
+  if (!commitOverrideTable(std::move(next), &changed)) {
+    return fail(m_lastMutationError.empty() ? "the saved table was rejected by validation" : m_lastMutationError);
+  }
+  return true;
+}
+
 bool ConfigService::renameOverrideTable(
     const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath
 ) {

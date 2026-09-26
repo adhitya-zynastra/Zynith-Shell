@@ -76,6 +76,8 @@ private:
   RenderContext* m_renderContext = nullptr;
 
   LockscreenWidgetsSnapshot m_snapshot;
+  // What the editor opened with: exitEdit() writes settings.toml only when the layout changed.
+  LockscreenWidgetsSnapshot m_snapshotAtEdit;
   desktop_widgets::PlacementMapper m_placementMapper;
   bool m_initialized = false;
   std::function<void()> m_onEnterEdit;

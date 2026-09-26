@@ -2,12 +2,25 @@
 
 #include "render/animation/motion_service.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iterator>
 
 namespace {
   constexpr float kReducedMotionDurationMs = 1.0F;
-}
+
+  // A spring is "at rest" within 0.4 % of its travel (never less than 0.001, never more than half a
+  // unit): for pixel geometry that is at most half a pixel, so the final snap onto the target is
+  // invisible, and the entry stops requesting frames promptly after it looks finished.
+  float springRestEpsilon(float span) {
+    return std::clamp(std::abs(span) * 0.004F, 0.001F, 0.5F);
+  }
+
+  std::chrono::steady_clock::duration msDuration(float ms) {
+    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<float, std::milli>(ms));
+  }
+} // namespace
 
 AnimationManager::AnimationManager() { MotionService::instance().registerManager(this); }
 
@@ -29,7 +42,8 @@ AnimationManager::Id AnimationManager::animateTimer(
 
 AnimationManager::Id AnimationManager::animateInternal(
     float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
-    std::function<void()> onComplete, const void* owner, bool scaleDuration, bool respectMotionEnabled
+    std::function<void()> onComplete, const void* owner, bool scaleDuration, bool respectMotionEnabled,
+    float delayMs
 ) {
   const auto& motion = MotionService::instance();
   const bool reduceMotion = respectMotionEnabled && !motion.enabled();
@@ -58,7 +72,9 @@ AnimationManager::Id AnimationManager::animateInternal(
   }
 
   Id id = m_nextId++;
-  const auto now = std::chrono::steady_clock::now();
+  // A role delay postpones the start; tick() holds the value at `from` until then.
+  const float effectiveDelayMs = reduceMotion ? 0.0F : std::max(0.0F, scaleDuration ? delayMs / motion.speed() : delayMs);
+  const auto now = std::chrono::steady_clock::now() + msDuration(effectiveDelayMs);
   // Started from inside a setter? Park it until the tick finishes walking.
   std::vector<Entry>& sink = m_tickDepth > 0 ? m_pending : m_animations;
   sink.push_back(
@@ -82,6 +98,137 @@ AnimationManager::Id AnimationManager::animateInternal(
       }
   );
   return id;
+}
+
+AnimationManager::Id AnimationManager::animate(
+    motion::Role role, float from, float to, std::function<void(float)> setter, std::function<void()> onComplete,
+    const void* owner
+) {
+  const auto& spec = motion::spec(role);
+  if (!MotionService::instance().enabled()) {
+    // Reduced motion. Snap roles land on the end state; Shorten roles keep the state change legible as
+    // a short fade on real time, independent of the (disabled) motion settings.
+    if (spec.reduced == motion::ReducedMotion::Shorten && spec.reducedDurationMs > 0.0F) {
+      return animateInternal(
+          from, to, spec.reducedDurationMs, Easing::EaseOutQuad, std::move(setter), std::move(onComplete), owner,
+          false, false
+      );
+    }
+    return animateInternal(from, to, 0.0F, spec.easing, std::move(setter), std::move(onComplete), owner, true, true);
+  }
+  if (spec.model == motion::Model::Spring) {
+    return animateSpring(from, to, spec.spring, std::move(setter), std::move(onComplete), owner);
+  }
+  return animateInternal(
+      from, to, spec.durationMs, spec.easing, std::move(setter), std::move(onComplete), owner, true, true, spec.delayMs
+  );
+}
+
+AnimationManager::Id AnimationManager::animateSpring(
+    float from, float to, motion::SpringParams params, std::function<void(float)> setter,
+    std::function<void()> onComplete, const void* owner, float initialVelocity
+) {
+  if (!MotionService::instance().enabled() || !(params.omega > 0.0F)) {
+    if (setter) {
+      setter(to);
+    }
+    if (onComplete) {
+      onComplete();
+    }
+    return 0;
+  }
+  Id id = m_nextId++;
+  const auto now = std::chrono::steady_clock::now();
+  std::vector<Entry>& sink = m_tickDepth > 0 ? m_pending : m_animations;
+  Entry entry{
+      .id = id,
+      .owner = owner,
+      .respectMotionEnabled = true,
+      .animation = Animation{
+          .startValue = from,
+          .endValue = to,
+          .startedAt = now,
+          .setter = std::move(setter),
+          .onComplete = std::move(onComplete),
+      },
+  };
+  entry.spring = true;
+  entry.springParams = params;
+  entry.springState = motion::SpringState{.position = from, .velocity = initialVelocity};
+  entry.restEpsilon = springRestEpsilon(to - from);
+  entry.lastStep = now;
+  sink.push_back(std::move(entry));
+  return id;
+}
+
+AnimationManager::Entry* AnimationManager::findLive(Id id) {
+  if (id == 0) {
+    return nullptr;
+  }
+  for (auto* list : {&m_animations, &m_pending}) {
+    for (auto& entry : *list) {
+      if (entry.id == id && !entry.dead && !entry.animation.finished) {
+        return &entry;
+      }
+    }
+  }
+  return nullptr;
+}
+
+const AnimationManager::Entry* AnimationManager::findLive(Id id) const {
+  return const_cast<AnimationManager*>(this)->findLive(id);
+}
+
+AnimationManager::Sample AnimationManager::sampleEntry(const Entry& entry, std::chrono::steady_clock::time_point now) {
+  if (entry.spring) {
+    return Sample{.value = entry.springState.position, .velocity = entry.springState.velocity, .spring = true};
+  }
+  const auto& anim = entry.animation;
+  const float span = anim.endValue - anim.startValue;
+  if (anim.durationMs <= 0.0F) {
+    return Sample{.value = anim.endValue};
+  }
+  const float elapsed = std::chrono::duration<float, std::milli>(now - anim.startedAt).count();
+  const float t = std::clamp(elapsed / anim.durationMs, 0.0F, 1.0F);
+  // Velocity of a tween: the easing's slope (finite difference) times span per millisecond.
+  constexpr float kProbe = 0.002F;
+  const float t0 = std::max(0.0F, t - kProbe);
+  const float t1 = std::min(1.0F, t + kProbe);
+  const float slope = t1 > t0 ? (applyEasing(anim.easing, t1) - applyEasing(anim.easing, t0)) / (t1 - t0) : 0.0F;
+  return Sample{
+      .value = anim.startValue + span * applyEasing(anim.easing, t),
+      .velocity = slope * span / anim.durationMs * 1000.0F,
+  };
+}
+
+std::optional<AnimationManager::Sample> AnimationManager::sample(Id id) const {
+  const Entry* entry = findLive(id);
+  if (entry == nullptr) {
+    return std::nullopt;
+  }
+  return sampleEntry(*entry, std::chrono::steady_clock::now());
+}
+
+bool AnimationManager::retarget(Id id, float to) {
+  Entry* entry = findLive(id);
+  if (entry == nullptr) {
+    return false;
+  }
+  auto& anim = entry->animation;
+  if (entry->spring) {
+    // Position and velocity are untouched: the motion bends toward the new target from where, and as
+    // fast as, it is actually going. The rest threshold follows the larger of the old and new travel.
+    entry->restEpsilon = std::max(entry->restEpsilon, springRestEpsilon(to - entry->springState.position));
+    anim.endValue = to;
+    return true;
+  }
+  const auto now = std::chrono::steady_clock::now();
+  const float current = sampleEntry(*entry, now).value;
+  anim.startValue = current;
+  anim.endValue = to;
+  anim.elapsedMs = 0.0F;
+  anim.startedAt = now;
+  return true;
 }
 
 void AnimationManager::killEntry(Entry& entry) {
@@ -136,6 +283,11 @@ void AnimationManager::reduceMotion() {
       continue; // cancelled by its own setter
     }
     auto& anim = m_animations[i].animation;
+    if (m_animations[i].spring) {
+      // The next tick finds it at rest on its target and finishes it.
+      m_animations[i].springState = motion::SpringState{.position = anim.endValue, .velocity = 0.0F};
+      continue;
+    }
     anim.startValue = anim.endValue;
     anim.durationMs = kReducedMotionDurationMs;
     anim.elapsedMs = 0.0F;
@@ -186,6 +338,31 @@ void AnimationManager::tick(float /*deltaMs*/) {
 
   for (std::size_t i = 0; i < m_animations.size(); ++i) {
     if (m_animations[i].animation.finished) {
+      continue;
+    }
+
+    if (m_animations[i].spring) {
+      Entry& e = m_animations[i];
+      if (now < e.animation.startedAt) {
+        continue; // role delay: not moving yet
+      }
+      const float dt = std::chrono::duration<float>(now - std::max(e.lastStep, e.animation.startedAt)).count();
+      e.lastStep = now;
+      motion::SpringParams params = e.springParams;
+      params.omega *= MotionService::instance().speed();
+      e.springState = motion::step(e.springState, e.animation.endValue, params, dt);
+      bool springDone = false;
+      if (motion::atRest(e.springState, e.animation.endValue, params, e.restEpsilon)) {
+        e.springState = motion::SpringState{.position = e.animation.endValue, .velocity = 0.0F};
+        e.animation.finished = true;
+        springDone = true;
+      }
+      if (e.animation.setter) {
+        e.animation.setter(e.springState.position);
+      }
+      if (springDone && i < m_animations.size() && !m_animations[i].dead && m_animations[i].animation.onComplete) {
+        completedCallbacks.push_back(std::move(m_animations[i].animation.onComplete));
+      }
       continue;
     }
 

@@ -548,6 +548,25 @@ namespace settings {
           tr("settings.schema.appearance.font-family.description"), {"shell", "font_family"},
           std::move(fontFamilyControl), "typeface"
       ));
+      // zynith: the display face, next to the UI face it falls back to.
+      SettingControl displayFontControl = TextSetting{
+          .value = cfg.shell.displayFontFamily, .placeholder = tr("settings.schema.appearance.display-font.placeholder"),
+          .browseFileExtensions = {}
+      };
+      if (!env.fontFamilies.empty()) {
+        displayFontControl = SearchPickerSetting{
+            .options = env.fontFamilies,
+            .selectedValue = cfg.shell.displayFontFamily,
+            .placeholder = tr("settings.schema.appearance.display-font.placeholder"),
+            .emptyText = tr("ui.controls.search-picker.empty"),
+            .preferredHeight = 280.0F,
+        };
+      }
+      entries.push_back(makeEntry(
+          SettingsSection::Appearance, "interface", tr("settings.schema.appearance.display-font.label"),
+          tr("settings.schema.appearance.display-font.description"), {"shell", "display_font_family"},
+          std::move(displayFontControl), "typeface display clock heading font"
+      ));
     }
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "interface", tr("settings.schema.appearance.language.label"),
@@ -1569,6 +1588,11 @@ namespace settings {
           "size dimension wide narrow"
       ));
     }
+    entries.push_back(makeEntry(
+        SettingsSection::Personalization, "control-center", tr("settings.schema.personalization.cc-style.label"),
+        tr("settings.schema.personalization.cc-style.description"), {"control_center", "style"},
+        asSegmented(enumSelect(kControlCenterStyles, cfg.controlCenter.style)), "control center style zynith classic"
+    ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "control-center", tr("settings.schema.personalization.cc-density.label"),
         tr("settings.schema.personalization.cc-density.description"), {"control_center", "density"},

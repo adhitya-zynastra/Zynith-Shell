@@ -10,6 +10,9 @@
 #include "ui/controls/flex.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
+#include "ui/semantic_color.h"
+#include "ui/tokens.h"
+#include "ui/typography.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 
@@ -22,7 +25,6 @@ namespace {
   // Long enough to read the hint and press again; short enough that an armed shutdown does not
   // linger on a lock screen someone walks away from.
   constexpr std::chrono::milliseconds kArmWindow{4000};
-  constexpr float kButtonSize = 44.0F;
 
 } // namespace
 
@@ -58,8 +60,11 @@ bool DesktopSessionActionsWidget::needsConfirmation(const SessionPanelActionConf
 void DesktopSessionActionsWidget::create() {
   m_buttons.clear();
   auto column = ui::column({.out = &m_column, .align = FlexAlign::Center, .gap = Style::spaceSm});
-  auto row = m_options.vertical ? ui::column({.out = &m_row, .align = FlexAlign::Center, .gap = Style::spaceSm})
-                                : ui::row({.out = &m_row, .align = FlexAlign::Center, .gap = Style::spaceSm});
+  // zynith: one glass capsule holding the actions (a single object in the corner), not a row of discs.
+  auto row = m_options.vertical ? ui::column({.out = &m_row, .align = FlexAlign::Center})
+                                : ui::row({.out = &m_row, .align = FlexAlign::Center});
+  row->setFill(colorSpecFromRole(ColorRole::Surface, 0.30F));
+  row->setBorder(ui::color::spec(ui::color::Semantic::Hairline), ui::tokens::kHairline);
   for (std::size_t i = 0; i < m_actions.size(); ++i) {
     const auto& action = m_actions[i];
     Button* button = nullptr;
@@ -150,19 +155,21 @@ void DesktopSessionActionsWidget::disarm() {
 }
 
 void DesktopSessionActionsWidget::syncVisuals() {
-  // Quiet glass discs; an armed action turns into the error role and says what a second press does.
+  // Clear actions inside the capsule; an armed action turns into the error role (the one solid fill in the
+  // corner) and the hint below says what a second press does.
   for (std::size_t i = 0; i < m_buttons.size(); ++i) {
     const bool armed = m_armed == i;
     Button::ButtonPalette colors;
-    colors.borderWidth = Style::borderWidth;
-    const ColorSpec bg = armed ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::Surface, 0.34F);
-    const ColorSpec fg = armed ? colorSpecFromRole(ColorRole::OnError) : colorSpecFromRole(ColorRole::OnSurface);
-    const ColorSpec edge = armed ? colorSpecFromRole(ColorRole::Error) : colorSpecFromRole(ColorRole::OnSurface, 0.12F);
+    colors.borderWidth = ui::tokens::kHairline;
+    const ColorSpec bg = armed ? ui::color::spec(ui::color::Semantic::Error) : clearColorSpec();
+    const ColorSpec fg = armed ? ui::color::spec(ui::color::Semantic::OnError)
+                               : ui::color::spec(ui::color::Semantic::Muted);
+    const ColorSpec edge = armed ? ui::color::spec(ui::color::Semantic::Error) : clearColorSpec();
     colors.normal = {.bg = bg, .border = edge, .label = fg};
     colors.hover = {
-        .bg = armed ? bg : colorSpecFromRole(ColorRole::Surface, 0.55F),
-        .border = armed ? edge : colorSpecFromRole(ColorRole::Primary, 0.45F),
-        .label = fg,
+        .bg = armed ? bg : colorSpecFromRole(ColorRole::OnSurface, 0.10F),
+        .border = armed ? edge : clearColorSpec(),
+        .label = armed ? fg : ui::color::spec(ui::color::Semantic::OnSurface),
     };
     colors.pressed = colors.hover;
     colors.disabled = colors.normal;
@@ -188,16 +195,22 @@ void DesktopSessionActionsWidget::doLayout(Renderer& renderer) {
     return;
   }
   const float scale = contentScale();
+  const float item = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
+  const float inset = ui::tokens::space(ui::tokens::Space::Inline, scale);
   for (Button* button : m_buttons) {
-    button->setGlyphSize(Style::baseGlyphSize * scale);
-    button->setFontSize(Style::fontSizeCaption * scale);
-    button->setRadius(kButtonSize * 0.5F * scale);
-    button->setMinWidth(kButtonSize * scale);
-    button->setMinHeight(kButtonSize * scale);
-    button->setPadding(Style::spaceXs * scale, (m_options.showLabels ? Style::spaceMd : Style::spaceXs) * scale);
+    button->setGlyphSize(ui::tokens::iconSize(ui::tokens::Size::Medium, scale));
+    button->setFontSize(ui::type::size(ui::type::Role::Label, scale));
+    button->setRadius(ui::tokens::pill(item));
+    button->setMinWidth(item);
+    button->setMinHeight(item);
+    button->setPadding(0.0F, m_options.showLabels ? ui::tokens::space(ui::tokens::Space::Control, scale) : 0.0F);
   }
   if (m_row != nullptr) {
-    m_row->setGap(Style::spaceSm * scale);
+    // Concentric: the capsule's radius is the items' plus the inset, so the ends share one centre.
+    m_row->setGap(inset * 0.5F);
+    m_row->setPadding(inset);
+    m_row->setRadius(ui::tokens::pill(item + inset * 2.0F));
+    m_row->setBorder(ui::color::spec(ui::color::Semantic::Hairline), ui::tokens::kHairline * scale);
   }
   if (m_column != nullptr) {
     m_column->setGap(Style::spaceSm * scale);

@@ -2,6 +2,7 @@
 
 #include "render/animation/animation_manager.h"
 #include "render/animation/morph_transition.h"
+#include "render/animation/motion_value.h"
 #include "shell/control_center/control_center_services.h"
 #include "shell/control_center/tab.h"
 #include "shell/control_center/tabs/audio_tab.h"
@@ -149,6 +150,13 @@ private:
   void applyTabContainerVisibility(TabId activeTab);
   void layoutTabContainers(float bodyWidth, float bodyHeight);
   void layoutNavIndicator();
+  void applyNavIndicatorGeometry();
+  // zynith command bar (see m_commandBar): measures the nav items, then places them by hand.
+  void layoutCommandBarNav(Renderer& renderer, float barWidth);
+  void applyCommandBarNavGeometry();
+  void syncCommandBarNavTargets(bool animate);
+  // Where `tab`'s item sits once every expansion has settled (the indicator's destination).
+  [[nodiscard]] MotionRectValue commandBarNavRest(TabId tab) const;
   void styleNavButton(Button* button, bool active) const;
   void layoutFullSidebarWidth(Renderer& renderer);
   void resetTabContainerTransforms();
@@ -192,14 +200,27 @@ private:
   // section switch — it moves and resizes from the old tab's button to the new one — so the switch
   // reads as this panel reconfiguring, not as one page replacing another.
   Box* m_navIndicator = nullptr;
-  struct IndicatorRect {
-    float x = 0.0F;
-    float y = 0.0F;
-    float w = 0.0F;
-    float h = 0.0F;
-  };
-  IndicatorRect m_indicatorFrom;
-  bool m_indicatorPlaced = false;
+  // Its geometry is a MotionRect on the ElementMove role: a critically damped spring per edge, so a
+  // burst of switches bends the one motion toward each new tab with its velocity kept instead of
+  // restarting a curve. Only a change of section animates; layout corrections for the same section
+  // snap (or bend an in-flight glide).
+  MotionRect m_indicatorMotion;
+  TabId m_indicatorTab = TabId::Home;
+  // zynith command bar: style = "zynith" with top_nav. The section navigation, the section's own actions
+  // and close share one bar; there is no title row, because the active item names the section. Items are
+  // positioned by hand, not by the flex pass: each has an expansion (0 = icon, 1 = icon + label) moved by
+  // a spring, so when the section changes the old label folds away, the new one unfolds, and every item
+  // between them slides — one continuous reconfiguration with the indicator travelling through it.
+  bool m_commandBar = false;
+  Box* m_commandRule = nullptr;
+  std::array<MotionValue, kTabCount> m_navExpand;
+  std::array<float, kTabCount> m_navCollapsedWidth{};
+  std::array<float, kTabCount> m_navExpandedWidth{};
+  std::array<float, kTabCount> m_navInk{}; // label opacity last drawn, per item
+  float m_navItemHeight = 0.0F;
+  float m_navGap = 0.0F;
+  // False when the bar is too narrow for any label: the strip stays icon-only (tooltips name them).
+  bool m_navLabelsFit = true;
   std::array<Flex*, kTabCount> m_tabContainers{};
   std::array<Flex*, kTabCount> m_tabHeaderActions{};
   TabId m_activeTab = TabId::Home;

@@ -4,6 +4,7 @@
 #include "render/animation/animation_manager.h"
 #include "shell/desktop/desktop_widget_factory.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -47,6 +48,10 @@ private:
   void createInstance(const DesktopWidgetState& state, LockSurface& surface, const WaylandOutput& output);
   void attachToSurface(WidgetInstance& instance);
   void detachFromSurface(WidgetInstance& instance);
+  // Detaches every instance the predicate selects, then erases them. Two passes on purpose: detaching
+  // re-syncs the surface's frame tick, which walks m_instances, and that walk must never run while
+  // std::erase_if is moving elements (moved-from slots are null). Returns how many were removed.
+  std::size_t removeInstances(const std::function<bool(const WidgetInstance&)>& shouldRemove);
   void syncSurfaceFrameTick(LockSurface* surface);
   [[nodiscard]] WidgetInstance* findInstance(const std::string& id);
   [[nodiscard]] LockSurface* findSurfaceForOutput(LockScreen& lockScreen, const std::string& outputKey) const;

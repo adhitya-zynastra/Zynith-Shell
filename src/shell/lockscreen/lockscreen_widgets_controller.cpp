@@ -130,6 +130,43 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
     return "ok\n";
   });
 
+  // zynith: an editor save stores the whole layout (widget_order included) as settings.toml overrides,
+  // which then shadow the lockscreen.toml preset entirely. This is the way back: it clears only the
+  // [lockscreen_widgets] overrides, and the reload callback rebuilds from the preset. Refused while the
+  // editor is open (its exit would write the old snapshot back) and while the session is locked.
+  ipc.bind(noctalia::cli::msg::lockscreenWidgetsReset, [this](const std::string&) -> std::string {
+    if (m_config == nullptr) {
+      return "error: configuration unavailable\n";
+    }
+    if (isEditing()) {
+      return "error: close the lockscreen widgets editor first\n";
+    }
+    if (m_lockScreen != nullptr && m_lockScreen->isActive()) {
+      return "error: session is locked\n";
+    }
+    // The overrides are parked in a sidecar file first, so a reset is one command from being undone.
+    std::string error;
+    if (!m_config->stashOverrideTable("lockscreen_widgets", &error)) {
+      return error.empty() ? "ok: no lockscreen widget overrides\n" : "error: " + error + "\n";
+    }
+    return m_config->clearOverride({"lockscreen_widgets"}) ? "ok: previous layout kept for lockscreen-widgets-restore\n"
+                                                           : "ok: no lockscreen widget overrides\n";
+  });
+
+  ipc.bind(noctalia::cli::msg::lockscreenWidgetsRestore, [this](const std::string&) -> std::string {
+    if (m_config == nullptr) {
+      return "error: configuration unavailable\n";
+    }
+    if (isEditing()) {
+      return "error: close the lockscreen widgets editor first\n";
+    }
+    if (m_lockScreen != nullptr && m_lockScreen->isActive()) {
+      return "error: session is locked\n";
+    }
+    std::string error;
+    return m_config->restoreStashedOverrideTable("lockscreen_widgets", &error) ? "ok\n" : "error: " + error + "\n";
+  });
+
   ipc.bind(noctalia::cli::msg::lockscreenWidgetsToggleEdit, [this](const std::string&) -> std::string {
     if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
       return "error: lock screen disabled\n";
@@ -225,6 +262,7 @@ void LockscreenWidgetsController::enterEdit() {
     m_onEnterEdit();
   }
   m_editor->open(toDesktopWidgetsEditorSnapshot(m_snapshot));
+  m_snapshotAtEdit = m_snapshot;
   m_host->hide();
 }
 
@@ -238,7 +276,11 @@ void LockscreenWidgetsController::exitEdit() {
   m_placementMapper.rebaseForCurrentOutputs(*m_wayland, m_snapshot.widgets);
   applyVisibility();
   (void)m_editor->close();
-  saveSnapshotToConfig();
+  // zynith: only a real edit is written. Saving unconditionally turned every visit to the editor into
+  // a full [lockscreen_widgets] override in settings.toml, which then shadows the lockscreen.toml preset.
+  if (!(m_snapshot == m_snapshotAtEdit)) {
+    saveSnapshotToConfig();
+  }
   if (m_desktopWidgets != nullptr) {
     m_desktopWidgets->unsuppressDisplay();
   }

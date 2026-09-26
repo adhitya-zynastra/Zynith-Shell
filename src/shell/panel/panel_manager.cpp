@@ -29,12 +29,15 @@
 #include "ui/controls/select_dropdown_popup.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "ui/tokens.h"
 #include "util/string_utils.h"
 #include "util/sys_utils.h"
 #include "wayland/hyprland/focus_grab_service.h"
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "shell/spatial/spatial_model.h"
+#include "shell/surface/surface_role.h"
 
 #include <algorithm>
 #include <cmath>
@@ -45,10 +48,8 @@
 PanelManager* PanelManager::s_instance = nullptr;
 
 namespace {
-  // zynith: panels share the OSD/toast silhouette — clearly rounded, themed radius as the floor.
-  [[nodiscard]] float zynithPanelRadius(float scale) {
-    return std::max(Style::scaledRadiusXl(scale), 16.0F * scale);
-  }
+  // zynith: panels share the toast/wallpaper-browser silhouette — the Surface radius token.
+  [[nodiscard]] float zynithPanelRadius(float scale) { return ui::tokens::radius(ui::tokens::Radius::Surface, scale); }
 
 
   constexpr Logger kLog("panel");
@@ -544,6 +545,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   if (m_inTransition) {
     return;
   }
+  m_openOrigin = request.origin;
 
   if (request.output == nullptr && m_platform != nullptr) {
     request.output = m_platform->focusedInteractiveOutput(std::chrono::milliseconds(1200));
@@ -954,7 +956,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     m_layerSurface = nullptr;
     m_output = nullptr;
     m_wlSurface = nullptr;
-    m_panelLayer = LayerShellLayer::Top;
+    m_panelLayer = shell::surface::layer(shell::surface::Role::Surface); // raised to its bar's layer on attach
     m_activePanel = nullptr;
     m_activePanelId.clear();
     m_pendingOpenContext.clear();
@@ -1215,6 +1217,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
         });
       }
       kLog.debug("panel manager: opened \"{}\" as attached layer-shell", panelId);
+      kLog.debug("panel manager: origin {}", shell::spatial::describe(m_openOrigin));
       if (m_panelOpenedCallback) {
         m_panelOpenedCallback();
       }
@@ -1459,9 +1462,11 @@ void PanelManager::closePanel(bool animateClose) {
     const std::uint64_t gen = ++m_destroyGeneration;
     if (m_attachedToBar && m_attachedRevealClipNode != nullptr) {
       m_animations.cancelForOwner(m_attachedRevealClipNode);
+      // zynith motion language: a dismissal is the SurfaceDismiss role — shorter than the reveal and
+      // accelerating — for attached panels too. (Upstream closed attached panels on animNormal with
+      // EaseInOutQuad, whose slow tail left a sliver at the bar for ~350 ms at the Cinematic tempo.)
       m_animations.animate(
-          m_attachedRevealProgress, 0.0F, Style::animNormal, Easing::EaseInOutQuad,
-          [this](float v) { applyAttachedReveal(v); },
+          motion::Role::SurfaceDismiss, m_attachedRevealProgress, 0.0F, [this](float v) { applyAttachedReveal(v); },
           [this, gen]() {
             DeferredCall::callLater([this, gen]() {
               if (m_destroyGeneration == gen) {
@@ -1474,8 +1479,7 @@ void PanelManager::closePanel(bool animateClose) {
     } else {
       m_animations.cancelForOwner(m_sceneRoot.get());
       m_animations.animate(
-          m_detachedRevealProgress, 0.0F, Style::animExit, Easing::EaseInQuad,
-          [this](float v) { applyDetachedReveal(v); },
+          motion::Role::SurfaceDismiss, m_detachedRevealProgress, 0.0F, [this](float v) { applyDetachedReveal(v); },
           [this, gen]() {
             DeferredCall::callLater([this, gen]() {
               if (m_destroyGeneration == gen) {
@@ -2242,8 +2246,8 @@ void PanelManager::startAttachedOpenAnimation() {
 
   m_attachedOpenAnimationPending = false;
   m_animations.animate(
-      m_attachedRevealProgress, 1.0F, Style::animNormal, Easing::EaseOutQuint,
-      [this](float v) { applyAttachedReveal(v); }, {}, m_attachedRevealClipNode
+      motion::Role::SurfaceReveal, m_attachedRevealProgress, 1.0F, [this](float v) { applyAttachedReveal(v); }, {},
+      m_attachedRevealClipNode
   );
 }
 
@@ -2670,8 +2674,8 @@ void PanelManager::buildScene(std::uint32_t width, std::uint32_t height) {
     } else {
       applyDetachedReveal(0.0F);
       m_animations.animate(
-          m_detachedRevealProgress, 1.0F, Style::animNormal, Easing::EaseOutQuint,
-          [this](float v) { applyDetachedReveal(v); }, {}, m_sceneRoot.get()
+          motion::Role::SurfaceReveal, m_detachedRevealProgress, 1.0F, [this](float v) { applyDetachedReveal(v); }, {},
+          m_sceneRoot.get()
       );
     }
 
@@ -2909,15 +2913,26 @@ void PanelManager::registerIpc(IpcService& ipc) {
         if (!m_panels.contains(panelId) && !m_persistentHost.hasPanel(panelId)) {
           return unknownPanelError(panelId);
         }
-        // Output left unset: openPanel resolves it (focus source, else compositor probe).
-        if (context.empty()) {
-          togglePanel(panelId);
-        } else {
-          togglePanel(panelId, PanelOpenRequest{.context = context});
-        }
+        // Output left unset: openPanel resolves it (focus source, else compositor probe). The request
+        // came from a command (IPC or a keybinding running it): no spatial source to grow from.
+        togglePanel(panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}});
         return "ok\n";
       }
   );
+
+  // The same override the Settings window writes for [control_center] style. An open Control Center keeps
+  // its current tree; the next open builds with the new style.
+  ipc.bind(noctalia::cli::msg::controlCenterStyleSet, [this](const std::string& args) -> std::string {
+    const std::string token = StringUtils::trim(args);
+    const auto style = enumFromKey(kControlCenterStyles, token);
+    if (!style.has_value()) {
+      return "error: expected zynith or classic\n";
+    }
+    if (m_config == nullptr || !m_config->setOverride({"control_center", "style"}, std::string(token))) {
+      return "error: settings not writable\n";
+    }
+    return "ok\n";
+  });
 
   ipc.bind(
       noctalia::cli::msg::panelOpen, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
@@ -2939,7 +2954,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
         }
 
         // Output left unset: openPanel resolves it (focus source, else compositor probe).
-        openPanel(panelId, PanelOpenRequest{.context = context});
+        openPanel(panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}});
         return "ok\n";
       }
   );

@@ -24,6 +24,7 @@
 #include "shell/panel/panel_manager.h"
 #include "shell/surface/shadow.h"
 #include "shell/tooltip/tooltip_manager.h"
+#include "shell/spatial/spatial_model.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -303,10 +304,38 @@ namespace {
     TooltipManager::instance().suppressBarTooltipsForPanel(panelId);
   }
 
-  // The dead zone has no widget to anchor to, so a panel action anchors at the pointer instead.
+  // zynith spatial model: a bar widget as an origin — its identity and its rectangle, in the same
+  // output-local space as the panel anchor (the bar surface's origin plus the widget node's position).
+  shell::spatial::Origin widgetOrigin(const BarInstance& instance, const Widget& widget, CompositorPlatform* platform) {
+    shell::spatial::Origin origin{
+        .kind = shell::spatial::OriginKind::BarWidget,
+        .sourceBar = instance.barConfig.name,
+        .sourceId = std::string(widget.configName().empty() ? widget.widgetType() : widget.configName()),
+        .edge = shell::spatial::edgeFromBarPosition(instance.barConfig.position),
+    };
+    if (const Node* node = widget.root(); node != nullptr) {
+      float nodeX = 0.0F;
+      float nodeY = 0.0F;
+      Node::absolutePosition(node, nodeX, nodeY);
+      float offsetX = 0.0F;
+      float offsetY = 0.0F;
+      if (platform != nullptr && instance.output != nullptr) {
+        if (const auto* out = platform->findOutputByWl(instance.output); out != nullptr && out->hasUsableGeometry()) {
+          const auto [surfaceX, surfaceY] = surfaceOriginForOutputLocal(instance, *out);
+          offsetX = surfaceX;
+          offsetY = surfaceY;
+        }
+      }
+      origin.rect = {.x = nodeX + offsetX, .y = nodeY + offsetY, .width = node->width(), .height = node->height()};
+    }
+    return origin;
+  }
+
+  // The dead zone has no widget to anchor to, so a panel action anchors at the pointer instead. When the
+  // pointer is over a known widget (hover-open on the clock), `sourceWidget` makes that widget the origin.
   void openPanelAtBarPointer(
       BarInstance& instance, float sx, float sy, CompositorPlatform* platform, std::string_view sourceBarName,
-      std::string_view panelId, std::string_view context, bool toggle
+      std::string_view panelId, std::string_view context, bool toggle, const Widget* sourceWidget = nullptr
   ) {
     auto& panelManager = PanelManager::instance();
     if (toggle && panelManager.isOpenPanel(std::string(panelId))) {
@@ -332,6 +361,14 @@ namespace {
             .hasAnchorPosition = true,
             .context = std::string(context),
             .sourceBarName = std::string(sourceBarName),
+            // An empty part of the bar is a point on the bar's edge; a hovered widget is itself.
+            .origin = sourceWidget != nullptr
+                ? widgetOrigin(instance, *sourceWidget, platform)
+                : shell::spatial::Origin{
+                      .kind = shell::spatial::OriginKind::BarArea,
+                      .sourceBar = std::string(sourceBarName),
+                      .rect = {.x = anchorX, .y = anchorY, .width = 1.0F, .height = 1.0F},
+                      .edge = shell::spatial::edgeFromBarPosition(instance.barConfig.position)},
         }
     );
   }
@@ -2645,7 +2682,7 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
           return panel != nullptr && panel->isPanelTransitionActive();
         });
       }
-      widget->setPanelToggleCallback([this, inst = &instance](
+      widget->setPanelToggleCallback([this, inst = &instance, source = widget.get()](
                                          std::string_view panelId, std::string_view context,
                                          std::optional<float> anchorSurfaceX, std::optional<float> anchorSurfaceY,
                                          Widget::PanelActivation activation
@@ -2672,7 +2709,8 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
             .hasExplicitAnchor = anchorSurfaceX.has_value() || anchorSurfaceY.has_value(),
             .hasAnchorPosition = true,
             .context = context,
-            .sourceBarName = inst->barConfig.name
+            .sourceBarName = inst->barConfig.name,
+            .origin = widgetOrigin(*inst, *source, m_platform),
         };
         // zynith: the pointer rested on the time cluster long enough to open the control center,
         // then clicked it. That click is the one the hover pre-empted, so it confirms the panel
@@ -2998,7 +3036,7 @@ void Bar::updateClockHoverIntent(BarInstance& instance, Widget* target) {
         }
         openPanelAtBarPointer(
             *inst, inst->lastPointerSx, inst->lastPointerSy, platform, inst->barConfig.name, "control-center", "home",
-            false
+            false, held
         );
         inst->hoverOpenedControlCenter = PanelManager::instance().isOpenPanel("control-center");
       }

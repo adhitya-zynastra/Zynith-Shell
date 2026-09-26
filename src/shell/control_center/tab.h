@@ -12,6 +12,11 @@ class Renderer;
 
 namespace control_center {
 
+  // Which surface language the sections build with: the Control Center sets it from
+  // [control_center].style before its tabs create their trees (zynith plates vs classic cards).
+  void setZynithSurfaces(bool zynith) noexcept;
+  [[nodiscard]] bool zynithSurfaces() noexcept;
+
   void applySectionCardStyle(Flex& card, float scale = 1.0F, float fillOpacity = 1.0F);
   Label* addTitle(Flex& parent, const std::string& text, float scale = 1.0F);
   void addBody(Flex& parent, const std::string& text, float scale = 1.0F);

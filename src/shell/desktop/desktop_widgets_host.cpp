@@ -15,6 +15,7 @@
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
+#include "shell/surface/surface_role.h"
 
 #include <algorithm>
 #include <string>
@@ -274,7 +275,7 @@ void DesktopWidgetsHost::createInstance(const DesktopWidgetState& state, const W
 
   auto surfaceConfig = LayerSurfaceConfig{
       .nameSpace = desktopWidgetNamespace(clampedState),
-      .layer = LayerShellLayer::Bottom,
+      .layer = shell::surface::layer(shell::surface::Role::Atmosphere),
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
       .width = geometry.surfaceWidth,
       .height = geometry.surfaceHeight,

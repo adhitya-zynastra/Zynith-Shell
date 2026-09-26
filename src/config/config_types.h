@@ -964,6 +964,19 @@ enum class LayoutDensity : std::uint8_t {
   Spacious = 2,
 };
 
+// zynith: the Control Center's composition. Zynith (default) leads with a wallpaper-backed hero —
+// display clock, date, weather, identity — over the media strip and quick controls; Classic is the
+// previous three-card layout, kept selectable and unchanged.
+enum class ControlCenterStyle : std::uint8_t {
+  Zynith = 0,
+  Classic = 1,
+};
+
+constexpr EnumOption<ControlCenterStyle> kControlCenterStyles[] = {
+    {ControlCenterStyle::Zynith, "zynith", "settings.options.control-center.style.zynith"},
+    {ControlCenterStyle::Classic, "classic", "settings.options.control-center.style.classic"},
+};
+
 constexpr EnumOption<PositionReference> kPositionReferences[] = {
     {PositionReference::Workspace, "workspace", "settings.options.bar.reference.workspace"},
     {PositionReference::Output, "output", "settings.options.bar.reference.output"},
@@ -1217,6 +1230,9 @@ struct ShellConfig {
   bool popupShadows = true;
   bool cardBorders = true;
   std::string fontFamily = "sans-serif";
+  // zynith: typeface for display moments — the Control Center hero clock and the like. Empty = the
+  // UI font (font_family). Display type is set light and large, so a geometric face suits it.
+  std::string displayFontFamily;
   std::string lang; // empty = auto-detect from $LC_ALL/$LC_MESSAGES/$LANG
   std::string timeFormat = "{:%H:%M}";
   std::string dateFormat = "%A, %x";
@@ -1750,6 +1766,7 @@ struct ControlCenterConfig {
   std::int32_t hoverOpenDelayMs = 350;
   // zynith: spacing of the control center's frame (outer rhythm, navigation, content gaps).
   LayoutDensity density = LayoutDensity::Comfortable;
+  ControlCenterStyle style = ControlCenterStyle::Zynith;
   // zynith: the bar a Control Center opened without a source bar (shortcut, IPC) attaches to.
   // Empty = the first enabled bar. A click on a bar widget always uses the bar that was clicked.
   std::string anchorBar;

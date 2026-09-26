@@ -27,6 +27,9 @@
 #include "ui/builders.h"
 #include "ui/controls/grid_view.h"
 #include "ui/dialogs/file_dialog.h"
+#include "ui/semantic_color.h"
+#include "ui/tokens.h"
+#include "ui/typography.h"
 
 #include <algorithm>
 #include <cmath>
@@ -65,6 +68,7 @@ namespace {
   constexpr std::int64_t kHomeTransientPositionRegressionCeilingUs = 1'500'000;
   constexpr std::int64_t kHomeTransientPositionRegressionDeltaUs = 5'000'000;
   constexpr int kHomeMediaArtLayoutPassLimit = 8;
+  constexpr std::size_t kZynithChipColumns = 3;
 
   float homeAvatarSize(float scale) { return Style::controlHeightLg * kHomeAvatarScale * scale; }
 
@@ -133,6 +137,42 @@ namespace {
     button.setEnabled(enabled);
   }
 
+  // zynith chip: clear at rest (a tone step on the glass), the selection material when on. The accent
+  // appears only on an active toggle, so a row of chips reads as state, not decoration.
+  void applyZynithChipStyle(Button& button, bool enabled, bool active, float fillOpacity) {
+    const bool on = enabled && active;
+    Button::ButtonPalette colors;
+    colors.borderWidth = ui::tokens::kHairline;
+    const ColorSpec fill = on ? ui::color::spec(ui::color::Semantic::SelectionFill)
+                              : colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity * 0.72F);
+    const ColorSpec edge = on ? ui::color::spec(ui::color::Semantic::SelectionEdge)
+                              : ui::color::spec(ui::color::Semantic::Hairline);
+    const ColorSpec label = !enabled ? colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.45F)
+        : on                         ? ui::color::spec(ui::color::Semantic::Accent)
+                                     : ui::color::spec(ui::color::Semantic::OnSurface);
+    colors.normal = {.bg = fill, .border = edge, .label = label};
+    colors.hover = {
+        .bg = on ? colorSpecFromRole(ColorRole::Primary, 0.24F) : colorSpecFromRole(ColorRole::OnSurface, 0.08F),
+        .border = on ? edge : colorSpecFromRole(ColorRole::Primary, 0.35F),
+        .label = on ? label : ui::color::spec(ui::color::Semantic::OnSurface),
+    };
+    colors.pressed = colors.hover;
+    colors.disabled = colors.normal;
+    button.setCustomPalette(colors);
+    button.setEnabled(enabled);
+  }
+
+  // zynith plate hover: the hairline edge warms to the accent. No fill change, as with the classic cards.
+  void applyZynithPlateHover(Flex& plate, bool hovered, float scale) {
+    if (hovered) {
+      plate.setBorder(colorSpecFromRole(ColorRole::Primary, 0.4F), ui::tokens::kHairline * scale);
+    } else if (Style::cardBordersEnabled()) {
+      plate.setBorder(ui::color::spec(ui::color::Semantic::Hairline), ui::tokens::kHairline * scale);
+    } else {
+      plate.clearBorder();
+    }
+  }
+
   // The whole home cards are clickable; on hover swap the card outline to the hover colour. No fill
   // change — the user card's fill sits behind the wallpaper, so a thin hover border is the one hover
   // signal that reads consistently across all three cards.
@@ -146,8 +186,17 @@ namespace {
     }
   }
 
-  void applyAvatarChrome(Image* avatar, bool highlighted) {
+  void applyAvatarChrome(Image* avatar, bool highlighted, bool zynith) {
     if (avatar == nullptr) {
+      return;
+    }
+    if (zynith) {
+      // A hairline ring at rest; the focus-ring weight in the accent when hovered or focused.
+      if (highlighted) {
+        avatar->setBorder(ui::color::spec(ui::color::Semantic::Accent), ui::tokens::kFocusRing);
+      } else {
+        avatar->setBorder(colorSpecFromRole(ColorRole::OnSurface, 0.22F), ui::tokens::kHairline);
+      }
       return;
     }
     const float borderWidth = Style::borderWidth * 3.0F;
@@ -196,6 +245,10 @@ HomeTab::~HomeTab() {
 }
 
 std::unique_ptr<Flex> HomeTab::create() {
+  m_zynith = control_center::zynithSurfaces();
+  if (m_zynith) {
+    return createZynith();
+  }
   const float scale = contentScale();
   const std::string displayName = sessionDisplayName();
 
@@ -241,74 +294,7 @@ std::unique_ptr<Flex> HomeTab::create() {
   }
 
   const float avatarSize = homeAvatarSize(scale);
-  const auto openAvatarPicker = [this]() {
-    if (m_config == nullptr) {
-      return;
-    }
-
-    FileDialogOptions options;
-    options.mode = FileDialogMode::Open;
-    options.defaultViewMode = FileDialogViewMode::Grid;
-    options.title = i18n::tr("control-center.home.select-avatar");
-    options.extensions = DirectoryScanner::imageExtensionFilter(false);
-    options.startDirectory = avatarStartDirectory(m_accounts, m_config);
-
-    (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
-      if (!pickedPath.has_value() || m_config == nullptr) {
-        return;
-      }
-      const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
-      if (applyResult.success()) {
-        DeferredCall::callLater([]() {
-          PanelManager::instance().refresh();
-          PanelManager::instance().requestRedraw();
-        });
-        return;
-      }
-      notify::error(
-          "Noctalia", i18n::tr("control-center.home.avatar-error-title"),
-          i18n::tr(shell::avatarApplyErrorTranslationKey(applyResult.error))
-      );
-    });
-  };
-
-  auto avatarArea = ui::inputArea({});
-  avatarArea->setSize(avatarSize, avatarSize);
-  avatarArea->setHitShape(InputArea::HitShape::Circle);
-  avatarArea->setFocusable(true);
-  avatarArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
-  avatarArea->setOnClick([openAvatarPicker](const InputArea::PointerData&) { openAvatarPicker(); });
-  avatarArea->setOnKeyDown([openAvatarPicker](const InputArea::KeyData& key) {
-    if (key.pressed && KeybindMatcher::matches(KeybindAction::Validate, key.sym, key.modifiers)) {
-      openAvatarPicker();
-    }
-  });
-  m_userAvatarArea = avatarArea.get();
-  avatarArea->addChild(
-      ui::image({
-          .out = &m_userAvatar,
-          .fit = ImageFit::Cover,
-          .radius = avatarSize * 0.5F,
-          .padding = 1.0F * scale,
-          .width = avatarSize,
-          .height = avatarSize,
-          .configure = [](Image& image) {
-            image.setBorder(colorSpecFromRole(ColorRole::Primary), Style::borderWidth * 3.0F);
-            image.setHitTestVisible(false);
-            image.setAsyncReadyCallback([]() { PanelManager::instance().refresh(); });
-          },
-      })
-  );
-  const auto syncAvatarChrome = [this]() {
-    const bool highlighted =
-        m_userAvatarArea != nullptr && (m_userAvatarArea->focused() || m_userAvatarArea->hovered());
-    applyAvatarChrome(m_userAvatar, highlighted);
-    PanelManager::instance().requestRedraw();
-  };
-  avatarArea->setOnEnter([syncAvatarChrome](const InputArea::PointerData&) { syncAvatarChrome(); });
-  avatarArea->setOnLeave([syncAvatarChrome]() { syncAvatarChrome(); });
-  avatarArea->setOnFocusGain(syncAvatarChrome);
-  avatarArea->setOnFocusLoss(syncAvatarChrome);
+  auto avatarArea = buildAvatarArea(avatarSize, scale);
   const auto configureUserDetailLabel = [scale](Label& label) {
     label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.36F), 0.0F, 1.0F * scale);
   };
@@ -516,21 +502,118 @@ std::unique_ptr<Flex> HomeTab::create() {
   bottomRow->addChild(std::move(leftColumn));
 
   // --- Shortcuts (right of media + clock) ---
+  auto grid = buildShortcutGrid(scale);
+  if (m_shortcutPads.size() <= kHomeStackedShortcutMax) {
+    grid->setColumns(1);
+    grid->setFlexGrow(0.0F);
+  }
+
+  if (!m_shortcutPads.empty()) {
+    bottomRow->addChild(std::move(grid));
+  } else {
+    m_shortcutsGrid = nullptr;
+  }
+  tab->addChild(std::move(bottomRow));
+
+  return tab;
+}
+
+void HomeTab::openAvatarPicker() {
+  if (m_config == nullptr) {
+    return;
+  }
+
+  FileDialogOptions options;
+  options.mode = FileDialogMode::Open;
+  options.defaultViewMode = FileDialogViewMode::Grid;
+  options.title = i18n::tr("control-center.home.select-avatar");
+  options.extensions = DirectoryScanner::imageExtensionFilter(false);
+  options.startDirectory = avatarStartDirectory(m_accounts, m_config);
+
+  (void)FileDialog::open(std::move(options), [this](std::optional<std::filesystem::path> pickedPath) {
+    if (!pickedPath.has_value() || m_config == nullptr) {
+      return;
+    }
+    const auto applyResult = shell::applyAvatarPath(m_accounts, m_config, pickedPath->string());
+    if (applyResult.success()) {
+      DeferredCall::callLater([]() {
+        PanelManager::instance().refresh();
+        PanelManager::instance().requestRedraw();
+      });
+      return;
+    }
+    notify::error(
+        "Noctalia", i18n::tr("control-center.home.avatar-error-title"),
+        i18n::tr(shell::avatarApplyErrorTranslationKey(applyResult.error))
+    );
+  });
+}
+
+std::unique_ptr<InputArea> HomeTab::buildAvatarArea(float avatarSize, float scale) {
+  auto avatarArea = ui::inputArea({});
+  avatarArea->setSize(avatarSize, avatarSize);
+  avatarArea->setHitShape(InputArea::HitShape::Circle);
+  avatarArea->setFocusable(true);
+  avatarArea->setCursorShape(WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER);
+  avatarArea->setOnClick([this](const InputArea::PointerData&) { openAvatarPicker(); });
+  avatarArea->setOnKeyDown([this](const InputArea::KeyData& key) {
+    if (key.pressed && KeybindMatcher::matches(KeybindAction::Validate, key.sym, key.modifiers)) {
+      openAvatarPicker();
+    }
+  });
+  m_userAvatarArea = avatarArea.get();
+  avatarArea->addChild(
+      ui::image({
+          .out = &m_userAvatar,
+          .fit = ImageFit::Cover,
+          .radius = avatarSize * 0.5F,
+          .padding = 1.0F * scale,
+          .width = avatarSize,
+          .height = avatarSize,
+          .configure = [this](Image& image) {
+            applyAvatarChrome(&image, false, m_zynith);
+            image.setHitTestVisible(false);
+            image.setAsyncReadyCallback([]() { PanelManager::instance().refresh(); });
+          },
+      })
+  );
+  const auto syncAvatarChrome = [this]() {
+    const bool highlighted =
+        m_userAvatarArea != nullptr && (m_userAvatarArea->focused() || m_userAvatarArea->hovered());
+    applyAvatarChrome(m_userAvatar, highlighted, m_zynith);
+    PanelManager::instance().requestRedraw();
+  };
+  avatarArea->setOnEnter([syncAvatarChrome](const InputArea::PointerData&) { syncAvatarChrome(); });
+  avatarArea->setOnLeave([syncAvatarChrome]() { syncAvatarChrome(); });
+  avatarArea->setOnFocusGain(syncAvatarChrome);
+  avatarArea->setOnFocusLoss(syncAvatarChrome);
+  return avatarArea;
+}
+
+std::unique_ptr<GridView> HomeTab::buildShortcutGrid(float scale) {
   const auto& shortcuts =
       m_config != nullptr ? m_config->config().controlCenter.shortcuts : std::vector<ShortcutConfig>{};
   const std::size_t count = std::min(shortcuts.size(), std::size_t{6});
 
   auto grid = std::make_unique<GridView>();
-  grid->setColumns(kHomeShortcutGridColumns);
-  grid->setColumnGap(Style::spaceMd * scale);
-  grid->setRowGap(Style::spaceMd * scale);
+  if (m_zynith) {
+    // Capsule chips, three across: a compact control strip under the composition.
+    grid->setColumns(kZynithChipColumns);
+    grid->setColumnGap(ui::tokens::space(ui::tokens::Space::Related, scale));
+    grid->setRowGap(ui::tokens::space(ui::tokens::Space::Related, scale));
+    grid->setSpanLastItem(false);
+  } else {
+    grid->setColumns(kHomeShortcutGridColumns);
+    grid->setColumnGap(Style::spaceMd * scale);
+    grid->setRowGap(Style::spaceMd * scale);
+    grid->setSpanLastItem(true);
+    grid->setFlexGrow(kHomeShortcutsFlexGrow);
+  }
   grid->setPadding(0.0F);
   grid->setUniformCellSize(true);
   grid->setStretchItems(true);
   grid->setSquareCells(false);
   grid->setMinCellHeight(0.0F);
-  grid->setSpanLastItem(true);
-  grid->setFlexGrow(kHomeShortcutsFlexGrow);
   m_shortcutsGrid = grid.get();
 
   // Keep Shortcut instances across open/close so plugin file watches and runtimes
@@ -586,7 +669,38 @@ std::unique_ptr<Flex> HomeTab::create() {
     const bool isActive = shortcut->isToggle() && shortcut->active();
 
     const std::size_t padIdx = m_shortcutPads.size();
-    auto btn = ui::button({
+    const auto onChipClick = [this, padIdx]() {
+      if (padIdx < m_shortcutPads.size()) {
+        m_shortcutPads[padIdx].shortcut->onClick();
+      }
+    };
+    const auto onChipRightClick = [this, padIdx]() {
+      if (padIdx < m_shortcutPads.size()) {
+        m_shortcutPads[padIdx].shortcut->onRightClick();
+      }
+    };
+    const float chipHeight = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
+    auto btn = m_zynith ? ui::button({
+        .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
+        .glyph = shortcut->displayIcon(),
+        .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
+        .contentAlign = showLabels ? ButtonContentAlign::Start : ButtonContentAlign::Center,
+        .minHeight = chipHeight,
+        .paddingV = 0.0F,
+        .paddingH = ui::tokens::space(ui::tokens::Space::Control, scale),
+        .gap = ui::tokens::space(ui::tokens::Space::Related, scale),
+        .radius = ui::tokens::pill(chipHeight),
+        .onClick = onChipClick,
+        .onRightClick = onChipRightClick,
+        .configure =
+            [enabled, isActive, fillOpacity = panelCardOpacity(), scale](Button& button) {
+              if (button.label() != nullptr) {
+                ui::type::apply(*button.label(), ui::type::Role::Label, scale);
+                button.label()->setMaxLines(1);
+              }
+              applyZynithChipStyle(button, enabled, isActive, fillOpacity);
+            },
+    }) : ui::button({
         .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
         .glyph = shortcut->displayIcon(),
         .glyphSize = Style::fontSizeTitle * 1.35F * scale,
@@ -595,18 +709,8 @@ std::unique_ptr<Flex> HomeTab::create() {
         .padding = Style::spaceSm * scale,
         .gap = Style::spaceXs * scale,
         .radius = Style::scaledRadiusXl(scale),
-        .onClick =
-            [this, padIdx]() {
-              if (padIdx < m_shortcutPads.size()) {
-                m_shortcutPads[padIdx].shortcut->onClick();
-              }
-            },
-        .onRightClick =
-            [this, padIdx]() {
-              if (padIdx < m_shortcutPads.size()) {
-                m_shortcutPads[padIdx].shortcut->onRightClick();
-              }
-            },
+        .onClick = onChipClick,
+        .onRightClick = onChipRightClick,
         .configure =
             [enabled, isActive, showLabels, fillOpacity = panelCardOpacity(), scale](Button& button) {
               button.setDirection(FlexDirection::Vertical);
@@ -651,19 +755,7 @@ std::unique_ptr<Flex> HomeTab::create() {
     grid->addChild(std::move(btn));
   }
 
-  if (m_shortcutPads.size() <= kHomeStackedShortcutMax) {
-    grid->setColumns(1);
-    grid->setFlexGrow(0.0F);
-  }
-
-  if (!m_shortcutPads.empty()) {
-    bottomRow->addChild(std::move(grid));
-  } else {
-    m_shortcutsGrid = nullptr;
-  }
-  tab->addChild(std::move(bottomRow));
-
-  return tab;
+  return grid;
 }
 
 std::unique_ptr<Flex> HomeTab::createHeaderActions() {
@@ -674,13 +766,25 @@ std::unique_ptr<Flex> HomeTab::createHeaderActions() {
           .out = &m_settingsButton,
           .glyph = "settings",
           .onClick = []() { PanelManager::instance().openSettingsWindow(); },
-          .configure = [scale](Button& button) { panel_button_style::configureHeaderIconButton(button, scale); },
+          .configure =
+              [scale](Button& button) {
+                panel_button_style::configureHeaderIconButton(button, scale);
+                if (control_center::zynithSurfaces()) {
+                  button.setVariant(ButtonVariant::Ghost); // clear capsule actions in the Zynith command bar
+                }
+              },
       }),
       ui::button({
           .out = &m_sessionButton,
           .glyph = "shutdown",
           .onClick = []() { PanelManager::instance().togglePanel("session"); },
-          .configure = [scale](Button& button) { panel_button_style::configureHeaderIconButton(button, scale); },
+          .configure =
+              [scale](Button& button) {
+                panel_button_style::configureHeaderIconButton(button, scale);
+                if (control_center::zynithSurfaces()) {
+                  button.setVariant(ButtonVariant::Ghost);
+                }
+              },
       })
   );
   syncHeaderActions();
@@ -689,6 +793,10 @@ std::unique_ptr<Flex> HomeTab::createHeaderActions() {
 
 void HomeTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight) {
   if (m_rootLayout == nullptr) {
+    return;
+  }
+  if (m_zynith) {
+    layoutZynith(renderer, contentWidth, bodyHeight);
     return;
   }
 
@@ -935,8 +1043,12 @@ InputArea* HomeTab::addCardOverlay(Flex& card, std::function<void()> onActivate,
   InputArea* areaPtr = area.get();
   std::function<void()> activate = std::move(onActivate);
 
-  const auto setHovered = [cardPtr](bool hovered) {
-    applyHomeCardHover(*cardPtr, hovered);
+  const auto setHovered = [cardPtr, onHover = std::move(options.onHover)](bool hovered) {
+    if (onHover) {
+      onHover(hovered);
+    } else {
+      applyHomeCardHover(*cardPtr, hovered);
+    }
     PanelManager::instance().requestRedraw();
   };
 
@@ -979,6 +1091,23 @@ void HomeTab::layoutCardOverlays() {
   cover(m_mediaCard, m_mediaCardArea);
   cover(m_dateTimeCard, m_dateTimeCardArea);
   cover(m_userCard, m_userCardKeyboardArea);
+
+  // zynith: the avatar sits at the stage's right edge, so the pointer overlay ends just before the
+  // identity block instead; the clock column sits above the overlay (z) and keeps its own target.
+  if (m_zynith) {
+    if (m_userCard != nullptr && m_userCardArea != nullptr) {
+      float right = m_userCard->width();
+      if (m_identity != nullptr) {
+        float ix = 0.0F, iy = 0.0F, cx = 0.0F, cy = 0.0F;
+        Node::absolutePosition(m_identity, ix, iy);
+        Node::absolutePosition(m_userCard, cx, cy);
+        right = std::clamp(ix - cx - Style::spaceSm * contentScale(), 0.0F, m_userCard->width());
+      }
+      m_userCardArea->setPosition(0.0F, 0.0F);
+      m_userCardArea->setSize(right, m_userCard->height());
+    }
+    return;
+  }
 
   // The pointer overlay must not swallow the avatar's own click, so start it just past the
   // avatar's right edge; the avatar (a nested InputArea) keeps the carved-out left region.
@@ -1029,18 +1158,32 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
   const float bw = Style::borderWidth;
   const float cw = std::max(0.0F, m_userCard->width() - bw * 2.0F);
   const float ch = std::max(0.0F, m_userCard->height() - bw * 2.0F);
-  const float radius = std::max(0.0F, Style::scaledRadiusXl(contentScale()) - bw);
+  const float outerRadius = m_zynith ? ui::tokens::radius(ui::tokens::Radius::Plate, contentScale())
+                                     : Style::scaledRadiusXl(contentScale());
+  const float radius = std::max(0.0F, outerRadius - bw);
 
   const Color surface = colorForRole(ColorRole::Surface);
   const Color translucentSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.9F);
   const Color transparentSurface = rgba(surface.r, surface.g, surface.b, 0.0F);
-  const ImageScrim scrim{
-      .direction = GradientDirection::Horizontal,
-      .stops =
-          {GradientStop{0.0F, translucentSurface}, GradientStop{0.25F, translucentSurface},
-           GradientStop{0.9F, transparentSurface}, GradientStop{1.0F, transparentSurface}},
-      .enabled = true,
-  };
+  // classic: the left side veiled for the text column. zynith: the scene stays clear above and settles
+  // into the panel's surface at the bottom, where the readouts sit — light pooling under the time.
+  const Color groundSurface = rgba(surface.r, surface.g, surface.b, surface.a * 0.82F);
+  const ImageScrim scrim = m_zynith
+      ? ImageScrim{
+            .direction = GradientDirection::Vertical,
+            .stops =
+                {GradientStop{0.0F, transparentSurface}, GradientStop{0.34F, transparentSurface},
+                 GradientStop{0.78F, rgba(surface.r, surface.g, surface.b, surface.a * 0.52F)},
+                 GradientStop{1.0F, groundSurface}},
+            .enabled = true,
+        }
+      : ImageScrim{
+            .direction = GradientDirection::Horizontal,
+            .stops =
+                {GradientStop{0.0F, translucentSurface}, GradientStop{0.25F, translucentSurface},
+                 GradientStop{0.9F, transparentSurface}, GradientStop{1.0F, transparentSurface}},
+            .enabled = true,
+        };
 
   for (Image* layer : {m_wallpaperPlaceholder, m_wallpaperBg}) {
     if (layer == nullptr) {
@@ -1291,12 +1434,17 @@ void HomeTab::onClose() {
   m_clockTimer.stop();
   m_rootLayout = nullptr;
   m_bottomRow = nullptr;
+  m_stageRow = nullptr;
+  m_identity = nullptr;
+  m_userName = nullptr;
+  m_dateSeparator = nullptr;
   m_dateTimeCard = nullptr;
   m_mediaCard = nullptr;
   m_mediaText = nullptr;
   m_userCard = nullptr;
   m_userMain = nullptr;
   m_userAvatar = nullptr;
+  m_userAvatarArea = nullptr;
   m_timeLabel = nullptr;
   m_dateLabel = nullptr;
   m_weatherGlyph = nullptr;
@@ -1355,6 +1503,10 @@ void HomeTab::onPanelCardOpacityChanged(float opacity) {
 }
 
 void HomeTab::syncScaledFonts() {
+  if (m_zynith) {
+    syncZynithFonts();
+    return;
+  }
   const float s = contentScale();
   if (m_timeLabel != nullptr) {
     m_timeLabel->setFontSize(Style::fontSizeTitle * 1.7F * s);
@@ -1460,7 +1612,8 @@ void HomeTab::sync(Renderer& renderer) {
         );
       } else {
         m_weatherGlyph->setGlyph(WeatherService::glyphForCode(snapshot.current.weatherCode, snapshot.current.isDay));
-        m_weatherGlyph->setColor(colorSpecFromRole(ColorRole::Primary));
+        // zynith keeps the accent for state; the weather glyph is part of a quiet readout line.
+        m_weatherGlyph->setColor(colorSpecFromRole(m_zynith ? ColorRole::OnSurfaceVariant : ColorRole::Primary));
         const int t = static_cast<int>(std::lround(m_weather->displayTemperature(snapshot.current.temperatureC)));
         m_weatherLine->setText(
             std::format(
@@ -1641,7 +1794,11 @@ void HomeTab::syncShortcuts() {
     const bool on = sc.isToggle() && sc.active();
 
     if (pad.button != nullptr) {
-      applyShortcutButtonStyle(*pad.button, enabled, on, panelCardOpacity());
+      if (m_zynith) {
+        applyZynithChipStyle(*pad.button, enabled, on, panelCardOpacity());
+      } else {
+        applyShortcutButtonStyle(*pad.button, enabled, on, panelCardOpacity());
+      }
     }
     if (pad.glyph != nullptr) {
       pad.glyph->setGlyph(sc.displayIcon());
@@ -1652,5 +1809,359 @@ void HomeTab::syncShortcuts() {
         pad.button->setText(label);
       }
     }
+  }
+}
+
+// ---- zynith Home ---------------------------------------------------------------------------------
+//
+//   ┌ stage ─────────────────────────────────────────────────────────────┐
+//   │  (the wallpaper, clear above, settling into the surface below)      │
+//   │                                                                     │
+//   │  22:27                                          Name         (◉)   │
+//   │  Saturday, 26 September · ☁ 24° Cloudy          user@host           │
+//   └─────────────────────────────────────────────────────────────────────┘
+//   ┌ band ──────────────────────────────────────────────────────────────┐
+//   │ [art] Track                                         Playing · 1:23  │
+//   │       Artist                                                        │
+//   └─────────────────────────────────────────────────────────────────────┘
+//   ( chip )  ( chip )  ( chip )
+//   ( chip )  ( chip )  ( chip )
+//
+// One focal point (the time, in the display face), identity opposite it, one quiet band, then controls.
+// The accent appears only on the navigation indicator, active toggles and a playing status.
+
+std::unique_ptr<Flex> HomeTab::createZynith() {
+  using ui::tokens::Space;
+  const float scale = contentScale();
+  const float inlineGap = ui::tokens::space(Space::Inline, scale);
+  const float related = ui::tokens::space(Space::Related, scale);
+  const float control = ui::tokens::space(Space::Control, scale);
+  const float group = ui::tokens::space(Space::Group, scale);
+  const float section = ui::tokens::space(Space::Section, scale);
+  const float opacity = panelCardOpacity();
+  const auto readoutShadow = [scale](Label& label) {
+    label.setShadow(colorSpecFromRole(ColorRole::Shadow, 0.42F), 0.0F, 1.0F * scale);
+  };
+
+  auto tab = ui::column({.out = &m_rootLayout, .align = FlexAlign::Stretch, .gap = control});
+
+  // --- Stage ---
+  auto stage = ui::column({
+      .out = &m_userCard,
+      .fillWidth = true,
+      .flexGrow = 1.0F,
+      .configure =
+          [scale, opacity, group, section](Flex& card) {
+            applySectionCardStyle(card, scale, opacity);
+            card.setJustify(FlexJustify::End);
+            card.setPadding(group, section);
+            card.setMinHeight(Style::controlHeightLg * 3.4F * scale);
+          },
+  });
+  {
+    const float wallpaperRadius =
+        std::max(0.0F, ui::tokens::radius(ui::tokens::Radius::Plate, scale) - Style::borderWidth);
+    stage->addChild(ui::image({
+        .out = &m_wallpaperPlaceholder,
+        .fit = ImageFit::Cover,
+        .radius = wallpaperRadius,
+        .participatesInLayout = false,
+        .configure = [](Image& image) { image.setZIndex(-2); },
+    }));
+    stage->addChild(ui::image({
+        .out = &m_wallpaperBg,
+        .fit = ImageFit::Cover,
+        .radius = wallpaperRadius,
+        .participatesInLayout = false,
+        .configure = [](Image& image) {
+          image.setZIndex(-1);
+          image.setOpacity(0.0F);
+        },
+    }));
+  }
+
+  // The clock column: the focal readout. Above the stage's own click target (z) so it keeps its own.
+  auto clock = ui::column({
+      .out = &m_dateTimeCard,
+      .align = FlexAlign::Start,
+      .justify = FlexJustify::End,
+      .gap = inlineGap,
+      .flexGrow = 1.0F,
+      .configure = [](Flex& column) { column.setZIndex(4); },
+  });
+  clock->addChild(ui::label({
+      .out = &m_timeLabel,
+      .text = formatShellTime(m_config),
+      .color = ui::color::spec(ui::color::Semantic::OnSurface),
+      .configure = readoutShadow,
+  }));
+  clock->addChild(ui::row(
+      {.align = FlexAlign::Center, .gap = related},
+      ui::label({
+          .out = &m_dateLabel,
+          .text = formatShellDate(m_config),
+          .color = ui::color::spec(ui::color::Semantic::OnSurface),
+          .configure = readoutShadow,
+      }),
+      ui::label({
+          .out = &m_dateSeparator,
+          .text = "·",
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .configure = readoutShadow,
+      }),
+      ui::glyph({
+          .out = &m_weatherGlyph,
+          .glyph = "weather-cloud-sun",
+          .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+      }),
+      ui::label({
+          .out = &m_weatherLine,
+          .text = "—",
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .configure = readoutShadow,
+      })
+  ));
+
+  // Identity, opposite the time.
+  const float avatarSize = ui::tokens::iconContainer(ui::tokens::Size::Large, scale);
+  auto identity = ui::row({.out = &m_identity, .align = FlexAlign::Center, .gap = control});
+  identity->addChild(ui::column(
+      {.out = &m_userMain, .align = FlexAlign::End, .justify = FlexJustify::Center, .gap = inlineGap * 0.5F},
+      ui::label({
+          .out = &m_userName,
+          .text = sessionDisplayName(),
+          .color = ui::color::spec(ui::color::Semantic::OnSurface),
+          .configure = readoutShadow,
+      }),
+      ui::label({
+          .out = &m_userHost,
+          .text = userHostLine(),
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .configure = readoutShadow,
+      }),
+      ui::label({
+          .out = &m_userUptime,
+          .text = "…",
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .configure = readoutShadow,
+      })
+  ));
+  identity->addChild(buildAvatarArea(avatarSize, scale));
+
+  stage->addChild(ui::row(
+      {.out = &m_stageRow, .align = FlexAlign::End, .justify = FlexJustify::SpaceBetween, .gap = group},
+      std::move(clock), std::move(identity)
+  ));
+
+  Flex* stagePtr = stage.get();
+  const auto stageHover = [stagePtr, scale](bool hovered) { applyZynithPlateHover(*stagePtr, hovered, scale); };
+  const auto openWallpaperPanel = []() { PanelManager::instance().togglePanel("wallpaper"); };
+  m_userCardKeyboardArea = addCardOverlay(
+      *m_userCard, openWallpaperPanel, {.keyboardFocus = true, .pointerHitTest = false, .onHover = stageHover}
+  );
+  m_userCardArea = addCardOverlay(
+      *m_userCard, openWallpaperPanel, {.keyboardFocus = false, .pointerHitTest = true, .onHover = stageHover}
+  );
+  // The time and date open the weather section, as the classic clock card does; hovering brightens the
+  // readout line instead of outlining anything.
+  m_dateTimeCardArea = addCardOverlay(
+      *m_dateTimeCard, []() { openControlCenterTab("weather"); },
+      {.keyboardFocus = true,
+       .pointerHitTest = true,
+       .onHover =
+           [this](bool hovered) {
+             const auto role = hovered ? ui::color::Semantic::OnSurface : ui::color::Semantic::Muted;
+             if (m_weatherLine != nullptr) {
+               m_weatherLine->setColor(ui::color::spec(role));
+             }
+             if (m_weatherGlyph != nullptr) {
+               m_weatherGlyph->setColor(ui::color::spec(role));
+             }
+           }}
+  );
+  tab->addChild(std::move(stage));
+
+  // --- Band: now playing ---
+  const float artSize = ui::tokens::iconContainer(ui::tokens::Size::Medium, scale);
+  auto band = ui::row({
+      .out = &m_mediaCard,
+      .align = FlexAlign::Center,
+      .gap = control,
+      .fillWidth = true,
+      .configure =
+          [scale, opacity, related, control](Flex& card) {
+            applySectionCardStyle(card, scale, opacity);
+            card.setDirection(FlexDirection::Horizontal);
+            card.setAlign(FlexAlign::Center);
+            card.setGap(control);
+            card.setPadding(related, control);
+          },
+  });
+  band->addChild(ui::column(
+      {.out = &m_mediaArtSlot,
+       .align = FlexAlign::Center,
+       .justify = FlexJustify::Center,
+       .width = artSize,
+       .height = artSize},
+      ui::glyph({
+          .out = &m_mediaArtFallback,
+          .glyph = "disc-filled",
+          .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Medium, scale),
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+      }),
+      ui::image({
+          .out = &m_mediaArt,
+          .fit = ImageFit::Cover,
+          .radius = ui::tokens::radius(ui::tokens::Radius::Control, scale),
+          .width = artSize,
+          .height = artSize,
+          .participatesInLayout = false,
+          .configure = [](Image& image) { image.setZIndex(1); },
+      })
+  ));
+  band->addChild(ui::column(
+      {.out = &m_mediaText, .align = FlexAlign::Stretch, .gap = inlineGap * 0.5F, .flexGrow = 1.0F},
+      ui::label({
+          .out = &m_mediaTrack,
+          .text = "…",
+          .color = ui::color::spec(ui::color::Semantic::OnSurface),
+          .maxLines = 1,
+          .ellipsize = TextEllipsize::End,
+      }),
+      ui::label({
+          .out = &m_mediaArtist,
+          .text = i18n::tr("control-center.home.media.no-active-player"),
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .maxLines = 1,
+          .ellipsize = TextEllipsize::End,
+      }),
+      ui::label({
+          .out = &m_mediaProgress,
+          .text = " ",
+          .maxLines = 1,
+          .visible = false,
+      })
+  ));
+  // A technical readout: monospaced, tabular, so the position ticks without jitter.
+  band->addChild(ui::label({
+      .out = &m_mediaStatus,
+      .text = i18n::tr("control-center.home.media.idle"),
+      .color = ui::color::spec(ui::color::Semantic::Muted),
+      .maxLines = 1,
+      .ellipsize = TextEllipsize::End,
+  }));
+  Flex* bandPtr = band.get();
+  m_mediaCardArea = addCardOverlay(
+      *m_mediaCard, []() { openControlCenterTab("media"); },
+      {.keyboardFocus = true,
+       .pointerHitTest = true,
+       .onHover = [bandPtr, scale](bool hovered) { applyZynithPlateHover(*bandPtr, hovered, scale); }}
+  );
+  tab->addChild(std::move(band));
+
+  // --- Chips ---
+  auto grid = buildShortcutGrid(scale);
+  if (!m_shortcutPads.empty()) {
+    tab->addChild(std::move(grid));
+  } else {
+    m_shortcutsGrid = nullptr;
+  }
+
+  syncZynithFonts();
+  return tab;
+}
+
+void HomeTab::syncZynithFonts() {
+  using ui::type::Role;
+  const float s = contentScale();
+  const auto apply = [s](Label* label, Role role) {
+    if (label != nullptr) {
+      ui::type::apply(*label, role, s);
+    }
+  };
+  apply(m_timeLabel, Role::Display);
+  apply(m_dateLabel, Role::Label);
+  apply(m_dateSeparator, Role::Label);
+  apply(m_weatherLine, Role::Label);
+  apply(m_userName, Role::Subtitle);
+  apply(m_userHost, Role::Micro);
+  apply(m_userUptime, Role::Micro);
+  apply(m_mediaTrack, Role::Body);
+  apply(m_mediaArtist, Role::Micro);
+  apply(m_mediaProgress, Role::Micro);
+  apply(m_mediaStatus, Role::Data);
+  if (m_weatherGlyph != nullptr) {
+    m_weatherGlyph->setGlyphSize(ui::tokens::iconSize(ui::tokens::Size::Small, s));
+  }
+  for (auto& pad : m_shortcutPads) {
+    apply(pad.label, Role::Label);
+    if (pad.glyph != nullptr) {
+      pad.glyph->setGlyphSize(ui::tokens::iconSize(ui::tokens::Size::Small, s));
+    }
+  }
+}
+
+void HomeTab::layoutZynith(Renderer& renderer, float contentWidth, float bodyHeight) {
+  // Text budgets depend on the widths the first pass settles, so lay out, cap, lay out again.
+  m_rootLayout->setSize(contentWidth, bodyHeight);
+  m_rootLayout->layout(renderer);
+
+  const auto innerWidth = [](const Flex* flex) {
+    return flex == nullptr ? 1.0F : std::max(1.0F, flex->width() - flex->paddingLeft() - flex->paddingRight());
+  };
+  const float stageInner = innerWidth(m_userCard);
+  // The identity never takes more than about a third of the stage; the clock column gets the rest.
+  const float identityBudget = std::max(1.0F, stageInner * 0.34F);
+  for (Label* label : {m_userName, m_userHost, m_userUptime}) {
+    if (label != nullptr) {
+      label->setMaxWidth(identityBudget);
+      label->setMaxLines(1);
+      label->setEllipsize(TextEllipsize::End);
+    }
+  }
+  const float identityWidth = m_identity != nullptr ? m_identity->width() : 0.0F;
+  const float gap = m_stageRow != nullptr ? m_stageRow->gap() : 0.0F;
+  const float clockBudget = std::max(1.0F, stageInner - identityWidth - gap);
+  if (m_timeLabel != nullptr) {
+    m_timeLabel->setMaxWidth(clockBudget);
+    m_timeLabel->setMaxLines(1);
+  }
+  if (m_dateLabel != nullptr) {
+    m_dateLabel->setMaxLines(1);
+    m_dateLabel->setMaxWidth(clockBudget * 0.6F);
+  }
+  if (m_weatherLine != nullptr) {
+    const float used = (m_dateLabel != nullptr ? m_dateLabel->width() : 0.0F)
+        + (m_dateSeparator != nullptr ? m_dateSeparator->width() : 0.0F)
+        + (m_weatherGlyph != nullptr ? m_weatherGlyph->width() : 0.0F)
+        + ui::tokens::space(ui::tokens::Space::Related, contentScale()) * 3.0F;
+    m_weatherLine->setMaxWidth(std::max(1.0F, clockBudget - used));
+    m_weatherLine->setMaxLines(1);
+    m_weatherLine->setEllipsize(TextEllipsize::End);
+  }
+
+  const float bandInner = innerWidth(m_mediaCard);
+  if (m_mediaStatus != nullptr) {
+    m_mediaStatus->setMaxWidth(std::max(1.0F, bandInner * 0.4F));
+  }
+  const float mediaTextWrap = innerWidth(m_mediaText);
+  for (Label* label : {m_mediaTrack, m_mediaArtist}) {
+    if (label != nullptr) {
+      label->setMaxWidth(mediaTextWrap);
+      label->setMaxLines(1);
+      label->setEllipsize(TextEllipsize::End);
+    }
+  }
+
+  m_rootLayout->layout(renderer);
+  if (m_mediaArt != nullptr && m_mediaArtSlot != nullptr) {
+    m_mediaArt->setPosition(0.0F, 0.0F);
+    m_mediaArt->setSize(m_mediaArtSlot->width(), m_mediaArtSlot->height());
+  }
+  layoutWallpaperBackground(renderer);
+  layoutCardOverlays();
+  if (m_weatherGlyph != nullptr) {
+    m_weatherGlyph->measure(renderer);
   }
 }

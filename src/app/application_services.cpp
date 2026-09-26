@@ -96,6 +96,7 @@
 #include "ui/dialogs/file_dialog.h"
 #include "ui/dialogs/glyph_picker_dialog.h"
 #include "ui/style.h"
+#include "ui/typography.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 
@@ -509,6 +510,8 @@ void Application::initStyleThemeAndWayland() {
     Style::setPopupBordersEnabled(m_configService.config().shell.popupBorders);
     Style::setPopupShadowsEnabled(m_configService.config().shell.popupShadows);
     Style::setCardBordersEnabled(m_configService.config().shell.cardBorders);
+    // Typography faces follow the same config as the renderer's default family (one owner per font).
+    ui::type::setFamilies(m_configService.config().shell.fontFamily, m_configService.config().shell.displayFontFamily);
     lastCornerRadiusScale = corner;
     if (cornerChanged) {
       m_notificationToast.requestLayout();

@@ -23,6 +23,23 @@ void MorphTransition::start(
     int direction, float carry, float durationMs, Easing easing, std::function<void(float)> onFrame,
     std::function<void()> onSettle
 ) {
+  startLeg(direction, carry, std::move(onFrame), std::move(onSettle), [durationMs, easing](AnimationManager& m, auto frame, auto settle, const void* owner) {
+    return m.animate(0.0F, 1.0F, durationMs, easing, std::move(frame), std::move(settle), owner);
+  });
+}
+
+void MorphTransition::start(
+    int direction, float carry, motion::Role role, std::function<void(float)> onFrame, std::function<void()> onSettle
+) {
+  startLeg(direction, carry, std::move(onFrame), std::move(onSettle), [role](AnimationManager& m, auto frame, auto settle, const void* owner) {
+    return m.animate(role, 0.0F, 1.0F, std::move(frame), std::move(settle), owner);
+  });
+}
+
+void MorphTransition::startLeg(
+    int direction, float carry, std::function<void(float)> onFrame, std::function<void()> onSettle,
+    const std::function<AnimationManager::Id(AnimationManager&, std::function<void(float)>, std::function<void()>, const void*)>& launch
+) {
   m_direction = direction;
   m_carry = carry;
 
@@ -51,8 +68,8 @@ void MorphTransition::start(
   m_progress = 0.0F;
   m_active = true;
 
-  m_id = m_animations->animate(
-      0.0F, 1.0F, durationMs, easing,
+  m_id = launch(
+      *m_animations,
       [this, onFrame](float progress) {
         m_progress = progress;
         if (onFrame) {

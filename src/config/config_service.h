@@ -173,6 +173,12 @@ public:
   bool clearOverride(const std::vector<std::string>& path);
   bool clearOverrides(const std::vector<std::vector<std::string>>& paths, bool* changed);
   bool renameOverrideTable(const std::vector<std::string>& oldPath, const std::vector<std::string>& newPath);
+  // zynith: makes a reset of a whole top-level override table reversible. stash writes the table to a
+  // sidecar next to settings.toml (<settings.toml>.<section>.stash; never read as configuration) and
+  // returns false with an empty error when there is nothing to keep. restore puts it back through the
+  // normal validated override commit.
+  bool stashOverrideTable(std::string_view section, std::string* error);
+  bool restoreStashedOverrideTable(std::string_view section, std::string* error);
 
   [[nodiscard]] static BarConfig resolveForOutput(const BarConfig& base, const WaylandOutput& output);
 

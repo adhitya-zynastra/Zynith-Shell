@@ -4,6 +4,7 @@
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_dispatcher.h"
 #include "shell/panel/attached_panel_context.h"
+#include "shell/spatial/spatial_origin.h"
 #include "shell/panel/panel_click_shield.h"
 #include "shell/panel/persistent_panel_host.h"
 #include "ui/dialogs/layer_popup_host.h"
@@ -45,6 +46,9 @@ struct PanelOpenRequest {
   bool hasAnchorPosition = false;
   std::string_view context;
   std::string_view sourceBarName;
+  // zynith spatial model: what summoned this panel (a bar widget, a bar area, a command). Placement is
+  // unchanged by it; it records the relationship so surfaces can derive direction and entrance from it.
+  shell::spatial::Origin origin{};
 };
 
 class PanelManager : public PopupGrabHost {
@@ -111,6 +115,8 @@ public:
   [[nodiscard]] bool isOpenPanel(std::string_view panelId) const noexcept;
   [[nodiscard]] bool isPanelTransitionActive() const noexcept;
   [[nodiscard]] bool isAttachedOpen() const noexcept;
+  // What summoned the open panel (spatial model). Kind None when an internal open did not say.
+  [[nodiscard]] const shell::spatial::Origin& openOrigin() const noexcept { return m_openOrigin; }
   // Output the active panel is on; null when none is open.
   [[nodiscard]] wl_output* attachedPanelOutput() const noexcept;
   // Bar that opened the active panel; empty when none was recorded.
@@ -269,6 +275,8 @@ private:
   float m_attachedRevealProgress = 1.0F;
   float m_detachedRevealProgress = 1.0F;
   AttachedRevealDirection m_attachedRevealDirection = AttachedRevealDirection::Down;
+  // The origin of the most recent open request (spatial model); see openOrigin().
+  shell::spatial::Origin m_openOrigin{};
   AttachedRevealDirection m_detachedRevealDirection = AttachedRevealDirection::Down;
   Timer m_keyboardRelaxTimer;
   std::string m_attachedBarPosition; // "top" / "bottom" / "left" / "right" while attached, empty otherwise

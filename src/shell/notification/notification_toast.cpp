@@ -20,6 +20,7 @@
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "ui/tokens.h"
 #include "util/string_utils.h"
 #include "wayland/layer_surface.h"
 #include "wayland/surface.h"
@@ -62,7 +63,7 @@ namespace {
   // One radius for the card and its blur region. They used to differ — the card clamped to 16 px,
   // the blur region did not — so at a corner-radius scale below 1 the blur showed past the card's
   // rounded corners.
-  float toastCardRadius(float scale) { return std::max(Style::scaledRadiusXl(scale), 16.0F * scale); }
+  float toastCardRadius(float scale) { return ui::tokens::radius(ui::tokens::Radius::Surface, scale); }
 
   float notificationIconRadius(float iconSize, float localScale = 1.0F) {
     const float baseRadius = Style::radiusMd * (iconSize / kNotificationIconReferenceSize);

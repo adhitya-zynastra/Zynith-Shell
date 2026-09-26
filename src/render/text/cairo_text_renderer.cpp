@@ -1,5 +1,7 @@
 #include "render/text/cairo_text_renderer.h"
 
+#include "render/text/font_spec.h"
+
 #include "core/log.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
@@ -408,7 +410,19 @@ PangoLayout* CairoTextRenderer::buildLayout(
   if (!fontFamily.empty()) {
     fontFamilyStr.assign(fontFamily);
   }
-  pango_font_description_set_family(desc, fontFamilyStr.empty() ? m_fontFamily.c_str() : fontFamilyStr.c_str());
+  // zynith typography: a family may carry OpenType features after " #" (e.g. "Inter #tnum=1" for
+  // tabular figures, from ui::type::familyFor; render/text/font_spec.h). Pango's description parser
+  // understands that syntax, but set_family would treat it as part of the name, so it is split here —
+  // the one place a family string meets Pango. The full string stays the cache key, so featured and
+  // plain text never share a cached layout.
+  const auto familySpec =
+      font_spec::split(fontFamilyStr.empty() ? std::string_view(m_fontFamily) : std::string_view(fontFamilyStr));
+  const std::string familyName(familySpec.family.empty() ? std::string_view(m_fontFamily) : familySpec.family);
+  pango_font_description_set_family(desc, familyName.c_str());
+  if (!familySpec.features.empty()) {
+    const std::string features(familySpec.features);
+    pango_font_description_set_features(desc, features.c_str());
+  }
   pango_font_description_set_weight(desc, static_cast<PangoWeight>(fontWeight));
   pango_font_description_set_absolute_size(desc, static_cast<double>(rasterSize) * PANGO_SCALE);
   pango_layout_set_font_description(layout, desc);

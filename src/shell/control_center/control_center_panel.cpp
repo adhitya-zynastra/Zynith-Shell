@@ -21,11 +21,15 @@
 #include "ui/controls/scroll_view.h"
 #include "ui/responsive.h"
 #include "ui/scroll_into_view.h"
+#include "ui/semantic_color.h"
 #include "ui/split_pane_focus.h"
+#include "ui/tokens.h"
+#include "ui/typography.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string_view>
@@ -108,10 +112,15 @@ void ControlCenterPanel::create() {
   // configured density. Each tab's internal spacing is its own and is not touched here.
   const float density = m_config != nullptr ? layoutDensityFactor(m_config->config().controlCenter.density) : 1.0F;
   const ControlCenterSidebarMode sidebarMode = sidebarModeForOpen(pendingOpenContext());
+  const bool zynith = m_config == nullptr || m_config->config().controlCenter.style == ControlCenterStyle::Zynith;
   m_topNav = m_config != nullptr && m_config->config().controlCenter.topNav;
   // zynith top nav: icon-only buttons in a row above the content (no scroll rail needed).
   m_compact = m_topNav || sidebarMode == ControlCenterSidebarMode::Compact;
   m_showSidebar = sidebarMode != ControlCenterSidebarMode::None;
+  // The command bar needs the top nav's placement; with the left rail the classic header stays.
+  m_commandBar = zynith && m_topNav && m_showSidebar;
+  // Sections build their plates and headings from this (tab.cpp); set before any tab creates.
+  control_center::setZynithSurfaces(zynith);
 
   for (auto& tab : m_tabs) {
     tab->setContentScale(scale);
@@ -121,7 +130,8 @@ void ControlCenterPanel::create() {
   const ui::FlexProps rootProps{
       .out = &m_rootLayout,
       .align = FlexAlign::Stretch,
-      .gap = ui::responsive::space(Style::panelPadding, density, scale),
+      .gap = m_commandBar ? ui::responsive::space(ui::tokens::space(ui::tokens::Space::Control), density, scale)
+                          : ui::responsive::space(Style::panelPadding, density, scale),
       .padding = 0.0F,
   };
   auto rootLayout = m_topNav ? ui::column(rootProps) : ui::row(rootProps);
@@ -136,6 +146,13 @@ void ControlCenterPanel::create() {
         .fillWidth = m_topNav,
         .fillHeight = !m_topNav,
         .configure = [this, scale](Flex& flex) {
+          if (m_commandBar) {
+            // The command bar is not a tray: it sits directly on the panel's glass, and the rule
+            // below it is the only line between navigation and content.
+            flex.setPadding(0.0F);
+            flex.setJustify(FlexJustify::SpaceBetween); // navigation left, the section's actions right
+            return;
+          }
           flex.setFill(colorSpecFromRole(ColorRole::SurfaceVariant, panelCardOpacity()));
           flex.setRadius(Style::scaledRadiusXl(scale));
         },
@@ -185,25 +202,77 @@ void ControlCenterPanel::create() {
     }
     sidebarNav->setGap(Style::spaceXs * scale);
     m_sidebarNav = sidebarNav.get();
+    const float commandItemHeight = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
     sidebarNav->addChild(ui::box({
         .out = &m_navIndicator,
-        .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
-        .configure = [scale](Box& box) {
-          box.setBorder(colorSpecFromRole(ColorRole::Primary, 0.5F), Style::borderWidth * scale);
-          box.setRadius(Style::scaledRadiusLg(scale));
+        .fill = ui::color::spec(ui::color::Semantic::SelectionFill),
+        .configure = [this, scale, commandItemHeight](Box& box) {
+          box.setBorder(ui::color::spec(ui::color::Semantic::SelectionEdge), Style::borderWidth * scale);
+          // In the command bar the indicator is a capsule: it has to read as one object whether it
+          // wraps an icon (a circle) or an icon and its label (a pill).
+          box.setRadius(m_commandBar ? ui::tokens::pill(commandItemHeight) : Style::scaledRadiusLg(scale));
           box.setParticipatesInLayout(false);
           box.setHitTestVisible(false);
           box.setZIndex(-1);
         },
     }));
-    m_indicatorPlaced = false;
+    // A new panel instance places its indicator immediately (reset), then moves it by ElementMove.
+    // Owner = the indicator node, so destroying the node cancels any glide in flight.
+    m_indicatorMotion.reset();
+    m_indicatorMotion.bind(m_animations, m_navIndicator, motion::Role::ElementMove, [this]() {
+      applyNavIndicatorGeometry();
+      if (m_commandBar) {
+        applyCommandBarNavGeometry(); // the incoming label's ink follows the capsule
+      }
+      PanelManager::instance().requestRedraw();
+    });
 
+    for (auto& expand : m_navExpand) {
+      expand.reset();
+    }
+    m_navInk.fill(0.0F);
     for (const auto& tab : kTabs) {
       const std::size_t idx = tabIndex(tab.id);
       const auto onClick = [this, id = tab.id]() {
         selectTab(id, true);
         PanelManager::instance().refresh();
       };
+      if (m_commandBar) {
+        const float glyphSize = ui::tokens::iconSize(ui::tokens::Size::Medium, scale);
+        sidebarNav->addChild(
+            ui::button({
+                .out = &m_tabButtons[idx],
+                .text = i18n::tr(tab.titleKey),
+                .glyph = tab.glyph,
+                .glyphSize = glyphSize,
+                .contentAlign = ButtonContentAlign::Start,
+                .variant = ButtonVariant::Tab,
+                .tooltip = i18n::tr(tab.titleKey),
+                .minHeight = commandItemHeight,
+                .paddingV = 0.0F,
+                // The glyph sits centred in the collapsed square and never moves: the label unfolds
+                // to its right.
+                .paddingH = (commandItemHeight - glyphSize) * 0.5F,
+                .gap = ui::tokens::space(ui::tokens::Space::Related, scale),
+                .radius = ui::tokens::pill(commandItemHeight),
+                .onClick = onClick,
+                .configure = [this, scale](Button& button) {
+                  if (button.label() != nullptr) {
+                    ui::type::apply(*button.label(), ui::type::Role::Label, scale);
+                  }
+                  button.setParticipatesInLayout(false);
+                  button.setClipChildren(true);
+                  wireSidebarScroll(button.inputArea());
+                },
+            })
+        );
+        m_navExpand[idx].bind(m_animations, m_tabButtons[idx], motion::Role::ElementMove, [this](float) {
+          applyCommandBarNavGeometry();
+          PanelManager::instance().requestRedraw();
+        });
+        sidebarNav->registerItem(m_tabButtons[idx], onClick);
+        continue;
+      }
       sidebarNav->addChild(
           ui::button({
               .out = &m_tabButtons[idx],
@@ -237,6 +306,7 @@ void ControlCenterPanel::create() {
       sidebarNav->setDirection(FlexDirection::Horizontal);
       sidebar->addChild(std::move(sidebarNav));
       sidebarScroll.reset();
+      m_sidebarScrollView = nullptr; // destroyed above; keep no dangling pointer to it
     } else {
       if (sidebarScroll->content() != nullptr) {
         if (!m_compact) {
@@ -247,6 +317,13 @@ void ControlCenterPanel::create() {
       sidebar->addChild(std::move(sidebarScroll));
     }
     rootLayout->addChild(std::move(sidebar));
+    if (m_commandBar) {
+      rootLayout->addChild(ui::box({
+          .out = &m_commandRule,
+          .fill = ui::color::spec(ui::color::Semantic::Hairline),
+          .height = ui::tokens::kHairline * scale,
+      }));
+    }
   }
 
   auto content = ui::column({
@@ -270,23 +347,32 @@ void ControlCenterPanel::create() {
   });
   m_contentDismissArea = static_cast<InputArea*>(content->addChild(std::move(dismissArea)));
 
-  auto header = ui::row({
-      .out = &m_contentHeader,
-      .align = FlexAlign::Center,
-      .justify = FlexJustify::SpaceBetween,
-      .gap = Style::spaceSm * scale,
-  });
+  // The command bar has no title row: the unfolded navigation item names the section.
+  std::unique_ptr<Flex> header;
+  if (!m_commandBar) {
+    header = ui::row({
+        .out = &m_contentHeader,
+        .align = FlexAlign::Center,
+        .justify = FlexJustify::SpaceBetween,
+        .gap = Style::spaceSm * scale,
+    });
 
-  header->addChild(
-      ui::label({
-          .out = &m_contentTitle,
-          .text = i18n::tr("control-center.tabs.home"),
-          .fontSize = Style::fontSizeTitle * scale,
-          .fontWeight = FontWeight::Bold,
-          .color = colorSpecFromRole(ColorRole::Primary),
-          .flexGrow = 1.0F,
-      })
-  );
+    // zynith: the section title is set in the display face, lighter and in the surface colour; accent
+    // colour is reserved for the navigation indicator and active states, so there is one focal accent.
+    const std::string displayFont = m_config != nullptr ? m_config->config().shell.displayFontFamily : std::string{};
+    header->addChild(
+        ui::label({
+            .out = &m_contentTitle,
+            .text = i18n::tr("control-center.tabs.home"),
+            .fontSize = (zynith ? Style::fontSizeHeader : Style::fontSizeTitle) * scale,
+            .fontWeight = zynith ? FontWeight::Medium : FontWeight::Bold,
+            .fontFamily = zynith && !displayFont.empty() ? std::optional<std::string>{displayFont}
+                                                         : std::optional<std::string>{},
+            .color = colorSpecFromRole(zynith ? ColorRole::OnSurface : ColorRole::Primary),
+            .flexGrow = 1.0F,
+        })
+    );
+  }
 
   auto headerActions = ui::row({
       .out = &m_contentHeaderActions,
@@ -308,12 +394,36 @@ void ControlCenterPanel::create() {
           .out = &m_closeButton,
           .glyph = "close",
           .onClick = []() { PanelManager::instance().close(); },
-          .configure = [scale](Button& button) { panel_button_style::configureHeaderIconButton(button, scale); },
+          .configure =
+              [zynith, scale](Button& button) {
+                panel_button_style::configureHeaderIconButton(button, scale);
+                if (zynith) {
+                  button.setVariant(ButtonVariant::Ghost);
+                }
+              },
       })
   );
-  header->addChild(std::move(headerActions));
-
-  content->addChild(std::move(header));
+  if (zynith) {
+    // Same geometry as the navigation: every action becomes a capsule. Only the shape changes — a
+    // section's actions keep their own variants and selected states (a DND toggle, a destructive clear).
+    const float actionRadius = ui::tokens::pill(Style::controlHeightSm * scale);
+    std::function<void(Node&)> capsule = [&capsule, actionRadius](Node& node) {
+      for (const auto& child : node.children()) {
+        if (auto* button = dynamic_cast<Button*>(child.get())) {
+          button->setRadius(actionRadius);
+        } else {
+          capsule(*child);
+        }
+      }
+    };
+    capsule(*headerActions);
+  }
+  if (m_commandBar && m_sidebar != nullptr) {
+    m_sidebar->addChild(std::move(headerActions));
+  } else {
+    header->addChild(std::move(headerActions));
+    content->addChild(std::move(header));
+  }
 
   auto bodies = ui::column({
       .out = &m_tabBodies,
@@ -364,9 +474,31 @@ void ControlCenterPanel::doLayout(Renderer& renderer, float width, float height)
   if (!m_compact && m_showSidebar) {
     layoutFullSidebarWidth(renderer);
   }
+  if (m_commandBar) {
+    layoutCommandBarNav(renderer, width);
+  }
 
   m_rootLayout->setSize(width, height);
   m_rootLayout->layout(renderer);
+
+  if (m_commandBar) {
+    // The flex pass skips the hand-placed items; lay each out at its unfolded size once, then the
+    // expansion only changes the visible width (the item clips its label).
+    for (const auto& meta : kTabs) {
+      Button* button = m_tabButtons[tabIndex(meta.id)];
+      if (button == nullptr || !button->visible()) {
+        continue;
+      }
+      const std::size_t idx = tabIndex(meta.id);
+      button->arrange(
+          renderer, LayoutRect{.x = 0.0F, .y = 0.0F, .width = m_navExpandedWidth[idx], .height = m_navItemHeight}
+      );
+    }
+    applyCommandBarNavGeometry();
+    if (m_commandRule != nullptr) {
+      m_commandRule->setSize(width, m_commandRule->height());
+    }
+  }
 
   const float contentInnerWidth =
       std::max(0.0F, m_content->width() - (m_content->paddingLeft() + m_content->paddingRight()));
@@ -474,13 +606,17 @@ bool ControlCenterPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifi
     }
   }
 
-  if (!m_showSidebar || m_sidebarNav == nullptr || m_sidebarScrollView == nullptr || m_content == nullptr) {
+  // The top nav has no scroll rail (and in the command bar the section's actions share the row), so
+  // the navigation strip itself is the "sidebar" pane there.
+  const Node* sidebarRoot = m_sidebarScrollView != nullptr ? static_cast<const Node*>(m_sidebarScrollView)
+                                                           : static_cast<const Node*>(m_sidebarNav);
+  if (!m_showSidebar || m_sidebarNav == nullptr || sidebarRoot == nullptr || m_content == nullptr) {
     return false;
   }
 
   const SplitPaneFocusConfig panes{
       .sidebarFocus = m_sidebarNav->focusArea(),
-      .sidebarRoot = m_sidebarScrollView,
+      .sidebarRoot = sidebarRoot,
       .contentRoot = m_content,
       .headerFocus = nullptr,
   };
@@ -504,8 +640,13 @@ void ControlCenterPanel::onClose() {
   m_sidebarScrollView = nullptr;
   m_sidebarScrollState = {};
   m_sidebarNav = nullptr;
+  m_indicatorMotion.reset();
   m_navIndicator = nullptr;
-  m_indicatorPlaced = false;
+  for (auto& expand : m_navExpand) {
+    expand.reset();
+  }
+  m_commandRule = nullptr;
+  m_navItemHeight = 0.0F;
   m_sidebarScrollArea = nullptr;
   m_content = nullptr;
   m_contentDismissArea = nullptr;
@@ -744,22 +885,221 @@ void ControlCenterPanel::layoutNavIndicator() {
     return;
   }
   Button* target = m_tabButtons[tabIndex(m_activeTab)];
-  if (target == nullptr || !target->visible() || target->width() <= 0.0F) {
+  const bool measured = m_commandBar ? m_navItemHeight > 0.0F : target != nullptr && target->width() > 0.0F;
+  if (target == nullptr || !target->visible() || !measured) {
     m_navIndicator->setVisible(false);
     return;
   }
-  IndicatorRect to{target->x(), target->y(), target->width(), target->height()};
-  IndicatorRect rect = to;
-  if (m_tabMorph.active() && m_indicatorFrom.w > 0.0F) {
-    const float p = m_tabMorph.progress();
-    const auto mix = [p](float a, float b) { return a + (b - a) * p; };
-    rect = {mix(m_indicatorFrom.x, to.x), mix(m_indicatorFrom.y, to.y), mix(m_indicatorFrom.w, to.w),
-            mix(m_indicatorFrom.h, to.h)};
+  // In the command bar the destination is where the item WILL be once the labels have folded and
+  // unfolded, not where it is mid-reconfiguration: the indicator makes one journey there, and the
+  // items converge on it.
+  const MotionRectValue to = m_commandBar
+      ? commandBarNavRest(m_activeTab)
+      : MotionRectValue{.x = target->x(), .y = target->y(), .width = target->width(), .height = target->height()};
+  if (!m_indicatorMotion.hasValue()) {
+    m_indicatorTab = m_activeTab;
+    m_indicatorMotion.setImmediate(to);
+  } else if (m_activeTab != m_indicatorTab || m_indicatorMotion.animating()) {
+    // A section switch travels, and so does any correction while a glide is in flight — from where
+    // the indicator is drawn now, with its current velocity (retarget), never from the old button.
+    m_indicatorTab = m_activeTab;
+    m_indicatorMotion.setTarget(to);
+  } else {
+    m_indicatorMotion.setImmediate(to); // same section, layout changed: follow it exactly
   }
+  applyNavIndicatorGeometry();
+}
+
+void ControlCenterPanel::applyNavIndicatorGeometry() {
+  if (m_navIndicator == nullptr || !m_indicatorMotion.hasValue()) {
+    return;
+  }
+  const auto r = m_indicatorMotion.value();
   m_navIndicator->setVisible(true);
-  m_navIndicator->setPosition(rect.x, rect.y);
-  m_navIndicator->setSize(rect.w, rect.h);
-  m_indicatorPlaced = true;
+  m_navIndicator->setPosition(r.x, r.y);
+  m_navIndicator->setSize(r.width, r.height);
+}
+
+void ControlCenterPanel::layoutCommandBarNav(Renderer& renderer, float barWidth) {
+  if (m_sidebarNav == nullptr || m_sidebar == nullptr) {
+    return;
+  }
+  const float scale = contentScale();
+  m_navGap = ui::tokens::space(ui::tokens::Space::Inline, scale);
+
+  // Sized against the widest section's actions, not the active one's: otherwise the whole strip would
+  // resize at the moment of a switch (Home has three actions, most sections one) — the frame must not move.
+  float widestSectionActions = 0.0F;
+  for (Flex* actions : m_tabHeaderActions) {
+    if (actions != nullptr) {
+      widestSectionActions = std::max(widestSectionActions, actions->measure(renderer, LayoutConstraints{}).width);
+    }
+  }
+  float actionsWidth = m_closeButton != nullptr ? m_closeButton->measure(renderer, LayoutConstraints{}).width : 0.0F;
+  if (widestSectionActions > 0.0F && m_contentHeaderActions != nullptr) {
+    actionsWidth += widestSectionActions + m_contentHeaderActions->gap();
+  }
+  const float available = std::max(0.0F, barWidth - actionsWidth - ui::tokens::space(ui::tokens::Space::Group, scale));
+
+  int visibleItems = 0;
+  for (const auto& meta : kTabs) {
+    const Button* button = m_tabButtons[tabIndex(meta.id)];
+    visibleItems += button != nullptr && button->visible() ? 1 : 0;
+  }
+  // Responsive, labels first. An item's unfold (gap + label) does not depend on its height, so the items
+  // shrink — from the medium control height down to 30 px — to make room for the widest label beside the
+  // actions. Only when even that fails does the strip go icon-only, and then it may shrink to 28 px before
+  // anything overlaps (a section opened directly is 0.75 of the panel width).
+  const float gaps = m_navGap * static_cast<float>(std::max(0, visibleItems - 1));
+  const float labelGap = ui::tokens::space(ui::tokens::Space::Related, scale);
+  const auto& labelSpec = ui::type::spec(ui::type::Role::Label);
+  float widestText = 0.0F;
+  for (const auto& meta : kTabs) {
+    const Button* button = m_tabButtons[tabIndex(meta.id)];
+    if (button == nullptr || !button->visible()) {
+      continue;
+    }
+    widestText = std::max(
+        widestText, renderer
+                        .measureText(
+                            i18n::tr(meta.titleKey), ui::type::size(ui::type::Role::Label, scale), labelSpec.weight,
+                            0.0F, 0, TextAlign::Start, ui::type::familyFor(ui::type::Role::Label)
+                        )
+                        .width
+    );
+  }
+  const float maxItem = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
+  const float items = static_cast<float>(std::max(1, visibleItems));
+  // 1 px margin: the unfolded widths are ceiled, which must not flip the labels off at fractional scales.
+  const float withLabels = std::floor((available - gaps - labelGap - std::ceil(widestText) - 1.0F) / items);
+  if (withLabels >= 30.0F * scale) {
+    m_navItemHeight = std::min(maxItem, withLabels);
+  } else {
+    m_navItemHeight = std::clamp(std::floor((available - gaps) / items), 28.0F * scale, maxItem);
+  }
+  const float glyphSize = std::min(ui::tokens::iconSize(ui::tokens::Size::Medium, scale), m_navItemHeight * 0.55F);
+
+  float collapsedRun = 0.0F;
+  float widestUnfold = 0.0F;
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    Button* button = m_tabButtons[idx];
+    if (button == nullptr || !button->visible()) {
+      continue;
+    }
+    button->setGlyphSize(glyphSize);
+    button->setPadding(0.0F, (m_navItemHeight - glyphSize) * 0.5F);
+    button->setRadius(ui::tokens::pill(m_navItemHeight));
+    // Unfolded = the collapsed square (glyph centred, equal padding) + gap + label. Measured from the
+    // text rather than the button: the button's frame is pinned by the expansion between layouts.
+    m_navCollapsedWidth[idx] = m_navItemHeight;
+    const float textWidth =
+        renderer
+            .measureText(
+                i18n::tr(meta.titleKey), ui::type::size(ui::type::Role::Label, scale), labelSpec.weight, 0.0F, 0,
+                TextAlign::Start, ui::type::familyFor(ui::type::Role::Label)
+            )
+            .width;
+    m_navExpandedWidth[idx] = std::ceil(m_navItemHeight + labelGap + textWidth);
+    widestUnfold = std::max(widestUnfold, m_navExpandedWidth[idx] - m_navCollapsedWidth[idx]);
+    collapsedRun += m_navCollapsedWidth[idx];
+  }
+  collapsedRun += gaps;
+
+  // Labels only when the widest one fits beside the section's actions; the strip is then sized for the
+  // widest unfolded state, so nothing else in the bar moves while the items reconfigure.
+  if (m_navIndicator != nullptr) {
+    m_navIndicator->setRadius(ui::tokens::pill(m_navItemHeight));
+  }
+  const bool labelsFit = collapsedRun + widestUnfold <= available;
+  const bool fitChanged = labelsFit != m_navLabelsFit;
+  m_navLabelsFit = labelsFit;
+
+  const float stripWidth = std::ceil(collapsedRun + (labelsFit ? widestUnfold : 0.0F));
+  m_sidebarNav->setMinWidth(stripWidth);
+  m_sidebarNav->setMaxWidth(stripWidth);
+  m_sidebarNav->setMinHeight(m_navItemHeight);
+  if (fitChanged) {
+    syncCommandBarNavTargets(false);
+  }
+}
+
+void ControlCenterPanel::syncCommandBarNavTargets(bool animate) {
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    if (m_tabButtons[idx] == nullptr) {
+      continue;
+    }
+    const float target = m_navLabelsFit && meta.id == m_activeTab ? 1.0F : 0.0F;
+    if (animate) {
+      m_navExpand[idx].setTarget(target);
+    } else {
+      m_navExpand[idx].setImmediate(target);
+    }
+  }
+}
+
+MotionRectValue ControlCenterPanel::commandBarNavRest(TabId tab) const {
+  float x = 0.0F;
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    const Button* button = m_tabButtons[idx];
+    if (button == nullptr || !button->visible()) {
+      continue;
+    }
+    const bool unfolded = m_navLabelsFit && meta.id == tab;
+    const float w = unfolded ? m_navExpandedWidth[idx] : m_navCollapsedWidth[idx];
+    if (meta.id == tab) {
+      return MotionRectValue{.x = x, .y = 0.0F, .width = w, .height = m_navItemHeight};
+    }
+    x += w + m_navGap;
+  }
+  return MotionRectValue{.x = 0.0F, .y = 0.0F, .width = m_navItemHeight, .height = m_navItemHeight};
+}
+
+void ControlCenterPanel::applyCommandBarNavGeometry() {
+  if (!m_commandBar || m_navItemHeight <= 0.0F) {
+    return;
+  }
+  float x = 0.0F;
+  for (const auto& meta : kTabs) {
+    const std::size_t idx = tabIndex(meta.id);
+    Button* button = m_tabButtons[idx];
+    if (button == nullptr || !button->visible()) {
+      continue;
+    }
+    const float unfold = m_navExpand[idx].hasValue() ? std::clamp(m_navExpand[idx].value(), 0.0F, 1.0F) : 0.0F;
+    const float collapsed = m_navCollapsedWidth[idx];
+    const float w = collapsed + unfold * std::max(0.0F, m_navExpandedWidth[idx] - collapsed);
+    // Frame size, not setSize: a frame change repaints without asking for a layout pass, so an
+    // unfold costs a redraw per frame, not a panel relayout.
+    button->setPosition(x, 0.0F);
+    button->setFrameSize(w, m_navItemHeight);
+    button->updateInputArea();
+    if (Label* label = button->label()) {
+      // The clip reveals the label; its ink arrives over the second half of the unfold so a
+      // half-open item never shows a squeezed word.
+      float ink = std::clamp((unfold - 0.4F) / 0.6F, 0.0F, 1.0F);
+      // The incoming label also waits for the capsule: items and capsule converge on the same end state
+      // by different paths, and mid-flight the unfolding word would otherwise show beside the capsule
+      // instead of inside it. It appears as the capsule settles around it (within 12 px of rest).
+      if (meta.id == m_activeTab) {
+        if (m_indicatorMotion.hasValue()) {
+          const MotionRectValue pill = m_indicatorMotion.value();
+          const MotionRectValue rest = commandBarNavRest(m_activeTab);
+          const float offRest = std::abs(pill.x - rest.x) + std::abs(pill.width - rest.width);
+          ink = std::min(ink, std::clamp(1.0F - offRest / (12.0F * contentScale()), 0.0F, 1.0F));
+        }
+      } else {
+        // An item the capsule has left may only lose ink: in a burst of switches, an item passed through
+        // on the way (half unfolded, never reached) must not flash its label as it folds again.
+        ink = std::min(ink, m_navInk[idx]);
+      }
+      m_navInk[idx] = ink;
+      label->setOpacity(ink);
+    }
+    x += w + m_navGap;
+  }
 }
 
 int ControlCenterPanel::visibleTabOrdinal(TabId tab) const {
@@ -791,13 +1131,8 @@ void ControlCenterPanel::startTabTransition(TabId from, TabId to, float carry) {
   }
 
   m_tabTransitionOutgoing = from;
-  // The indicator leaves from wherever it is drawn right now — mid-flight after an interruption —
-  // which is what makes a burst of switches one continuous motion instead of a queue.
-  if (m_navIndicator != nullptr && m_indicatorPlaced) {
-    m_indicatorFrom = {m_navIndicator->x(), m_navIndicator->y(), m_navIndicator->width(), m_navIndicator->height()};
-  } else if (Button* fromButton = m_tabButtons[tabIndex(from)]; fromButton != nullptr) {
-    m_indicatorFrom = {fromButton->x(), fromButton->y(), fromButton->width(), fromButton->height()};
-  }
+  // The indicator is not driven from here: layoutNavIndicator() retargets its MotionRect when the
+  // active section changes, so a burst of switches stays one continuous motion with its velocity kept.
 
   const int fromOrdinal = visibleTabOrdinal(from);
   const int toOrdinal = visibleTabOrdinal(to);
@@ -816,7 +1151,7 @@ void ControlCenterPanel::startTabTransition(TabId from, TabId to, float carry) {
   // direction off the morph, so the pre-animation frame has to see the new leg's state.
   m_tabMorph.bind(m_animations, m_tabBodies);
   m_tabMorph.start(
-      direction, carry, static_cast<float>(Style::animNormal), Easing::EaseOutQuint,
+      direction, carry, motion::Role::Morph,
       [this](float) {
         applyTabTransitionLayout();
         PanelManager::instance().requestRedraw();
@@ -910,6 +1245,9 @@ void ControlCenterPanel::selectTab(TabId tab, bool animated) {
   }
 
   updateTabChrome(tab);
+  if (m_commandBar) {
+    syncCommandBarNavTargets(animated);
+  }
 
   if (tabChanged && animated && m_animations != nullptr && m_tabBodies != nullptr) {
     startTabTransition(previousTab, tab, interrupted ? interruptedOffset : 1.0F);

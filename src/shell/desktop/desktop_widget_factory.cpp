@@ -216,6 +216,12 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         .showCircle = getBoolSetting(settings, "circle", true),
         .centerText = getBoolSetting(settings, "center_text", true),
         .timezone = getStringSetting(settings, "timezone", ""),
+        .weight = [&settings]() {
+          const std::string weight = getStringSetting(settings, "weight", "bold");
+          return weight == "light" ? FontWeight::Light : (weight == "regular" ? FontWeight::Normal : FontWeight::Bold);
+        }(),
+        .face = DesktopClockWidget::faceFromSetting(getStringSetting(settings, "face", "custom")),
+        .tabular = getBoolSetting(settings, "tabular", false),
     });
     applyCommonSettings(*widget, settings);
     widget->setContentScale(contentScale);

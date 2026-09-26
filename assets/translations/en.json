@@ -676,7 +676,16 @@
         "anchor-bottom-left": "Bottom left",
         "anchor-bottom": "Bottom",
         "anchor-bottom-right": "Bottom right",
-        "show-labels": "Show labels"
+        "show-labels": "Show labels",
+        "weight": "Weight",
+        "weight-light": "Light",
+        "weight-regular": "Regular",
+        "weight-bold": "Bold",
+        "face": "Typeface",
+        "face-custom": "Font family",
+        "face-display": "Display",
+        "face-interface": "Interface",
+        "tabular": "Tabular figures"
       },
       "state": {
         "grid": "Grid"
@@ -1454,7 +1463,11 @@
           "full": "Full",
           "none": "None"
         },
-        "anchor-bar-first": "First bar"
+        "anchor-bar-first": "First bar",
+        "style": {
+          "zynith": "Zynith",
+          "classic": "Classic"
+        }
       },
       "dock-launcher-position": {
         "end": "End",
@@ -1845,6 +1858,11 @@
         "motion-overview": {
           "label": "Overview",
           "description": "Duration of the overview open and close animation, as a percentage of the preset's baseline."
+        },
+        "display-font": {
+          "label": "Display Font",
+          "description": "Typeface for display moments — the Control Center clock and section titles. Empty uses the interface font.",
+          "placeholder": "Interface font"
         }
       },
       "backdrop": {
@@ -3467,6 +3485,10 @@
         "osd-duration": {
           "label": "Display Duration",
           "description": "How long the on-screen display stays after the last change before it fades. Each new change restarts it."
+        },
+        "cc-style": {
+          "label": "Control Center Style",
+          "description": "Zynith leads with the wallpaper, a large clock and your identity; Classic is the previous card layout. Applies the next time the Control Center opens."
         }
       },
       "osd": {
@@ -3717,6 +3739,10 @@
           "lockscreen-widgets-exit": {
             "description": "Close the lockscreen widgets editor",
             "label": "Exit lockscreen widget editor"
+          },
+          "lockscreen-widgets-reset": {
+            "description": "Discard lockscreen widget layout overrides and use the preset",
+            "label": "Reset lockscreen widgets to the preset"
           },
           "lockscreen-widgets-toggle-edit": {
             "description": "Toggle lockscreen widgets edit mode",
