@@ -1,5 +1,7 @@
 #include "core/log.h"
 
+#include <atomic>
+
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
@@ -15,6 +17,7 @@ namespace {
 
   LogLevel gMinLevel = LogLevel::Info;
   FILE* gLogFile = nullptr;
+  std::atomic<int> gLogFileFd{-1}; // mirrors gLogFile for the fatal-signal handler
   std::mutex gLogMutex;
   std::string gLogPath;
   std::string gBackupLogPath;
@@ -200,6 +203,7 @@ namespace {
       return;
     }
 
+    gLogFileFd.store(-1, std::memory_order_relaxed);
     std::fflush(gLogFile);
     std::fclose(gLogFile);
     gLogFile = nullptr;
@@ -221,6 +225,7 @@ namespace {
     }
 
     gLogFile = std::fopen(gLogPath.c_str(), "a");
+    gLogFileFd.store(gLogFile != nullptr ? fileno(gLogFile) : -1, std::memory_order_relaxed);
     gLogSizeBytes = gLogFile == nullptr ? 0 : currentLogFileSizeUnlocked();
     gBufferedFileLogLines = 0;
     gLastFileFlushAt = std::chrono::steady_clock::now();
@@ -372,3 +377,5 @@ void initLogLevelFromEnvironment() {
   setLogLevel(*level);
   logInfo("log level set to {}", logLevelName(*level));
 }
+
+int logFileDescriptor() noexcept { return gLogFileFd.load(std::memory_order_relaxed); }

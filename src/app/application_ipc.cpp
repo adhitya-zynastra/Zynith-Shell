@@ -9,6 +9,7 @@
 #include "core/files/resource_paths.h"
 #include "core/input/keybind_matcher.h"
 #include "core/log.h"
+#include "security/process_hardening.h"
 #include "core/process/process.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/accounts/accounts_service.h"
@@ -134,6 +135,13 @@ void Application::initIpc() {
         json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
         json += ",\n  \"locked\": ";
         json += m_lockScreen.isActive() ? "true" : "false";
+        // The shell is non-dumpable, so /proc/<pid>/fd is root-owned from outside: report our own resources.
+        const auto res = security::readSelfResources();
+        json += std::format(
+            ",\n  \"process\": {{\"pid\": {}, \"rssKb\": {}, \"threads\": {}, \"fds\": {}, \"cpuTicks\": {}, "
+            "\"dumpable\": {}}}",
+            res.pid, res.rssKb, res.threads, res.fds, res.cpuTicks, res.dumpable ? "true" : "false"
+        );
         json += "\n}\n";
         return json;
       },

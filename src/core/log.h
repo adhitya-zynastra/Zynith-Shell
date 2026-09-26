@@ -61,3 +61,6 @@ private:
 void setLogLevel(LogLevel level);
 void initLogLevelFromEnvironment();
 void initLogFile();
+// Descriptor of the open log file, or -1. Safe to call from a signal handler (an atomic load); used by the
+// fatal-signal backtrace (security/process_hardening).
+[[nodiscard]] int logFileDescriptor() noexcept;

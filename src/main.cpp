@@ -8,6 +8,7 @@
 #include "core/build_info.h"
 #include "core/log.h"
 #include "core/process/process_fds.h"
+#include "security/process_hardening.h"
 #include "ipc/cli.h"
 #include "launcher/dmenu_cli.h"
 #include "scripting/plugin_lint.h"
@@ -215,6 +216,10 @@ namespace {
   }
 
   int runShell() {
+    // zynith: the shell can hold password material; keep it out of core files (security/process_hardening.h).
+    security::disableCoreDumps();
+    security::installCrashBacktrace();
+
     // Raise the soft fd limit before any Wayland/EGL init. The NVIDIA EGL/Wayland
     // driver leaks internal sync_file fences slowly across a session; the default
     // 1024 soft cap can be exhausted in a long-running session, after which the
@@ -286,8 +291,11 @@ int main(int argc, char* argv[]) {
     if (std::strcmp(argv[1], "msg") == 0)
       return noctalia::ipc::runCli(argc, argv);
     // Internal mode for PAM authentication after re-exec.
-    if (std::strcmp(argv[1], "pam-helper") == 0)
+    if (std::strcmp(argv[1], "pam-helper") == 0) {
+      // The helper is re-exec'd (so it is dumpable again) and receives the password: harden it first.
+      security::disableCoreDumps();
       return PamAuthenticator::runHelperMode(argc, argv);
+    }
     if (std::strcmp(argv[1], "config") == 0)
       return noctalia::config::runCli(argc, argv);
     if (std::strcmp(argv[1], "dmenu") == 0)
