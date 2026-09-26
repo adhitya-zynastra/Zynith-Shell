@@ -768,6 +768,8 @@ void Application::reconcileOutputSurfaces() {
   // output set, so re-running it is safe. initialize() only wires dependencies.
   m_backdrop.onOutputChange();
   m_wallpaper.onOutputChange();
+  // After the static backend: the live controller hands outputs over (or resumes Live mode) on top of it.
+  m_liveWallpaper.onOutputChange();
   m_bar.onOutputChange();
   m_dock.onOutputChange();
   m_desktopWidgetsController.onOutputChange();

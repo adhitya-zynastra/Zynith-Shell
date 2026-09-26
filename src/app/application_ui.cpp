@@ -132,6 +132,8 @@ void Application::initUiRenderSurfacesAndSettings() {
   Style::setRtl(i18n::Service::instance().rtl());
   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
   m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
+  m_liveWallpaper.initialize(m_wayland, m_configService, m_wallpaper);
+  m_liveWallpaper.registerIpc(m_ipcService);
   m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(
       m_wayland, &m_configService, &m_renderContext, &m_dependencyService, m_upowerService.get(), &m_idleManager,
@@ -320,6 +322,7 @@ void Application::initLockScreenAndSession() {
   );
   m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, m_mprisService.get(), &m_weatherService, &m_httpClient);
   m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
+  m_liveWallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
   m_configService.addReloadCallback([this]() {
     if (m_logindService != nullptr) {
       m_logindService->setSessionLockIntegrationEnabled(m_configService.isLockScreenEnabled());
@@ -700,7 +703,8 @@ void Application::initPanelManagerAndPanels() {
   m_panelManager.registerPanel(
       "wallpaper",
       std::make_unique<WallpaperPanel>(
-          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService
+          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService,
+          &m_liveWallpaper
       )
   );
   m_panelManager.registerPanel("tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService));

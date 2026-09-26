@@ -5,6 +5,7 @@
 #include "render/core/thumbnail_service.h"
 #include "shell/panel/panel.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
+#include "ui/signal.h"
 
 #include <chrono>
 #include <cstddef>
@@ -23,6 +24,7 @@ class ConfigService;
 class Flex;
 class Input;
 class Label;
+class LiveWallpaperController;
 class Segmented;
 class Select;
 class Spinner;
@@ -47,7 +49,7 @@ public:
 
   WallpaperPanel(
       WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails, WallpaperScanner* scanner,
-      noctalia::theme::ThemeService* themeService = nullptr
+      noctalia::theme::ThemeService* themeService = nullptr, LiveWallpaperController* live = nullptr
   );
   ~WallpaperPanel() override;
 
@@ -145,11 +147,40 @@ private:
   [[nodiscard]] std::optional<Color> selectedFillColor() const;
   [[nodiscard]] static std::string displayNameForWallpaperPath(std::string_view path);
 
+  // zynith: Static / Live browse modes. The Live tab browses the live controller's catalog through the
+  // same adapter, tiles and browse surface; the entries' images are the providers' own preview files,
+  // so browsing never starts a renderer. Selecting (click / Enter) is the only thing that does.
+  [[nodiscard]] bool liveTab() const noexcept { return m_liveTab && m_live != nullptr; }
+  void setLiveTab(bool live);
+  void rebuildLiveEntries();
+  void syncLiveChrome();
+  void scheduleLiveRefresh();
+  void onLiveChanged();
+  void applyLiveEntry(const WallpaperEntry& entry);
+  [[nodiscard]] std::string focusedLiveId() const;
+
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
   WallpaperScanner* m_scanner = nullptr;
   noctalia::theme::ThemeService* m_themeService = nullptr;
+  LiveWallpaperController* m_live = nullptr;
+  bool m_liveTab = false;
+  bool m_liveRefreshQueued = false;
+  bool m_syncingLiveControls = false;
+  Signal<>::ScopedConnection m_liveChangedConn;
+  // Live-tab controls (owned by the root flex tree).
+  Segmented* m_modeSegmented = nullptr;
+  Flex* m_liveOptionsRow = nullptr;
+  Select* m_liveSourceSelect = nullptr;
+  Segmented* m_liveCategorySegmented = nullptr;
+  Button* m_liveCollectionButton = nullptr;
+  Label* m_liveCarouselLabel = nullptr;
+  Toggle* m_liveCarouselToggle = nullptr;
+  Select* m_liveIntervalSelect = nullptr;
+  Button* m_liveOrderButton = nullptr;
+  Button* m_liveStopButton = nullptr;
+  Label* m_liveStatusLabel = nullptr;
 
   // UI nodes (owned by the root flex tree).
   Flex* m_rootLayout = nullptr;

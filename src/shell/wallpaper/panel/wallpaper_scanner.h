@@ -22,6 +22,9 @@ struct WallpaperEntry {
   // Cached on the scan worker so date sorting never stats per comparison.
   std::filesystem::file_time_type mtime;
   bool hasMtime = false;
+  // zynith: set for Live wallpaper entries (the provider's stable id, e.g. a Workshop id). absPath is then
+  // the item's preview image inside the provider's canonical folder — a thumbnail source, never a copy.
+  std::string liveId;
 };
 
 struct WallpaperScanResult {

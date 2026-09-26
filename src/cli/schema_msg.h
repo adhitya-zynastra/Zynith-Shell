@@ -228,6 +228,19 @@ namespace noctalia::cli {
   inline constexpr std::array kMsgWallpaperGetPositionals{
       Positional{"connector", {}, {}, false, false, false},
   };
+  // zynith: live wallpapers (shell/wallpaper/live).
+  inline constexpr std::array kMsgWallpaperLiveSetPositionals{
+      Positional{"workshop-id", "Wallpaper Engine Steam Workshop id", {}, true, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgWallpaperLiveListActions{"add", "remove"};
+  inline constexpr std::array kMsgWallpaperLiveListPositionals{
+      Positional{"action", {}, kMsgWallpaperLiveListActions, true, false, false},
+      Positional{"workshop-id", {}, {}, true, false, false},
+  };
+  inline constexpr std::array kMsgWallpaperLiveCarouselPositionals{
+      Positional{"state", "on or off, then optionally an interval in seconds and sequential|shuffle", {}, true,
+                 true, false},
+  };
   inline constexpr std::array kMsgWallpaperNextPositionals{
       Positional{"connector", {}, {}, false, false, false},
   };
@@ -765,6 +778,32 @@ namespace noctalia::cli {
         {},
         false
     };
+    inline constexpr Command wallpaperLiveCarousel{
+        "wallpaper-live-carousel", "Cycle the live wallpaper collection: on|off [seconds] [sequential|shuffle]",
+        {}, {}, {}, kMsgWallpaperLiveCarouselPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveCollection{
+        "wallpaper-live-collection", "Add or remove a Wallpaper Engine item in the live collection", {}, {}, {},
+        kMsgWallpaperLiveListPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveFavorite{
+        "wallpaper-live-favorite", "Add or remove a Wallpaper Engine item in the live favorites", {}, {}, {},
+        kMsgWallpaperLiveListPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveNext{
+        "wallpaper-live-next", "Switch to the next wallpaper of the live collection now", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command wallpaperLiveSet{
+        "wallpaper-live-set", "Show a Wallpaper Engine wallpaper as the live wallpaper", {}, {}, {},
+        kMsgWallpaperLiveSetPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveStatus{
+        "wallpaper-live-status", "Print live wallpaper state as JSON", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command wallpaperLiveStop{
+        "wallpaper-live-stop", "Stop the live wallpaper and return to the static wallpaper", {}, {}, {}, {}, {},
+        false
+    };
     inline constexpr Command wallpaperRandom{"wallpaper-random",
                                              "Switch to a random wallpaper immediately",
                                              {},
@@ -939,6 +978,13 @@ namespace noctalia::cli {
       msg::volumeSet,
       msg::volumeUp,
       msg::wallpaperGet,
+      msg::wallpaperLiveCarousel,
+      msg::wallpaperLiveCollection,
+      msg::wallpaperLiveFavorite,
+      msg::wallpaperLiveNext,
+      msg::wallpaperLiveSet,
+      msg::wallpaperLiveStatus,
+      msg::wallpaperLiveStop,
       msg::wallpaperNext,
       msg::wallpaperPrevious,
       msg::wallpaperRandom,

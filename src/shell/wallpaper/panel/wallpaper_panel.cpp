@@ -2,6 +2,7 @@
 
 #include "config/config_service.h"
 #include "core/input/keybind_matcher.h"
+#include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/random.h"
 #include "core/ui_phase.h"
@@ -12,6 +13,7 @@
 #include "render/scene/input_area.h"
 #include "shell/panel/panel_manager.h"
 #include "shell/tooltip/tooltip_manager.h"
+#include "shell/wallpaper/live/live_wallpaper_controller.h"
 #include "shell/wallpaper/panel/wallpaper_tile.h"
 #include "shell/wallpaper/wallpaper_paths.h"
 #include "theme/builtin_palettes.h"
@@ -31,6 +33,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <chrono>
 #include <filesystem>
 #include <memory>
@@ -78,6 +81,10 @@ namespace {
   // Upper bound on how many entries one session prefetches, whatever the library
   // size. Ordered outward from the focused item so the useful ones land first.
   constexpr std::size_t kMaxPrefetchEntries = 360;
+  // zynith: Live tab. A Wallpaper Engine library easily holds hundreds of items, so the live browser keeps
+  // only the neighbourhood of the focused card resident (~24 MB at the browse size) instead of the whole
+  // collection; everything further away decodes on arrival from the persistent WebP thumbnail cache.
+  constexpr std::size_t kMaxLivePrefetchEntries = 64;
   // Cards within the promotion window hold the display-quality texture: every card the arc
   // shows (a preview is visibly soft at the 475-760 px they draw at), plus this many past the
   // leading edge, so the next card is already sharp when it arrives. The arc widens with the
@@ -294,6 +301,9 @@ public:
   void setRenderer(Renderer* renderer) { m_renderer = renderer; }
   void setConfig(ConfigService* config) { m_config = config; }
   void setCurrentWallpaperPath(std::string path) { m_currentWallpaperPath = std::move(path); }
+  // zynith: live entries (entry.liveId set) take their star and "current" marks from the live controller.
+  void setCurrentLiveId(std::string id) { m_currentLiveId = std::move(id); }
+  void setLiveFavoriteQuery(std::function<bool(const std::string&)> query) { m_liveFavorite = std::move(query); }
   void setThumbnailService(ThumbnailService* service) {
     m_thumbnails = service;
     for (WallpaperTile* tile : m_pool) {
@@ -352,7 +362,9 @@ public:
     if (m_renderer != nullptr && m_entries != nullptr && index < m_entries->size()) {
       const auto& entry = (*m_entries)[index];
       wt->setEntry(entry, *m_renderer);
-      if (m_config != nullptr && !entry.isDir) {
+      if (!entry.liveId.empty()) {
+        wt->setFavoriteState(m_liveFavorite && m_liveFavorite(entry.liveId), std::nullopt);
+      } else if (m_config != nullptr && !entry.isDir) {
         const std::string path = entry.absPath.string();
         wt->setFavoriteState(
             m_config->isWallpaperFavorite(path), favoriteThemeBadge(m_config->wallpaperFavorite(path))
@@ -367,7 +379,9 @@ public:
     wt->setCurrent(
         m_entries != nullptr
         && index < m_entries->size()
-        && wallpaperEntryIsCurrent((*m_entries)[index], m_currentWallpaperPath)
+        && ((*m_entries)[index].liveId.empty()
+                ? wallpaperEntryIsCurrent((*m_entries)[index], m_currentWallpaperPath)
+                : (*m_entries)[index].liveId == m_currentLiveId)
     );
     wt->setHoveredVisual(hovered && !selected);
   }
@@ -418,6 +432,8 @@ private:
   float m_scale;
   const std::vector<WallpaperEntry>* m_entries = nullptr;
   std::string m_currentWallpaperPath;
+  std::string m_currentLiveId;
+  std::function<bool(const std::string&)> m_liveFavorite;
   Renderer* m_renderer = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
   ConfigService* m_config = nullptr;
@@ -433,9 +449,10 @@ private:
 
 WallpaperPanel::WallpaperPanel(
     WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails, WallpaperScanner* scanner,
-    noctalia::theme::ThemeService* themeService
+    noctalia::theme::ThemeService* themeService, LiveWallpaperController* live
 )
-    : m_wayland(wayland), m_config(config), m_thumbnails(thumbnails), m_scanner(scanner), m_themeService(themeService) {
+    : m_wayland(wayland), m_config(config), m_thumbnails(thumbnails), m_scanner(scanner), m_themeService(themeService),
+      m_live(live) {
   if (m_config != nullptr) {
     m_flatten = m_config->stateBool("wallpaper_panel", "flatten").value_or(false);
     if (const std::optional<std::string> sort = m_config->stateString("wallpaper_panel", "sort")) {
@@ -489,6 +506,30 @@ void WallpaperPanel::create() {
           .color = colorSpecFromRole(ColorRole::Primary),
       })
   );
+
+  // zynith: Static / Live. Switching the tab only changes what is browsed; the desktop changes when a
+  // wallpaper is actually selected.
+  if (m_live != nullptr) {
+    toolbar->addChild(
+        ui::segmented({
+            .out = &m_modeSegmented,
+            .options =
+                std::vector<ui::SegmentedOption>{
+                    {.label = i18n::tr("wallpaper.panel.mode-static")},
+                    {.label = i18n::tr("wallpaper.panel.mode-live")},
+                },
+            .selectedIndex = static_cast<std::size_t>(m_liveTab ? 1 : 0),
+            .scale = scale,
+            .compact = true,
+            .surfaceOpacity = panelCardOpacity(),
+            .onChange = [this](std::size_t index) {
+              if (!m_syncingLiveControls) {
+                setLiveTab(index == 1);
+              }
+            },
+        })
+    );
+  }
 
   toolbar->addChild(
       ui::input({
@@ -632,7 +673,9 @@ void WallpaperPanel::create() {
           .padding = Style::spaceXs * scale,
           .radius = Style::scaledRadiusMd(scale),
           .onClick = [this]() {
-            if (m_scanner != nullptr) {
+            if (liveTab()) {
+              m_live->provider().refresh(/*force=*/true);
+            } else if (m_scanner != nullptr) {
               m_scanner->invalidate();
             }
             refreshVisibleEntries();
@@ -811,6 +854,174 @@ void WallpaperPanel::create() {
 
   menuHost->addChild(std::move(favoritesOptions));
 
+  if (m_live != nullptr) {
+    auto liveRow = ui::row({
+        .out = &m_liveOptionsRow,
+        .align = FlexAlign::Center,
+        .gap = kFavoritesMetaRowGap * scale,
+        .fillWidth = true,
+        .visible = false,
+    });
+    liveRow->addChild(
+        ui::select({
+            .out = &m_liveSourceSelect,
+            .fontSize = favoritesLabelFontSize,
+            .controlHeight = favoritesControlHeight,
+            .horizontalPadding = Style::spaceSm * scale,
+            .glyphSize = Style::fontSizeCaption * scale,
+            .surfaceOpacity = panelCardOpacity(),
+            .configure =
+                [this, scale](Select& select) {
+                  // One provider today; the source picker is where a second one appears.
+                  select.setOptions({m_live->provider().displayName()});
+                  select.setSelectedIndexSilently(0);
+                  select.setMinWidth(kFavoriteSelectMinWidth * scale);
+                },
+        })
+    );
+    liveRow->addChild(
+        ui::segmented({
+            .out = &m_liveCategorySegmented,
+            .options =
+                std::vector<ui::SegmentedOption>{
+                    {.label = i18n::tr("wallpaper.panel.live-collection")},
+                    {.label = i18n::tr("wallpaper.panel.live-favorites")},
+                    {.label = i18n::tr("wallpaper.panel.live-recent")},
+                    {.label = i18n::tr("wallpaper.panel.live-installed")},
+                },
+            .selectedIndex = static_cast<std::size_t>(m_live->category()),
+            .scale = scale,
+            .compact = true,
+            .surfaceOpacity = panelCardOpacity(),
+            .onChange = [this](std::size_t index) {
+              if (m_syncingLiveControls || index > 3) {
+                return;
+              }
+              m_live->setCategory(static_cast<LiveWallpaperController::Category>(index));
+              m_pendingInitialFocus = true;
+              rebuildLiveEntries();
+              resetSelection();
+              rebindGrid(true);
+              syncBrowseChrome();
+              m_dirty = true;
+              PanelManager::instance().refresh();
+            },
+        })
+    );
+    liveRow->addChild(
+        ui::button({
+            .out = &m_liveCollectionButton,
+            .glyph = "playlist-add",
+            .glyphSize = Style::fontSizeBody * scale,
+            .variant = ButtonVariant::Default,
+            .tooltip = i18n::tr("wallpaper.panel.live-collection-add"),
+            .minWidth = Style::controlHeightSm * scale,
+            .minHeight = Style::controlHeightSm * scale,
+            .padding = Style::spaceXs * scale,
+            .radius = Style::scaledRadiusMd(scale),
+            .onClick =
+                [this]() {
+                  if (const std::string id = focusedLiveId(); !id.empty()) {
+                    m_live->toggleCollection(id);
+                  }
+                },
+        })
+    );
+    liveRow->addChild(ui::spacer());
+    liveRow->addChild(
+        ui::label({
+            .out = &m_liveCarouselLabel,
+            .text = i18n::tr("wallpaper.panel.live-carousel"),
+            .fontSize = favoritesLabelFontSize,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+        })
+    );
+    liveRow->addChild(
+        ui::toggle({
+            .out = &m_liveCarouselToggle,
+            .checked = m_live->carouselEnabled(),
+            .onChange =
+                [this](bool checked) {
+                  if (!m_syncingLiveControls) {
+                    m_live->setCarouselEnabled(checked);
+                  }
+                },
+        })
+    );
+    liveRow->addChild(
+        ui::select({
+            .out = &m_liveIntervalSelect,
+            .fontSize = favoritesLabelFontSize,
+            .controlHeight = favoritesControlHeight,
+            .horizontalPadding = Style::spaceSm * scale,
+            .glyphSize = Style::fontSizeCaption * scale,
+            .surfaceOpacity = panelCardOpacity(),
+            .onSelectionChanged =
+                [this](std::size_t index, std::string_view) {
+                  if (!m_syncingLiveControls && index < LiveWallpaperController::kCarouselIntervalPresets.size()) {
+                    m_live->setCarouselInterval(LiveWallpaperController::kCarouselIntervalPresets[index]);
+                  }
+                },
+            .configure =
+                [](Select& select) {
+                  std::vector<std::string> labels;
+                  for (const std::int32_t seconds : LiveWallpaperController::kCarouselIntervalPresets) {
+                    labels.push_back(
+                        seconds < 3600 ? i18n::trp("wallpaper.panel.live-interval-minutes", seconds / 60)
+                                       : i18n::trp("wallpaper.panel.live-interval-hours", seconds / 3600)
+                    );
+                  }
+                  select.setOptions(std::move(labels));
+                },
+        })
+    );
+    liveRow->addChild(
+        ui::button({
+            .out = &m_liveOrderButton,
+            .glyph = "repeat",
+            .glyphSize = Style::fontSizeBody * scale,
+            .variant = ButtonVariant::Default,
+            .tooltip = i18n::tr("wallpaper.panel.live-order-sequential"),
+            .minWidth = Style::controlHeightSm * scale,
+            .minHeight = Style::controlHeightSm * scale,
+            .padding = Style::spaceXs * scale,
+            .radius = Style::scaledRadiusMd(scale),
+            .onClick =
+                [this]() {
+                  m_live->setCarouselOrder(
+                      m_live->carouselOrder() == LiveWallpaperController::CarouselOrder::Shuffle
+                          ? LiveWallpaperController::CarouselOrder::Sequential
+                          : LiveWallpaperController::CarouselOrder::Shuffle
+                  );
+                },
+        })
+    );
+    liveRow->addChild(
+        ui::button({
+            .out = &m_liveStopButton,
+            .glyph = "player-stop",
+            .glyphSize = Style::fontSizeBody * scale,
+            .variant = ButtonVariant::Default,
+            .tooltip = i18n::tr("wallpaper.panel.live-stop"),
+            .minWidth = Style::controlHeightSm * scale,
+            .minHeight = Style::controlHeightSm * scale,
+            .padding = Style::spaceXs * scale,
+            .radius = Style::scaledRadiusMd(scale),
+            .onClick = [this]() { m_live->switchToStatic(); },
+        })
+    );
+    menuHost->addChild(std::move(liveRow));
+    menuHost->addChild(
+        ui::label({
+            .out = &m_liveStatusLabel,
+            .text = "",
+            .fontSize = favoritesLabelFontSize,
+            .color = colorSpecFromRole(ColorRole::OnSurfaceVariant),
+            .visible = false,
+        })
+    );
+  }
+
   // ── Body: virtualized scrolling grid ──────────────────────────────────
   m_adapter = std::make_unique<WallpaperGridAdapter>(scale);
   m_adapter->setThumbnailService(m_thumbnails);
@@ -824,10 +1035,17 @@ void WallpaperPanel::create() {
     }
   });
   m_adapter->setOnStarToggle([this](const WallpaperEntry& entry) {
-    if (!entry.isDir) {
+    if (!entry.liveId.empty()) {
+      if (m_live != nullptr) {
+        m_live->toggleFavorite(std::string(entry.liveId)); // copy: the refresh may rebuild the entries
+      }
+    } else if (!entry.isDir) {
       toggleFavoriteForPath(entry.absPath.string());
     }
   });
+  if (m_live != nullptr) {
+    m_adapter->setLiveFavoriteQuery([this](const std::string& id) { return m_live->isFavorite(id); });
+  }
 
   m_carouselMode = carouselMode();
 
@@ -850,6 +1068,9 @@ void WallpaperPanel::create() {
       m_selectedVisibleIndex = (idx.has_value() && *idx < m_visibleEntries.size()) ? *idx : kNoVisibleSelection;
       updatePromotionWindow();
       syncThemeControls();
+      if (liveTab()) {
+        syncLiveChrome();
+      }
       m_dirty = true;
       PanelManager::instance().refresh();
     });
@@ -895,6 +1116,9 @@ void WallpaperPanel::create() {
                   m_selectedVisibleIndex = kNoVisibleSelection;
                 }
                 syncThemeControls();
+                if (liveTab()) {
+                  syncLiveChrome();
+                }
               },
           .configure = [](VirtualGridView& grid) { grid.setFillWidth(true); },
       })
@@ -1047,6 +1271,16 @@ void WallpaperPanel::onPanelCardOpacityChanged(float opacity) {
   if (m_favoritePaletteDetailSelect != nullptr) {
     m_favoritePaletteDetailSelect->setSurfaceOpacity(opacity);
   }
+  for (Segmented* segmented : {m_modeSegmented, m_liveCategorySegmented}) {
+    if (segmented != nullptr) {
+      segmented->setSurfaceOpacity(opacity);
+    }
+  }
+  for (Select* select : {m_liveSourceSelect, m_liveIntervalSelect}) {
+    if (select != nullptr) {
+      select->setSurfaceOpacity(opacity);
+    }
+  }
 }
 
 void WallpaperPanel::onOpen(std::string_view /*context*/) {
@@ -1067,6 +1301,15 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   if (m_thumbnails != nullptr && m_thumbnailSession == 0) {
     m_thumbnails->resetStats();
     m_thumbnailSession = m_thumbnails->beginSession(kBrowseSessionIdleBytes, kBrowseSessionIdleEntries);
+  }
+  if (m_live != nullptr) {
+    // Open on Live while a live wallpaper is up; otherwise on the tab used last.
+    m_liveTab = m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active()
+        || (m_config != nullptr && m_config->stateString("wallpaper_panel", "tab").value_or("") == "live");
+    m_liveChangedConn = m_live->changed().connect([this]() { scheduleLiveRefresh(); });
+    if (m_liveTab) {
+      m_live->provider().refresh(/*force=*/false); // no-op while the catalog is fresh
+    }
   }
   populateMonitorChoices();
   syncSortButtonGlyph();
@@ -1114,6 +1357,19 @@ void WallpaperPanel::onClose() {
     m_thumbnailSession = 0;
   }
   m_thumbnailPendingSub.disconnect();
+  m_liveChangedConn.disconnect();
+  m_liveRefreshQueued = false;
+  m_modeSegmented = nullptr;
+  m_liveOptionsRow = nullptr;
+  m_liveSourceSelect = nullptr;
+  m_liveCategorySegmented = nullptr;
+  m_liveCollectionButton = nullptr;
+  m_liveCarouselLabel = nullptr;
+  m_liveCarouselToggle = nullptr;
+  m_liveIntervalSelect = nullptr;
+  m_liveOrderButton = nullptr;
+  m_liveStopButton = nullptr;
+  m_liveStatusLabel = nullptr;
 
   m_rootLayout = nullptr;
   m_toolbar = nullptr;
@@ -1151,6 +1407,15 @@ bool WallpaperPanel::carouselMode() const {
 }
 
 std::size_t WallpaperPanel::indexOfCurrentWallpaper() const {
+  if (liveTab()) {
+    const std::string& id = m_live->currentId();
+    for (std::size_t i = 0; !id.empty() && i < m_visibleEntries.size(); ++i) {
+      if (m_visibleEntries[i].liveId == id) {
+        return i;
+      }
+    }
+    return kNoVisibleSelection;
+  }
   const std::string current = currentWallpaperPathForSelection();
   if (current.empty()) {
     return kNoVisibleSelection;
@@ -1348,8 +1613,9 @@ std::string WallpaperPanel::displayNameForWallpaperPath(std::string_view path) {
 
 void WallpaperPanel::syncBrowseChrome() {
   if (m_backButton != nullptr) {
-    m_backButton->setVisible(!m_navStack.empty());
+    m_backButton->setVisible(!m_navStack.empty() && !liveTab());
   }
+  syncLiveChrome();
   if (m_favoriteCurrentButton != nullptr && m_config != nullptr) {
     const std::string current = currentWallpaperPathForSelection();
     const bool favorite = !current.empty() && m_config->isWallpaperFavorite(current);
@@ -1521,6 +1787,9 @@ void WallpaperPanel::applyThemeFromControls() {
 }
 
 void WallpaperPanel::syncThemeControls() {
+  if (liveTab()) {
+    return; // the palette controls belong to static wallpapers; the Live tab hides them
+  }
   if (m_favoriteThemeSegmented == nullptr || m_config == nullptr) {
     return;
   }
@@ -1553,6 +1822,11 @@ void WallpaperPanel::refreshScan() {
 }
 
 void WallpaperPanel::refreshVisibleEntries() {
+  if (liveTab()) {
+    rebuildLiveEntries();
+    syncLoadingState();
+    return;
+  }
   refreshScan();
   applyFilter();
   syncLoadingState();
@@ -1560,7 +1834,7 @@ void WallpaperPanel::refreshVisibleEntries() {
 
 void WallpaperPanel::onScanComplete() {
   // The scanner outlives the panel's UI; ignore late results after teardown.
-  if (m_rootLayout == nullptr) {
+  if (m_rootLayout == nullptr || liveTab()) {
     return;
   }
   const auto dir = activeDirectoryForSelection();
@@ -1595,6 +1869,10 @@ void WallpaperPanel::syncLoadingState() {
 }
 
 void WallpaperPanel::applyFilter() {
+  if (liveTab()) {
+    rebuildLiveEntries();
+    return;
+  }
   m_visibleEntries.clear();
   std::unordered_set<std::string> favoritePaths;
   const auto dir = activeDirectoryForSelection();
@@ -1686,7 +1964,8 @@ void WallpaperPanel::prefetchSessionThumbnails() {
   const std::size_t count = m_visibleEntries.size();
   const std::size_t centre = hasVisibleSelection() ? m_selectedVisibleIndex : 0;
   std::size_t queued = 0;
-  for (std::size_t step = 0; step < count && queued < kMaxPrefetchEntries; ++step) {
+  const std::size_t cap = liveTab() ? kMaxLivePrefetchEntries : kMaxPrefetchEntries;
+  for (std::size_t step = 0; step < count && queued < cap; ++step) {
     for (const long dir : {1L, -1L}) {
       if (step == 0 && dir < 0) {
         continue; // centre once
@@ -1700,7 +1979,7 @@ void WallpaperPanel::prefetchSessionThumbnails() {
         continue;
       }
       m_thumbnails->prefetch(entry.absPath.string(), kBrowseThumbnailPx);
-      if (++queued >= kMaxPrefetchEntries) {
+      if (++queued >= cap) {
         break;
       }
     }
@@ -1710,7 +1989,10 @@ void WallpaperPanel::prefetchSessionThumbnails() {
 
 void WallpaperPanel::rebindGrid(bool resetScroll) {
   if (m_adapter != nullptr) {
-    m_adapter->setCurrentWallpaperPath(currentWallpaperPathForSelection());
+    m_adapter->setCurrentWallpaperPath(liveTab() ? std::string() : currentWallpaperPathForSelection());
+    m_adapter->setCurrentLiveId(m_live != nullptr && m_live->mode() == LiveWallpaperController::Mode::Live
+                                    ? m_live->currentId()
+                                    : std::string());
   }
   if (m_carousel != nullptr) {
     m_carousel->notifyDataChanged();
@@ -1779,6 +2061,12 @@ void WallpaperPanel::applyWallpaperPath(const std::string& path, const Wallpaper
     return;
   }
 
+  // Choosing a static wallpaper ends Live mode: the static surfaces come back first, then the renderer
+  // stops (LiveWallpaperController::switchToStatic), and the new image transitions in as usual.
+  if (m_live != nullptr
+      && (m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active())) {
+    m_live->switchToStatic();
+  }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
   const std::optional<std::string> connector =
       choice.connector.empty() ? std::optional<std::string>{} : std::optional<std::string>{choice.connector};
@@ -2087,7 +2375,7 @@ void WallpaperPanel::reseedRandomSort() {
 }
 
 void WallpaperPanel::sortVisibleEntries() {
-  if (m_visibleEntries.empty()) {
+  if (m_visibleEntries.empty() || liveTab()) { // live lists keep their own order (collection, recency, title)
     return;
   }
 
@@ -2161,6 +2449,10 @@ void WallpaperPanel::applyWallpaperFromEntry(const WallpaperEntry& entry) {
   if (entry.isDir) {
     return;
   }
+  if (!entry.liveId.empty()) {
+    applyLiveEntry(entry);
+    return;
+  }
 
   const std::string path = entry.absPath.string();
 
@@ -2205,4 +2497,229 @@ void WallpaperPanel::applyColorWallpaper() {
     syncBrowseChrome();
     kLog.info("applied color wallpaper {}", colorWallpaperPath(rgb));
   });
+}
+
+// ── zynith: Live tab ────────────────────────────────────────────────────────
+
+void WallpaperPanel::setLiveTab(bool live) {
+  if (m_live == nullptr || m_liveTab == live) {
+    return;
+  }
+  m_liveTab = live;
+  if (m_config != nullptr) {
+    (void)m_config->setStateString("wallpaper_panel", "tab", live ? "live" : "static");
+  }
+  if (live) {
+    m_live->provider().refresh(/*force=*/false);
+  }
+  m_navStack.clear();
+  m_pendingInitialFocus = true;
+  m_lastPromotionFocus = -1;
+  refreshVisibleEntries();
+  resetSelection();
+  rebindGrid(true);
+  syncBackButton();
+  syncBrowseChrome();
+  m_dirty = true;
+  PanelManager::instance().refresh();
+}
+
+std::string WallpaperPanel::focusedLiveId() const {
+  if (!hasVisibleSelection()) {
+    return {};
+  }
+  return m_visibleEntries[m_selectedVisibleIndex].liveId;
+}
+
+void WallpaperPanel::rebuildLiveEntries() {
+  const std::string keepId = focusedLiveId();
+  m_visibleEntries.clear();
+  m_pinnedFavoriteCount = 0;
+  if (m_live == nullptr) {
+    return;
+  }
+  const LiveWallpaperProvider& provider = m_live->provider();
+  m_scanPending = provider.discovering() && provider.items().empty();
+
+  const std::string needle = StringUtils::toLower(m_filterQuery);
+  const auto items = m_live->itemsFor(m_live->category());
+  m_visibleEntries.reserve(items.size());
+  for (const live::Item* item : items) {
+    if (!needle.empty() && !StringUtils::toLower(item->title).contains(needle) && item->id != needle) {
+      continue;
+    }
+    WallpaperEntry entry;
+    entry.name = item->title;
+    // The author's preview inside the Steam Workshop folder is the thumbnail source. An item without one
+    // uses its folder: unique per item, and it simply fails to decode into the tile's placeholder.
+    entry.absPath = item->preview.empty() ? item->directory : item->preview;
+    entry.liveId = item->id;
+    m_visibleEntries.push_back(std::move(entry));
+  }
+
+  resetSelection();
+  if (!keepId.empty()) {
+    for (std::size_t i = 0; i < m_visibleEntries.size(); ++i) {
+      if (m_visibleEntries[i].liveId == keepId) {
+        m_selectedVisibleIndex = i;
+        break;
+      }
+    }
+  }
+}
+
+void WallpaperPanel::applyLiveEntry(const WallpaperEntry& entry) {
+  if (m_live == nullptr) {
+    return;
+  }
+  // Copy first: selecting emits changes that rebuild m_visibleEntries (deferred, but be safe).
+  const std::string id = entry.liveId;
+  const std::string guardKey = "live:" + id;
+  const auto now = std::chrono::steady_clock::now();
+  if (guardKey == m_lastAppliedPath && now - m_lastAppliedAt < kReapplyGuard) {
+    return;
+  }
+  m_lastAppliedPath = guardKey;
+  m_lastAppliedAt = now;
+  if (id == m_live->currentId() && m_live->mode() == LiveWallpaperController::Mode::Live) {
+    return; // already showing it
+  }
+  std::string error;
+  if (!m_live->select(id, &error)) {
+    kLog.warn("live wallpaper {} not applied: {}", id, error);
+  }
+  syncLiveChrome();
+  m_dirty = true;
+  PanelManager::instance().refresh();
+}
+
+void WallpaperPanel::scheduleLiveRefresh() {
+  // Controller changes arrive from renderer callbacks, IPC and from inside our own click handlers
+  // (select() emits synchronously while the adapter is still dispatching the activation). Coalesce them
+  // and apply at the top of the next loop iteration, never mid-dispatch.
+  if (m_liveRefreshQueued) {
+    return;
+  }
+  m_liveRefreshQueued = true;
+  DeferredCall::callLater([this]() { onLiveChanged(); });
+}
+
+void WallpaperPanel::onLiveChanged() {
+  if (!m_liveRefreshQueued) {
+    return; // panel closed in the meantime
+  }
+  m_liveRefreshQueued = false;
+  if (m_rootLayout == nullptr) {
+    return;
+  }
+  if (liveTab()) {
+    rebuildLiveEntries();
+    syncLoadingState();
+    rebindGrid();
+    if (m_pendingInitialFocus == false && m_carouselMode) {
+      updatePromotionWindow();
+    }
+  } else {
+    rebindGrid();
+  }
+  syncBrowseChrome();
+  m_dirty = true;
+  PanelManager::instance().refresh();
+}
+
+void WallpaperPanel::syncLiveChrome() {
+  const bool live = liveTab();
+  // Static-only chrome.
+  for (Node* node : std::initializer_list<Node*>{
+           m_flattenLabel, m_flattenToggle, m_monitorSelect, m_colorButton, m_sortButton, m_favoritesOptionsColumn
+       }) {
+    if (node != nullptr) {
+      node->setVisible(!live);
+    }
+  }
+  if (m_liveOptionsRow != nullptr) {
+    m_liveOptionsRow->setVisible(live);
+  }
+  if (m_liveStatusLabel != nullptr) {
+    m_liveStatusLabel->setVisible(live);
+  }
+  if (m_live == nullptr) {
+    return;
+  }
+
+  m_syncingLiveControls = true;
+  if (m_modeSegmented != nullptr) {
+    m_modeSegmented->setSelectedIndex(live ? 1 : 0);
+  }
+  if (m_liveCategorySegmented != nullptr) {
+    m_liveCategorySegmented->setSelectedIndex(static_cast<std::size_t>(m_live->category()));
+  }
+  if (m_liveCarouselToggle != nullptr) {
+    m_liveCarouselToggle->setCheckedImmediate(m_live->carouselEnabled());
+  }
+  if (m_liveIntervalSelect != nullptr) {
+    const auto& presets = LiveWallpaperController::kCarouselIntervalPresets;
+    std::size_t nearest = 0;
+    for (std::size_t i = 0; i < presets.size(); ++i) {
+      if (std::abs(presets[i] - m_live->carouselInterval()) < std::abs(presets[nearest] - m_live->carouselInterval())) {
+        nearest = i;
+      }
+    }
+    m_liveIntervalSelect->setSelectedIndexSilently(nearest);
+  }
+  m_syncingLiveControls = false;
+
+  if (m_liveOrderButton != nullptr) {
+    const bool shuffle = m_live->carouselOrder() == LiveWallpaperController::CarouselOrder::Shuffle;
+    m_liveOrderButton->setGlyph(shuffle ? "arrows-random" : "repeat");
+    m_liveOrderButton->setTooltip(
+        i18n::tr(shuffle ? "wallpaper.panel.live-order-shuffle" : "wallpaper.panel.live-order-sequential")
+    );
+  }
+  if (m_liveCollectionButton != nullptr) {
+    const std::string id = focusedLiveId();
+    const bool inCollection = !id.empty() && m_live->isInCollection(id);
+    m_liveCollectionButton->setEnabled(!id.empty());
+    m_liveCollectionButton->setGlyph(inCollection ? "playlist-x" : "playlist-add");
+    m_liveCollectionButton->setTooltip(
+        i18n::tr(inCollection ? "wallpaper.panel.live-collection-remove" : "wallpaper.panel.live-collection-add")
+    );
+  }
+  if (m_liveStopButton != nullptr) {
+    m_liveStopButton->setEnabled(
+        m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active()
+    );
+  }
+  if (m_liveStatusLabel != nullptr && live) {
+    const LiveWallpaperProvider& provider = m_live->provider();
+    std::string text;
+    if (!provider.problem().empty() && provider.discovered()) {
+      text = provider.problem();
+    } else if (provider.discovering() && provider.items().empty()) {
+      text = i18n::tr("wallpaper.panel.live-discovering");
+    } else {
+      text = m_live->statusLine();
+      if (m_visibleEntries.empty() && m_filterQuery.empty()) {
+        switch (m_live->category()) {
+        case LiveWallpaperController::Category::Collection:
+          text += "  ·  " + i18n::tr("wallpaper.panel.live-empty-collection");
+          break;
+        case LiveWallpaperController::Category::Favorites:
+          text += "  ·  " + i18n::tr("wallpaper.panel.live-empty-favorites");
+          break;
+        case LiveWallpaperController::Category::Recent:
+          text += "  ·  " + i18n::tr("wallpaper.panel.live-empty-recent");
+          break;
+        case LiveWallpaperController::Category::Installed:
+          break;
+        }
+      } else {
+        text += "  ·  " + i18n::trp("wallpaper.panel.live-count", static_cast<long>(m_visibleEntries.size()));
+        if (m_live->category() == LiveWallpaperController::Category::Installed && m_live->unsupportedCount() > 0) {
+          text += "  ·  " + i18n::tr("wallpaper.panel.live-hidden", "count", static_cast<long>(m_live->unsupportedCount()));
+        }
+      }
+    }
+    m_liveStatusLabel->setText(text);
+  }
 }

@@ -521,6 +521,35 @@ struct WallpaperAutomationConfig {
   bool operator==(const WallpaperAutomationConfig&) const = default;
 };
 
+// zynith: Live wallpapers (shell/wallpaper/live). These keys describe HOW the external renderer runs;
+// WHAT is selected (mode, Workshop id, favourites, collection, carousel) is user state and lives in
+// state.toml, written by the wallpaper panel.
+enum class LiveWallpaperScaling : std::uint8_t {
+  Fill,
+  Fit,
+  Stretch,
+  Default,
+};
+
+struct WallpaperLiveConfig {
+  // Renderer executable. Empty = `linux-wallpaperengine` from PATH.
+  std::string renderer;
+  // Steam root to search. Empty = the standard native / Flatpak / Snap roots; extra library folders are
+  // always followed through libraryfolders.vdf.
+  std::string steamRoot;
+  std::int32_t fps = 30;
+  // 0 = silent (--silent). The renderer's own automute still applies otherwise.
+  std::int32_t volume = 0;
+  LiveWallpaperScaling scaling = LiveWallpaperScaling::Fill;
+  // Pointer input for wallpapers that react to the mouse. Off by default: with it on, the renderer's
+  // surface takes input across the whole output, unlike the static wallpaper surface (click-through).
+  bool mouse = false;
+  // Pause while a window is fullscreen (the renderer's default behaviour).
+  bool fullscreenPause = true;
+
+  bool operator==(const WallpaperLiveConfig&) const = default;
+};
+
 struct WallpaperConfig {
   bool enabled = true;
   WallpaperFillMode fillMode = WallpaperFillMode::Crop;
@@ -543,6 +572,7 @@ struct WallpaperConfig {
   // resolved width is clamped to the available band, and how many neighbours are visible follows
   // from it and the output width — so a wider monitor shows more cards rather than bigger ones.
   std::int32_t carouselCardWidth = 760;
+  WallpaperLiveConfig live;
 
   bool operator==(const WallpaperConfig&) const = default;
 };
@@ -1031,6 +1061,14 @@ constexpr EnumOption<WallpaperFillMode> kWallpaperFillModes[] = {
     {WallpaperFillMode::Stretch, "stretch", "settings.options.wallpaper.fill.stretch"},
     {WallpaperFillMode::Repeat, "repeat", "settings.options.wallpaper.fill.repeat"},
     {WallpaperFillMode::Span, "span", "settings.options.wallpaper.fill.span"},
+};
+
+// Values are linux-wallpaperengine's own --scaling vocabulary.
+constexpr EnumOption<LiveWallpaperScaling> kLiveWallpaperScalings[] = {
+    {LiveWallpaperScaling::Fill, "fill", "settings.options.wallpaper.live-scaling.fill"},
+    {LiveWallpaperScaling::Fit, "fit", "settings.options.wallpaper.live-scaling.fit"},
+    {LiveWallpaperScaling::Stretch, "stretch", "settings.options.wallpaper.live-scaling.stretch"},
+    {LiveWallpaperScaling::Default, "default", "settings.options.wallpaper.live-scaling.default"},
 };
 
 constexpr EnumOption<WallpaperAutomationConfig::Order> kWallpaperAutomationOrders[] = {

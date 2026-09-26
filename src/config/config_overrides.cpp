@@ -2245,14 +2245,32 @@ std::string ConfigService::getPaletteWallpaperPath() const {
   if (const std::string bundled = firstRunWallpaperPath(); !bundled.empty()) {
     return bundled;
   }
+  if (!m_paletteSourceOverride.empty()) {
+    return m_paletteSourceOverride;
+  }
   if (!m_lastWallpaperPath.empty()) {
     return m_lastWallpaperPath;
   }
   return m_defaultWallpaperPath;
 }
 
+void ConfigService::setPaletteSourceOverride(const std::string& path) {
+  if (path == m_paletteSourceOverride) {
+    return;
+  }
+  const std::string before = getPaletteWallpaperPath();
+  m_paletteSourceOverride = path;
+  if (getPaletteWallpaperPath() != before && m_wallpaperChangeCallback) {
+    m_wallpaperChangeCallback();
+  }
+}
+
 std::string ConfigService::getGreeterSyncWallpaperPath() const {
-  const std::string palettePath = getPaletteWallpaperPath();
+  // The greeter gets the real (static) wallpaper image, never a live wallpaper's small preview.
+  std::string palettePath = firstRunWallpaperPath();
+  if (palettePath.empty()) {
+    palettePath = !m_lastWallpaperPath.empty() ? m_lastWallpaperPath : m_defaultWallpaperPath;
+  }
   if (!palettePath.empty()) {
     return palettePath;
   }
