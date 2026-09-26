@@ -138,6 +138,10 @@ void Application::reloadPluginPanels() {
 }
 
 void Application::runPluginAutoUpdate() {
+  // zynith: no background network work behind a lock screen; the 6h timer (or the next unlocked tick) retries.
+  if (m_lockScreen.isActive()) {
+    return;
+  }
   // Each update runs off-thread and serializes per-source via a source lock, so a tick
   // that overlaps a still-running update queues behind it rather than racing (at 6h it never does).
   m_pluginManager.updateAutoUpdateScope(m_configService.config().plugins.autoUpdate);

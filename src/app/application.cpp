@@ -208,9 +208,10 @@ void Application::run(std::function<void()> startupReadyCallback) {
     // control-center rebuilds when a plugin is enabled or disabled.
     m_pluginManager.refresh();
     m_configService.addReloadCallback([this]() { m_pluginManager.refresh(); });
-    // Opt-in auto-update: pull each flagged git source in the background, once now
-    // and then every 6h so a long-running session isn't stuck on the startup snapshot.
-    runPluginAutoUpdate();
+    // Background plugin checks (notify-only by default; see PluginAutoUpdateMode). zynith: the first check waits a
+    // few minutes instead of running during login — the desktop comes first, network metadata second — and then
+    // repeats every 6h so a long-running session isn't stuck on the startup snapshot.
+    m_pluginAutoUpdateStartTimer.start(std::chrono::minutes(3), [this]() { runPluginAutoUpdate(); });
     m_pluginAutoUpdateTimer.startRepeating(std::chrono::hours(6), [this]() { runPluginAutoUpdate(); });
   });
   runStartupPhase("initUi", [this]() { initUi(); });
@@ -247,6 +248,26 @@ void Application::run(std::function<void()> startupReadyCallback) {
     m_pluginManager.setOnEnablingChanged([this]() { m_settingsWindow.onPluginsChanged(); });
     m_pluginManager.setOnSourceUpdated([this](const std::string& sourceName) {
       m_settingsWindow.invalidatePluginSourceCache(sourceName);
+    });
+    // Notify-only checks: announce each new set of pending updates once per session.
+    m_pluginManager.setOnUpdatesAvailable([this](const std::string& sourceName, std::vector<std::string> pending) {
+      std::vector<std::string> fresh;
+      for (auto& item : pending) {
+        if (m_notifiedPluginUpdates.insert(sourceName + ":" + item).second) {
+          fresh.push_back(std::move(item));
+        }
+      }
+      if (fresh.empty()) {
+        return;
+      }
+      std::string list;
+      for (const auto& item : fresh) {
+        list += (list.empty() ? "" : ", ") + item;
+      }
+      notify::info(
+          "Noctalia", i18n::tr("notifications.internal.plugin-updates-title"),
+          i18n::tr("notifications.internal.plugin-updates-body", "source", sourceName, "plugins", list)
+      );
     });
     m_pluginManager.setOnEnabled([this](std::string_view pluginId) { m_pluginServiceHost.enablePlugin(pluginId); });
   });

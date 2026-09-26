@@ -97,6 +97,8 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace sdbus {
@@ -388,6 +390,8 @@ private:
   Timer m_clipboardAutoPasteTimer;
   Timer m_launcherAutoPasteTimer;
   Timer m_pluginAutoUpdateTimer;
+  Timer m_pluginAutoUpdateStartTimer; // one-shot: the first background check, a few minutes after startup
+  std::unordered_set<std::string> m_notifiedPluginUpdates; // "source:author/plugin version" already announced
   Timer m_graphicsRecoveryTimer;
   std::uint64_t m_greeterSyncGeneration = 0;
   int m_graphicsRecoveryAttempts = 0;

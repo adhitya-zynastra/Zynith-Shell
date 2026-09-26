@@ -759,7 +759,7 @@ namespace scripting {
     updateSource(*source);
   }
 
-  void PluginManager::updateSource(const PluginSourceConfig& source) {
+  void PluginManager::updateSource(const PluginSourceConfig& source, bool apply) {
     if (source.kind != PluginSourceKind::Git) {
       return; // path sources are externally owned
     }
@@ -782,7 +782,7 @@ namespace scripting {
     // The whole git sequence runs off-thread; only the final registry rescan marshals
     // back to the main thread. `this` is an Application member, so it outlives the worker.
     const std::string sourceName = source.name;
-    std::thread([this, source, repoRoot, sourceName, enabled = std::move(enabled)]() mutable {
+    std::thread([this, source, repoRoot, sourceName, apply, enabled = std::move(enabled)]() mutable {
       auto sourceLock = plugin_source_locks::acquire(source.name);
       if (const auto prepared = plugin_git::ensureRepo(repoRoot, source.location); !prepared) {
         DeferredCall::callLater([sourceName, err = prepared.err]() {
@@ -831,6 +831,7 @@ namespace scripting {
         }
       };
       std::vector<std::pair<std::string, std::string>> exportFailures;
+      std::vector<std::string> pending; // check-only: what an update would install
 
       bool materialized = false;
       for (const auto& id : enabled) {
@@ -858,6 +859,10 @@ namespace scripting {
             && materializedPluginMatchesCatalog(source, id, *catalogEntry)) {
           continue;
         }
+        if (!apply) {
+          pending.push_back(catalogEntry->version.empty() ? id : id + " " + catalogEntry->version);
+          continue;
+        }
         logHeldBack(source, *catalogEntry);
         if (const auto m = materializeGitPlugin(source, repoRoot, catalogEntry->resolvedRevision, id, true); !m) {
           if (m.incompatible) {
@@ -868,6 +873,20 @@ namespace scripting {
           continue;
         }
         materialized = true;
+      }
+      if (!apply) {
+        // Check only: the source HEAD stays where the installed plugins came from.
+        DeferredCall::callLater([this, sourceName, pending = std::move(pending)]() mutable {
+          if (pending.empty()) {
+            kLog.info("source '{}': installed plugins are current", sourceName);
+            return;
+          }
+          kLog.info("source '{}': {} plugin update(s) available (not installed)", sourceName, pending.size());
+          if (m_onUpdatesAvailable) {
+            m_onUpdatesAvailable(sourceName, std::move(pending));
+          }
+        });
+        return;
       }
       bool applied = true;
       std::string applyError;
@@ -965,9 +984,10 @@ namespace scripting {
   }
 
   void PluginManager::updateAutoUpdateScope(PluginAutoUpdateMode mode) {
+    const bool apply = mode != PluginAutoUpdateMode::Notify;
     for (const auto& source : m_config.config().plugins.sources) {
       if (sourceInAutoUpdateScope(source, mode)) {
-        updateSource(source);
+        updateSource(source, apply);
       }
     }
   }

@@ -76,8 +76,8 @@ bool sourceInAutoUpdateScope(const PluginSourceConfig& source, PluginAutoUpdateM
   if (mode == PluginAutoUpdateMode::None || source.kind != PluginSourceKind::Git || !source.enabled) {
     return false;
   }
-  if (mode == PluginAutoUpdateMode::All) {
-    return true;
+  if (mode == PluginAutoUpdateMode::All || mode == PluginAutoUpdateMode::Notify) {
+    return true; // Notify checks every enabled source; it never installs (PluginManager::updateAutoUpdateScope)
   }
   const auto official = defaultPluginSources()[0];
   return source.name == official.name && source.location == official.location;

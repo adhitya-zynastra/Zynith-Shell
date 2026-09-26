@@ -80,6 +80,11 @@ namespace scripting {
     // Called when update() advances a git source to a new revision. Lets the plugin store
     // drop its cached thumbnail/README copies for that source so they re-fetch at the new
     // HEAD instead of showing the previous revision's files.
+    // zynith: notify-only checks report the enabled plugins that have a newer version waiting, as
+    // "author/plugin version" strings; nothing has been installed when this runs (main thread).
+    void setOnUpdatesAvailable(std::function<void(const std::string& sourceName, std::vector<std::string> pending)> cb) {
+      m_onUpdatesAvailable = std::move(cb);
+    }
     void setOnSourceUpdated(std::function<void(const std::string& sourceName)> cb) {
       m_onSourceUpdated = std::move(cb);
     }
@@ -159,7 +164,8 @@ namespace scripting {
     // The work behind update(name), on the exact configured source. Callers that
     // already hold the matched PluginSourceConfig must use this directly rather
     // than resolving by name again.
-    void updateSource(const PluginSourceConfig& source);
+    // `apply` false = check only: fetch and compare, but never materialize plugin code or move the source HEAD.
+    void updateSource(const PluginSourceConfig& source, bool apply = true);
     // Plugin ids offered by the implicit local dev source.
     [[nodiscard]] std::unordered_set<std::string> localPluginIds() const;
     // Re-derive any enabled git-source plugin missing from disk, per source on a worker
@@ -182,6 +188,7 @@ namespace scripting {
     std::function<void()> m_onChanged;
     std::function<void()> m_onEnablingChanged;
     std::function<void(const std::string& sourceName)> m_onSourceUpdated;
+    std::function<void(const std::string& sourceName, std::vector<std::string> pending)> m_onUpdatesAvailable;
     std::function<void(std::string_view pluginId)> m_onEnabled;
     // Git-source plugins whose runtime export is running on a worker thread. Touched
     // only on the main thread (enable() inserts, the DeferredCall completion erases).

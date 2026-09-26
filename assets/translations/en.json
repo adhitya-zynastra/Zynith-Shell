@@ -844,6 +844,8 @@
       "placeholder": "Type a reply…"
     },
     "internal": {
+      "plugin-updates-body": "{source}: {plugins}. Nothing was installed — update from Settings → Plugins when you have reviewed them",
+      "plugin-updates-title": "Plugin updates available",
       "battery": "Battery",
       "battery-critical-body": "{device}: {percent}%; your computer will shut down soon",
       "battery-critical-title": "Battery critically low",
@@ -1526,6 +1528,7 @@
         "auto-update": {
           "all": "All",
           "none": "None",
+          "notify": "Notify only",
           "official": "Official"
         }
       },
@@ -1682,7 +1685,7 @@
         "add": "Add Source",
         "add-title": "Add Plugin Source",
         "auto-update": "Auto-Update Plugins",
-        "auto-update-desc": "Check enabled sources for new versions in the background and keep installed plugins current",
+        "auto-update-desc": "Check enabled sources for new versions in the background. Notify only announces updates; All and Official also install them",
         "edit": "Edit source",
         "edit-title": "Edit plugin source",
         "empty": "No sources configured.",

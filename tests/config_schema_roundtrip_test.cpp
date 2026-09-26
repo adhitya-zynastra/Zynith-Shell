@@ -563,7 +563,7 @@ location = "https://example.invalid/bad"
          .location = "https://github.com/noctalia-dev/official-plugins"},
     };
     c.plugins.enabled = {"noctalia/notes"};
-    c.plugins.autoUpdate = PluginAutoUpdateMode::None; // non-default (default is All) so the round-trip exercises it
+    c.plugins.autoUpdate = PluginAutoUpdateMode::None; // non-default (default is Notify) so the round-trip exercises it
 
     c.bars = {makeProbeBar()};
     return c;
@@ -660,6 +660,7 @@ location = "https://example.invalid/bad"
         std::pair{"auto_update = \"all\"", PluginAutoUpdateMode::All},
         std::pair{"auto_update = \"official\"", PluginAutoUpdateMode::Official},
         std::pair{"auto_update = \"none\"", PluginAutoUpdateMode::None},
+        std::pair{"auto_update = \"notify\"", PluginAutoUpdateMode::Notify},
     };
     for (const auto& [text, expected] : cases) {
       const auto [plugins, diag] = parsePlugins(text);
@@ -677,7 +678,8 @@ location = "https://example.invalid/bad"
     for (const auto text :
          {"auto_update = \"sometimes\"", "auto_update = 1.5", "auto_update = true", "auto_update = false"}) {
       const auto [plugins, diag] = parsePlugins(text);
-      if (plugins.autoUpdate != PluginAutoUpdateMode::All || !erroredOnAutoUpdate(diag)) {
+      // zynith: the default is notify-only (updates are announced, never installed silently).
+      if (plugins.autoUpdate != PluginAutoUpdateMode::Notify || !erroredOnAutoUpdate(diag)) {
         fail(std::string("plugins.auto_update: '") + text + "' should error and keep the default");
       }
     }
@@ -723,6 +725,14 @@ location = "https://example.invalid/bad"
         "defaults", sources, PluginAutoUpdateMode::All,
         {"https://github.com/noctalia-dev/official-plugins", "https://github.com/noctalia-dev/community-plugins"}
     );
+    // Notify checks the same sources as All (it never installs: PluginManager passes apply = false).
+    expectLocations(
+        "defaults", sources, PluginAutoUpdateMode::Notify,
+        {"https://github.com/noctalia-dev/official-plugins", "https://github.com/noctalia-dev/community-plugins"}
+    );
+    if (PluginsConfig{}.autoUpdate != PluginAutoUpdateMode::Notify) {
+      fail("plugins.auto_update default must be notify-only");
+    }
     // A single source reusing the "official" name with an untrusted location is
     // legal config (names must be unique, locations need not), but the location
     // check must keep it out of the official scope.

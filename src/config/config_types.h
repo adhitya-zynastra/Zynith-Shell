@@ -1795,9 +1795,14 @@ enum class PluginAutoUpdateMode : std::uint8_t {
   None = 0,     // never auto-update
   Official = 1, // only the built-in "official" source
   All = 2,      // every enabled git source
+  // zynith default: check every enabled git source and notify when installed plugins have updates, but install
+  // nothing. Third-party plugin code runs inside the shell, so a new version is applied only by an explicit
+  // update (Settings → Plugins, or `noctalia msg plugins update <source>`).
+  Notify = 3,
 };
 
 constexpr EnumOption<PluginAutoUpdateMode> kPluginAutoUpdateModes[] = {
+    {PluginAutoUpdateMode::Notify, "notify", "settings.options.plugins.auto-update.notify"},
     {PluginAutoUpdateMode::All, "all", "settings.options.plugins.auto-update.all"},
     {PluginAutoUpdateMode::Official, "official", "settings.options.plugins.auto-update.official"},
     {PluginAutoUpdateMode::None, "none", "settings.options.plugins.auto-update.none"},
@@ -1816,7 +1821,9 @@ struct PluginSourceConfig {
 struct PluginsConfig {
   std::vector<PluginSourceConfig> sources;
   std::vector<std::string> enabled; // active plugin ids ("author/plugin"); opt-in for every source
-  PluginAutoUpdateMode autoUpdate = PluginAutoUpdateMode::All; // background auto-update scope (startup + every 6h)
+  // Background update behaviour (first check a few minutes after startup, then every 6h). Notify-only by default:
+  // updates are announced, never installed without an explicit action.
+  PluginAutoUpdateMode autoUpdate = PluginAutoUpdateMode::Notify;
   // Plugin-level setting overrides, keyed by plugin id then setting key. Seeded
   // into every entry runtime of the plugin (widget/shortcut/service). Open-ended
   // (validated against the manifest schema), so compared via configEqual rather
