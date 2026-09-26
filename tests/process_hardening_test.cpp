@@ -4,6 +4,7 @@
 // Every check that changes process state runs in a forked child, so the test binary itself is left untouched.
 
 #include "security/process_hardening.h"
+#include "security/sensitive_string.h"
 
 #include <array>
 #include <csignal>
@@ -101,6 +102,27 @@ int main() {
     check(out.find("[FATAL] noctalia: fatal signal 11 (SEGV)") != std::string::npos, "the signal is reported");
     check(out.find("backtrace") != std::string::npos && out.find("process_hardening_test") != std::string::npos,
           "a backtrace naming the executable is written");
+  }
+
+  // wipeString zeroes the whole capacity (leftovers of an earlier, longer value included) and keeps the buffer.
+  {
+    std::string secret;
+    secret.reserve(security::kPasswordBufferReserve);
+    secret = "correct horse battery staple";
+    secret = "short"; // the tail of the longer value is still in the buffer past size()
+    const char* buffer = secret.data();
+    const std::size_t capacity = secret.capacity();
+    security::wipeString(secret);
+    bool allZero = true;
+    for (std::size_t i = 0; i < capacity; ++i) {
+      allZero = allZero && buffer[i] == '\0';
+    }
+    check(allZero, "every byte of the buffer is zero after wipeString");
+    check(secret.empty() && secret.data() == buffer && secret.capacity() == capacity,
+          "wipeString leaves the string empty with its buffer kept (no reallocation)");
+    std::string empty;
+    security::wipeString(empty); // no buffer: must not crash
+    check(empty.empty(), "wiping an empty string is harmless");
   }
 
   if (failures == 0) {

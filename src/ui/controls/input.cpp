@@ -1,5 +1,7 @@
 #include "ui/controls/input.h"
 
+#include "security/sensitive_string.h"
+
 #include "core/deferred_call.h"
 #include "core/input/key_chord.h"
 #include "core/input/key_modifiers.h"
@@ -402,10 +404,19 @@ Input::~Input() {
   if (m_textInputService != nullptr) {
     m_textInputService->clearFocusedClient(this);
   }
+  if (m_passwordMode) {
+    security::wipeString(m_value); // zynith: a password field leaves no plaintext in freed memory
+  }
 }
 
 void Input::setValue(std::string_view value) {
-  m_value = std::string(value);
+  if (m_passwordMode) {
+    // Wipe, then copy into the same (reserved) buffer: no replaced buffer is freed with a password in it.
+    security::wipeString(m_value);
+    m_value.assign(value);
+  } else {
+    m_value = std::string(value);
+  }
   m_cursorPos = m_value.size();
   m_selectionAnchor = m_cursorPos;
   m_preeditStart = 0;
@@ -462,6 +473,8 @@ void Input::setPasswordMode(bool enabled) {
   m_passwordMode = enabled;
   if (m_passwordMode) {
     clearEditHistory();
+    // Reserve once so typing never reallocates (a reallocation frees the old buffer, prefix included).
+    m_value.reserve(security::kPasswordBufferReserve);
   } else {
     syncPasswordGlyphNodes(0);
   }
@@ -1200,6 +1213,9 @@ void Input::handleKey(std::uint32_t sym, std::uint32_t utf32, std::uint32_t modi
     } else {
       if (!m_value.empty() || hasSelection()) {
         pushUndoSnapshot(EditCoalesceKind::Discrete);
+        if (m_passwordMode) {
+          security::wipeString(m_value);
+        }
         m_value.clear();
         m_cursorPos = 0;
         m_selectionAnchor = 0;
@@ -1644,6 +1660,9 @@ void Input::clearFromButton() {
     return;
   }
   pushUndoSnapshot(EditCoalesceKind::Discrete);
+  if (m_passwordMode) {
+    security::wipeString(m_value);
+  }
   m_value.clear();
   m_cursorPos = 0;
   m_selectionAnchor = 0;

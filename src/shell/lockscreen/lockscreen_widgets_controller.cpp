@@ -176,7 +176,13 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
   });
 }
 
-void LockscreenWidgetsController::onLockStateChanged() { applyVisibility(); }
+void LockscreenWidgetsController::onLockStateChanged() {
+  if (m_reloadPendingUnlock && m_lockScreen != nullptr && !m_lockScreen->isActive()) {
+    handleConfigReload(); // the reload deferred while locked
+    return;
+  }
+  applyVisibility();
+}
 
 void LockscreenWidgetsController::onOutputChange() {
   if (!m_initialized || m_lockScreen == nullptr) {
@@ -406,6 +412,14 @@ void LockscreenWidgetsController::handleConfigReload() {
   if (!m_initialized) {
     return;
   }
+  // zynith: never rebuild lock widgets under a live lock. A config change while locked (another tool, a sync, the
+  // assistant — 2026-09-26) is applied at unlock instead; the lock screen keeps what it showed. See the
+  // 2026-09-26 lock-reload postmortem: rebuilding here once took the lock client down.
+  if (m_lockScreen != nullptr && m_lockScreen->isActive() && !isEditing()) {
+    m_reloadPendingUnlock = true;
+    return;
+  }
+  m_reloadPendingUnlock = false;
 
   if (!isEditing()) {
     loadSnapshotFromConfig();

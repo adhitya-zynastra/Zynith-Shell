@@ -80,6 +80,7 @@ private:
   LockscreenWidgetsSnapshot m_snapshotAtEdit;
   desktop_widgets::PlacementMapper m_placementMapper;
   bool m_initialized = false;
+  bool m_reloadPendingUnlock = false; // a config reload arrived while locked; applied at unlock
   std::function<void()> m_onEnterEdit;
   std::function<void()> m_onExitEdit;
   std::unique_ptr<LockscreenWidgetsHost> m_host;

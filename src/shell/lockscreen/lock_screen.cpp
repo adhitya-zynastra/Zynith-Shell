@@ -1,5 +1,7 @@
 #include "shell/lockscreen/lock_screen.h"
 
+#include "security/sensitive_string.h"
+
 #include "auth/fingerprint_authenticator.h"
 #include "capture/screencopy_util.h"
 #include "compositors/compositor_detect.h"
@@ -115,6 +117,8 @@ void LockScreen::setLoginBoxServices(
 }
 
 bool LockScreen::lock() {
+  // zynith: reserve once so typing never reallocates the password (a reallocation frees the old buffer unwiped).
+  m_password.reserve(security::kPasswordBufferReserve);
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return false;
   }
@@ -1037,9 +1041,6 @@ void LockScreen::handleFingerprintStatus(const std::string& message, bool isErro
 }
 
 void LockScreen::clearSensitiveString(std::string& value) {
-  volatile char* ptr = value.empty() ? nullptr : value.data();
-  for (std::size_t i = 0; i < value.size(); ++i) {
-    ptr[i] = '\0';
-  }
-  value.clear();
+  // zynith: the whole capacity, not just size() (security/sensitive_string.h).
+  security::wipeString(value);
 }

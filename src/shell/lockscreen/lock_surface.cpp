@@ -1,5 +1,7 @@
 #include "shell/lockscreen/lock_surface.h"
 
+#include "security/sensitive_string.h"
+
 #include "capture/screencopy_capture.h"
 #include "core/ui_phase.h"
 #include "dbus/mpris/mpris_art.h"
@@ -548,6 +550,7 @@ LockSurface::LockSurface(WaylandConnection& connection, ConfigService* config) :
 }
 
 LockSurface::~LockSurface() {
+  security::wipeString(m_password);
   m_aliveGuard.reset();
   releaseCaptureTextures();
   if (m_wallpaperTexture.id != 0) {
@@ -653,6 +656,12 @@ void LockSurface::focusPasswordField() {
 void LockSurface::setPromptState(
     std::string user, std::string password, std::string status, bool error, bool authenticating
 ) {
+  // zynith: `password` is a by-value copy made for this call. Wipe it on every exit (after the move below it is
+  // empty); the stored copy is wiped before it is replaced, so no keystroke leaves a prefix in freed memory.
+  struct WipeOnExit {
+    std::string& value;
+    ~WipeOnExit() { security::wipeString(value); }
+  } wipeArgument{password};
   if (m_user == user
       && m_password == password
       && m_status == status
@@ -662,6 +671,7 @@ void LockSurface::setPromptState(
   }
   const bool newError = error && !m_error;
   m_user = std::move(user);
+  security::wipeString(m_password);
   m_password = std::move(password);
   m_status = std::move(status);
   m_error = error;

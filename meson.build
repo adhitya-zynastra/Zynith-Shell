@@ -610,6 +610,7 @@ _noctalia_sources = files(
   'src/security/process_hardening.cpp',
   'src/security/secret_store.cpp',
   'src/security/secure_buffer.cpp',
+  'src/security/sensitive_string.cpp',
   'src/security/storage_key_provider.cpp',
   'src/system/battery_warning_monitor.cpp',
   'src/shell/bar/bar.cpp',
