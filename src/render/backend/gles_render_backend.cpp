@@ -675,7 +675,24 @@ void GlesRenderBackend::drawGraph(
 
 void GlesRenderBackend::drawWallpaper(const WallpaperDrawParams& params) {
   m_wallpaperProgram.ensureInitialized();
+  if (params.opacity >= 0.999F) {
+    m_wallpaperProgram.draw(params);
+    return;
+  }
+  if (params.opacity <= 0.001F) {
+    return;
+  }
+  // Fading wallpaper node (unlock veil): scale the source by a constant alpha in the blend stage instead of
+  // touching every transition shader. Exact for the opaque images wallpapers are; only this path uses it.
+  const auto saved = m_blendMode;
+  glEnable(GL_BLEND);
+  glBlendColor(0.0F, 0.0F, 0.0F, params.opacity);
+  glBlendFuncSeparate(GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_ALPHA);
   m_wallpaperProgram.draw(params);
+  m_blendMode.reset(); // the GL state no longer matches any tracked mode
+  if (saved.has_value()) {
+    setBlendMode(*saved);
+  }
 }
 
 void GlesRenderBackend::drawWallpaperMask(const WallpaperMaskDrawParams& params) {

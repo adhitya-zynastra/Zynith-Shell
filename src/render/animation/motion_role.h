@@ -40,6 +40,9 @@ namespace motion {
     Morph,
     // Whole-scene changes: wallpaper, full-screen compositions.
     SceneChange,
+    // An overlay lifting off a scene that was already there (the unlock veil revealing the desktop). Symmetric
+    // ease-in-out: the first frames change little, so what is underneath is uncovered rather than popped in.
+    SceneReveal,
     Count,
   };
 

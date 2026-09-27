@@ -124,11 +124,67 @@ void ScreenVeil::fadeTo(float opacity, float durationMs, Easing easing, std::fun
   }
 }
 
+void ScreenVeil::fadeOutOnPresent(motion::Role role, std::function<void()> onDone) {
+  if (m_root == nullptr) {
+    if (onDone) {
+      onDone();
+    }
+    return;
+  }
+  m_pendingFade = PendingFade{.role = role, .onDone = std::move(onDone), .requestedAt = std::chrono::steady_clock::now()};
+  if (m_surface != nullptr) {
+    // An update (not just a redraw): prepareFrame(), which starts the fade, only runs for update/layout
+    // requests. Deferred by the surface until the compositor releases its frame callback.
+    m_surface->requestUpdate();
+  }
+}
+
 void ScreenVeil::prepareFrame(bool needsUpdate, bool needsLayout) {
   if (m_surface == nullptr || m_renderContext == nullptr || m_surface->width() == 0 || m_surface->height() == 0) {
     return;
   }
   m_renderContext->makeCurrent(m_surface->renderTarget());
+
+  if (m_finishFramesLeft > 0) {
+    if (--m_finishFramesLeft == 0) {
+      kLog.info(
+          "veil fade: {} frames over {:.0f} ms, zero-opacity frame presented", m_fadeFrames,
+          std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - m_fadeStartedAt).count()
+      );
+      if (auto done = std::move(m_finishAfterPresent)) {
+        done();
+      }
+    } else {
+      m_surface->requestUpdate();
+    }
+  } else if (m_fadeFrames > 0 || m_pendingFade.has_value()) {
+    ++m_fadeFrames;
+  }
+
+  if (m_pendingFade.has_value() && m_root != nullptr) {
+    PendingFade fade = std::move(*m_pendingFade);
+    m_pendingFade.reset();
+    const float waitedMs =
+        std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - fade.requestedAt).count();
+    kLog.info("veil fade starts on first presented frame, {:.1f} ms after the request", waitedMs);
+    Node* root = m_root.get();
+    m_fadeStartedAt = std::chrono::steady_clock::now();
+    m_animations.cancelForOwner(root);
+    m_animations.animate(
+        fade.role, root->opacity(), 0.0F,
+        [this, root](float v) {
+          root->setOpacity(v);
+          m_surface->requestUpdate(); // every step must reach the screen, not only the first
+        },
+        [this, done = std::move(fade.onDone)]() mutable {
+          m_finishAfterPresent = std::move(done);
+          m_finishFramesLeft = 2; // render the 0-opacity frame, then wait for its presentation
+          m_surface->requestUpdate();
+        },
+        root
+    );
+    m_surface->requestUpdate();
+  }
 
   if (m_contentDirty) {
     applyContent();

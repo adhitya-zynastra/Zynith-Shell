@@ -62,6 +62,12 @@ namespace motion {
          .easing = Easing::EaseOutCubic,
          .reduced = ReducedMotion::Shorten,
          .reducedDurationMs = 150.0F},
+        {.name = "scene-reveal",
+         .model = Model::Tween,
+         .durationMs = 420.0F,
+         .easing = Easing::EaseInOutCubic,
+         .reduced = ReducedMotion::Shorten,
+         .reducedDurationMs = 150.0F},
     }};
 
   } // namespace

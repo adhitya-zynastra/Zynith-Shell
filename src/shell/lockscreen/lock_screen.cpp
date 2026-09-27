@@ -20,6 +20,7 @@
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/keyboard_layout_label.h"
 #include "shell/lockscreen/lock_surface.h"
+#include "render/animation/motion_role.h"
 #include "shell/veil/screen_veil.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
@@ -954,6 +955,7 @@ void LockScreen::beginUnlockTransition() {
   createUnlockVeils();
   const auto& motion = MotionService::instance();
   const float exitMs = motion.enabled() ? exitEndBaseMs / std::max(0.05F, motion.speed()) : 0.0F;
+  kLog.info("unlock: authenticated; lock exit animation {:.0f} ms before the session unlocks", exitMs);
   m_unlockTransitionTimer.start(
       std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
         unlock();
@@ -1005,12 +1007,20 @@ void LockScreen::fadeOutUnlockVeils() {
   if (m_unlockVeils.empty()) {
     return;
   }
-  // Base 210 ms, divided by [shell.animation] speed (0.8 -> ~262 ms). Ease-out: the desktop is
-  // mostly visible within ~100 ms and settles softly. Input already goes to the desktop.
-  constexpr float kVeilFadeMs = 210.0F;
-  auto clearVeils = [this]() { DeferredCall::callLater([this]() { m_unlockVeils.clear(); }); };
+  // zynith: the veil is the lock background lifting off a desktop that was never torn down — the workspace and
+  // its windows kept existing under the lock surface. It fades with the scene-reveal role (symmetric ease-in-out,
+  // 420 ms base / [shell.animation] speed) and the fade starts on the veil's first presented frame, not here:
+  // the old 210 ms ease-out, clocked from this call, was typically a third faded on the first visible frame and
+  // two thirds by ~75 ms, which read as the desktop popping in. Input already goes to the desktop.
+  kLog.info("unlock: veil reveal requested");
+  auto clearVeils = [this]() {
+    DeferredCall::callLater([this]() {
+      kLog.info("unlock: veil reveal finished");
+      m_unlockVeils.clear();
+    });
+  };
   for (auto& veil : m_unlockVeils) {
-    veil->fadeTo(0.0F, kVeilFadeMs, Easing::EaseOutCubic, clearVeils);
+    veil->fadeOutOnPresent(motion::Role::SceneReveal, clearVeils);
   }
   // Belt and braces: never let a veil outlive the handoff, even if frames stop (e.g. DPMS off).
   m_unlockVeilSafetyTimer.start(std::chrono::milliseconds(2000), [this]() { m_unlockVeils.clear(); });
