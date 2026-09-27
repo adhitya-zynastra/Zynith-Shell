@@ -19,6 +19,8 @@
 #include "compositors/compositor_detect.h"
 #include "compositors/niri/niri_config_fragments.h"
 #include "compositors/niri/niri_fragment_writer.h"
+#include "compositors/niri/niri_runtime.h"
+#include "wayland/surface.h"
 #include "dbus/modem/modem_manager_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
@@ -102,6 +104,9 @@
 
 #include <algorithm>
 #include <chrono>
+
+#include <nlohmann/json.hpp>
+#include <wayland-client-core.h>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -446,6 +451,55 @@ void Application::syncStorageKeyProvider() {
   m_storageKeyProvider.configure(storage.keySource, storage.keyFile, encryptedDataExists);
 }
 
+// zynith: early background. At login, niri shows its own grey background from the moment its output is up
+// until the shell's wallpaper presents a frame. Measured on the 2026-09-27 login: the wallpaper surface was only
+// created after ~900 ms of service setup (D-Bus round-trips to NetworkManager, BlueZ, UPower… that nothing on
+// screen needs yet), so the grey lasted ~1.4 s. The wallpaper only needs Wayland, GL and the config, all of
+// which exist at this point, so it is created and presented here — before the services — with a short local
+// event pump (configure → render → commit). The backdrop is created first to keep the canonical same-layer
+// order of reconcileOutputSurfaces(), which later runs as usual and finds both already in place.
+//
+// The shell's own startup transition cannot animate here (the main loop is not running yet, and the service
+// block that follows would stall and then jump it), so the first frame is shown opaque and niri is asked for
+// its compositor-side screen transition instead: niri crossfades from what it was showing to the wallpaper
+// on its own, however busy the shell is.
+void Application::paintEarlyBackground() {
+  const auto start = std::chrono::steady_clock::now();
+  initBackgroundRendering();
+  if (!m_configService.config().wallpaper.enabled) {
+    return;
+  }
+  if (compositors::detect() == compositors::CompositorKind::Niri) {
+    (void)m_compositorPlatform.niriRuntime().requestAction(
+        nlohmann::json{{"DoScreenTransition", nlohmann::json{{"delay_ms", 0}}}}, true
+    );
+  }
+  m_wallpaper.setStartupTransitionSuppressed(true);
+  m_backdrop.onOutputChange();
+  m_wallpaper.onOutputChange();
+  wl_display* display = m_wayland.display();
+  bool painted = false;
+  for (int round = 0; round < 12; ++round) { // bounded: a missing configure must not hold up startup
+    if (wl_display_roundtrip(display) < 0) {
+      break;
+    }
+    Surface::drainPendingFrameWork();
+    Surface::drainPendingRenders();
+    wl_display_flush(display);
+    if (m_wallpaper.settled() && m_wallpaper.hasInstances()) {
+      if (painted) {
+        break; // the frame queued in the previous round has been rendered and committed
+      }
+      painted = true;
+    }
+  }
+  m_wallpaper.setStartupTransitionSuppressed(false);
+  kLog.info(
+      "startup: early background {} after {:.1f} ms", painted ? "presented" : "not ready",
+      std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count()
+  );
+}
+
 void Application::initServices() {
   if (!security::initializeSecurityPrimitives()) {
     kLog.error("libsodium initialization failed; encrypted persistence is unavailable");
@@ -734,6 +788,7 @@ void Application::initStyleThemeAndWayland() {
   auto* sharedGlPtr = m_glShared.hasSharedContext() ? &m_glShared : nullptr;
   m_sharedTextureCache.initialize(sharedGlPtr);
   m_asyncTextureCache.initialize(sharedGlPtr);
+  paintEarlyBackground();
   m_wayland.setTextInputService(&m_textInputService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
 

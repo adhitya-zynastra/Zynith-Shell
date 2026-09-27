@@ -176,6 +176,11 @@ private:
   void initUi();
   // Sub-phases of initUi(), called in order.
   void initUiRenderSurfacesAndSettings();
+  // zynith: brings the render context, backdrop and wallpaper up (idempotent) and, the first time, presents
+  // the wallpaper before the rest of startup runs. See application_services.cpp.
+  void initBackgroundRendering();
+  void paintEarlyBackground();
+  bool m_backgroundRenderingInitialized = false;
   void initLockScreenAndSession();
   void initInputDispatch();
   void initPanelManagerAndPanels();

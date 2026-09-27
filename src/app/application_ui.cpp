@@ -121,20 +121,27 @@ void Application::initUi() {
   reconcileOutputSurfaces();
 }
 
-void Application::initUiRenderSurfacesAndSettings() {
-
+void Application::initBackgroundRendering() {
+  if (m_backgroundRenderingInitialized) {
+    return;
+  }
+  m_backgroundRenderingInitialized = true;
   m_renderContext.initialize(m_glShared);
   m_renderContext.setGraphicsResetCallback([this](RenderGraphicsResetStatus status) { onGraphicsReset(status); });
   if (!m_glShared.hasSharedContext()) {
     m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
   }
+  m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
+  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
+}
+
+void Application::initUiRenderSurfacesAndSettings() {
+  initBackgroundRendering(); // normally already done by paintEarlyBackground()
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   Style::setRtl(i18n::Service::instance().rtl());
   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
-  m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
   m_liveWallpaper.initialize(m_wayland, m_configService, m_wallpaper);
   m_liveWallpaper.registerIpc(m_ipcService);
-  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
   m_settingsWindow.initialize(
       m_wayland, &m_configService, &m_renderContext, &m_dependencyService, m_upowerService.get(), &m_idleManager,
       &m_compositorPlatform, m_accountsService.get()
