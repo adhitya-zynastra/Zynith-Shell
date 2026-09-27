@@ -47,6 +47,20 @@ public:
   // its Background surface is torn down so the external surface shows through. Runtime-only
   // (not persisted) — it clears on restart and is re-asserted by the owner.
   void setOutputExternallyManaged(const std::string& connector, bool managed);
+  // zynith: runtime-only image shown instead of the configured wallpaper (never persisted, never touches
+  // settings.toml). The live wallpaper controller uses it as a "poster frame" — the next live item's preview —
+  // so a renderer switch never exposes the compositor's empty background. `instant` skips the startup
+  // transition for surfaces created while it is set (the poster must be opaque on its first frame); surfaces
+  // that already exist transition to it as to any wallpaper. An empty path restores the configured wallpaper.
+  void setTransientImage(const std::string& path, bool instant);
+  [[nodiscard]] const std::string& transientImage() const noexcept { return m_transientPath; }
+  // True when every wallpaper surface shows its target (transient or configured) with no transition running.
+  // Vacuously true with no surfaces. changed() fires whenever this may have become true.
+  [[nodiscard]] bool settled() const;
+  [[nodiscard]] bool hasInstances() const noexcept { return !m_instances.empty(); }
+  // zynith: early background (Application::paintEarlyBackground): surfaces created while set show their image
+  // immediately instead of running transition_on_startup, which cannot animate before the main loop runs.
+  void setStartupTransitionSuppressed(bool suppressed) noexcept { m_startupTransitionSuppressed = suppressed; }
   [[nodiscard]] std::vector<WallpaperChange> onStateChange();
   void onSecondTick();
   void onGpuResourcesInvalidated();
@@ -120,6 +134,7 @@ private:
   void runQueuedWallpaper(WallpaperInstance& instance);
   void updateRendererState(WallpaperInstance& instance);
   void releaseInstanceTextures(WallpaperInstance& inst);
+  [[nodiscard]] std::string displayPathFor(const std::string& connector) const;
 
   WaylandConnection* m_wayland = nullptr;
   ConfigService* m_config = nullptr;
@@ -136,4 +151,7 @@ private:
   Signal<> m_changed;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
   std::unordered_set<std::string> m_externallyManagedOutputs;
+  std::string m_transientPath;
+  bool m_transientInstant = false;
+  bool m_startupTransitionSuppressed = false;
 };

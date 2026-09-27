@@ -128,6 +128,10 @@ private:
   void onRendererExited(const LiveRendererProcess::Exit& exit);
   void handOverToLive(const std::vector<std::string>& outputs);
   void restoreStatic();
+  // Static backend reports a change: a poster or the restored static wallpaper may now be on screen.
+  void onStaticChanged();
+  void stopAfterPoster();
+  void stopAfterStaticSettled();
   void armCarousel();
   void onCarouselTimer();
   [[nodiscard]] std::vector<std::string> carouselCandidates() const;
@@ -163,6 +167,12 @@ private:
   CarouselOrder m_carouselOrder = CarouselOrder::Sequential;
   Timer m_carouselTimer;
   Timer m_restartTimer;
+  // Hand-over sequencing (see the header comment): the old renderer is stopped only once the shell's own
+  // surface is on screen above it — the next item's poster during a switch, the static wallpaper on Live -> Static.
+  bool m_waitingPoster = false;
+  bool m_waitingStatic = false;
+  Timer m_handoverTimer;
+  Signal<>::ScopedConnection m_staticChangedConn;
   std::function<bool()> m_automationGate;
 
   std::string m_lastError;

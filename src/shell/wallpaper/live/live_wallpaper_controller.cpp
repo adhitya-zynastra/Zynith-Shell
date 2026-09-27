@@ -122,6 +122,7 @@ void LiveWallpaperController::initialize(WaylandConnection& wayland, ConfigServi
   m_provider->setOnChanged([this]() { notify(); });
   m_process.setOnStarted([this]() { onRendererStarted(); });
   m_process.setOnExit([this](const LiveRendererProcess::Exit& exit) { onRendererExited(exit); });
+  m_staticChangedConn = m_wallpaper->changed().connect([this]() { onStaticChanged(); });
   removeStaleScratchDirs();
   loadState();
 }
@@ -133,6 +134,8 @@ void LiveWallpaperController::shutdown() {
   m_shuttingDown = true;
   m_carouselTimer.stop();
   m_restartTimer.stop();
+  m_handoverTimer.stop();
+  m_staticChangedConn.disconnect();
   m_pending.reset();
   m_process.terminateNow();
 }
@@ -289,10 +292,35 @@ bool LiveWallpaperController::activate(const std::string& id, std::string* error
       .isRestart = isRestart,
   };
   kLog.info("switching live wallpaper to {} \"{}\"", m_pending->item.id, m_pending->item.title);
+  m_waitingStatic = false;
+  const std::string poster = m_pending->item.preview.string();
   // Exactly one renderer: if one is alive, it is stopped and the pending one starts from its exit callback.
   if (m_process.active()) {
-    m_process.stop();
+    if (m_process.state() != LiveRendererProcess::State::Stopping && !m_managedOutputs.empty() && !poster.empty()) {
+      // Poster frame: bring the shell's own wallpaper surface back above the old renderer showing the new
+      // item's preview — opaque on its first frame — and stop the old renderer only once it is on screen.
+      // The compositor's empty background is never exposed; the new renderer later draws over the poster.
+      m_wallpaper->setTransientImage(poster, /*instant=*/true);
+      for (const std::string& connector : m_managedOutputs) {
+        m_wallpaper->setOutputExternallyManaged(connector, false);
+      }
+      m_managedOutputs.clear();
+      m_waitingPoster = true;
+      kLog.info("transition: poster requested");
+      m_handoverTimer.start(std::chrono::milliseconds(600), [this]() { stopAfterPoster(); });
+      onStaticChanged(); // already settled if the static backend has no surfaces
+    } else {
+      if (!poster.empty() && m_managedOutputs.empty()) {
+        m_wallpaper->setTransientImage(poster, /*instant=*/false); // poster or static surface already up
+      }
+      m_waitingPoster = false;
+      m_process.stop();
+    }
   } else {
+    // Static -> Live: the static wallpaper transitions to the poster while the renderer starts underneath it.
+    if (!poster.empty()) {
+      m_wallpaper->setTransientImage(poster, /*instant=*/false);
+    }
     startPending();
   }
   notify();
@@ -431,15 +459,25 @@ void LiveWallpaperController::handOverToLive(const std::vector<std::string>& out
     m_wallpaper->setOutputExternallyManaged(connector, true);
   }
   m_managedOutputs = outputs;
+  // The surfaces are gone, so dropping the poster costs nothing and never shows on screen.
+  m_wallpaper->setTransientImage({}, false);
+  kLog.info("transition: static surfaces released to the renderer on {}", StringUtils::join(outputs, ", "));
 }
 
 void LiveWallpaperController::restoreStatic() {
   m_carouselTimer.stop();
+  m_waitingPoster = false;
+  m_handoverTimer.stop();
+  m_wallpaper->setTransientImage({}, false);
   for (const std::string& connector : m_managedOutputs) {
     m_wallpaper->setOutputExternallyManaged(connector, false);
   }
+  const bool hadManaged = !m_managedOutputs.empty();
   m_managedOutputs.clear();
   m_config->setPaletteSourceOverride({});
+  if (hadManaged) {
+    kLog.info("transition: static surfaces restored");
+  }
 }
 
 void LiveWallpaperController::switchToStatic() {
@@ -451,14 +489,53 @@ void LiveWallpaperController::switchToStatic() {
   m_mode = Mode::Static;
   m_lastError.clear();
   (void)m_config->setStateString(kStateOwner, "mode", "static");
-  // Static first, then stop: the desktop never shows an empty background layer.
+  // Static first, then stop — and only once the static wallpaper has finished its transition in: a fresh
+  // static surface starts transparent (transition_on_startup), so stopping the renderer earlier exposed the
+  // compositor's grey background through it (measured: a 20-30 ms grey flash, 3 of 5 samples).
   restoreStatic();
   if (m_process.active()) {
-    m_process.stop();
+    if (m_process.state() != LiveRendererProcess::State::Stopping) {
+      m_waitingStatic = true;
+      m_handoverTimer.start(std::chrono::milliseconds(3000), [this]() { stopAfterStaticSettled(); });
+      onStaticChanged();
+    }
   } else {
     m_activeItem.reset();
   }
   notify();
+}
+
+void LiveWallpaperController::onStaticChanged() {
+  if (m_shuttingDown || m_wallpaper == nullptr || !m_wallpaper->settled()) {
+    return;
+  }
+  if (m_waitingPoster) {
+    kLog.info("transition: poster on screen");
+    stopAfterPoster();
+  } else if (m_waitingStatic) {
+    kLog.info("transition: static wallpaper settled");
+    stopAfterStaticSettled();
+  }
+}
+
+void LiveWallpaperController::stopAfterPoster() {
+  if (!m_waitingPoster) {
+    return;
+  }
+  m_waitingPoster = false;
+  m_handoverTimer.stop();
+  m_process.stop(); // its exit callback starts the pending renderer
+}
+
+void LiveWallpaperController::stopAfterStaticSettled() {
+  if (!m_waitingStatic) {
+    return;
+  }
+  m_waitingStatic = false;
+  m_handoverTimer.stop();
+  if (m_mode == Mode::Static && !m_pending.has_value()) {
+    m_process.stop();
+  }
 }
 
 // ── Library views ───────────────────────────────────────────────────────────

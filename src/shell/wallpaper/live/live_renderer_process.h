@@ -52,9 +52,10 @@ public:
   // created its layer surface (it appears in `niri msg layers` well under a second) and is rendering.
   // Failures (missing item, bad assets, no EGL) abort within ~200 ms.
   static constexpr std::chrono::milliseconds kStartupGrace{1500};
-  // SIGTERM -> SIGKILL. Scene/video renderers exit in 0.1-0.3 s; a web renderer takes ~5 s and then
-  // aborts inside CEF shutdown anyway, so waiting longer buys nothing.
-  static constexpr std::chrono::milliseconds kStopGrace{2000};
+  // SIGTERM -> SIGKILL. Measured in the shell: scene renderers exit 40-150 ms after SIGTERM, 4K video
+  // ~300 ms; a web renderer ignores it for ~5 s and then aborts inside CEF shutdown anyway. A switch waits
+  // for the exit, so this bounds the worst case (web) without cutting short any renderer that exits cleanly.
+  static constexpr std::chrono::milliseconds kStopGrace{1000};
 
   LiveRendererProcess() = default;
   ~LiveRendererProcess() override;

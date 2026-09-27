@@ -505,7 +505,7 @@ std::vector<WallpaperChange> Wallpaper::onStateChange() {
 
   std::vector<WallpaperChange> changes;
   for (auto& inst : m_instances) {
-    auto newPath = m_config->getWallpaperPath(inst->connectorName);
+    auto newPath = displayPathFor(inst->connectorName);
     if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
       continue;
     }
@@ -871,6 +871,38 @@ void Wallpaper::setOutputExternallyManaged(const std::string& connector, bool ma
   }
 }
 
+std::string Wallpaper::displayPathFor(const std::string& connector) const {
+  return m_transientPath.empty() ? m_config->getWallpaperPath(connector) : m_transientPath;
+}
+
+void Wallpaper::setTransientImage(const std::string& path, bool instant) {
+  if (path == m_transientPath && instant == m_transientInstant) {
+    return;
+  }
+  m_transientPath = path;
+  m_transientInstant = instant;
+  kLog.info("transient image {}", path.empty() ? std::string("cleared") : path);
+  // Existing surfaces move to the new target through the normal transition machinery.
+  for (auto& inst : m_instances) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr || inst->surface->width() == 0) {
+      continue; // not configured yet: its configure callback loads the current target
+    }
+    const std::string target = displayPathFor(inst->connectorName);
+    if (!target.empty()) {
+      loadWallpaper(*inst, target);
+    }
+  }
+}
+
+bool Wallpaper::settled() const {
+  for (const auto& inst : m_instances) {
+    if (inst->transitioning || inst->currentPath.empty() || inst->currentPath != displayPathFor(inst->connectorName)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void Wallpaper::resetAutomationState() {
   m_lastAutomationSecondStamp = -1;
   m_lastAutomationSwitchSecond = -1;
@@ -1220,7 +1252,7 @@ Wallpaper::SwitchOutcome Wallpaper::switchWallpaperTo(PickWallpaper action, std:
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {
-  auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
+  auto wallpaperPath = displayPathFor(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto instance = std::make_unique<WallpaperInstance>();
@@ -1252,7 +1284,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
-  instance->surface->setConfigureCallback([this, inst, wallpaperPath](std::uint32_t width, std::uint32_t height) {
+  instance->surface->setConfigureCallback([this, inst](std::uint32_t width, std::uint32_t height) {
     const auto sw = static_cast<float>(width);
     const auto sh = static_cast<float>(height);
     inst->sceneRoot->setSize(sw, sh);
@@ -1261,8 +1293,9 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     inst->wallpaperNode->setPosition(0.0F, 0.0F);
     inst->wallpaperNode->setSize(sw, sh);
 
-    if (inst->currentPath.empty() && !wallpaperPath.empty()) {
-      loadWallpaper(*inst, wallpaperPath);
+    // Resolved now, not at creation: a transient image may have been set or cleared since.
+    if (const std::string target = displayPathFor(inst->connectorName); inst->currentPath.empty() && !target.empty()) {
+      loadWallpaper(*inst, target);
     } else {
       updateRendererState(*inst);
     }
@@ -1348,7 +1381,9 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
 
   if (instance.currentPath.empty()) {
     const auto& wpConfig = m_config->config().wallpaper;
-    if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty()) {
+    const bool instantTransient = m_transientInstant && !m_transientPath.empty() && path == m_transientPath;
+    if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty() && !instantTransient
+        && !m_startupTransitionSuppressed) {
       instance.currentSourceKind = WallpaperSourceKind::Color;
       instance.currentTexture = {};
       instance.currentColor = rgba(0.0F, 0.0F, 0.0F, 0.0F);
