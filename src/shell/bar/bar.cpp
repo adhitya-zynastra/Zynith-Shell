@@ -1,3 +1,4 @@
+#include "zynith/surfaces.h"
 #include "shell/bar/bar.h"
 #include "shell/surface/glass.h"
 
@@ -2338,6 +2339,18 @@ void Bar::toggle() {
 void Bar::syncInstances() {
   const auto& outputs = m_platform->outputs();
   const auto& bars = m_config->config().bars;
+
+  // zynith: the Zynith UI draws the bars; the services behind them stay here
+  if (zynith::uiOwns("bar")) {
+    for (const auto& inst : m_instances) {
+      if (inst->surface != nullptr) {
+        m_surfaceMap.erase(inst->surface->wlSurface());
+      }
+    }
+    m_hoveredInstance = nullptr;
+    m_instances.clear();
+    return;
+  }
 
   const auto geometryChanged = [](const BarInstance& instance, const WaylandOutput& output) {
     return instance.outputLogicalX != output.logicalX

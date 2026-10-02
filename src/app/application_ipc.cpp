@@ -1,3 +1,4 @@
+#include "zynith/surfaces.h"
 #include "app/main_loop.h"
 #include "application.h"
 #include "application_internal.h"
@@ -485,6 +486,11 @@ void Application::initIpc() {
       return "error: no clipboard entry " + args + "\n";
     }
     return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
+    m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
+    return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + "\n";
   });
 
   m_ipcService.bind(

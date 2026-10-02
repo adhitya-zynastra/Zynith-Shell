@@ -405,6 +405,10 @@ namespace noctalia::cli {
         "clipboard-select", "Copy a clipboard history entry back to the clipboard", {}, {}, {},
         kMsgClipboardEntryPositionals, {}, false
     };
+    inline constexpr Command surfacesSync{
+        "surfaces-sync", "Re-read ~/.config/zynith/zynith.toml [surfaces] and hand surfaces to or from the Zynith UI",
+        {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command clipboardText{
         "clipboard-text",
         "Print the most recent clipboard text (empty when the selection holds no text)",
@@ -951,6 +955,7 @@ namespace noctalia::cli {
       msg::clipboardRemove,
       msg::clipboardSelect,
       msg::clipboardText,
+      msg::surfacesSync,
       msg::colorSchemeGet,
       msg::colorSchemeSet,
       msg::controlCenterStyleSet,

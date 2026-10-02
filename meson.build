@@ -588,6 +588,7 @@ _noctalia_sources = files(
   'src/render/wallpaper_renderer.cpp',
   'src/scripting/luau_host.cpp',
   'src/scripting/plugin_capabilities.cpp',
+  'src/zynith/surfaces.cpp',
   'src/scripting/plugin_catalog.cpp',
   'src/scripting/plugin_file_cache.cpp',
   'src/scripting/plugin_git.cpp',
