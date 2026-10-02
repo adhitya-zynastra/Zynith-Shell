@@ -128,7 +128,7 @@
     (description
      "Noctalia is a lightweight Wayland shell and bar built directly on
 Wayland and OpenGL ES, with no Qt or GTK dependency.")
-    (license license:expat)))
+    (license (list license:gpl3 license:expat))))
 
 ;; Also return the package at the end, so that this file can be used by
 ;; commands that evaluate it.  For example:
