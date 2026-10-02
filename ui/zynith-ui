@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# zynith-ui start|stop|restart|status|log|ipc <method> [args...]
+# Runs the Quickshell UI beside the native shell. Always the packaged Quickshell (/usr/bin), never a
+# stray build earlier on PATH.
+set -euo pipefail
+
+QS=/usr/bin/quickshell
+HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+SHELL_QML="$HERE/shell.qml"
+RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/zynith"
+PIDFILE="$RUN/ui.pid"
+LOG="$RUN/ui.log"
+
+running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+
+case "${1:-status}" in
+start)
+    mkdir -p "$RUN"
+    if running; then echo "already running ($(cat "$PIDFILE"))"; exit 0; fi
+    setsid -f "$QS" -p "$SHELL_QML" >"$LOG" 2>&1 </dev/null
+    for _ in $(seq 1 50); do
+        pid=$(pgrep -n -f "^$QS -p $SHELL_QML\$" || true)
+        [[ -n "$pid" ]] && { echo "$pid" >"$PIDFILE"; break; }
+        sleep 0.05
+    done
+    echo "started ${pid:-?}"
+    ;;
+stop)
+    if running; then
+        pid=$(cat "$PIDFILE")
+        kill "$pid"
+        for _ in $(seq 1 40); do kill -0 "$pid" 2>/dev/null || break; sleep 0.05; done
+    fi
+    rm -f "$PIDFILE"
+    echo stopped
+    ;;
+restart) "$0" stop && "$0" start ;;
+status) running && echo "running ($(cat "$PIDFILE"))" || echo "not running" ;;
+log) sed 's/\x1b\[[0-9;]*m//g' "$LOG" ;;
+ipc) shift; exec "$QS" -p "$SHELL_QML" ipc call zynith "$@" ;;
+*) echo "usage: zynith-ui start|stop|restart|status|log|ipc <method> [args]" >&2; exit 2 ;;
+esac
