@@ -1,3 +1,4 @@
+#include "scripting/plugin_capabilities.h"
 #include "scripting/script_runtime.h"
 
 #include "core/deferred_call.h"
@@ -738,6 +739,9 @@ namespace scripting {
       bindingContext.host = host.get();
       bindingContext.ownerId = runtimeName;
       host->setPluginDir(pluginDir);
+      PluginCapabilities::instance().setDeclared(
+          runtimeName.substr(0, runtimeName.find(':')), declaredCapabilities(pluginDir)
+      );
       host->loadTranslations();
       host->setHttpClient(httpClient);
       host->setScriptContext(&bindingContext);

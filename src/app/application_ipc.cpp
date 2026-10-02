@@ -58,6 +58,7 @@
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
 #include "render/text/font_weight_catalog.h"
+#include "scripting/plugin_capabilities.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_panel_shell.h"
@@ -775,6 +776,51 @@ void Application::initIpc() {
           }
           m_pluginManager.disable(parts[1]);
           return "ok\n";
+        }
+        // zynith: capabilities. A plugin gets what it declares in plugin.toml and is granted here.
+        if (cmd == "grant" || cmd == "revoke") {
+          if (parts.size() < 3 || parts[1].find('/') == std::string::npos) {
+            return "error: plugins " + cmd + " <author/plugin> <capability...>\n";
+          }
+          std::string words;
+          for (std::size_t i = 2; i < parts.size(); ++i) {
+            words += parts[i] + " ";
+          }
+          std::string unknown;
+          const auto caps = scripting::parseCapabilityList(words, &unknown);
+          if (!unknown.empty()) {
+            return "error: unknown capability '" + unknown + "' (exec shell network files notifications clipboard env)\n";
+          }
+          auto& registry = scripting::PluginCapabilities::instance();
+          std::string error;
+          const bool ok = cmd == "grant" ? registry.grant(parts[1], caps, &error) : registry.revoke(parts[1], caps, &error);
+          if (!ok) {
+            return "error: " + error + "\n";
+          }
+          return std::format(
+              "ok: {} granted {} · effective {}\n", parts[1], scripting::describeCapabilities(registry.granted(parts[1])),
+              scripting::describeCapabilities(registry.effective(parts[1]))
+          );
+        }
+        if (cmd == "capabilities") {
+          auto& registry = scripting::PluginCapabilities::instance();
+          registry.reloadGrants();
+          std::string out;
+          for (const auto& s : m_pluginManager.list(scripting::CatalogAccess::LocalOnly)) {
+            if ((parts.size() > 1 && s.id != parts[1]) || (parts.size() == 1 && !s.enabled)) {
+              continue;
+            }
+            // a plugin that has not run yet (a lock screen widget while unlocked) is read from its manifest
+            const auto dir = scripting::PluginRegistry::instance().findPluginDir(s.id);
+            const scripting::CapabilitySet declared = dir ? scripting::declaredCapabilities(*dir) : registry.declared(s.id);
+            const scripting::CapabilitySet granted = registry.granted(s.id);
+            out += std::format(
+                "{} declared {} · granted {} · effective {}\n", s.id, scripting::describeCapabilities(declared),
+                scripting::describeCapabilities(granted),
+                scripting::describeCapabilities(static_cast<scripting::CapabilitySet>(declared & granted))
+            );
+          }
+          return out.empty() ? "(no matching plugins)\n" : out;
         }
         if (cmd == "update") {
           if (parts.size() != 2) {

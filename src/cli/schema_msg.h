@@ -56,12 +56,28 @@ namespace noctalia::cli {
       Command{"add", "Add a plugin source", {}, {}, {}, kMsgPluginsSourceAddPositionals, {}, false},
       Command{"remove", "Remove a plugin source", {}, {}, {}, kMsgPluginsSourceRemovePositionals, {}, false},
   };
+  // zynith: plugin capability grants (scripting/plugin_capabilities.h)
+  inline constexpr std::array<std::string_view, 7> kMsgPluginCapabilityChoices{
+      "exec", "shell", "network", "files", "notifications", "clipboard", "env"};
+  inline constexpr std::array kMsgPluginsGrantPositionals{
+      Positional{"author/plugin", {}, {}, true, false, false},
+      Positional{"capability", {}, kMsgPluginCapabilityChoices, true, true, false},
+  };
+  inline constexpr std::array kMsgPluginsCapabilitiesPositionals{
+      Positional{"author/plugin", {}, {}, false, false, false},
+  };
   inline constexpr std::array kMsgPluginsSubcommands{
       Command{"list", "List installed plugins", {}, {}, {}, {}, {}, false},
       Command{"enable", "Enable a plugin", {}, {}, {}, kMsgPluginsEnablePositionals, {}, false},
       Command{"disable", "Disable a plugin", {}, {}, {}, kMsgPluginsDisablePositionals, {}, false},
       Command{"update", "Update a plugin source", {}, {}, {}, kMsgPluginsUpdatePositionals, {}, false},
       Command{"source", "Manage plugin sources", {}, {}, {}, {}, kMsgPluginsSourceSubcommands, false},
+      Command{"grant", "Grant capabilities a plugin declares", {}, {}, {}, kMsgPluginsGrantPositionals, {}, false},
+      Command{"revoke", "Revoke granted capabilities", {}, {}, {}, kMsgPluginsGrantPositionals, {}, false},
+      Command{
+          "capabilities", "Show declared, granted and effective capabilities", {}, {}, {},
+          kMsgPluginsCapabilitiesPositionals, {}, false
+      },
   };
 
   inline constexpr std::array<std::string_view, 7> kMsgBarAutoHideSetStateChoices{"on",    "off", "smart", "true",
@@ -655,7 +671,7 @@ namespace noctalia::cli {
     };
     inline constexpr Command plugins{
         "plugins",
-        "Manage plugins and sources (list/enable/disable/update, source list/add/remove)",
+        "Manage plugins, sources and capabilities (list/enable/disable/update, source …, grant/revoke/capabilities)",
         {},
         {},
         {},

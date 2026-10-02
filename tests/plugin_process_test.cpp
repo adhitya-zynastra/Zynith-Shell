@@ -1,9 +1,12 @@
 #include "core/process/process.h"
 #include "core/toml.h"
 #include "scripting/luau_host.h"
+#include "scripting/plugin_capabilities.h"
 #include "scripting/script_api_context.h"
 
 #include <chrono>
+#include <cstdlib>
+#include <unistd.h>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -24,6 +27,17 @@ namespace {
 } // namespace
 
 int main() {
+  // the plugin under test runs commands, so it declares and is granted exec and shell (zynith capabilities)
+  const std::string grants = "/tmp/plugin_process_test_grants_" + std::to_string(::getpid()) + ".toml";
+  ::setenv("ZYNITH_PLUGIN_GRANTS", grants.c_str(), 1);
+  auto& caps = scripting::PluginCapabilities::instance();
+  caps.setDeclared("test/plugin", scripting::parseCapabilityList("exec shell"));
+  std::string grantError;
+  if (!caps.grant("test/plugin", scripting::parseCapabilityList("exec shell"), &grantError)) {
+    std::println(stderr, "plugin_process_test: grant failed: {}", grantError);
+    return 1;
+  }
+
   scripting::ScriptApiContext api;
   api.setConfigSnapshot(std::make_shared<const toml::table>(toml::parse("[shell]\noffline_mode = true")));
   api.setWallpaperPaths({{"DP-1", "/tmp/wallpaper.png"}});
@@ -83,5 +97,6 @@ noctalia.setWallpaperMask("DP-1", nil)
            "result callback should receive the completed process"
        )
       && ok;
+  ::unlink(grants.c_str());
   return ok ? 0 : 1;
 }
