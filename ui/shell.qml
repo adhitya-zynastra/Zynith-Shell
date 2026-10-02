@@ -7,6 +7,7 @@ import QtQuick
 import Quickshell
 import qs.Modules.Bar
 import qs.Modules.Panels
+import qs.Modules.Osd
 import qs.Services
 
 ShellRoot {
@@ -15,4 +16,5 @@ ShellRoot {
 
     Bars {}
     PanelHost {}
+    Osd {}
 }

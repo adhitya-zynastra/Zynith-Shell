@@ -13,6 +13,7 @@ Singleton {
     readonly property bool niri: NiriState.connected
     readonly property bool overviewOpen: NiriState.overviewOpen
     readonly property var focusedWindow: NiriState.focusedWindow
+    readonly property string keyboardLayout: NiriState.keyboardLayout
 
     function forScreen(screen: var): var {
         const name = screen?.name ?? "";

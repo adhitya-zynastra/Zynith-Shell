@@ -13,6 +13,7 @@ Singleton {
     readonly property alias experience: adapter.experience
     readonly property alias bars: adapter.bars
     readonly property alias panels: adapter.panels
+    readonly property alias osd: adapter.osd
     property bool loaded: false
 
     function setExperienceProfile(name: string): void {
@@ -70,6 +71,13 @@ Singleton {
 
             property JsonObject panels: JsonObject {
                 property int width: 400
+            }
+
+            // off while the native shell's OSD is still the one in use
+            property JsonObject osd: JsonObject {
+                property bool enabled: false
+                property int durationMs: 1400
+                property int margin: 72
             }
         }
     }
