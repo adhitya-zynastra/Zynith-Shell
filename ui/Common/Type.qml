@@ -18,7 +18,8 @@ Singleton {
     }
 
     readonly property string ui: interFont.status === FontLoader.Ready ? interFont.name : "Adwaita Sans"
-    readonly property string display: groteskFont.status === FontLoader.Ready ? groteskFont.name : ui
+    // the variable font registers its default instance as "Space Grotesk Light"; the family name keeps weights working
+    readonly property string display: groteskFont.status === FontLoader.Ready ? "Space Grotesk" : ui
     readonly property string mono: "JetBrains Mono"
     readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "noctalia-tabler-icons"
 
