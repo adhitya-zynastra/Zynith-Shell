@@ -35,11 +35,12 @@ BarItem {
         height: root.vertical ? root.length : root.cross - 10
 
         Repeater {
-            model: Spectrum.values.length
+            // a count that changes with the profile, not with every frame: only `level` is per frame
+            model: Spectrum.bandCount
 
             delegate: Rectangle {
                 required property int index
-                readonly property int count: Spectrum.values.length
+                readonly property int count: Spectrum.bandCount
                 readonly property real level: Math.max(0.06, Spectrum.values[index] ?? 0)
                 readonly property real slot: (root.vertical ? parent.height : parent.width) / count
 

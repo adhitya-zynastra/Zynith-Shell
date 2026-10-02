@@ -11,6 +11,8 @@ Singleton {
 
     readonly property bool enabled: ExperiencePolicy.visualizerBands > 0
     readonly property var values: AudioSpectrum.values
+    // changes only with the profile, unlike values (every frame): bind counts and colours to this
+    readonly property int bandCount: AudioSpectrum.bands
     readonly property bool active: AudioSpectrum.active
     readonly property int consumers: AudioSpectrum.consumers
 
