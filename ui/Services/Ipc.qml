@@ -3,12 +3,17 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Zynith.Native
 
 // `quickshell -p <ui>/shell.qml ipc call zynith <method> [args]`
 Singleton {
     id: root
 
+    // the output with keyboard focus under niri, else the first one
     function focusedScreen(): string {
+        const focused = NiriState.workspaces.find(w => w.focused)?.output ?? "";
+        if (focused && Quickshell.screens.some(s => s.name === focused))
+            return focused;
         return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
     }
 
@@ -17,6 +22,13 @@ Singleton {
 
         function panel(id: string): void {
             PanelRouter.toggle(id, root.focusedScreen(), null);
+        }
+        function launcher(): void {
+            PanelRouter.toggle("launcher", root.focusedScreen(), { edge: "center" });
+        }
+        // what the launcher would list for a query, best first
+        function apps(query: string): string {
+            return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");
         }
         function close(): void {
             PanelRouter.closeAll();

@@ -17,13 +17,16 @@ Item {
     property real fade: 1
 
     implicitHeight: loader.item?.implicitHeight ?? 0
+    // a panel may ask for its own width (0: the configured one)
+    readonly property int preferredWidth: loader.item?.preferredWidth ?? 0
 
     readonly property var panels: ({
             home: home,
             media: media,
             system: system,
             network: network,
-            bluetooth: bluetooth
+            bluetooth: bluetooth,
+            launcher: launcher
         })
 
     onPanelIdChanged: {
@@ -76,6 +79,10 @@ Item {
     Component {
         id: bluetooth
         BluetoothPanel {}
+    }
+    Component {
+        id: launcher
+        LauncherPanel {}
     }
 
     Loader {

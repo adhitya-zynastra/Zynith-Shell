@@ -15,6 +15,7 @@ Singleton {
     readonly property alias panels: adapter.panels
     readonly property alias osd: adapter.osd
     readonly property alias window: adapter.window
+    readonly property alias launcher: adapter.launcher
     property bool loaded: false
 
     function setExperienceProfile(name: string): void {
@@ -106,6 +107,11 @@ Singleton {
             // scrolling | tiling-like; the native shell turns it into a niri fragment
             property JsonObject window: JsonObject {
                 property string behaviour: "scrolling"
+            }
+
+            property JsonObject launcher: JsonObject {
+                // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
+                property list<string> terminal: []
             }
 
             // off while the native shell's OSD is still the one in use

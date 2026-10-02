@@ -20,7 +20,7 @@ PanelWindow {
         held = entry
 
     readonly property string edge: held?.edge ?? "top"
-    readonly property int panelWidth: Config.panels.width
+    readonly property int panelWidth: content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width
     readonly property real cardHeight: content.implicitHeight
     // the window grows at once and shrinks after the card has, so it never resizes every frame
     readonly property real windowCardHeight: Math.max(cardHeight, card.height)
@@ -38,8 +38,9 @@ PanelWindow {
     }
 
     // the card's rectangle on screen
-    readonly property real cardX: edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
+    readonly property real cardX: edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
+    readonly property real cardY: edge === "center" ? Math.round(sh * 0.22) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
     readonly property real winX: Math.max(0, cardX - pad)
     readonly property real winY: Math.max(0, cardY - pad)
 
@@ -149,8 +150,8 @@ PanelWindow {
         readonly property real travel: (1 - win.revealed) * Motion.revealOffset
         transform: [
             Scale {
-                origin.x: win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.ox - win.cardX
-                origin.y: win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.oy - win.cardY
+                origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.ox - win.cardX
+                origin.y: win.edge === "center" ? 0 : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.oy - win.cardY
                 xScale: Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                 yScale: Motion.revealScale + (1 - Motion.revealScale) * win.revealed
             },
