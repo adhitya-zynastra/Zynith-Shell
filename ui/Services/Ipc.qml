@@ -40,6 +40,7 @@ Singleton {
                 overview: Workspaces.overviewOpen,
                 workspaces: Workspaces.forScreen(Quickshell.screens[0]).map(w => (w.active ? "*" : "") + w.windows),
                 focused: Workspaces.focusedWindow.appId ?? "",
+                spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
                 launchTime: Quickshell.launchTime
             });

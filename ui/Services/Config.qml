@@ -63,7 +63,7 @@ Singleton {
                     widgets: {
                         start: ["workspaces"],
                         center: ["clock"],
-                        end: ["media", "audio", "network", "battery", "quick"]
+                        end: ["media", "visualizer", "audio", "network", "battery", "quick"]
                     }
                 }
             ]

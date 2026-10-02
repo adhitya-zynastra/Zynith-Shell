@@ -12,7 +12,8 @@ Singleton {
             audio: audio,
             network: network,
             battery: battery,
-            quick: quick
+            quick: quick,
+            visualizer: visualizer
         })
 
     function component(type: string): Component {
@@ -39,5 +40,8 @@ Singleton {
     }
     readonly property Component quick: Component {
         QuickWidget {}
+    }
+    readonly property Component visualizer: Component {
+        VisualizerWidget {}
     }
 }
