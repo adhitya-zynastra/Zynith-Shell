@@ -27,6 +27,9 @@ Item {
     // a panel that covers the screen and draws its own surfaces; blurItem is the one the compositor blurs
     readonly property bool bare: loader.item?.bare ?? false
     readonly property Item blurItem: loader.item?.blurItem ?? null
+    // a bare panel's say over the dimmed desktop: a colour to lean it towards, and how dim (0..1)
+    readonly property var backdropTint: loader.item?.backdropTint
+    readonly property real backdropDim: loader.item?.backdropDim ?? 1
 
     readonly property var panels: ({
             home: control,

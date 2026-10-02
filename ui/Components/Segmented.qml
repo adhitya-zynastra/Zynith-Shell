@@ -32,14 +32,7 @@ Item {
         border.width: Metrics.hairline
         border.color: Theme.accentLine
 
-        Behavior on x {
-            enabled: Motion.springs
-            SpringAnimation {
-                spring: Motion.spring
-                damping: Motion.damping
-                epsilon: Motion.springEpsilon
-            }
-        }
+        Glide on x {}
     }
 
     Row {

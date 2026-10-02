@@ -64,6 +64,7 @@ Item {
                         thumb: i.preview !== "" ? Thumbnails.url(i.preview, root.thumbWidth) : "",
                         still: i.preview !== "" ? Thumbnails.url(i.preview, 1280) : "",
                         animated: i.preview.toLowerCase().endsWith(".gif") ? "file://" + i.preview : "",
+                        source: i.preview,
                         favorite: favs.includes(i.id),
                         collected: coll.includes(i.id),
                         current: i.id === showing
@@ -78,6 +79,7 @@ Item {
                     thumb: Thumbnails.url(i.path, root.thumbWidth),
                     still: Thumbnails.url(i.path, 1280),
                     animated: "",
+                    source: i.path,
                     favorite: favs.includes(i.path),
                     collected: false,
                     current: i.path === showing
@@ -123,6 +125,7 @@ Item {
     function apply(entry: var): void {
         if (!entry)
             return;
+        applied++;
         if (live)
             Wallpapers.applyLive(entry.key);
         else if ((Wallpapers.browse.output ?? "") !== "" && Quickshell.screens.length > 1)
@@ -453,37 +456,79 @@ Item {
     readonly property string emptyText: Wallpapers.scanning || (live && Wallpapers.discovering) ? "Looking…" : live && Wallpapers.problem !== "" ? Wallpapers.problem : query !== "" ? "Nothing matches “" + query + "”" : view === "favorites" ? "Right-click or press F to make a favourite" : view === "collection" ? "Press C to add to the collection the carousel rotates through" : view === "recent" ? "Wallpapers you apply appear here" : "No wallpapers in " + Wallpapers.directory
 
     // ════ carousel ═════════════════════════════════════════════════════════
+    // Choreography, all derived from the panel's linear progress (visibleProgress) so opening and closing
+    // are the same motion run backwards: the control card drops in, the focused wallpaper rises first and its
+    // neighbours follow outward on the spatial curve; closing takes the outer cards first. Focus moves glide on
+    // a spring that can be retargeted mid-flight; a drag moves the arc with the pointer and a flick carries on.
+    readonly property color tint: tone.ready ? tone.color : Theme.accent
+    readonly property var backdropTint: carousel && tone.ready ? tone.color : undefined
+    property real backdropDim: 1
+    Tone {
+        id: tone
+        path: root.carousel ? (root.focused?.source ?? "") : ""
+    }
+    // applying: the backdrop lifts for a moment so the new wallpaper shows, and the card answers
+    property int applied: 0
+    SequentialAnimation {
+        id: reveal
+        Anim {
+            target: root
+            property: "backdropDim"
+            to: 0.3
+            role: "effects"
+        }
+        PauseAnimation {
+            duration: Motion.reduced ? 0 : 900
+        }
+        Anim {
+            target: root
+            property: "backdropDim"
+            to: 1
+            role: "spatialSlow"
+        }
+    }
+    onAppliedChanged: if (carousel && !Motion.reduced)
+        reveal.restart()
+
     Component {
         id: carouselLayout
 
         Item {
             id: stage
             readonly property alias controlCard: controls
+            readonly property real vp: root.visibleProgress
+            function phase(delay: real, span: real): real {
+                return Motion.reduced ? (vp > 0 ? 1 : 0) : Math.max(0, Math.min(1, (vp - delay) / span));
+            }
 
-            // a click on the dimmed desktop leaves
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.close()
-                onWheel: wheel => band.scrollBy(wheel)
+            // a tap on the dimmed desktop leaves; the wheel steps through the arc anywhere
+            TapHandler {
+                // only the desktop itself: a card, the caption or the controls keep the browser open
+                onTapped: point => {
+                    const x = point.position.x, y = point.position.y;
+                    const onControls = x >= controls.x && x <= controls.x + controls.width && y >= controls.y && y <= controls.y + controls.height;
+                    if (!onControls && band.childAt(x - band.x, y - band.y) === null)
+                        root.close();
+                }
+            }
+            WheelHandler {
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                onWheel: event => band.scrollBy(event.angleDelta)
             }
 
             // ── the control card ──
             Glass {
                 id: controls
+                readonly property real p: Motion.bezier(Motion.enterCurve, stage.phase(0, 0.6))
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: Math.round(parent.height * 0.06)
+                y: Math.round(parent.height * 0.06) - (1 - p) * 28
                 width: Math.min(1000, parent.width - Metrics.s6 * 2)
                 height: controlColumn.implicitHeight + Metrics.s4 * 2
                 radius: Metrics.radiusXl
                 raised: true
-                opacity: root.visibleProgress
-                transform: Translate {
-                    y: (1 - root.visibleProgress) * -Motion.revealOffset
-                }
+                opacity: p
 
-                MouseArea {
-                    anchors.fill: parent
-                }
+                TapHandler {}
                 Column {
                     id: controlColumn
                     x: Metrics.s5
@@ -531,6 +576,7 @@ Item {
                 readonly property real stride: cardW * 0.66
                 readonly property var fit: fitArc(width, cardW, stride)
                 readonly property real radius: stride / fit.step
+                readonly property real centreY: height * 0.44
 
                 function depthAt(theta: real): real {
                     const span = 1 - Math.cos(arc);
@@ -563,38 +609,73 @@ Item {
                     return { perSide: Math.max(1, per), step: arc / (Math.max(1, per) + 1) };
                 }
 
-                // the focus glides; a long jump (a new view) lands at once
-                property real pos: root.focusIndex
+                // where the arc is: the dragged position while a drag lasts, else a spring after the focus
+                property real glided: root.focusIndex
                 property bool glide: true
-                Behavior on pos {
-                    enabled: band.glide && Motion.springs
-                    SpringAnimation {
-                        spring: Motion.spring
-                        damping: Motion.damping
-                        epsilon: 0.002
-                    }
+                // a spring where the profile has springs, a tween on the spatial curve otherwise; never a jump
+                Glide on glided {
+                    enabled: band.glide && !Motion.reduced
+                    epsilon: 0.002
                 }
+                property real dragged: 0
+                readonly property real pos: drag.active ? dragged : glided
                 Connections {
                     target: root
                     function onFocusIndexChanged(): void {
-                        band.glide = Math.abs(root.focusIndex - band.pos) <= band.fit.perSide + 2;
-                        band.pos = root.focusIndex;
+                        if (drag.active)
+                            return;
+                        // a long jump (a new view, Home, End) lands at once
+                        band.glide = Math.abs(root.focusIndex - band.glided) <= band.fit.perSide + 3;
+                        band.glided = root.focusIndex;
+                        band.glide = true;
+                    }
+                }
+
+                // the pointer moves the arc 1:1; letting go carries the flick on and settles on a card
+                DragHandler {
+                    id: drag
+                    target: null
+                    xAxis.enabled: true
+                    yAxis.enabled: false
+                    property real from: 0
+                    onActiveChanged: {
+                        if (active) {
+                            from = band.glided;
+                            band.dragged = from;
+                        } else {
+                            const fling = -centroid.velocity.x / band.stride * 0.18;
+                            const target = Math.max(0, Math.min(root.entries.length - 1, Math.round(band.dragged + fling)));
+                            band.glide = false;
+                            band.glided = band.dragged;
+                            band.glide = true;
+                            root.focusIndex = target;
+                            band.glided = target;
+                        }
+                    }
+                    onTranslationChanged: if (active) {
+                        band.dragged = Math.max(-0.4, Math.min(root.entries.length - 0.6, from - translation.x / band.stride));
+                        const nearest = Math.max(0, Math.min(root.entries.length - 1, Math.round(band.dragged)));
+                        if (nearest !== root.focusIndex)
+                            root.focusIndex = nearest;
                     }
                 }
 
                 property real wheelRest: 0
-                function scrollBy(wheel: var): void {
-                    wheelRest += (wheel.angleDelta.x !== 0 ? -wheel.angleDelta.x : -wheel.angleDelta.y);
+                function scrollBy(delta: point): void {
+                    wheelRest += (delta.x !== 0 ? -delta.x : -delta.y);
                     while (Math.abs(wheelRest) >= 120) {
                         root.move(wheelRest > 0 ? 1 : -1);
                         wheelRest -= wheelRest > 0 ? 120 : -120;
                     }
                 }
 
-                // only the neighbourhood exists: the arc and one card past each end
+                // the opening: the deck rises (enter curve), then fans (spatial curve, with its small overshoot)
+                readonly property real rise: Motion.bezier(Motion.enterCurve, stage.phase(0, 0.5))
+                readonly property real spread: Motion.bezier(Motion.spatialCurve, stage.phase(0.22, 0.78))
+
+                // only the neighbourhood exists: the arc and a few past each end, for the glide
                 readonly property int lo: Math.max(0, root.focusIndex - fit.perSide - 3)
                 readonly property var window: root.entries.slice(lo, root.focusIndex + fit.perSide + 4)
-                readonly property real centreY: height * 0.44
 
                 Repeater {
                     model: ScriptModel {
@@ -608,74 +689,166 @@ Item {
                         required property int index
                         readonly property int entryIndex: band.lo + index
                         readonly property real offset: entryIndex - band.pos
-                        readonly property real theta: offset * band.fit.step
+                        // the deck: it rises as one, then fans out along the arc; closing folds it back first
+                        readonly property real spread: band.spread
+                        readonly property real theta: Math.max(-Math.PI / 2, Math.min(Math.PI / 2, offset * band.fit.step * spread))
                         readonly property real depth: band.depthAt(Math.abs(theta))
-                        readonly property real cardScale: band.scaleAt(depth)
                         readonly property bool focused: entryIndex === root.focusIndex
-                        readonly property bool shown: Math.abs(offset) <= band.fit.perSide + 1
+                        readonly property bool shown: Math.abs(offset) <= band.fit.perSide + 1.2
+                        readonly property real lift: hover.hovered && !focused ? 1 : 0
 
-                        visible: shown
+                        visible: shown && band.rise > 0.001
                         width: band.cardW
                         height: band.cardH
-                        x: band.width / 2 + band.radius * Math.sin(Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta))) - width / 2
-                        y: band.centreY - height / 2 + depth * band.cardH * 0.10
+                        x: band.width / 2 + band.radius * Math.sin(theta) - width / 2
+                        y: band.centreY - height / 2 + depth * band.cardH * 0.10 + (1 - band.rise) * band.cardH * 0.55 - liftY
                         z: 100 - Math.abs(offset) * 10
-                        scale: cardScale
-                        opacity: (1 - depth * 0.55) * root.visibleProgress
+                        scale: band.scaleAt(depth) * (0.78 + 0.22 * band.rise) * pulse
+                        // neighbours show as the deck opens; the focus with the rise
+                        opacity: (focused ? Math.min(1, band.rise * 1.6) : Math.min(1, spread * 1.8) * Math.min(1, band.rise * 1.6)) * (1 - depth * 0.55 + lift * 0.15)
 
-                        // shadow under the card, only where it reads (the focus and its neighbours)
+                        property real liftY: lift * 8
+                        Behavior on liftY {
+                            Anim {
+                                role: "spatialFast"
+                            }
+                        }
+                        // the applied card answers with a small swell
+                        property real pulse: 1
+                        SequentialAnimation {
+                            id: swell
+                            Anim {
+                                target: card
+                                property: "pulse"
+                                to: 1.045
+                                role: "effects"
+                            }
+                            Anim {
+                                target: card
+                                property: "pulse"
+                                to: 1
+                                role: "spatialFast"
+                            }
+                        }
+                        Connections {
+                            target: root
+                            function onAppliedChanged(): void {
+                                if (card.focused && !Motion.reduced)
+                                    swell.restart();
+                            }
+                        }
+
+                        // the glow under the focused card takes the wallpaper's own colour, and breathes
                         RectangularShadow {
-                            anchors.fill: frameRect
-                            visible: ExperiencePolicy.shadows && Math.abs(card.offset) < 2
-                            radius: frameRect.radius
-                            blur: 36
-                            spread: 0
-                            offset.y: 12
-                            color: Theme.alpha(Theme.shadow, 0.55 * (1 - card.depth))
-                        }
-                        Rectangle {
-                            id: frameRect
-                            anchors.fill: parent
+                            anchors.fill: art
+                            visible: ExperiencePolicy.shadows && Math.abs(card.offset) < 2.5
                             radius: Metrics.radiusLg
-                            color: Theme.well
-                        }
-                        Image {
-                            id: low
-                            anchors.fill: parent
-                            source: card.modelData.thumb
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            visible: false
-                        }
-                        // the focused card is promoted to a sharp image once it is there
-                        Image {
-                            id: sharp
-                            anchors.fill: parent
-                            source: card.focused ? card.modelData.still : ""
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            visible: false
-                        }
-                        AnimatedImage {
-                            id: moving
-                            anchors.fill: parent
-                            source: card.focused && ExperiencePolicy.richEffects && root.active ? card.modelData.animated : ""
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            playing: status === AnimatedImage.Ready
-                            visible: false
-                        }
-                        MultiEffect {
-                            anchors.fill: parent
-                            source: moving.status === AnimatedImage.Ready ? moving : sharp.status === Image.Ready ? sharp : low
-                            maskEnabled: true
-                            maskSource: cardMask
-                            maskThresholdMin: 0.5
-                            maskSpreadAtMin: 1
-                            opacity: low.status === Image.Ready || sharp.status === Image.Ready ? 1 : 0
-                            Behavior on opacity {
+                            blur: card.focused ? 56 : 28
+                            spread: card.focused ? 2 : 0
+                            offset.y: card.focused ? 16 : 10
+                            color: card.focused ? Theme.alpha(root.tint, 0.42 * breath) : Theme.alpha(Theme.shadow, 0.5 * (1 - card.depth))
+                            property real breath: 1
+                            SequentialAnimation on breath {
+                                running: card.focused && ExperiencePolicy.richEffects && root.active && !Motion.reduced
+                                loops: Animation.Infinite
                                 NumberAnimation {
-                                    duration: Motion.contentIn
+                                    to: 0.6
+                                    duration: 2200
+                                    easing.type: Easing.InOutSine
+                                }
+                                NumberAnimation {
+                                    to: 1
+                                    duration: 2200
+                                    easing.type: Easing.InOutSine
+                                }
+                            }
+                            Behavior on blur {
+                                Anim {
+                                    role: "spatialFast"
+                                }
+                            }
+                        }
+
+                        // the picture, a little larger than the card, slides against the arc's motion: parallax
+                        Item {
+                            id: art
+                            anchors.fill: parent
+                            layer.enabled: true
+                            layer.smooth: true
+                            layer.effect: MultiEffect {
+                                maskEnabled: true
+                                maskSource: cardMask
+                                maskThresholdMin: 0.5
+                                maskSpreadAtMin: 1
+                            }
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: Theme.well
+                            }
+                            Item {
+                                id: plate
+                                width: parent.width * 1.14
+                                height: parent.height * 1.14
+                                x: (parent.width - width) / 2 - Math.max(-1.5, Math.min(1.5, card.offset)) * parent.width * 0.045
+                                y: (parent.height - height) / 2
+
+                                Image {
+                                    id: low
+                                    anchors.fill: parent
+                                    source: card.modelData.thumb
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    opacity: status === Image.Ready ? 1 : 0
+                                    Behavior on opacity {
+                                        Anim {
+                                            role: "effects"
+                                        }
+                                    }
+                                }
+                                // the focused card is promoted to a sharp image once it is decoded
+                                Image {
+                                    id: sharp
+                                    anchors.fill: parent
+                                    source: card.focused ? card.modelData.still : ""
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    opacity: card.focused && status === Image.Ready ? 1 : 0
+                                    Behavior on opacity {
+                                        Anim {
+                                            role: "effects"
+                                        }
+                                    }
+                                }
+                                AnimatedImage {
+                                    anchors.fill: parent
+                                    source: card.focused && ExperiencePolicy.richEffects && root.active ? card.modelData.animated : ""
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    playing: status === AnimatedImage.Ready
+                                    opacity: status === AnimatedImage.Ready ? 1 : 0
+                                    Behavior on opacity {
+                                        Anim {
+                                            role: "effects"
+                                        }
+                                    }
+                                }
+                            }
+                            // a sheen across the top that fades with depth
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                height: parent.height * 0.35
+                                opacity: (1 - card.depth) * 0.5
+                                gradient: Gradient {
+                                    GradientStop {
+                                        position: 0
+                                        color: Theme.alpha("#ffffff", 0.10)
+                                    }
+                                    GradientStop {
+                                        position: 1
+                                        color: "transparent"
+                                    }
                                 }
                             }
                         }
@@ -693,14 +866,18 @@ Item {
                             size: 28
                             tone: "faint"
                         }
-                        // the focus ring; the showing-now card keeps a quiet one
+                        // the focus ring draws itself in; the showing-now card keeps a quiet one
                         Rectangle {
                             anchors.fill: parent
-                            anchors.margins: -4
-                            radius: Metrics.radiusLg + 4
+                            anchors.margins: -5
+                            radius: Metrics.radiusLg + 5
                             color: "transparent"
                             border.width: card.focused ? 2 : card.modelData.current ? 1 : 0
-                            border.color: card.focused ? Theme.accent : Theme.accentLine
+                            border.color: card.focused ? Theme.mix(Theme.accent, root.tint, 0.35) : Theme.accentLine
+                            opacity: card.focused ? 1 : 0.8
+                            Behavior on border.color {
+                                ColorAnim {}
+                            }
                         }
                         Row {
                             anchors.right: parent.right
@@ -717,18 +894,38 @@ Item {
                                 accent: true
                             }
                         }
-                        MouseArea {
-                            anchors.fill: parent
+                        Rectangle {
+                            visible: card.modelData.current
+                            anchors.left: parent.left
+                            anchors.bottom: parent.bottom
+                            anchors.margins: Metrics.s3
+                            width: nowText.implicitWidth + Metrics.s4
+                            height: 20
+                            radius: 10
+                            color: Theme.alpha(Theme.base, 0.72)
+                            Label {
+                                id: nowText
+                                anchors.centerIn: parent
+                                role: "micro"
+                                caps: true
+                                tone: "accent"
+                                text: root.live && Wallpapers.livePending === card.modelData.key ? "Starting" : "Showing"
+                            }
+                        }
+
+                        HoverHandler {
+                            id: hover
                             cursorShape: Qt.PointingHandCursor
+                        }
+                        TapHandler {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.RightButton)
+                            onTapped: (point, button) => {
+                                if (button === Qt.RightButton)
                                     root.toggleFavorite(card.modelData);
                                 else
                                     root.activate(card.entryIndex);
                                 keys.forceActiveFocus();
                             }
-                            onWheel: wheel => band.scrollBy(wheel)
                         }
                     }
                 }
@@ -737,6 +934,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     y: band.centreY - height / 2
                     visible: root.entries.length === 0
+                    opacity: stage.phase(0.2, 0.5)
                     role: "title"
                     tone: "muted"
                     text: root.emptyText
@@ -744,35 +942,77 @@ Item {
 
                 // ── what the focused card is, and what can be done with it ──
                 Column {
+                    id: info
+                    readonly property real p: Motion.bezier(Motion.enterCurve, stage.phase(0.32, 0.6))
                     anchors.horizontalCenter: parent.horizontalCenter
-                    y: band.centreY + band.cardH / 2 + Metrics.s5
-                    width: Math.min(band.cardW * 1.4, parent.width - Metrics.s6 * 2)
+                    y: band.centreY + band.cardH / 2 + Metrics.s6 + (1 - p) * 18
+                    width: Math.min(band.cardW * 1.5, parent.width - Metrics.s6 * 2)
                     spacing: Metrics.s3
                     visible: root.focused !== null
-                    opacity: root.visibleProgress
+                    opacity: p
 
-                    Column {
+                    // the title slides in from the side the arc moved towards
+                    Item {
                         width: parent.width
-                        spacing: 2
-                        Label {
-                            width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            role: "headline"
-                            font.weight: Font.Light
-                            text: root.focused?.title ?? ""
+                        height: titleCol.implicitHeight
+                        clip: false
+                        property real shift: 0
+                        property real fade: 1
+                        Connections {
+                            target: root
+                            function onFocusIndexChanged(): void {
+                                if (Motion.reduced)
+                                    return;
+                                const dir = root.focusIndex > titleCol.last ? 1 : -1;
+                                titleCol.last = root.focusIndex;
+                                slideIn.stop();
+                                titleCol.parent.shift = dir * 18;
+                                titleCol.parent.fade = 0.25;
+                                slideIn.start();
+                            }
                         }
-                        Label {
+                        ParallelAnimation {
+                            id: slideIn
+                            Anim {
+                                target: titleCol.parent
+                                property: "shift"
+                                to: 0
+                                role: "spatialFast"
+                            }
+                            Anim {
+                                target: titleCol.parent
+                                property: "fade"
+                                to: 1
+                                role: "effects"
+                            }
+                        }
+
+                        Column {
+                            id: titleCol
+                            property int last: root.focusIndex
+                            x: parent.shift
                             width: parent.width
-                            horizontalAlignment: Text.AlignHCenter
-                            role: "caption"
-                            tone: "muted"
-                            text: {
-                                const f = root.focused;
-                                if (!f)
-                                    return "";
-                                const where = root.live ? "Wallpaper Engine · " + f.subtitle : f.subtitle;
-                                const state = f.current ? (root.live && Wallpapers.livePending === f.key ? "starting" : "showing now") : "";
-                                return [where, state, (root.focusIndex + 1) + " of " + root.entries.length].filter(s => s !== "").join("  ·  ");
+                            opacity: parent.fade
+                            spacing: 3
+                            Label {
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                role: "headline"
+                                font.weight: Font.Light
+                                text: root.focused?.title ?? ""
+                            }
+                            Label {
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                role: "caption"
+                                tone: "muted"
+                                text: {
+                                    const f = root.focused;
+                                    if (!f)
+                                        return "";
+                                    const where = root.live ? "Wallpaper Engine · " + f.subtitle : f.subtitle;
+                                    return [where, (root.focusIndex + 1) + " of " + root.entries.length].filter(s => s !== "").join("  ·  ");
+                                }
                             }
                         }
                     }
@@ -795,6 +1035,13 @@ Item {
                             showing: root.focused?.current ?? false
                             onClicked: root.apply(root.focused)
                         }
+                    }
+                    // the keys, quietly
+                    Label {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        role: "micro"
+                        tone: "faint"
+                        text: "←  →  browse     Enter  apply     F  favourite" + (root.live ? "     C  collection" : "") + "     Tab  view     /  search     L  grid"
                     }
                 }
             }
@@ -1008,13 +1255,8 @@ Item {
                         height: Math.round(width * 0.62)
                         scale: cell.focused ? 1.0 : hover.containsMouse ? 0.985 : 0.965
 
-                        Behavior on scale {
-                            enabled: Motion.springs
-                            SpringAnimation {
-                                spring: Motion.spring
-                                damping: Motion.damping
-                                epsilon: Motion.springEpsilon
-                            }
+                        Glide on scale {
+                            epsilon: 0.001
                         }
 
                         Rectangle {

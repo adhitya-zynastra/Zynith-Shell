@@ -1,6 +1,10 @@
 #include "thumbnails.h"
 
 #include <QAtomicInteger>
+#include <QCoreApplication>
+#include <QMetaObject>
+
+#include <cmath>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFileInfo>
@@ -124,4 +128,54 @@ QString Thumbnails::url(const QString& path, int width) const {
         return {};
     return QStringLiteral("image://zthumb/") + QString::number(width) + QLatin1Char('/')
         + QString::fromLatin1(QUrl::toPercentEncoding(path));
+}
+
+Tone::Tone(QObject* parent)
+    : QObject(parent) {}
+
+Tone::~Tone() {
+    *m_alive = false;
+}
+
+void Tone::setPath(const QString& path) {
+    if (path == m_path)
+        return;
+    m_path = path;
+    emit pathChanged();
+    if (path.isEmpty())
+        return;
+    const quint64 request = ++m_request;
+    std::weak_ptr<bool> alive = m_alive;
+    decoders()->start(QRunnable::create([this, alive, path, request] {
+        const QImage small = makeThumbnail(path, 64).convertToFormat(QImage::Format_RGB32);
+        double r = 0, g = 0, b = 0, weight = 0, ar = 0, ag = 0, ab = 0;
+        for (int y = 0; y < small.height(); ++y) {
+            const QRgb* line = reinterpret_cast<const QRgb*>(small.constScanLine(y));
+            for (int x = 0; x < small.width(); ++x) {
+                const QColor c = QColor::fromRgb(line[x]);
+                ar += c.redF();
+                ag += c.greenF();
+                ab += c.blueF();
+                // saturated, mid-bright pixels say what the picture is about; greys and near-black do not
+                const double w = c.hsvSaturationF() * c.hsvSaturationF() * (1.0 - std::abs(c.valueF() - 0.6));
+                r += c.redF() * w;
+                g += c.greenF() * w;
+                b += c.blueF() * w;
+                weight += w;
+            }
+        }
+        const int n = qMax(1, small.width() * small.height());
+        QColor tone = weight > 0.5 ? QColor::fromRgbF(r / weight, g / weight, b / weight)
+                                   : QColor::fromRgbF(ar / n, ag / n, ab / n);
+        QMetaObject::invokeMethod(
+            qApp,
+            [this, alive, request, tone] {
+                if (alive.expired() || request != m_request)
+                    return;
+                m_color = tone;
+                m_ready = true;
+                emit colorChanged();
+            },
+            Qt::QueuedConnection);
+    }));
 }

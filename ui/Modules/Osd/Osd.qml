@@ -225,7 +225,7 @@ Scope {
                                 Connections {
                                     target: root
                                     function onPulseChanged(): void {
-                                        if (Motion.springs)
+                                        if (!Motion.reduced)
                                             tick.restart();
                                     }
                                 }

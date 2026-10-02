@@ -72,24 +72,31 @@ PanelWindow {
         radius: win.bare ? Metrics.radiusXl : Metrics.radiusXl
     }
 
-    // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through
+    // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The
+    // panel may tint it (the wallpaper carousel takes the focused wallpaper's colour) and lift it for a moment.
     Rectangle {
         anchors.fill: parent
         visible: win.bare
-        color: Theme.alpha(Theme.base, 0.55)
-        opacity: win.revealed
+        color: Theme.alpha(content.backdropTint !== undefined ? Theme.mix(Theme.base, content.backdropTint, 0.28) : Theme.base, 0.58 * (content.backdropDim ?? 1))
+        opacity: Motion.ease("standardDecel", win.revealed)
+        Behavior on color {
+            ColorAnim {
+                role: "spatialSlow"
+            }
+        }
     }
 
     // 0 = gone, 1 = in place
     property real revealed: 0
 
+    // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
     NumberAnimation {
         id: enter
         target: win
         property: "revealed"
         to: 1
-        duration: Motion.reveal
-        easing.type: Motion.enterEasing
+        duration: win.bare ? Motion.scene + 160 : Motion.reveal
+        easing.type: win.bare ? Easing.Linear : Motion.enterEasing
         onFinished: win.entering = false
     }
     NumberAnimation {
@@ -97,10 +104,17 @@ PanelWindow {
         target: win
         property: "revealed"
         to: 0
-        duration: Motion.dismiss
-        easing.type: Motion.exitEasing
+        duration: win.bare ? Motion.spatialFast : Motion.dismiss
+        easing.type: win.bare ? Easing.Linear : Motion.exitEasing
         onFinished: win.dismissed()
     }
+    // content can turn out bare only once it has loaded: the entrance restarts on the bare timing from
+    // where it is, so the choreography still gets its full length
+    onBareChanged: if (bare && enter.running) {
+        enter.stop();
+        enter.start();
+    }
+
     // the entrance plays once per showing, whether the window is new or warm
     property bool entering: false
     // counts appearances, so content can start fresh each time (warm or not)
@@ -160,16 +174,16 @@ PanelWindow {
                 easing.type: Motion.enterEasing
             }
         }
-        opacity: win.revealed
+        opacity: win.bare ? 1 : win.revealed
 
         // grow from the bar side, a few pixels of travel
-        readonly property real travel: (1 - win.revealed) * Motion.revealOffset
+        readonly property real travel: win.bare ? 0 : (1 - win.revealed) * Motion.revealOffset
         transform: [
             Scale {
                 origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.ox - win.cardX
                 origin.y: win.edge === "center" ? 0 : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.oy - win.cardY
-                xScale: Motion.revealScale + (1 - Motion.revealScale) * win.revealed
-                yScale: Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                xScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                yScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
             },
             Translate {
                 x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0

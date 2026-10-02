@@ -145,7 +145,9 @@ Singleton {
     function retain(): void {
         consumers++;
         if (consumers === 1) {
-            rescan();
+            // the list stays from the first scan (the refresh button rescans), so a browser opens on it at once
+            if (images.length === 0 && !scanning)
+                rescan();
             sync();
         }
     }
