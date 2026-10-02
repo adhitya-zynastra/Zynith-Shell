@@ -94,6 +94,7 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -413,6 +414,69 @@ void Application::initIpc() {
       return "error: failed to set the clipboard selection\n";
     }
     return "ok\n";
+  });
+
+  // zynith: previews only; a full payload leaves the shell only by being put back on the clipboard.
+  m_ipcService.bind(noctalia::cli::msg::clipboardHistory, [this](const std::string& args) -> std::string {
+    std::size_t limit = 50;
+    if (!args.empty()) {
+      try {
+        limit = static_cast<std::size_t>(std::clamp(std::stoi(args), 1, 500));
+      } catch (const std::exception&) {
+        return "error: clipboard-history [limit] expects a number\n";
+      }
+    }
+    nlohmann::json out = nlohmann::json::array();
+    for (const ClipboardEntry& entry : m_clipboardService.history()) {
+      if (out.size() >= limit) {
+        break;
+      }
+      std::string preview = entry.textPreview;
+      if (preview.size() > 240) {
+        std::size_t cut = 240;
+        while (cut > 0 && (static_cast<unsigned char>(preview[cut]) & 0xC0) == 0x80) {
+          --cut;
+        }
+        preview.resize(cut);
+      }
+      out.push_back({
+          {"id", entry.storageId},
+          {"preview", preview},
+          {"mime", entry.dataMimeType},
+          {"image", entry.isImage()},
+          {"bytes", entry.byteSize},
+          {"pinned", entry.pinned},
+          {"time",
+           std::chrono::duration_cast<std::chrono::milliseconds>(entry.capturedAt.time_since_epoch()).count()},
+      });
+    }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  const auto historyIndex = [this](const std::string& id) -> std::optional<std::size_t> {
+    const auto& history = m_clipboardService.history();
+    for (std::size_t i = 0; i < history.size(); ++i) {
+      if (history[i].storageId == id) {
+        return i;
+      }
+    }
+    return std::nullopt;
+  };
+
+  m_ipcService.bind(noctalia::cli::msg::clipboardSelect, [this, historyIndex](const std::string& args) -> std::string {
+    const auto index = historyIndex(args);
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    return m_clipboardService.promoteEntry(*index) ? "ok\n" : "error: failed to set the clipboard selection\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::clipboardRemove, [this, historyIndex](const std::string& args) -> std::string {
+    const auto index = historyIndex(args);
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
   });
 
   m_ipcService.bind(

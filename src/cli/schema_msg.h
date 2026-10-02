@@ -127,6 +127,13 @@ namespace noctalia::cli {
   inline constexpr std::array kMsgClipboardCopyPositionals{
       Positional{"text", {}, {}, true, false, false},
   };
+  // zynith: the history stays in the shell (encrypted at rest); other UIs read previews and pick entries.
+  inline constexpr std::array kMsgClipboardHistoryPositionals{
+      Positional{"limit", "Most recent entries to list (default 50)", {}, false, false, false},
+  };
+  inline constexpr std::array kMsgClipboardEntryPositionals{
+      Positional{"id", "Entry id from clipboard-history", {}, true, false, false},
+  };
   inline constexpr std::array kMsgEffectsProfileSetPositionals{
       Positional{"kind", {}, kMsgEffectsProfileSetKindChoices, true, false, false},
       Positional{"profile", {}, {}, true, false, false},
@@ -358,6 +365,24 @@ namespace noctalia::cli {
     inline constexpr Command clipboardClear{"clipboard-clear", "Clear clipboard history", {}, {}, {}, {}, {}, false};
     inline constexpr Command clipboardCopy{
         "clipboard-copy", "Copy text to the clipboard", {}, {}, {}, kMsgClipboardCopyPositionals, {}, false
+    };
+    inline constexpr Command clipboardHistory{
+        "clipboard-history",
+        "Print clipboard history as JSON: id, preview, mime, image, bytes, pinned, time (newest first)",
+        {},
+        {},
+        {},
+        kMsgClipboardHistoryPositionals,
+        {},
+        false
+    };
+    inline constexpr Command clipboardRemove{
+        "clipboard-remove", "Remove one entry from the clipboard history", {}, {}, {}, kMsgClipboardEntryPositionals,
+        {}, false
+    };
+    inline constexpr Command clipboardSelect{
+        "clipboard-select", "Copy a clipboard history entry back to the clipboard", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
     };
     inline constexpr Command clipboardText{
         "clipboard-text",
@@ -897,6 +922,9 @@ namespace noctalia::cli {
       msg::caffeineToggle,
       msg::clipboardClear,
       msg::clipboardCopy,
+      msg::clipboardHistory,
+      msg::clipboardRemove,
+      msg::clipboardSelect,
       msg::clipboardText,
       msg::colorSchemeGet,
       msg::colorSchemeSet,
