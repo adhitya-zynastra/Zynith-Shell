@@ -21,6 +21,16 @@ wifi wifi-1 wifi-2 wifi-off x layers-intersect stack-2 activity disc search apps
 corner-down-left bell bell-off bell-ringing microphone microphone-off coffee sunset-2 brightness-down
 keyboard logout refresh zzz grip-vertical dots-vertical calculator window app-window mood-smile math-function
 cloud cloud-rain cloud-snow cloud-storm cloud-fog sun-high moon-stars
+heart heart-filled folder sort-ascending sort-descending arrows-shuffle player-stop-filled star star-filled pin pin-filled
+pinned photo-off copy check arrows-move arrows-diagonal pencil edit eye eye-off arrow-big-up-line camera camera-off
+numbers keyboard-show bulb shield lock-open device-tv calendar-event temperature droplet wind cpu-2 database server
+chart-line hourglass list filter adjustments category external-link arrow-up arrow-down arrows-sort dots menu-2
+rotate flip-horizontal palette typography layout-dashboard layout-sidebar message headphones device-speaker home user
+info-circle alert-triangle circle-check circle-x plug puzzle shield-lock world map-pin player-track-next
+playlist square-rounded-plus minus arrow-back-up history clock-hour-4 alarm moon-off brightness disc-filled
+capture screenshot texture wallpaper picture-in-picture layout-bottombar layout-navbar layout-sidebar-right
+toggle-left toggle-right letter-a scan photo-heart grid-dots layout-collage keyboard-off sun-moon
+screen-share screen-share-off coffee-off
 """.split()
 
 

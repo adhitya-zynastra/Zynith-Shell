@@ -86,17 +86,33 @@ Singleton {
     }
 
     function wallpapers(q: string, limit: int): var {
-        if (Wallpapers.images.length === 0)
-            Wallpapers.refresh();
-        const needle = q.toLowerCase();
-        return Wallpapers.images.filter(p => needle === "" || p.toLowerCase().includes(needle)).slice(0, limit).map(p => ({
-                    key: "wp:" + p,
+        Wallpapers.ensure();
+        const images = Wallpapers.imagesFor("all", q, "az").slice(0, limit).map(i => ({
+                    key: "wp:" + i.path,
                     kind: "wallpaper",
-                    title: p.split("/").pop(),
-                    subtitle: p.split("/").slice(-2, -1)[0] ?? "",
-                    image: "file://" + p,
-                    run: () => Wallpapers.applyImage(p)
+                    title: i.name,
+                    subtitle: i.folder !== "" ? i.folder : "Image",
+                    image: Thumbnails.url(i.path, 96),
+                    run: () => Wallpapers.applyImage(i.path)
                 }));
+        const live = Wallpapers.liveFor("installed", q, "az").slice(0, limit).map(i => ({
+                    key: "live:" + i.id,
+                    kind: "wallpaper",
+                    title: i.title,
+                    subtitle: "Live  ·  " + i.kind,
+                    image: i.preview !== "" ? Thumbnails.url(i.preview, 96) : "",
+                    glyph: "photo",
+                    run: () => Wallpapers.applyLive(i.id)
+                }));
+        // interleave, so a search shows both kinds near the top
+        const out = [];
+        for (let k = 0; out.length < limit && (k < images.length || k < live.length); k++) {
+            if (k < live.length)
+                out.push(live[k]);
+            if (k < images.length && out.length < limit)
+                out.push(images[k]);
+        }
+        return out;
     }
 
     // the emoji table loads on first use

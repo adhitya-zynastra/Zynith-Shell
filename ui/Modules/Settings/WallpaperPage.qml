@@ -14,6 +14,29 @@ Column {
 
     Card {
         width: parent.width
+        caption: "Browser"
+
+        SettingChoice {
+            title: "Layout"
+            detail: "Carousel: a cinematic arc across the dimmed desktop. Grid: a panel with the focused wallpaper above a grid. L switches while browsing"
+            domain: "wallpaper"
+            key: "layout"
+            options: [{ key: "carousel", label: "Carousel" }, { key: "grid", label: "Grid" }]
+        }
+        SettingSlider {
+            title: "Carousel card"
+            detail: "Width of the focused card; Auto is 40 % of the screen, at most 760 px"
+            domain: "wallpaper"
+            key: "card_width"
+            from: 0
+            to: 1400
+            step: 20
+            format: v => v < 320 ? "Auto" : Math.round(v) + " px"
+        }
+    }
+
+    Card {
+        width: parent.width
         caption: "Images"
 
         SettingText {

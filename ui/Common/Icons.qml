@@ -7,4 +7,7 @@ Singleton {
     function glyph(name: string): string {
         return Map.glyphs[name] || "";
     }
+    function has(name: string): bool {
+        return Map.glyphs[name] !== undefined;
+    }
 }

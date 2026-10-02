@@ -29,4 +29,7 @@ signals:
 private:
     QString m_path;
     QLocalServer m_server;
+    // the socket file this instance put in place: a live reload starts the next instance before this one
+    // goes, so this one may only remove the file while it is still its own
+    quint64 m_inode = 0;
 };

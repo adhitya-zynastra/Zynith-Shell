@@ -31,7 +31,9 @@ Singleton {
     readonly property var osd: ({
             enabled: panelsFile.values.osd.enabled,
             durationMs: panelsFile.values.osd.duration_ms,
-            margin: panelsFile.values.osd.margin
+            margin: panelsFile.values.osd.margin,
+            position: panelsFile.values.osd.position,
+            hidden: panelsFile.values.osd.hidden ?? []
         })
     readonly property var notifications: ({
             server: notificationsFile.values.server,
@@ -223,7 +225,12 @@ Singleton {
                 osd: {
                     enabled: false,
                     duration_ms: 1400,
-                    margin: 72
+                    margin: 72,
+                    // bottom | top
+                    position: "bottom",
+                    // kinds never shown: volume microphone brightness keyboard-layout wifi bluetooth
+                    // power-profile caffeine nightlight dnd lock-keys media privacy keyboard-backlight
+                    hidden: []
                 }
             })
     }
@@ -258,6 +265,10 @@ Singleton {
         defaults: ({
                 // where the Wallpaper panel looks for images ("" = ~/Pictures/wallpapers)
                 directory: "",
+                // carousel: a cinematic band over the dimmed desktop · grid: a panel with a hero and a grid
+                layout: "carousel",
+                // the focused carousel card's width in px (0 = 40 % of the screen, at most 760)
+                card_width: 0,
                 // live: the running live wallpaper behind niri's overview; poster: its still image
                 overview: "poster",
                 lock: "poster"

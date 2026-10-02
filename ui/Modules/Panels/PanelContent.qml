@@ -24,6 +24,9 @@ Item {
     readonly property int preferredWidth: loader.item?.preferredWidth ?? 0
     // where a centred panel's top sits, as a fraction of the screen height
     readonly property real preferredTop: loader.item?.preferredTop ?? 0.22
+    // a panel that covers the screen and draws its own surfaces; blurItem is the one the compositor blurs
+    readonly property bool bare: loader.item?.bare ?? false
+    readonly property Item blurItem: loader.item?.blurItem ?? null
 
     readonly property var panels: ({
             home: control,

@@ -1,155 +1,1227 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
 
-// Pick a wallpaper. Static images from the wallpaper folder, or live wallpapers from the collection; the
-// desktop, overview, lock screen and palette all follow the choice. Thumbnails decode at the profile's size,
-// and only the ones in view.
-Column {
+// The wallpaper browser. Two sources — your images and Wallpaper Engine — each with its views (Images: all,
+// favourites, recent, folders; Live: installed, favourites, recent, collection). Two layouts over the same
+// state (wallpaper.toml layout):
+//   carousel  a cinematic arc across the dimmed desktop, the focused wallpaper large in the middle and its
+//             neighbours receding; one glass card above holds the controls
+//   grid      a panel with a hero of the focused wallpaper over a grid of the library
+// Every view is filtered from state the Wallpapers service already holds, so switching is immediate; the
+// shell's change events keep it current. Moving the focus never applies — a click on the focused card or
+// Enter does.
+//
+// Keys: arrows move · Enter applies · / searches · Tab next view · Shift+Tab other source
+//       F favourite · C collection (live) · L layout · Esc leaves (or clears the search first)
+Item {
     id: root
 
     property var screen: null
     property real visibleProgress: 1
     property bool active: true
-    readonly property int preferredWidth: 780
+    property string context: ""
 
-    property string tab: Wallpapers.mode
-    onActiveChanged: if (active) {
-        Wallpapers.refresh();
-        tab = Wallpapers.mode;
+    readonly property bool carousel: Config.wallpaper.layout !== "grid"
+    readonly property bool bare: carousel
+    readonly property Item blurItem: carousel ? (layoutLoader.item?.controlCard ?? null) : null
+    readonly property int preferredWidth: Math.min(1120, Math.round((screen?.width ?? 1600) * 0.74))
+    readonly property real preferredTop: 0.07
+    implicitHeight: carousel ? (screen?.height ?? 1080) : (layoutLoader.item?.implicitHeight ?? 0)
+
+    // ── browse state (kept in the service, so the browser reopens where it was left) ──
+    readonly property bool live: Wallpapers.browse.source === "live"
+    readonly property string view: live ? Wallpapers.browse.liveView : Wallpapers.browse.imageView
+    property string query: ""
+    signal focusSearch
+
+    readonly property var views: live ? [
+        { key: "installed", label: "Installed", icon: "layout-grid", count: Wallpapers.liveFor("installed", "", "az").length },
+        { key: "favorites", label: "Favourites", icon: "heart", count: Wallpapers.liveFavorites.length },
+        { key: "recent", label: "Recent", icon: "history", count: Wallpapers.liveRecent.length },
+        { key: "collection", label: "Collection", icon: "stack-2", count: Wallpapers.liveCollection.length }
+    ] : [
+        { key: "all", label: "All", icon: "layout-grid", count: Wallpapers.images.length },
+        { key: "favorites", label: "Favourites", icon: "heart", count: Wallpapers.favorites.length },
+        { key: "recent", label: "Recent", icon: "history", count: -1 }
+    ].concat(Wallpapers.folders.map(f => ({ key: "folder:" + f.name, label: f.name, icon: "folder", count: f.count })))
+
+    // one shape for both sources: { key, title, subtitle, thumb, still, animated, favorite, collected, current }
+    readonly property int thumbWidth: Math.min(ExperiencePolicy.thumbnailSize, 480)
+    readonly property var entries: {
+        const sort = Wallpapers.browse.sort;
+        if (live) {
+            const favs = Wallpapers.liveFavorites, coll = Wallpapers.liveCollection;
+            const showing = Wallpapers.mode === "live" ? (Wallpapers.livePending || Wallpapers.liveCurrent) : "";
+            return Wallpapers.liveFor(view, query, sort).map(i => ({
+                        key: i.id,
+                        title: i.title,
+                        subtitle: i.kind,
+                        thumb: i.preview !== "" ? Thumbnails.url(i.preview, root.thumbWidth) : "",
+                        still: i.preview !== "" ? Thumbnails.url(i.preview, 1280) : "",
+                        animated: i.preview.toLowerCase().endsWith(".gif") ? "file://" + i.preview : "",
+                        favorite: favs.includes(i.id),
+                        collected: coll.includes(i.id),
+                        current: i.id === showing
+                    }));
+        }
+        const favs = Wallpapers.favorites;
+        const showing = Wallpapers.mode === "static" ? Wallpapers.current : "";
+        return Wallpapers.imagesFor(view, query, sort).map(i => ({
+                    key: i.path,
+                    title: i.name,
+                    subtitle: i.folder,
+                    thumb: Thumbnails.url(i.path, root.thumbWidth),
+                    still: Thumbnails.url(i.path, 1280),
+                    animated: "",
+                    favorite: favs.includes(i.path),
+                    collected: false,
+                    current: i.path === showing
+                }));
     }
-    Component.onCompleted: Wallpapers.refresh()
 
-    padding: Metrics.s5
-    spacing: Metrics.s4
-    readonly property real inner: width - padding * 2
+    property int focusIndex: 0
+    readonly property var focused: entries[Math.min(focusIndex, entries.length - 1)] ?? null
+    onEntriesChanged: if (focusIndex >= entries.length)
+        focusIndex = Math.max(0, entries.length - 1)
+    // grid columns, so Up and Down move a row there; the carousel has one row
+    property int rowLength: 1
+
+    function setView(key: string): void {
+        if (live)
+            Wallpapers.browse = Object.assign({}, Wallpapers.browse, { liveView: key });
+        else
+            Wallpapers.browse = Object.assign({}, Wallpapers.browse, { imageView: key });
+        focusIndex = 0;
+    }
+    function setSource(source: string): void {
+        Wallpapers.browse = Object.assign({}, Wallpapers.browse, { source: source, touched: true });
+        focusOnCurrent();
+    }
+    function cycleView(back: bool): void {
+        const i = views.findIndex(v => v.key === view);
+        setView(views[(i + (back ? views.length - 1 : 1)) % views.length].key);
+    }
+    function focusOnCurrent(): void {
+        focusIndex = Math.max(0, entries.findIndex(e => e.current));
+    }
+    function move(delta: int): void {
+        if (entries.length > 0)
+            focusIndex = Math.max(0, Math.min(entries.length - 1, focusIndex + delta));
+    }
+    function activate(index: int): void {
+        // the focused card applies; any other one is focused first
+        if (index !== focusIndex)
+            focusIndex = index;
+        else
+            apply(entries[index]);
+    }
+    function apply(entry: var): void {
+        if (!entry)
+            return;
+        if (live)
+            Wallpapers.applyLive(entry.key);
+        else if ((Wallpapers.browse.output ?? "") !== "" && Quickshell.screens.length > 1)
+            Wallpapers.applyImageOn(Wallpapers.browse.output, entry.key);
+        else
+            Wallpapers.applyImage(entry.key);
+    }
+    function toggleFavorite(entry: var): void {
+        if (!entry)
+            return;
+        if (live)
+            Wallpapers.toggleLiveFavorite(entry.key);
+        else
+            Wallpapers.toggleFavorite(entry.key);
+    }
+    function toggleLayout(): void {
+        Config.write("wallpaper", "layout", carousel ? "grid" : "carousel");
+    }
+    function close(): void {
+        PanelRouter.close(screen.name);
+    }
+
+    // what it was opened for (wallpaper live | images) arrives just after the panel itself
+    onContextChanged: if (active && (context === "live" || context === "images"))
+        setSource(context)
+    onActiveChanged: active ? open() : Wallpapers.release()
+    Component.onCompleted: if (active)
+        open()
+    Component.onDestruction: if (active)
+        Wallpapers.release()
+    function open(): void {
+        Wallpapers.retain();
+        query = "";
+        if (context === "live" || context === "images")
+            Wallpapers.browse = Object.assign({}, Wallpapers.browse, { source: context });
+        else if (!Wallpapers.browse.touched)
+            Wallpapers.browse = Object.assign({}, Wallpapers.browse, { source: Wallpapers.mode === "live" ? "live" : "images" });
+        focusOnCurrent();
+        keys.forceActiveFocus();
+    }
+    // the first answer after opening lands the focus on what is showing
+    Connections {
+        target: Wallpapers
+        function onSyncedChanged(): void {
+            if (root.active)
+                root.focusOnCurrent();
+        }
+    }
 
     Item {
-        width: root.inner
-        height: 36
-
-        Label {
-            anchors.verticalCenter: parent.verticalCenter
-            role: "headline"
-            text: "Wallpaper"
-        }
-        Segmented {
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: 220
-            current: root.tab
-            options: [
-                {
-                    key: "static",
-                    label: "Images"
-                },
-                {
-                    key: "live",
-                    label: "Live"
-                }
-            ]
-            onPicked: key => root.tab = key
+        id: keys
+        focus: true
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Escape) {
+                root.close();
+            } else if (event.key === Qt.Key_Left) {
+                root.move(-1);
+            } else if (event.key === Qt.Key_Right) {
+                root.move(1);
+            } else if (event.key === Qt.Key_Up) {
+                root.move(-root.rowLength);
+            } else if (event.key === Qt.Key_Down) {
+                root.move(root.rowLength);
+            } else if (event.key === Qt.Key_PageUp) {
+                root.move(-root.rowLength * 3);
+            } else if (event.key === Qt.Key_PageDown) {
+                root.move(root.rowLength * 3);
+            } else if (event.key === Qt.Key_Home) {
+                root.move(-root.entries.length);
+            } else if (event.key === Qt.Key_End) {
+                root.move(root.entries.length);
+            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                root.apply(root.focused);
+            } else if (event.key === Qt.Key_Backtab) {
+                root.setSource(root.live ? "images" : "live");
+            } else if (event.key === Qt.Key_Tab) {
+                root.cycleView(false);
+            } else if (event.key === Qt.Key_Slash) {
+                root.focusSearch();
+            } else if (event.key === Qt.Key_F) {
+                root.toggleFavorite(root.focused);
+            } else if (event.key === Qt.Key_C && root.live && root.focused) {
+                Wallpapers.toggleCollection(root.focused.key);
+            } else if (event.key === Qt.Key_L) {
+                root.toggleLayout();
+            } else {
+                return;
+            }
+            event.accepted = true;
         }
     }
 
-    GridView {
-        id: grid
-        width: root.inner
-        readonly property int columns: 4
-        cellWidth: Math.floor(width / columns)
-        cellHeight: Math.round(cellWidth * 0.625) + (root.tab === "live" ? 22 : 0)
-        height: Math.min(cellHeight * 3 + 4, Math.max(cellHeight, contentHeight))
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        cacheBuffer: cellHeight
-        Keys.onEscapePressed: PanelRouter.close(root.screen.name)
-        focus: true
+    Loader {
+        id: layoutLoader
+        width: parent.width
+        height: root.carousel ? parent.height : implicitHeight
+        sourceComponent: root.carousel ? carouselLayout : gridLayout
+    }
 
-        model: ScriptModel {
-            values: root.tab === "live" ? Wallpapers.live : Wallpapers.images.map(p => ({
-                        path: p
-                    }))
-            objectProp: root.tab === "live" ? "id" : "path"
+    // ════ shared pieces ════════════════════════════════════════════════════
+
+    // source, search, sort and layout on one line
+    Component {
+        id: toolbar
+        Item {
+            height: 48
+
+            Segmented {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 236
+                current: root.live ? "live" : "images"
+                options: [
+                    { key: "images", label: "Images" },
+                    { key: "live", label: "Wallpaper Engine" }
+                ]
+                onPicked: key => root.setSource(key)
+            }
+
+            Row {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Metrics.s1
+
+                SearchField {
+                    id: field
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 220
+                    placeholder: root.live ? "Search Workshop titles" : "Search images"
+                    onTextChanged: {
+                        if (root.query !== text) {
+                            root.query = text;
+                            root.focusIndex = 0;
+                        }
+                    }
+                    onMoved: delta => root.move(delta * root.rowLength)
+                    onTabbed: back => root.cycleView(back)
+                    onAccepted: root.apply(root.focused)
+                    onEscaped: keys.forceActiveFocus()
+                    Connections {
+                        target: root
+                        function onQueryChanged(): void {
+                            if (field.text !== root.query)
+                                field.text = root.query;
+                        }
+                        function onFocusSearch(): void {
+                            field.focusField();
+                        }
+                    }
+                }
+                IconButton {
+                    id: sortButton
+                    anchors.verticalCenter: parent.verticalCenter
+                    readonly property var order: ["az", "za", "newest", "oldest"]
+                    readonly property var glyphs: ({ az: "sort-ascending", za: "sort-descending", newest: "clock", oldest: "history" })
+                    icon: glyphs[Wallpapers.browse.sort] ?? "sort-ascending"
+                    tone: "muted"
+                    enabled: root.view === "installed" || root.view === "all" || root.view.startsWith("folder:")
+                    onClicked: {
+                        const i = order.indexOf(Wallpapers.browse.sort);
+                        Wallpapers.browse = Object.assign({}, Wallpapers.browse, { sort: order[(i + 1) % order.length] });
+                    }
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: root.carousel ? "layout-grid" : "layout-collage"
+                    tone: "muted"
+                    onClicked: root.toggleLayout()
+                }
+            }
         }
+    }
 
-        delegate: Item {
-            id: cell
-            required property var modelData
-            readonly property bool live: root.tab === "live"
-            readonly property string source: live ? (modelData.preview ?? "") : modelData.path
-            readonly property bool current: live ? Wallpapers.mode === "live" && modelData.id === Wallpapers.liveCurrent : Wallpapers.mode === "static" && modelData.path === Wallpapers.current
+    // the views, as chips that scroll sideways when there are many folders
+    Component {
+        id: viewChips
+        Flickable {
+            height: 32
+            contentWidth: viewRow.implicitWidth
+            flickableDirection: Flickable.HorizontalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            clip: true
 
-            width: grid.cellWidth
-            height: grid.cellHeight
+            Row {
+                id: viewRow
+                spacing: Metrics.s1
+                Repeater {
+                    model: root.views
+                    delegate: Chip {
+                        required property var modelData
+                        text: modelData.label
+                        icon: modelData.icon
+                        count: modelData.count
+                        active: root.view === modelData.key
+                        onClicked: root.setView(modelData.key)
+                    }
+                }
+            }
+        }
+    }
 
-            Rectangle {
-                id: frame
-                x: Metrics.s1
-                y: Metrics.s1
-                width: parent.width - Metrics.s1 * 2
-                height: Math.round(width * 0.625)
-                radius: Metrics.radiusMd
-                color: Theme.hover
-                border.width: cell.current ? 2 : 0
-                border.color: Theme.accent
-                scale: hover.containsMouse ? 1.025 : 1
+    // the source's own controls: the live carousel and stop; for images a count, random and rescan
+    Component {
+        id: sourceActions
+        Item {
+            height: 40
 
-                Behavior on scale {
-                    NumberAnimation {
-                        duration: Motion.focus
-                        easing.type: Motion.standardEasing
+            Row {
+                visible: root.live
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Metrics.s3
+
+                Toggle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: Wallpapers.carousel.enabled
+                    onToggled: Wallpapers.setCarousel(!Wallpapers.carousel.enabled, Wallpapers.carousel.interval, Wallpapers.carousel.order)
+                }
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "label"
+                    text: "Rotate the collection"
+                }
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+                    opacity: Wallpapers.carousel.enabled ? 1 : 0.45
+                    Repeater {
+                        // the presets, plus an interval set elsewhere (IPC accepts any from 10 s)
+                        readonly property var presets: [{ s: 60, l: "1m" }, { s: 300, l: "5m" }, { s: 900, l: "15m" }, { s: 1800, l: "30m" }, { s: 3600, l: "1h" }]
+                        readonly property int interval: Wallpapers.carousel.interval
+                        model: presets.some(p => p.s === interval) ? presets : [{ s: interval, l: interval < 60 ? interval + "s" : interval % 60 === 0 ? (interval / 60) + "m" : interval + "s" }].concat(presets)
+                        delegate: Chip {
+                            required property var modelData
+                            text: modelData.l
+                            active: Wallpapers.carousel.interval === modelData.s
+                            onClicked: Wallpapers.setCarousel(Wallpapers.carousel.enabled, modelData.s, Wallpapers.carousel.order)
+                        }
+                    }
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "arrows-shuffle"
+                    active: Wallpapers.carousel.order === "shuffle"
+                    tone: "muted"
+                    onClicked: Wallpapers.setCarousel(Wallpapers.carousel.enabled, Wallpapers.carousel.interval, Wallpapers.carousel.order === "shuffle" ? "sequential" : "shuffle")
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "player-skip-forward-filled"
+                    tone: "muted"
+                    enabled: Wallpapers.liveCollection.length > 1
+                    onClicked: Wallpapers.nextLive()
+                }
+            }
+
+            Row {
+                visible: !root.live
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Metrics.s2
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "caption"
+                    tone: "faint"
+                    text: Wallpapers.images.length + " images in " + Wallpapers.directory.replace(Paths.home, "~")
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "arrows-shuffle"
+                    tone: "muted"
+                    onClicked: Wallpapers.random()
+                }
+                IconButton {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "refresh"
+                    tone: "muted"
+                    onClicked: Wallpapers.rescan()
+                }
+                // which screen an image goes to, once there is more than one
+                Row {
+                    visible: Quickshell.screens.length > 1
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+                    Chip {
+                        icon: "device-desktop"
+                        text: "All screens"
+                        active: (Wallpapers.browse.output ?? "") === ""
+                        onClicked: Wallpapers.browse = Object.assign({}, Wallpapers.browse, { output: "" })
+                    }
+                    Repeater {
+                        model: Quickshell.screens
+                        delegate: Chip {
+                            required property var modelData
+                            text: modelData.name
+                            active: Wallpapers.browse.output === modelData.name
+                            onClicked: Wallpapers.browse = Object.assign({}, Wallpapers.browse, { output: modelData.name })
+                        }
+                    }
+                }
+            }
+
+            Row {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Metrics.s3
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: text !== ""
+                    role: "caption"
+                    tone: Wallpapers.error !== "" ? "danger" : "faint"
+                    text: Wallpapers.error !== "" ? Wallpapers.error : root.live && Wallpapers.unsupported > 0 && root.view === "installed" ? Wallpapers.unsupported + " can’t be rendered on Linux" : ""
+                }
+                Chip {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Wallpapers.mode === "live"
+                    icon: "player-stop-filled"
+                    text: "Stop live"
+                    onClicked: Wallpapers.stopLive()
+                }
+            }
+        }
+    }
+
+    // what to say when a view is empty
+    readonly property string emptyText: Wallpapers.scanning || (live && Wallpapers.discovering) ? "Looking…" : live && Wallpapers.problem !== "" ? Wallpapers.problem : query !== "" ? "Nothing matches “" + query + "”" : view === "favorites" ? "Right-click or press F to make a favourite" : view === "collection" ? "Press C to add to the collection the carousel rotates through" : view === "recent" ? "Wallpapers you apply appear here" : "No wallpapers in " + Wallpapers.directory
+
+    // ════ carousel ═════════════════════════════════════════════════════════
+    Component {
+        id: carouselLayout
+
+        Item {
+            id: stage
+            readonly property alias controlCard: controls
+
+            // a click on the dimmed desktop leaves
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.close()
+                onWheel: wheel => band.scrollBy(wheel)
+            }
+
+            // ── the control card ──
+            Glass {
+                id: controls
+                anchors.horizontalCenter: parent.horizontalCenter
+                y: Math.round(parent.height * 0.06)
+                width: Math.min(1000, parent.width - Metrics.s6 * 2)
+                height: controlColumn.implicitHeight + Metrics.s4 * 2
+                radius: Metrics.radiusXl
+                raised: true
+                opacity: root.visibleProgress
+                transform: Translate {
+                    y: (1 - root.visibleProgress) * -Motion.revealOffset
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                }
+                Column {
+                    id: controlColumn
+                    x: Metrics.s5
+                    y: Metrics.s4
+                    width: parent.width - Metrics.s5 * 2
+                    spacing: Metrics.s2
+
+                    Loader {
+                        width: parent.width
+                        sourceComponent: toolbar
+                    }
+                    Loader {
+                        width: parent.width
+                        sourceComponent: viewChips
+                    }
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.hairline
+                    }
+                    Loader {
+                        width: parent.width
+                        sourceComponent: sourceActions
+                    }
+                }
+            }
+
+            // ── the band ──
+            Item {
+                id: band
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: controls.bottom
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Metrics.s6
+
+                // geometry after the native carousel (carousel_geometry.h): cards on an arc of 63°
+                readonly property real arc: 3 * 0.3665
+                readonly property real minScale: 0.52
+                readonly property real falloff: 0.6
+                readonly property real preferred: Config.wallpaper.card_width >= 320 ? Math.min(1400, Config.wallpaper.card_width) : 760
+                readonly property real cardW: width <= 1920 ? Math.min(preferred, width * 0.40) : preferred
+                readonly property real aspect: (root.screen?.height ?? 1080) / (root.screen?.width ?? 1920)
+                readonly property real cardH: Math.round(cardW * aspect)
+                readonly property real stride: cardW * 0.66
+                readonly property var fit: fitArc(width, cardW, stride)
+                readonly property real radius: stride / fit.step
+
+                function depthAt(theta: real): real {
+                    const span = 1 - Math.cos(arc);
+                    return Math.max(0, Math.min(1, (1 - Math.cos(theta)) / span));
+                }
+                function scaleAt(depth: real): real {
+                    return 1 - (1 - minScale) * Math.pow(depth, falloff);
+                }
+                // as many cards a side as stay legible and show enough of themselves past their neighbour
+                function fitArc(viewport: real, w: real, s: real): var {
+                    let per = 0;
+                    for (let n = 1; n <= 6; n++) {
+                        const step = arc / (n + 1);
+                        const r = s / step;
+                        const centre = viewport / 2;
+                        let nearer = centre + w / 2, fits = true;
+                        for (let k = 1; k <= n && fits; k++) {
+                            const th = k * step;
+                            const sc = scaleAt(depthAt(th));
+                            const half = w * sc / 2;
+                            const x = centre + r * Math.sin(th);
+                            const exposed = Math.min(x + half, viewport) - Math.max(x - half, nearer);
+                            fits = sc >= 0.42 && exposed >= 0.2 * 2 * half;
+                            nearer = Math.max(nearer, x + half);
+                        }
+                        if (!fits)
+                            break;
+                        per = n;
+                    }
+                    return { perSide: Math.max(1, per), step: arc / (Math.max(1, per) + 1) };
+                }
+
+                // the focus glides; a long jump (a new view) lands at once
+                property real pos: root.focusIndex
+                property bool glide: true
+                Behavior on pos {
+                    enabled: band.glide && Motion.springs
+                    SpringAnimation {
+                        spring: Motion.spring
+                        damping: Motion.damping
+                        epsilon: 0.002
+                    }
+                }
+                Connections {
+                    target: root
+                    function onFocusIndexChanged(): void {
+                        band.glide = Math.abs(root.focusIndex - band.pos) <= band.fit.perSide + 2;
+                        band.pos = root.focusIndex;
                     }
                 }
 
-                Image {
-                    anchors.fill: parent
-                    anchors.margins: cell.current ? 3 : 0
-                    source: cell.source !== "" ? "file://" + cell.source : ""
-                    sourceSize.width: Math.min(ExperiencePolicy.thumbnailSize, Math.round(frame.width * 1.5))
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                    smooth: true
-                    opacity: status === Image.Ready ? 1 : 0
+                property real wheelRest: 0
+                function scrollBy(wheel: var): void {
+                    wheelRest += (wheel.angleDelta.x !== 0 ? -wheel.angleDelta.x : -wheel.angleDelta.y);
+                    while (Math.abs(wheelRest) >= 120) {
+                        root.move(wheelRest > 0 ? 1 : -1);
+                        wheelRest -= wheelRest > 0 ? 120 : -120;
+                    }
+                }
 
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Motion.contentIn
+                // only the neighbourhood exists: the arc and one card past each end
+                readonly property int lo: Math.max(0, root.focusIndex - fit.perSide - 3)
+                readonly property var window: root.entries.slice(lo, root.focusIndex + fit.perSide + 4)
+                readonly property real centreY: height * 0.44
+
+                Repeater {
+                    model: ScriptModel {
+                        values: band.window
+                        objectProp: "key"
+                    }
+
+                    delegate: Item {
+                        id: card
+                        required property var modelData
+                        required property int index
+                        readonly property int entryIndex: band.lo + index
+                        readonly property real offset: entryIndex - band.pos
+                        readonly property real theta: offset * band.fit.step
+                        readonly property real depth: band.depthAt(Math.abs(theta))
+                        readonly property real cardScale: band.scaleAt(depth)
+                        readonly property bool focused: entryIndex === root.focusIndex
+                        readonly property bool shown: Math.abs(offset) <= band.fit.perSide + 1
+
+                        visible: shown
+                        width: band.cardW
+                        height: band.cardH
+                        x: band.width / 2 + band.radius * Math.sin(Math.max(-Math.PI / 2, Math.min(Math.PI / 2, theta))) - width / 2
+                        y: band.centreY - height / 2 + depth * band.cardH * 0.10
+                        z: 100 - Math.abs(offset) * 10
+                        scale: cardScale
+                        opacity: (1 - depth * 0.55) * root.visibleProgress
+
+                        // shadow under the card, only where it reads (the focus and its neighbours)
+                        RectangularShadow {
+                            anchors.fill: frameRect
+                            visible: ExperiencePolicy.shadows && Math.abs(card.offset) < 2
+                            radius: frameRect.radius
+                            blur: 36
+                            spread: 0
+                            offset.y: 12
+                            color: Theme.alpha(Theme.shadow, 0.55 * (1 - card.depth))
+                        }
+                        Rectangle {
+                            id: frameRect
+                            anchors.fill: parent
+                            radius: Metrics.radiusLg
+                            color: Theme.well
+                        }
+                        Image {
+                            id: low
+                            anchors.fill: parent
+                            source: card.modelData.thumb
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            visible: false
+                        }
+                        // the focused card is promoted to a sharp image once it is there
+                        Image {
+                            id: sharp
+                            anchors.fill: parent
+                            source: card.focused ? card.modelData.still : ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            visible: false
+                        }
+                        AnimatedImage {
+                            id: moving
+                            anchors.fill: parent
+                            source: card.focused && ExperiencePolicy.richEffects && root.active ? card.modelData.animated : ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            playing: status === AnimatedImage.Ready
+                            visible: false
+                        }
+                        MultiEffect {
+                            anchors.fill: parent
+                            source: moving.status === AnimatedImage.Ready ? moving : sharp.status === Image.Ready ? sharp : low
+                            maskEnabled: true
+                            maskSource: cardMask
+                            maskThresholdMin: 0.5
+                            maskSpreadAtMin: 1
+                            opacity: low.status === Image.Ready || sharp.status === Image.Ready ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: Motion.contentIn
+                                }
+                            }
+                        }
+                        Rectangle {
+                            id: cardMask
+                            anchors.fill: parent
+                            radius: Metrics.radiusLg
+                            visible: false
+                            layer.enabled: true
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            visible: low.status === Image.Error || card.modelData.thumb === ""
+                            name: "photo-off"
+                            size: 28
+                            tone: "faint"
+                        }
+                        // the focus ring; the showing-now card keeps a quiet one
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            radius: Metrics.radiusLg + 4
+                            color: "transparent"
+                            border.width: card.focused ? 2 : card.modelData.current ? 1 : 0
+                            border.color: card.focused ? Theme.accent : Theme.accentLine
+                        }
+                        Row {
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Metrics.s3
+                            spacing: 4
+                            Badge {
+                                visible: card.modelData.collected && root.view !== "collection"
+                                icon: "stack-2"
+                            }
+                            Badge {
+                                visible: card.modelData.favorite
+                                icon: "heart-filled"
+                                accent: true
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            onClicked: mouse => {
+                                if (mouse.button === Qt.RightButton)
+                                    root.toggleFavorite(card.modelData);
+                                else
+                                    root.activate(card.entryIndex);
+                                keys.forceActiveFocus();
+                            }
+                            onWheel: wheel => band.scrollBy(wheel)
                         }
                     }
                 }
 
-                MouseArea {
-                    id: hover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: cell.live ? Wallpapers.applyLive(cell.modelData.id) : Wallpapers.applyImage(cell.modelData.path)
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: band.centreY - height / 2
+                    visible: root.entries.length === 0
+                    role: "title"
+                    tone: "muted"
+                    text: root.emptyText
                 }
-            }
-            Label {
-                visible: cell.live
-                anchors.top: frame.bottom
-                anchors.topMargin: 3
-                x: Metrics.s1
-                width: frame.width
-                role: "caption"
-                tone: cell.current ? "accent" : "muted"
-                text: cell.modelData.title ?? ""
+
+                // ── what the focused card is, and what can be done with it ──
+                Column {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: band.centreY + band.cardH / 2 + Metrics.s5
+                    width: Math.min(band.cardW * 1.4, parent.width - Metrics.s6 * 2)
+                    spacing: Metrics.s3
+                    visible: root.focused !== null
+                    opacity: root.visibleProgress
+
+                    Column {
+                        width: parent.width
+                        spacing: 2
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            role: "headline"
+                            font.weight: Font.Light
+                            text: root.focused?.title ?? ""
+                        }
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignHCenter
+                            role: "caption"
+                            tone: "muted"
+                            text: {
+                                const f = root.focused;
+                                if (!f)
+                                    return "";
+                                const where = root.live ? "Wallpaper Engine · " + f.subtitle : f.subtitle;
+                                const state = f.current ? (root.live && Wallpapers.livePending === f.key ? "starting" : "showing now") : "";
+                                return [where, state, (root.focusIndex + 1) + " of " + root.entries.length].filter(s => s !== "").join("  ·  ");
+                            }
+                        }
+                    }
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: Metrics.s2
+
+                        RoundButton {
+                            icon: root.focused?.favorite ? "heart-filled" : "heart"
+                            on: root.focused?.favorite ?? false
+                            onClicked: root.toggleFavorite(root.focused)
+                        }
+                        RoundButton {
+                            visible: root.live
+                            icon: root.focused?.collected ? "check" : "plus"
+                            on: root.focused?.collected ?? false
+                            onClicked: Wallpapers.toggleCollection(root.focused.key)
+                        }
+                        ApplyButton {
+                            showing: root.focused?.current ?? false
+                            onClicked: root.apply(root.focused)
+                        }
+                    }
+                }
             }
         }
     }
 
-    Label {
-        visible: grid.count === 0
-        width: root.inner
-        height: 64
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        role: "label"
-        tone: "faint"
-        text: Wallpapers.loading ? "" : root.tab === "live" ? "No live wallpapers in the collection" : "No images in " + Wallpapers.directory
+    // ════ grid ═════════════════════════════════════════════════════════════
+    Component {
+        id: gridLayout
+
+        Column {
+            spacing: 0
+            Component.onCompleted: root.rowLength = Qt.binding(() => grid.columns)
+            Component.onDestruction: root.rowLength = 1
+
+            // the focused wallpaper, large, cross-faded
+            Item {
+                id: hero
+                width: parent.width
+                height: Math.round(width * 0.30)
+                clip: true
+
+                Item {
+                    id: heroImages
+                    anchors.fill: parent
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: heroMask
+                        maskThresholdMin: 0.5
+                        maskSpreadAtMin: 1
+                    }
+
+                    property string source: root.focused?.still ?? ""
+                    property bool flip: false
+                    onSourceChanged: {
+                        if (flip)
+                            a.source = source;
+                        else
+                            b.source = source;
+                        flip = !flip;
+                    }
+                    Image {
+                        id: a
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        opacity: !heroImages.flip && status === Image.Ready ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Motion.contentIn
+                                easing.type: Motion.standardEasing
+                            }
+                        }
+                    }
+                    Image {
+                        id: b
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        opacity: heroImages.flip && status === Image.Ready ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Motion.contentIn
+                                easing.type: Motion.standardEasing
+                            }
+                        }
+                    }
+                    AnimatedImage {
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        source: ExperiencePolicy.richEffects && root.active ? (root.focused?.animated ?? "") : ""
+                        playing: status === AnimatedImage.Ready
+                        opacity: status === AnimatedImage.Ready ? 1 : 0
+                    }
+                    Rectangle {
+                        anchors.fill: parent
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.35
+                                color: "transparent"
+                            }
+                            GradientStop {
+                                position: 1
+                                color: Theme.alpha(Theme.base, 0.86)
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    id: heroMask
+                    anchors.fill: parent
+                    visible: false
+                    layer.enabled: true
+                    radius: Metrics.radiusLg
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: parent.radius
+                    }
+                }
+
+                Item {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.margins: Metrics.s5
+                    height: 52
+
+                    Column {
+                        anchors.left: parent.left
+                        anchors.right: heroActions.left
+                        anchors.rightMargin: Metrics.s4
+                        anchors.bottom: parent.bottom
+                        spacing: 2
+                        Label {
+                            width: parent.width
+                            role: "headline"
+                            font.weight: Font.Light
+                            text: root.focused?.title ?? (Wallpapers.scanning || Wallpapers.discovering ? "" : "Nothing here yet")
+                        }
+                        Label {
+                            width: parent.width
+                            role: "caption"
+                            tone: "muted"
+                            text: {
+                                const f = root.focused;
+                                if (!f)
+                                    return "";
+                                const where = root.live ? "Wallpaper Engine · " + f.subtitle : f.subtitle;
+                                return [where, f.current ? "showing now" : ""].filter(s => s !== "").join("  ·  ");
+                            }
+                        }
+                    }
+                    Row {
+                        id: heroActions
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        spacing: Metrics.s2
+                        visible: root.focused !== null
+
+                        RoundButton {
+                            icon: root.focused?.favorite ? "heart-filled" : "heart"
+                            on: root.focused?.favorite ?? false
+                            onClicked: root.toggleFavorite(root.focused)
+                        }
+                        RoundButton {
+                            visible: root.live
+                            icon: root.focused?.collected ? "check" : "plus"
+                            on: root.focused?.collected ?? false
+                            onClicked: Wallpapers.toggleCollection(root.focused.key)
+                        }
+                        ApplyButton {
+                            showing: root.focused?.current ?? false
+                            onClicked: root.apply(root.focused)
+                        }
+                    }
+                }
+            }
+
+            Loader {
+                x: Metrics.s4
+                width: parent.width - Metrics.s4 * 2
+                sourceComponent: toolbar
+            }
+            Loader {
+                x: Metrics.s4
+                width: parent.width - Metrics.s4 * 2
+                sourceComponent: viewChips
+            }
+            Item {
+                width: parent.width
+                height: Metrics.s3
+            }
+
+            GridView {
+                id: grid
+                x: Metrics.s4
+                width: parent.width - Metrics.s4 * 2
+                readonly property int columns: Math.max(3, Math.floor(width / 196))
+                cellWidth: Math.floor(width / columns)
+                cellHeight: Math.round(cellWidth * 0.62) + 26
+                height: cellHeight * 3
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                cacheBuffer: cellHeight * 2
+                currentIndex: root.focusIndex
+                highlightFollowsCurrentItem: false
+                onCurrentIndexChanged: positionViewAtIndex(currentIndex, GridView.Contain)
+
+                model: ScriptModel {
+                    values: root.entries
+                    objectProp: "key"
+                }
+
+                delegate: Item {
+                    id: cell
+                    required property var modelData
+                    required property int index
+                    readonly property bool focused: index === root.focusIndex
+
+                    width: grid.cellWidth
+                    height: grid.cellHeight
+
+                    Item {
+                        id: frame
+                        x: 4
+                        y: 4
+                        width: parent.width - 8
+                        height: Math.round(width * 0.62)
+                        scale: cell.focused ? 1.0 : hover.containsMouse ? 0.985 : 0.965
+
+                        Behavior on scale {
+                            enabled: Motion.springs
+                            SpringAnimation {
+                                spring: Motion.spring
+                                damping: Motion.damping
+                                epsilon: Motion.springEpsilon
+                            }
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Metrics.radiusMd
+                            color: Theme.well
+                        }
+                        Image {
+                            id: thumb
+                            anchors.fill: parent
+                            source: cell.modelData.thumb
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            visible: false
+                        }
+                        MultiEffect {
+                            anchors.fill: parent
+                            source: thumb
+                            maskEnabled: true
+                            maskSource: cellMask
+                            maskThresholdMin: 0.5
+                            maskSpreadAtMin: 1
+                            opacity: thumb.status === Image.Ready ? 1 : 0
+                            Behavior on opacity {
+                                NumberAnimation {
+                                    duration: Motion.contentIn
+                                }
+                            }
+                        }
+                        Rectangle {
+                            id: cellMask
+                            anchors.fill: parent
+                            radius: Metrics.radiusMd
+                            visible: false
+                            layer.enabled: true
+                        }
+                        Icon {
+                            anchors.centerIn: parent
+                            visible: thumb.status === Image.Error || cell.modelData.thumb === ""
+                            name: "photo-off"
+                            size: 20
+                            tone: "faint"
+                        }
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -3
+                            radius: Metrics.radiusMd + 3
+                            color: "transparent"
+                            border.width: cell.focused ? 2 : cell.modelData.current ? 1 : 0
+                            border.color: cell.focused ? Theme.accent : Theme.accentLine
+                        }
+                        Rectangle {
+                            visible: cell.modelData.current
+                            anchors.left: parent.left
+                            anchors.bottom: parent.bottom
+                            anchors.margins: Metrics.s2
+                            width: 8
+                            height: 8
+                            radius: 4
+                            color: Theme.accent
+                            border.width: 2
+                            border.color: Theme.alpha(Theme.base, 0.7)
+                        }
+                        Row {
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                            anchors.margins: Metrics.s2
+                            spacing: 3
+                            Badge {
+                                visible: cell.modelData.collected && root.view !== "collection"
+                                icon: "stack-2"
+                            }
+                            Badge {
+                                visible: cell.modelData.favorite
+                                icon: "heart-filled"
+                                accent: true
+                            }
+                        }
+                        MouseArea {
+                            id: hover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            onClicked: mouse => {
+                                if (mouse.button === Qt.RightButton)
+                                    root.toggleFavorite(cell.modelData);
+                                else {
+                                    root.focusIndex = cell.index;
+                                    root.apply(cell.modelData);
+                                }
+                                keys.forceActiveFocus();
+                            }
+                        }
+                    }
+                    Label {
+                        anchors.top: frame.bottom
+                        anchors.topMargin: 5
+                        x: frame.x + 2
+                        width: frame.width - 4
+                        role: "caption"
+                        tone: cell.focused || cell.modelData.current ? "ink" : "muted"
+                        text: cell.modelData.title
+                    }
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    visible: grid.count === 0
+                    role: "label"
+                    tone: "faint"
+                    text: root.emptyText
+                }
+            }
+
+            Rectangle {
+                width: parent.width - Metrics.s4 * 2
+                x: Metrics.s4
+                height: 1
+                color: Theme.hairline
+            }
+            Loader {
+                x: Metrics.s4
+                width: parent.width - Metrics.s4 * 2
+                height: 52
+                sourceComponent: sourceActions
+            }
+        }
+    }
+
+    // ════ small parts ══════════════════════════════════════════════════════
+    component RoundButton: Rectangle {
+        id: rb
+        property string icon
+        property bool on: false
+        signal clicked
+        width: 38
+        height: 38
+        radius: 19
+        color: rbArea.containsMouse ? Theme.alpha(Theme.base, 0.85) : Theme.alpha(Theme.base, 0.62)
+        border.width: Metrics.hairline
+        border.color: rb.on ? Theme.accentLine : Theme.hairline
+        Icon {
+            anchors.centerIn: parent
+            name: rb.icon
+            size: 16
+            tone: rb.on ? "accent" : "ink"
+        }
+        MouseArea {
+            id: rbArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: rb.clicked()
+        }
+    }
+
+    // Apply, or a quiet "Showing" once it is the wallpaper
+    component ApplyButton: Rectangle {
+        id: ab
+        property bool showing: false
+        signal clicked
+        width: abRow.implicitWidth + Metrics.s5 * 2
+        height: 38
+        radius: 19
+        color: showing ? Theme.alpha(Theme.base, 0.62) : Theme.accent
+        border.width: showing ? Metrics.hairline : 0
+        border.color: Theme.accentLine
+        opacity: abArea.pressed ? 0.85 : 1
+        Row {
+            id: abRow
+            anchors.centerIn: parent
+            spacing: Metrics.s2
+            Icon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: ab.showing ? "check" : "corner-down-left"
+                size: 15
+                color: ab.showing ? Theme.accent : Theme.onAccent
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "label"
+                font.weight: Font.Medium
+                color: ab.showing ? Theme.accent : Theme.onAccent
+                text: ab.showing ? "Showing" : "Apply"
+            }
+        }
+        MouseArea {
+            id: abArea
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: ab.clicked()
+        }
+    }
+
+    component Badge: Rectangle {
+        property string icon
+        property bool accent: false
+        width: 22
+        height: 22
+        radius: 11
+        color: Theme.alpha(Theme.base, 0.72)
+        Icon {
+            anchors.centerIn: parent
+            name: parent.icon
+            size: 12
+            tone: parent.accent ? "accent" : "muted"
+        }
     }
 }

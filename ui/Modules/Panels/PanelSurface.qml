@@ -20,11 +20,13 @@ PanelWindow {
         held = entry
 
     readonly property string edge: held?.edge ?? "top"
-    readonly property int panelWidth: content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width
-    readonly property real cardHeight: content.implicitHeight
+    // a bare panel (the wallpaper carousel) covers the screen and draws its own surfaces over a dimmed desktop
+    readonly property bool bare: content.bare
+    readonly property int panelWidth: bare ? sw : content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width
+    readonly property real cardHeight: bare ? sh : content.implicitHeight
     // the window grows at once and shrinks after the card has, so it never resizes every frame
     readonly property real windowCardHeight: Math.max(cardHeight, card.height)
-    readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
+    readonly property int pad: bare ? 0 : ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
     readonly property int gap: Metrics.s3
     readonly property int screenMargin: Metrics.s3
     readonly property real sw: screen?.width ?? 1920
@@ -39,8 +41,8 @@ PanelWindow {
 
     // the card's rectangle on screen
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
-    readonly property real cardX: edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: edge === "center" ? Math.round(sh * content.preferredTop) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    readonly property real cardX: bare ? 0 : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
+    readonly property real cardY: bare ? 0 : edge === "center" ? Math.round(sh * content.preferredTop) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
     readonly property real winX: Math.max(0, cardX - pad)
     readonly property real winY: Math.max(0, cardY - pad)
 
@@ -66,8 +68,16 @@ PanelWindow {
 
     BlurRegion {
         window: win
-        item: card
-        radius: Metrics.radiusXl
+        item: win.bare ? content.blurItem : card
+        radius: win.bare ? Metrics.radiusXl : Metrics.radiusXl
+    }
+
+    // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through
+    Rectangle {
+        anchors.fill: parent
+        visible: win.bare
+        color: Theme.alpha(Theme.base, 0.55)
+        opacity: win.revealed
     }
 
     // 0 = gone, 1 = in place
@@ -138,7 +148,10 @@ PanelWindow {
         width: win.panelWidth
         height: win.cardHeight
         radius: Metrics.radiusXl
-        raised: true
+        raised: !win.bare
+        fill: win.bare ? "transparent" : Theme.glass
+        edge: !win.bare
+        sheen: !win.bare && ExperiencePolicy.effectsQuality !== "minimal"
 
         Behavior on height {
             enabled: win.revealed > 0.99

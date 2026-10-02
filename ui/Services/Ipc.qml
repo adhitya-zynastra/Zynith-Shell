@@ -36,7 +36,8 @@ Singleton {
             case "clipboard":
             case "wallpaper":
             case "session":
-                PanelRouter.toggle(name, screen, { edge: "center" });
+                // an argument picks what the panel opens on, e.g. wallpaper live
+                PanelRouter.toggle(name, screen, { edge: "center", context: args });
                 break;
             case "control":
             case "notifications":
@@ -47,6 +48,9 @@ Singleton {
                 break;
             case "close":
                 PanelRouter.closeAll();
+                break;
+            case "event":
+                Events.dispatch(args);
                 break;
             case "brightness":
                 // up | down | <0-100>
@@ -136,7 +140,7 @@ Singleton {
                 spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
                 network: { connected: Network.connected, kind: NetworkState.kind, strength: Number(Network.strength.toFixed(2)), wifi: Network.wifiEnabled, listed: Network.networks.length, consumers: NetworkState.consumers },
-                core: { known: Core.known, clipboardEntries: Clipboard.entries.length, wallpaperMode: Wallpapers.mode, liveItems: Wallpapers.live.length, staticKnown: Wallpapers.current !== "" },
+                core: { known: Core.known, clipboardEntries: Clipboard.entries.length, wallpaperMode: Wallpapers.mode, liveItems: Object.keys(Wallpapers.liveItems).length, staticKnown: Wallpapers.current !== "" },
                 notifications: { serving: Notifications.serving, wanted: Notifications.wanted, history: Notifications.history.length, popups: Notifications.popups.length, dnd: Notifications.dnd },
                 windowBehaviour: { value: Config.window.behaviour, included: WindowBehaviour.included, error: WindowBehaviour.status },
                 launchTime: Quickshell.launchTime

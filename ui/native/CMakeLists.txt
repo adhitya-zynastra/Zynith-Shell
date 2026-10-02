@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Qml Network DBus)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Qml Quick Network DBus)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PIPEWIRE REQUIRED IMPORTED_TARGET libpipewire-0.3)
 pkg_check_modules(TOMLPP REQUIRED IMPORTED_TARGET tomlplusplus)
@@ -29,11 +29,12 @@ qt_add_qml_module(zynith_native
         src/core_client.h src/core_client.cpp
         src/config_file.h src/config_file.cpp
         src/command_server.h src/command_server.cpp
+        src/thumbnails.h src/thumbnails.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(zynith_native PRIVATE -Wall -Wextra)
-target_link_libraries(zynith_native PRIVATE Qt6::Core Qt6::Qml Qt6::Network Qt6::DBus PkgConfig::PIPEWIRE PkgConfig::TOMLPP)
+target_link_libraries(zynith_native PRIVATE Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick Qt6::Network Qt6::DBus PkgConfig::PIPEWIRE PkgConfig::TOMLPP)
 
 # backing library and plugin live side by side in the module directory
 set_target_properties(zynith_native PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/qml/Zynith/Native)
