@@ -117,11 +117,24 @@ Column {
                 }
             }
             Label {
-                anchors.right: parent.right
+                id: headerClock
+                anchors.right: settingsButton.left
+                anchors.rightMargin: Metrics.s2
                 anchors.verticalCenter: parent.verticalCenter
                 role: "display2"
                 numeric: true
                 text: Qt.formatTime(Time.now, "HH:mm")
+            }
+            IconButton {
+                id: settingsButton
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                icon: "settings"
+                tone: "muted"
+                onClicked: {
+                    PanelRouter.close(root.screen.name);
+                    Quickshell.execDetached([Quickshell.shellPath("zynith-ui"), "settings"]);
+                }
             }
         }
     }
