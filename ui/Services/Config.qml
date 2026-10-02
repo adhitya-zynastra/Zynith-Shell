@@ -17,6 +17,7 @@ Singleton {
     readonly property alias window: adapter.window
     readonly property alias launcher: adapter.launcher
     readonly property alias notifications: adapter.notifications
+    readonly property alias wallpaper: adapter.wallpaper
     property bool loaded: false
 
     function setExperienceProfile(name: string): void {
@@ -118,6 +119,11 @@ Singleton {
             property JsonObject launcher: JsonObject {
                 // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
                 property list<string> terminal: []
+            }
+
+            // where the Wallpaper panel looks for images ("" = ~/Pictures/wallpapers)
+            property JsonObject wallpaper: JsonObject {
+                property string directory: ""
             }
 
             property JsonObject notifications: JsonObject {

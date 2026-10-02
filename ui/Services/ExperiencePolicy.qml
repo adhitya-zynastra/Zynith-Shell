@@ -49,7 +49,7 @@ Singleton {
                 springs: false,
                 stagger: false,
                 blurQuality: "off",
-                glassOpacity: 0.94,
+                glassOpacity: 0.97,
                 shadowQuality: "none",
                 effectsQuality: "minimal",     // no sheen, no glow, no hover lift
                 visualizerQuality: "off",

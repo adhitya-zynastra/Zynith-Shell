@@ -37,9 +37,10 @@ Singleton {
     readonly property color accentLine: alpha(pal("primary"), 0.55)
     readonly property color danger: pal("error")
 
-    // glass: a tinted, near-opaque sheet when blur is off; thinner when the compositor blurs behind it
+    // glass: a near-opaque sheet when blur is off (even 6 % of bright text behind it shows); thinner when the
+    // compositor blurs behind it
     readonly property color glass: alpha(mix(pal("surface_container_lowest"), pal("surface_container_low"), 0.5),
-        ExperiencePolicy.blur ? ExperiencePolicy.glassOpacity : Math.max(0.9, ExperiencePolicy.glassOpacity))
+        ExperiencePolicy.blur ? ExperiencePolicy.glassOpacity : Math.max(0.97, ExperiencePolicy.glassOpacity))
     readonly property color glassRaised: alpha(pal("surface_container_high"), ExperiencePolicy.blur ? 0.55 : 0.92)
     readonly property color hairline: alpha(pal("outline_variant"), 0.55)
     readonly property color sheen: alpha("#ffffff", ExperiencePolicy.richEffects ? 0.07 : 0.04)

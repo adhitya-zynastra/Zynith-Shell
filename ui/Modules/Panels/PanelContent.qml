@@ -29,7 +29,8 @@ Item {
             launcher: launcher,
             clipboard: clipboard,
             notifications: notifications,
-            quick: quick
+            quick: quick,
+            wallpaper: wallpaper
         })
 
     onPanelIdChanged: {
@@ -98,6 +99,10 @@ Item {
     Component {
         id: quick
         QuickSettingsPanel {}
+    }
+    Component {
+        id: wallpaper
+        WallpaperPanel {}
     }
 
     Loader {
