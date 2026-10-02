@@ -14,6 +14,9 @@ ShellRoot {
     // singletons are created on first use; IPC must exist from the start
     readonly property var ipc: Ipc
 
+    // this instance writes the generated niri layout fragment; Settings only edits shell.json
+    Component.onCompleted: WindowBehaviour.writer = true
+
     Bars {}
     PanelHost {}
     Osd {}

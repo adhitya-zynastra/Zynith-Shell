@@ -104,9 +104,9 @@ Singleton {
                 property int width: 400
             }
 
-            // scrolling | tiling-like; the native shell turns it into a niri fragment
+            // config (niri's layout block as written) | scrolling | tiling-like; written to rice/layout.kdl
             property JsonObject window: JsonObject {
-                property string behaviour: "scrolling"
+                property string behaviour: "config"
             }
 
             property JsonObject launcher: JsonObject {

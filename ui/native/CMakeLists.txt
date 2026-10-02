@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.21)
 project(zynith-native LANGUAGES CXX)
 
 # Zynith.Native: the in-process C++ half of the UI. Only what QML should not do itself — compositor event
-# parsing, sampling, signal processing. Built against Qt's public API only, so it survives Qt minor updates.
+# parsing, sampling, signal processing, validated config writes. Built against Qt's public API only, so it survives Qt minor updates.
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,6 +22,7 @@ qt_add_qml_module(zynith_native
     SOURCES
         src/niri_state.h src/niri_state.cpp
         src/audio_spectrum.h src/audio_spectrum.cpp
+        src/niri_config.h src/niri_config.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

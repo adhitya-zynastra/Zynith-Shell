@@ -12,14 +12,19 @@ Column {
 
     readonly property var choices: [
         {
+            key: "config",
+            title: "As configured",
+            text: "The layout block in niri's config.kdl applies exactly as written. Zynith adds nothing."
+        },
+        {
             key: "scrolling",
             title: "Scrolling",
-            text: "Windows open beside each other on an endless strip and the view scrolls to them. niri's own way."
+            text: "Windows open at the width they ask for on an endless strip; the view scrolls, centring the focused window when it does not fit."
         },
         {
             key: "tiling-like",
             title: "Tiling-like",
-            text: "New columns open at half the screen, with ⅓ · ½ · ⅔ · full presets and expand / center actions. Existing windows are never resized when one opens; a third column still scrolls."
+            text: "New windows take half the screen, so two share it side by side, with ⅓ · ½ · ⅔ · full presets. Existing windows are never resized when one opens; a third window still scrolls. niri has no master/stack tiling."
         }
     ]
 
@@ -73,9 +78,11 @@ Column {
     Label {
         width: root.width
         role: "caption"
-        tone: "faint"
+        tone: WindowBehaviour.status !== "" || !WindowBehaviour.included ? "accent" : "faint"
         wrapMode: Text.WordWrap
         elide: Text.ElideNone
-        text: "The choice is stored now; the native shell writes ~/.config/niri/rice/layout.kdl from it (validated with niri validate, applied by niri's live reload). Until that generator ships, this records your preference only."
+        text: WindowBehaviour.status !== "" ? "Not applied: " + WindowBehaviour.status
+            : !WindowBehaviour.included ? "niri's config.kdl does not include rice/layout.kdl, so the choice has no effect yet. Add  include \"rice/layout.kdl\"  after its layout block."
+            : "Written to ~/.config/niri/rice/layout.kdl after niri has validated it; niri applies it at once. Windows already open keep their size."
     }
 }

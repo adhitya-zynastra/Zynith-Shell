@@ -33,6 +33,11 @@ Singleton {
         function apps(query: string): string {
             return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");
         }
+        // config | scrolling | tiling-like
+        function behaviour(name: string): string {
+            Config.setWindowBehaviour(name);
+            return Config.window.behaviour;
+        }
         function close(): void {
             PanelRouter.closeAll();
         }
@@ -66,6 +71,7 @@ Singleton {
                 focused: Workspaces.focusedWindow.appId ?? "",
                 spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
+                windowBehaviour: { value: Config.window.behaviour, included: WindowBehaviour.included, error: WindowBehaviour.status },
                 launchTime: Quickshell.launchTime
             });
         }
