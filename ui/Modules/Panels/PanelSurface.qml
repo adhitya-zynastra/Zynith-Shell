@@ -17,6 +17,8 @@ PanelWindow {
     readonly property string edge: entry?.edge ?? "top"
     readonly property int panelWidth: Config.panels.width
     readonly property real cardHeight: content.implicitHeight
+    // the window grows at once and shrinks after the card has, so it never resizes every frame
+    readonly property real windowCardHeight: Math.max(cardHeight, card.height)
     readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
     readonly property int gap: Metrics.s3
     readonly property int screenMargin: Metrics.s3
@@ -50,7 +52,7 @@ PanelWindow {
         top: winY
     }
     implicitWidth: cardX - winX + panelWidth + pad
-    implicitHeight: cardY - winY + cardHeight + pad
+    implicitHeight: cardY - winY + windowCardHeight + pad
 
     mask: Region {
         item: card
@@ -102,6 +104,14 @@ PanelWindow {
         height: win.cardHeight
         radius: Metrics.radiusXl
         raised: true
+
+        Behavior on height {
+            enabled: win.revealed > 0.99
+            NumberAnimation {
+                duration: Motion.morph
+                easing.type: Motion.enterEasing
+            }
+        }
         opacity: win.revealed
 
         // grow from the bar side, a few pixels of travel
@@ -123,15 +133,23 @@ PanelWindow {
             anchors.fill: parent
             focus: true
             Keys.onEscapePressed: PanelRouter.close(win.screen.name)
+            Keys.onBackPressed: PanelRouter.back(win.screen.name)
         }
 
-        PanelContent {
-            id: content
+        // clips content while the card height animates; the shadow stays outside
+        Item {
+            anchors.fill: parent
+            clip: true
 
-            width: parent.width
-            panelId: win.entry?.id ?? ""
-            screen: win.screen
-            visibleProgress: win.revealed
+            PanelContent {
+                id: content
+
+                width: parent.width
+                panelId: win.entry?.id ?? ""
+                history: win.entry?.history ?? []
+                screen: win.screen
+                visibleProgress: win.revealed
+            }
         }
     }
 }

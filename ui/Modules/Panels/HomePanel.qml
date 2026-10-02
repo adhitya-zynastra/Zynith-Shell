@@ -11,6 +11,10 @@ Column {
     property var screen: null
     property real visibleProgress: 1
 
+    function go(id: string): void {
+        PanelRouter.navigate(id, screen.name);
+    }
+
     padding: Metrics.s6
     spacing: Metrics.s5
 
@@ -64,6 +68,14 @@ Column {
         width: root.inner
         height: 64
         opacity: root.stage(1)
+
+        Interactive {
+            anchors.fill: parent
+            anchors.rightMargin: 120
+            anchors.margins: -Metrics.s2
+            radius: Metrics.radiusLg
+            onClicked: root.go("media")
+        }
 
         Rectangle {
             id: art
@@ -189,7 +201,9 @@ Column {
             title: "Wi‑Fi"
             detail: !Network.wifiEnabled ? "Off" : Network.name || "Not connected"
             on: Network.wifiEnabled
+            more: true
             onToggled: Network.setWifiEnabled(!Network.wifiEnabled)
+            onOpened: root.go("network")
         }
         Tile {
             width: (parent.width - parent.spacing) / 2
@@ -197,26 +211,41 @@ Column {
             title: "Bluetooth"
             detail: Bluetooth.available ? Bluetooth.summary : "Unavailable"
             on: Bluetooth.enabled
+            more: true
             onToggled: Bluetooth.setEnabled(!Bluetooth.enabled)
+            onOpened: root.go("bluetooth")
         }
     }
 
     // ── system ──────────────────────────────────────────────────────────────
-    Row {
+    Item {
         width: root.inner
-        spacing: Metrics.s5
+        height: systemRow.implicitHeight
         opacity: root.stage(4)
 
-        Meter {
-            width: (parent.width - parent.spacing) / 2
-            label: "CPU"
-            value: System.cpu
+        Interactive {
+            anchors.fill: parent
+            anchors.margins: -Metrics.s2
+            radius: Metrics.radiusMd
+            onClicked: root.go("system")
         }
-        Meter {
-            width: (parent.width - parent.spacing) / 2
-            label: "Memory"
-            value: System.memUsed
-            readout: (System.memUsed * System.memTotalGiB).toFixed(1) + " / " + System.memTotalGiB.toFixed(0) + " GB"
+
+        Row {
+            id: systemRow
+            width: parent.width
+            spacing: Metrics.s5
+
+            Meter {
+                width: (parent.width - parent.spacing) / 2
+                label: "CPU"
+                value: System.cpu
+            }
+            Meter {
+                width: (parent.width - parent.spacing) / 2
+                label: "Memory"
+                value: System.memUsed
+                readout: (System.memUsed * System.memTotalGiB).toFixed(1) + " / " + System.memTotalGiB.toFixed(0) + " GB"
+            }
         }
     }
 

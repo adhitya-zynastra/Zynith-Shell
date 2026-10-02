@@ -9,7 +9,9 @@ Item {
     property string title: ""
     property string detail: ""
     property bool on: false
+    property bool more: false
     signal toggled
+    signal opened
 
     implicitHeight: 58
     implicitWidth: 160
@@ -34,10 +36,33 @@ Item {
         onClicked: root.toggled()
     }
 
+    // a separate target on the right opens the full panel
+    Item {
+        id: moreArea
+        visible: root.more
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: root.more ? 30 : 0
+
+        Interactive {
+            anchors.fill: parent
+            anchors.margins: 4
+            radius: Metrics.radiusMd
+            onClicked: root.opened()
+        }
+        Icon {
+            anchors.centerIn: parent
+            name: "chevron-right"
+            size: 14
+            tone: "faint"
+        }
+    }
+
     Row {
         anchors.fill: parent
         anchors.leftMargin: Metrics.s4
-        anchors.rightMargin: Metrics.s3
+        anchors.rightMargin: Metrics.s3 + moreArea.width
         spacing: Metrics.s3
 
         Icon {
