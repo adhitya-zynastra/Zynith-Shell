@@ -145,8 +145,19 @@ FloatingWindow {
                     home: homePage,
                     experience: experiencePage,
                     appearance: appearancePage,
+                    animation: animationPage,
+                    wallpaper: wallpaperPage,
+                    lock: lockPage,
                     bars: barsPage,
+                    control: controlPage,
+                    launcher: launcherPage,
+                    notifications: notificationsPage,
+                    media: mediaPage,
+                    surfaces: surfacesPage,
                     window: windowPage,
+                    network: networkPage,
+                    bluetooth: bluetoothPage,
+                    plugins: pluginsPage,
                     about: aboutPage
                 })[win.route] ?? homePage
 
@@ -188,5 +199,49 @@ FloatingWindow {
     Component {
         id: aboutPage
         AboutPage {}
+    }
+    Component {
+        id: animationPage
+        AnimationPage {}
+    }
+    Component {
+        id: wallpaperPage
+        WallpaperPage {}
+    }
+    Component {
+        id: lockPage
+        LockPage {}
+    }
+    Component {
+        id: controlPage
+        ControlPanelPage {}
+    }
+    Component {
+        id: launcherPage
+        LauncherPage {}
+    }
+    Component {
+        id: notificationsPage
+        NotificationsPage {}
+    }
+    Component {
+        id: mediaPage
+        MediaPage {}
+    }
+    Component {
+        id: surfacesPage
+        SurfacesPage {}
+    }
+    Component {
+        id: networkPage
+        NetworkPage {}
+    }
+    Component {
+        id: bluetoothPage
+        BluetoothPage {}
+    }
+    Component {
+        id: pluginsPage
+        PluginsPage {}
     }
 }
