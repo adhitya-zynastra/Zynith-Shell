@@ -90,6 +90,9 @@ Singleton {
     function setBars(list: var): void {
         barsFile.set("bar", list);
     }
+    function setWidgets(list: var): void {
+        widgetsFile.set("widget", list);
+    }
     // generic: Config.write("appearance", "glass.opacity", 0.8)
     function write(domain: string, key: string, value: var): void {
         const file = files[domain];
@@ -304,7 +307,7 @@ Singleton {
     ConfigFile {
         id: widgetsFile
         path: Paths.config + "/widgets.toml"
-        header: "Desktop widgets. Each [[widget]]: type (clock label sticker visualizer weather media), output, the\ncentre (cx, cy) and box (width, height) in the reference resolution, rotation in radians, flip, settings."
+        header: "Desktop widgets. Each [[widget]]: type (clock label sticker audio_visualizer weather media_player calendar\nsysmon volume session_actions button), output, the centre (cx, cy) and box (width, height) in the reference\nresolution, rotation in radians, flip, hidden, settings. Edit them on the desktop: Mod+Alt+W."
         defaults: ({
                 widget: []
             })

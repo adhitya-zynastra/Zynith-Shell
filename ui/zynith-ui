@@ -27,20 +27,53 @@ build_native() {
 }
 
 running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
+pid=""
+
+# launch(shell.qml): start Quickshell on that config, record its pid and path
+launch() {
+    local qml="$1"
+    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+        QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+        setsid -f "$QS" -p "$qml" >"$LOG" 2>&1 </dev/null
+    pid=""
+    for _ in $(seq 1 50); do
+        pid=$(pgrep -n -f "^$QS -p $qml\$" || true)
+        [[ -n "$pid" ]] && { echo "$pid" >"$PIDFILE"; echo "$qml" >"$RUN/ui.shell"; break; }
+        sleep 0.05
+    done
+}
+# loaded | failed | unknown, from the log, within a few seconds
+load_state() {
+    for _ in $(seq 1 80); do
+        grep -q "Failed to load configuration" "$LOG" 2>/dev/null && { echo failed; return; }
+        grep -q "Configuration Loaded" "$LOG" 2>/dev/null && { echo loaded; return; }
+        sleep 0.1
+    done
+    echo unknown
+}
 
 case "${1:-status}" in
 start)
     mkdir -p "$RUN"
     if running; then echo "already running ($(cat "$PIDFILE"))"; exit 0; fi
     build_native
-    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
-        QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
-        setsid -f "$QS" -p "$SHELL_QML" >"$LOG" 2>&1 </dev/null
-    for _ in $(seq 1 50); do
-        pid=$(pgrep -n -f "^$QS -p $SHELL_QML\$" || true)
-        [[ -n "$pid" ]] && { echo "$pid" >"$PIDFILE"; break; }
-        sleep 0.05
-    done
+    launch "$SHELL_QML"
+    # a working copy that does not load must not leave the desktop without its UI: the last commit runs
+    # instead, from a snapshot, until the working copy is fixed
+    if [[ "$(load_state)" == failed ]]; then
+        echo "the working copy failed to load:" >&2
+        sed 's/\x1b\[[0-9;]*m//g' "$LOG" | grep -A4 "Failed to load configuration" >&2 || true
+        kill "$pid" 2>/dev/null || true
+        snap="$RUN/fallback"
+        rm -rf "$snap" && mkdir -p "$snap"
+        git -C "$HERE" archive "HEAD:$(git -C "$HERE" rev-parse --show-prefix)" | tar -x -C "$snap"
+        # the snapshot shares the repository's assets (fonts, emoji)
+        ln -sfn "$HERE/../assets" "$RUN/assets" 2>/dev/null || true
+        cp "$LOG" "$RUN/ui-failed.log"
+        launch "$snap/shell.qml"
+        echo "started the last commit instead ($(git -C "$HERE" rev-parse --short HEAD)), pid ${pid:-?}" >&2
+        exit 1
+    fi
     echo "started ${pid:-?}"
     ;;
 stop)
@@ -67,7 +100,7 @@ settings)
         setsid -f "$QS" -p "$HERE/settings.qml" >"$RUN/settings.log" 2>&1 </dev/null
     echo "settings: $route"
     ;;
-ipc) shift; exec "$QS" -p "$SHELL_QML" ipc call zynith "$@" ;;
+ipc) shift; exec "$QS" -p "$(cat "$RUN/ui.shell" 2>/dev/null || echo "$SHELL_QML")" ipc call zynith "$@" ;;
 cmd)
     # for keybindings: a line to the UI's socket (milliseconds), or the native shell's panel if the UI is not up
     shift
@@ -81,6 +114,7 @@ cmd)
     control) exec "$N" msg panel-toggle control-center ;;
     notifications) exec "$N" msg panel-toggle control-center notifications ;;
     brightness) [[ "${2:-}" == "down" ]] && exec "$N" msg brightness-down || exec "$N" msg brightness-up ;;
+    desktop-edit) exec "$N" msg desktop-widgets-toggle-edit ;;
     esac
     ;;
 *) echo "usage: zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args]|cmd <command> [args]" >&2; exit 2 ;;

@@ -1,36 +1,57 @@
 import QtQuick
 import QtQuick.Effects
 import qs.Common
+import qs.Components
+import qs.Services
 
-// A title and/or a line of text.
+// A title and/or a line of text, fitted to the box.
 Item {
     id: root
     property var settings: ({})
-    readonly property bool shadowed: settings.shadow ?? false
-    opacity: settings.opacity ?? 1
+    function opt(key: string): var {
+        return WidgetTypes.value("label", settings, key);
+    }
+    readonly property string title: opt("title") ?? ""
+    readonly property string line: opt("description") ?? ""
+    readonly property color ink: Theme.colour(opt("color"))
+    readonly property string family: (opt("font_family") ?? "") !== "" ? opt("font_family") : Type.ui
+    opacity: opt("opacity") ?? 1
+    implicitWidth: 420
+    implicitHeight: 120
 
     Column {
-        id: body
         anchors.centerIn: parent
+        width: parent.width
         spacing: 2
         Text {
-            visible: text !== ""
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: root.settings.title ?? ""
-            font.family: root.settings.font_family ?? Type.ui
-            font.pixelSize: root.settings.description ? root.height * 0.55 : Math.max(10, root.height * 0.8)
-            color: Theme.pal(root.settings.color ?? "on_surface")
+            visible: root.title !== ""
+            width: parent.width
+            height: root.line !== "" ? root.height * 0.6 : root.height
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
+            text: root.title
+            font.family: root.family
+            font.pixelSize: Math.max(10, height * 0.85)
+            color: root.ink
         }
         Text {
-            visible: text !== ""
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: root.settings.description ?? ""
-            font.family: root.settings.font_family ?? Type.ui
-            font.pixelSize: Math.max(10, root.settings.title ? root.height * 0.35 : root.height * 0.8)
-            color: Theme.pal(root.settings.color ?? "on_surface_variant")
+            visible: root.line !== ""
+            width: parent.width
+            height: root.title !== "" ? root.height * 0.32 : root.height
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            fontSizeMode: Text.Fit
+            minimumPixelSize: 8
+            wrapMode: Text.WordWrap
+            text: root.line
+            font.family: root.family
+            font.pixelSize: Math.max(10, height * 0.7)
+            color: Theme.alpha(root.ink, root.title !== "" ? 0.78 : 1)
         }
     }
-    layer.enabled: root.shadowed
+    layer.enabled: opt("shadow") === true
     layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: Theme.shadow

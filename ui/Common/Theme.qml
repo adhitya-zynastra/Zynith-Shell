@@ -13,6 +13,11 @@ Singleton {
     function pal(name: string): color {
         return (Scheme.colors && Scheme.colors[name]) || Fallback.colors[name] || "#808080";
     }
+    // a colour setting: a palette role ("primary", "on_surface"…) or a literal ("#b4c5ff")
+    function colour(v: var): color {
+        const s = String(v ?? "");
+        return s.startsWith("#") || s.startsWith("rgb") ? Qt.color(s) : pal(s === "" ? "on_surface" : s);
+    }
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);
     }

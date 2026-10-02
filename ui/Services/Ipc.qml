@@ -52,6 +52,9 @@ Singleton {
             case "event":
                 Events.dispatch(args);
                 break;
+            case "desktop-edit":
+                Desktop.toggleEditing();
+                break;
             case "brightness":
                 // up | down | <0-100>
                 if (args === "up")
@@ -72,6 +75,23 @@ Singleton {
 
         function panel(id: string): void {
             PanelRouter.toggle(id, root.focusedScreen(), null);
+        }
+        // the desktop widget editor
+        function desktopEdit(): void {
+            Desktop.toggleEditing();
+        }
+        // select the n-th widget (from 0) in the editor and show its settings
+        function desktopInspect(n: int): void {
+            Desktop.setEditing(true);
+            const w = Config.widgets[n];
+            if (w) {
+                Desktop.selection = [w.id];
+                Desktop.inspecting = true;
+            }
+        }
+        function desktopPick(): void {
+            Desktop.setEditing(true);
+            Desktop.picking = true;
         }
         function launcher(): void {
             PanelRouter.toggle("launcher", root.focusedScreen(), { edge: "center" });
