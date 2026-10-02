@@ -48,7 +48,8 @@ PanelWindow {
 
     WlrLayershell.namespace: "zynith-panel"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+    // a closing panel lets go of the keyboard at once, so typing (and a paste) reaches the window beneath
+    WlrLayershell.keyboardFocus: win.closing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     anchors {

@@ -9,8 +9,11 @@ Item {
     property alias text: input.text
     property string placeholder: "Search"
     readonly property bool editing: input.activeFocus
-    signal accepted
+    // modifiers as held, so Shift+Enter can mean something else
+    signal accepted(int modifiers)
     signal escaped
+    // every other key first, before the field uses it; accept it to keep it from the field
+    signal keyPressed(var event)
     signal moved(int delta)
     signal tabbed(bool back)
 
@@ -63,8 +66,9 @@ Item {
         font.pixelSize: Type.body
         clip: true
 
-        Keys.onReturnPressed: root.accepted()
-        Keys.onEnterPressed: root.accepted()
+        Keys.onReturnPressed: event => root.accepted(event.modifiers)
+        Keys.onEnterPressed: event => root.accepted(event.modifiers)
+        Keys.onPressed: event => root.keyPressed(event)
         Keys.onEscapePressed: event => {
             if (text !== "")
                 text = "";
