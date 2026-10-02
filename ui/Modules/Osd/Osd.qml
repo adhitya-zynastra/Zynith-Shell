@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -10,7 +11,8 @@ import qs.Services
 Scope {
     id: root
 
-    readonly property bool enabled: Config.osd.enabled
+    // drawn here when zynith.toml hands the OSD over (or panels.toml [osd] enabled)
+    readonly property bool enabled: (Config.surfaces?.osd ?? "native") === "zynith" || Config.osd.enabled
     property string kind: ""
     property string icon: ""
     property string label: ""
@@ -47,6 +49,18 @@ Scope {
         }
         function onMutedChanged(): void {
             root.show("volume", Audio.glyph, Audio.muted ? "Muted" : Math.round(Audio.volume * 100) + "", Math.min(1, Audio.volume));
+        }
+    }
+    Connections {
+        target: Audio
+        function onMicMutedChanged(): void {
+            root.show("mic", Audio.micMuted ? "microphone-off" : "microphone", Audio.micMuted ? "Microphone off" : "Microphone on", -1);
+        }
+    }
+    Connections {
+        target: Backlight
+        function onValueChanged(): void {
+            root.show("brightness", Backlight.value < 0.34 ? "brightness-down" : "brightness-up", Math.round(Backlight.value * 100) + "", Backlight.value);
         }
     }
     Connections {

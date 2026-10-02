@@ -48,6 +48,15 @@ Singleton {
             case "close":
                 PanelRouter.closeAll();
                 break;
+            case "brightness":
+                // up | down | <0-100>
+                if (args === "up")
+                    Backlight.set(Backlight.value + 0.05);
+                else if (args === "down")
+                    Backlight.set(Backlight.value - 0.05);
+                else if (!isNaN(parseFloat(args)))
+                    Backlight.set(parseFloat(args) / 100);
+                break;
             default:
                 console.warn("zynith: unknown command", name);
             }

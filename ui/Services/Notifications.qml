@@ -15,8 +15,18 @@ Singleton {
     // the Zynith UI owns notifications when zynith.toml hands them over (or notifications.toml server = true)
     readonly property bool wanted: (Config.surfaces?.notifications ?? "native") === "zynith" || Config.notifications.server || forceServer
     property bool forceServer: false     // test harness only (private bus)
+    // once this process owns the name it keeps it across live reloads (keepOnReload), so a reload must not
+    // mistake its own server for someone else's
+    PersistentProperties {
+        id: persist
+        reloadableId: "zynith-notifications"
+        property bool owned: false
+    }
     property bool nameFree: false
-    readonly property bool serving: wanted && nameFree
+    readonly property bool mayServe: nameFree || persist.owned
+    onServingChanged: if (serving)
+        persist.owned = true
+    readonly property bool serving: wanted && mayServe
     readonly property bool dnd: Config.notifications.dnd
 
     // newest first: { key, n (live Notification or null), appName, appIcon, image, summary, body, urgency,
@@ -140,11 +150,11 @@ Singleton {
     // never take the name from someone else; while another owner is letting go (the native shell after a
     // handover), ask again for a little while
     property int ownerChecks: 0
-    onWantedChanged: if (wanted) {
+    onWantedChanged: if (wanted && !persist.owned) {
         ownerChecks = 0;
         owner.running = true;
     }
-    Component.onCompleted: if (wanted)
+    Component.onCompleted: if (wanted && !persist.owned)
         owner.running = true
     Timer {
         id: recheck
@@ -157,7 +167,7 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 root.nameFree = text.trim() === "b false";
-                if (root.nameFree || !root.wanted)
+                if (root.nameFree || persist.owned || !root.wanted)
                     return;
                 if (++root.ownerChecks < 20)
                     recheck.restart();

@@ -80,6 +80,7 @@ cmd)
     clipboard | wallpaper | session) exec "$N" msg panel-toggle "$1" ;;
     control) exec "$N" msg panel-toggle control-center ;;
     notifications) exec "$N" msg panel-toggle control-center notifications ;;
+    brightness) [[ "${2:-}" == "down" ]] && exec "$N" msg brightness-down || exec "$N" msg brightness-up ;;
     esac
     ;;
 *) echo "usage: zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args]|cmd <command> [args]" >&2; exit 2 ;;
