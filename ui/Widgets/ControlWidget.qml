@@ -3,7 +3,7 @@ import qs.Common
 import qs.Components
 import qs.Services
 
-// Opens the Home panel; its glyph shows the active Experience Profile.
+// Opens the Control Panel; the glyph shows the active Experience profile.
 BarItem {
     id: root
 
@@ -14,8 +14,8 @@ BarItem {
             max: "rocket"
         })
 
-    active: PanelRouter.isOpen("home", screen?.name ?? "")
-    onClicked: bar?.openPanel("home", root)
+    active: PanelRouter.isOpen("control", screen?.name ?? "")
+    onClicked: bar?.openPanel("control", root)
 
     Icon {
         name: root.glyphs[ExperiencePolicy.profile] ?? "adjustments-horizontal"

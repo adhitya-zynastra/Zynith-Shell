@@ -30,7 +30,9 @@ Item {
             clipboard: clipboard,
             notifications: notifications,
             quick: quick,
-            wallpaper: wallpaper
+            wallpaper: wallpaper,
+            control: quick,
+            session: session
         })
 
     onPanelIdChanged: {
@@ -103,6 +105,10 @@ Item {
     Component {
         id: wallpaper
         WallpaperPanel {}
+    }
+    Component {
+        id: session
+        SessionPanel {}
     }
 
     Loader {

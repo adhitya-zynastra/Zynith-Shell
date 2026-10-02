@@ -3,145 +3,295 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Zynith.Native
 import qs.Common
 
-// ~/.config/zynith/shell.json. Missing keys fall back to the defaults below; a missing file is created
-// with them so the available options are visible. Only this service writes the file.
+// Zynith's configuration: one TOML file per domain in ~/.config/zynith. Each file holds only what differs from
+// the defaults below; edits on disk apply live, and every write from the UI goes through here.
 Singleton {
     id: root
 
-    readonly property alias experience: adapter.experience
-    readonly property alias bars: adapter.bars
-    readonly property alias panels: adapter.panels
-    readonly property alias osd: adapter.osd
-    readonly property alias window: adapter.window
-    readonly property alias launcher: adapter.launcher
-    readonly property alias notifications: adapter.notifications
-    readonly property alias wallpaper: adapter.wallpaper
-    property bool loaded: false
+    readonly property bool loaded: experienceFile.loaded && barsFile.loaded && panelsFile.loaded && appearanceFile.loaded
+        && animationFile.loaded && notificationsFile.loaded && wallpaperFile.loaded && windowFile.loaded
+        && zynithFile.loaded
 
+    // ── the shapes the rest of the UI reads ─────────────────────────────────
+    readonly property var experience: ({
+            profile: experienceFile.values.profile,
+            adaptive: experienceFile.values.adaptive,
+            overrides: experienceFile.values.overrides ?? {},
+            reducedMotion: animationFile.values.reduced_motion
+        })
+    readonly property var appearance: appearanceFile.values
+    readonly property var animation: animationFile.values
+    readonly property var bars: barsFile.values.bar ?? []
+    readonly property var panels: panelsFile.values.panels
+    readonly property var launcher: panelsFile.values.launcher
+    readonly property var controlPanel: panelsFile.values.control_panel
+    readonly property var osd: ({
+            enabled: panelsFile.values.osd.enabled,
+            durationMs: panelsFile.values.osd.duration_ms,
+            margin: panelsFile.values.osd.margin
+        })
+    readonly property var notifications: ({
+            server: notificationsFile.values.server,
+            dnd: notificationsFile.values.dnd,
+            popupMs: notificationsFile.values.popup_ms,
+            maxPopups: notificationsFile.values.max_popups,
+            historySize: notificationsFile.values.history_size,
+            location: notificationsFile.values.location,
+            density: notificationsFile.values.density,
+            grouping: notificationsFile.values.grouping,
+            lockRedaction: notificationsFile.values.lock_redaction
+        })
+    readonly property var wallpaper: wallpaperFile.values
+    readonly property var window: windowFile.values
+    // which visible surfaces this UI draws instead of the native shell (the shell reads the same file)
+    readonly property var surfaces: zynithFile.values.surfaces
+
+    // ── writers ─────────────────────────────────────────────────────────────
     function setExperienceProfile(name: string): void {
-        if (adapter.experience.profile === name)
-            return;
-        adapter.experience.profile = name;
-        file.writeAdapter();
+        if (experienceFile.values.profile !== name)
+            experienceFile.set("profile", name);
     }
-
     function setAdaptive(on: bool): void {
-        adapter.experience.adaptive = on;
-        file.writeAdapter();
+        experienceFile.set("adaptive", on);
     }
-
-    function setNotificationsDnd(on: bool): void {
-        adapter.notifications.dnd = on;
-        file.writeAdapter();
-    }
-
     function setReducedMotion(on: bool): void {
-        adapter.experience.reducedMotion = on;
-        file.writeAdapter();
+        animationFile.set("reduced_motion", on);
     }
-
-    // one field of one bar; the list is replaced so bindings see the change
+    function setNotificationsDnd(on: bool): void {
+        notificationsFile.set("dnd", on);
+    }
+    function setWindowBehaviour(behaviour: string): void {
+        windowFile.set("behaviour", behaviour);
+    }
+    // one field of one bar; the list is written back whole
     function updateBar(index: int, key: string, value: var): void {
-        const bars = adapter.bars.slice();
-        if (index < 0 || index >= bars.length)
+        const list = bars.slice();
+        if (index < 0 || index >= list.length)
             return;
-        bars[index] = Object.assign({}, bars[index], {
+        list[index] = Object.assign({}, list[index], {
             [key]: value
         });
-        adapter.bars = bars;
-        file.writeAdapter();
+        barsFile.set("bar", list);
     }
-
-    function setWindowBehaviour(behaviour: string): void {
-        adapter.window.behaviour = behaviour;
-        file.writeAdapter();
+    function setBars(list: var): void {
+        barsFile.set("bar", list);
     }
+    // generic: Config.write("appearance", "glass.opacity", 0.8)
+    function write(domain: string, key: string, value: var): void {
+        const file = files[domain];
+        if (file)
+            file.set(key, value);
+    }
+    function reset(domain: string, key: string): void {
+        const file = files[domain];
+        if (file)
+            file.reset(key);
+    }
+    readonly property var files: ({
+            experience: experienceFile,
+            appearance: appearanceFile,
+            animation: animationFile,
+            bars: barsFile,
+            panels: panelsFile,
+            notifications: notificationsFile,
+            wallpaper: wallpaperFile,
+            window: windowFile,
+            zynith: zynithFile
+        })
 
-    FileView {
-        id: file
-
-        path: Paths.config + "/shell.json"
-        watchChanges: true
-        onFileChanged: reload()
-        onLoaded: root.loaded = true
-        onLoadFailed: err => {
-            if (err === FileViewError.FileNotFound)
-                writeAdapter();
-            else
-                console.warn("zynith: config unreadable:", FileViewError.toString(err));
-            root.loaded = true;
-        }
-        onSaveFailed: err => console.warn("zynith: config not saved:", FileViewError.toString(err))
-
-        JsonAdapter {
-            id: adapter
-
-            property JsonObject experience: JsonObject {
-                // "auto" follows the hardware recommendation; otherwise performance | balanced | enhanced | max
-                property string profile: "auto"
-                // per-knob overrides on top of the profile, e.g. { "blurQuality": "off" }
-                property var overrides: ({})
-                property bool reducedMotion: false
-                // automatic mode steps down on battery and power saving
-                property bool adaptive: true
-            }
-
-            property list<var> bars: [
-                {
-                    id: "main",
-                    edge: "top",
-                    anchor: "end",
-                    offset: 12,
-                    margin: 8,
-                    thickness: 34,
-                    reserve: false,
-                    layer: "top",
-                    screens: ["*"],
-                    widgets: {
-                        start: ["workspaces"],
-                        center: ["clock"],
-                        end: ["media", "visualizer", "audio", "network", "battery", "quick"]
-                    }
+    // ── files and defaults ──────────────────────────────────────────────────
+    ConfigFile {
+        id: zynithFile
+        path: Paths.config + "/zynith.toml"
+        header: "Zynith. Which visible surfaces the Zynith UI draws (\"zynith\") and which the native shell still does\n(\"native\"). The native shell reads [surfaces] when it starts."
+        defaults: ({
+                surfaces: {
+                    bar: "native",
+                    launcher: "native",
+                    notifications: "native",
+                    osd: "native",
+                    control_center: "native",
+                    desktop_widgets: "native"
                 }
-            ]
+            })
+    }
 
-            property JsonObject panels: JsonObject {
-                property int width: 400
-            }
+    ConfigFile {
+        id: experienceFile
+        path: Paths.config + "/experience.toml"
+        header: "Experience profile: auto (hardware recommendation, easing off on battery) or performance | balanced |\nenhanced | max. [overrides] changes single knobs, e.g. blurQuality = \"off\"."
+        defaults: ({
+                profile: "auto",
+                adaptive: true,
+                overrides: {}
+            })
+    }
 
-            // config (niri's layout block as written) | scrolling | tiling-like; written to rice/layout.kdl
-            property JsonObject window: JsonObject {
-                property string behaviour: "config"
-            }
+    ConfigFile {
+        id: appearanceFile
+        path: Paths.config + "/appearance.toml"
+        header: "Appearance. Surfaces follow the wallpaper palette; these adjust how."
+        defaults: ({
+                // 0 = the Experience profile decides; otherwise 0.4 – 1.0
+                surface_opacity: 0,
+                // profile | on | off
+                blur: "profile",
+                // none | subtle | defined
+                border: "subtle",
+                // multiplies every corner radius
+                radius: 1.0,
+                // standard | high
+                contrast: "standard",
+                // wallpaper, or a fixed colour such as "#b4c5ff"
+                accent: "wallpaper",
+                // how much of the wallpaper's colour tints surfaces, 0 – 1
+                tint: 0.35,
+                // multiplies every text size
+                font_scale: 1.0
+            })
+    }
 
-            property JsonObject launcher: JsonObject {
-                // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
-                property list<string> terminal: []
-            }
+    ConfigFile {
+        id: animationFile
+        path: Paths.config + "/animation.toml"
+        header: "Animation. speed multiplies every duration (0.5 = twice as fast); style picks the easing family."
+        defaults: ({
+                speed: 1.0,
+                // fluid | crisp | calm
+                style: "fluid",
+                reduced_motion: false
+            })
+    }
 
-            // where the Wallpaper panel looks for images ("" = ~/Pictures/wallpapers)
-            property JsonObject wallpaper: JsonObject {
-                property string directory: ""
-            }
+    ConfigFile {
+        id: barsFile
+        path: Paths.config + "/bars.toml"
+        header: "Bars. Each [[bar]] is one bar: edge top | bottom | left | right, anchor start | center | end | fill,\noffset/margin/thickness/length in px (length 0 = fit the widgets), widgets per section.\nStyle keys left out follow appearance.toml."
+        defaults: ({
+                bar: [
+                    {
+                        id: "main",
+                        edge: "top",
+                        anchor: "fill",
+                        offset: 0,
+                        margin: 6,
+                        thickness: 34,
+                        length: 0,
+                        reserve: true,
+                        layer: "top",
+                        visibility: "always",
+                        screens: ["*"],
+                        widgets: {
+                            start: ["workspaces", "media"],
+                            center: ["clock"],
+                            end: ["visualizer", "audio", "network", "battery", "quick"]
+                        }
+                    }
+                ]
+            })
+    }
 
-            property JsonObject notifications: JsonObject {
-                // owning org.freedesktop.Notifications is exclusive; off while the native shell has it
-                property bool server: false
-                property bool dnd: false
-                property int popupMs: 6000
-                property int maxPopups: 4
-                // kept in memory only, never written to disk
-                property int historySize: 100
-            }
+    ConfigFile {
+        id: panelsFile
+        path: Paths.config + "/panels.toml"
+        header: "Panels: the launcher, the Control Panel and the OSD."
+        defaults: ({
+                panels: {
+                    width: 400
+                },
+                launcher: {
+                    // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
+                    terminal: [],
+                    width: 600,
+                    rows: 8,
+                    // center | top
+                    position: "center",
+                    // comfortable | compact
+                    density: "comfortable"
+                },
+                control_panel: {
+                    modules: ["header", "levels", "connectivity", "toggles", "media", "power", "system"],
+                    width: 420
+                },
+                osd: {
+                    enabled: false,
+                    duration_ms: 1400,
+                    margin: 72
+                }
+            })
+    }
 
-            // off while the native shell's OSD is still the one in use
-            property JsonObject osd: JsonObject {
-                property bool enabled: false
-                property int durationMs: 1400
-                property int margin: 72
+    ConfigFile {
+        id: notificationsFile
+        path: Paths.config + "/notifications.toml"
+        header: "Notifications. The server runs only when this UI owns notifications (zynith.toml [surfaces])\nor `server = true`, and never takes the bus name from another process."
+        defaults: ({
+                server: false,
+                dnd: false,
+                popup_ms: 6000,
+                max_popups: 4,
+                // kept in memory only
+                history_size: 100,
+                // top-right | top-left | top-center | bottom-right | bottom-left | bottom-center
+                location: "top-right",
+                // comfortable | compact
+                density: "comfortable",
+                grouping: true,
+                // hide notification text on the lock screen
+                lock_redaction: true
+            })
+    }
+
+    ConfigFile {
+        id: wallpaperFile
+        path: Paths.config + "/wallpaper.toml"
+        header: "Wallpaper. The native shell keeps the one WallpaperState; this file is about how the UI shows it."
+        defaults: ({
+                // where the Wallpaper panel looks for images ("" = ~/Pictures/wallpapers)
+                directory: "",
+                // live: the running live wallpaper behind niri's overview; poster: its still image
+                overview: "poster",
+                lock: "poster"
+            })
+    }
+
+    ConfigFile {
+        id: windowFile
+        path: Paths.config + "/window.toml"
+        header: "Window behaviour: config (niri's layout block as written) | scrolling | tiling-like.\nWritten to ~/.config/niri/rice/layout.kdl after niri validates it."
+        defaults: ({
+                behaviour: "config"
+            })
+    }
+
+    // one-time move from the Stage 1 shell.json: each file is created only if it does not exist yet
+    FileView {
+        path: Paths.config + "/shell.json"
+        printErrors: false
+        onLoaded: {
+            let old;
+            try {
+                old = JSON.parse(text());
+            } catch (e) {
+                return;
             }
+            if (old.bars)
+                barsFile.create({
+                    bar: old.bars
+                });
+            if (old.experience)
+                experienceFile.create({
+                    profile: old.experience.profile ?? "auto",
+                    adaptive: old.experience.adaptive ?? true,
+                    overrides: old.experience.overrides ?? {}
+                });
+            if (old.window)
+                windowFile.create({
+                    behaviour: old.window.behaviour ?? "config"
+                });
         }
     }
 }

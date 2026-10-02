@@ -140,9 +140,10 @@ Singleton {
     readonly property real animationScale: reducedMotion ? 0 : effective.animationScale
     readonly property bool springs: effective.springs && !reducedMotion
     readonly property bool stagger: effective.stagger && !reducedMotion
-    readonly property string blurQuality: effective.blurQuality
+    // appearance.toml can force blur and surface opacity regardless of the profile
+    readonly property string blurQuality: Config.appearance.blur === "off" ? "off" : Config.appearance.blur === "on" && effective.blurQuality === "off" ? "standard" : effective.blurQuality
     readonly property bool blur: blurQuality !== "off"
-    readonly property real glassOpacity: effective.glassOpacity
+    readonly property real glassOpacity: (Config.appearance.surface_opacity ?? 0) > 0 ? Math.max(0.4, Math.min(1, Config.appearance.surface_opacity)) : effective.glassOpacity
     readonly property string shadowQuality: effective.shadowQuality
     readonly property bool shadows: shadowQuality !== "none"
     readonly property string effectsQuality: effective.effectsQuality

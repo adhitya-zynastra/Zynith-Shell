@@ -7,7 +7,11 @@ import qs.Services
 // The native motion roles (src/render/animation/motion_role.cpp) as QML values, scaled by the policy.
 // Things arrive decelerating and leave accelerating; an exit is about two thirds of an entrance.
 Singleton {
-    readonly property real scale: ExperiencePolicy.animationScale
+    // the profile's scale times the user's speed (animation.toml); 0 under reduced motion
+    readonly property real speed: Math.max(0.25, Math.min(3, Config.animation.speed ?? 1))
+    readonly property real scale: ExperiencePolicy.animationScale * speed
+    // fluid: decelerate long, leave fast · crisp: short and even · calm: soft both ways
+    readonly property string style: Config.animation.style ?? "fluid"
 
     function ms(base: int): int {
         return Math.round(base * scale);
@@ -22,9 +26,9 @@ Singleton {
     readonly property int morph: ms(300)
     readonly property int scene: ms(520)
 
-    readonly property int enterEasing: Easing.OutQuint
-    readonly property int exitEasing: Easing.InQuad
-    readonly property int standardEasing: Easing.OutCubic
+    readonly property int enterEasing: style === "crisp" ? Easing.OutCubic : style === "calm" ? Easing.OutSine : Easing.OutQuint
+    readonly property int exitEasing: style === "crisp" ? Easing.InCubic : style === "calm" ? Easing.InSine : Easing.InQuad
+    readonly property int standardEasing: style === "calm" ? Easing.InOutSine : Easing.OutCubic
 
     // element travel: a critically damped spring where springs are on, the reveal tween otherwise
     readonly property bool springs: ExperiencePolicy.springs

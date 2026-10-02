@@ -23,7 +23,14 @@ PanelWindow {
     readonly property int margin: spec.margin ?? 0
     readonly property int offset: anchorAt === "center" ? 0 : (spec.offset ?? 0)
     readonly property bool reserve: spec.reserve ?? false
-    readonly property real radius: spec.radius ?? thickness / 2
+    // style: keys left out follow appearance.toml
+    readonly property real radius: (spec.radius ?? -1) >= 0 ? spec.radius * Metrics.radiusScale : thickness / 2
+    readonly property real sheetOpacity: (spec.opacity ?? 0) > 0 ? Math.min(1, spec.opacity) : Theme.glassAlpha
+    readonly property bool border: spec.border ?? true
+    readonly property int spacingOverride: spec.spacing ?? -1
+    readonly property int padding: spec.padding ?? Metrics.s3
+    // a fixed length along the edge (0 = fit the widgets)
+    readonly property int fixedLength: spec.length ?? 0
 
     // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
     readonly property string visibility: spec.visibility ?? "always"
@@ -56,9 +63,9 @@ PanelWindow {
     readonly property int alongGap: Math.max(0, offset - pad)
     readonly property int alongInset: anchorAt === "center" ? pad : offset - alongGap
 
-    readonly property real contentLength: (vertical ? sections.implicitHeight : sections.implicitWidth) + Metrics.s3 * 2
+    readonly property real contentLength: (vertical ? sections.implicitHeight : sections.implicitWidth) + padding * 2
     readonly property real screenLength: vertical ? (screen?.height ?? 0) : (screen?.width ?? 0)
-    readonly property real pillLength: anchorAt === "fill" ? screenLength - offset * 2 : Math.max(thickness, contentLength)
+    readonly property real pillLength: anchorAt === "fill" ? screenLength - offset * 2 : fixedLength > 0 ? fixedLength : Math.max(thickness, contentLength)
 
     WlrLayershell.namespace: "zynith-bar-" + (spec.id ?? "bar")
     WlrLayershell.layer: spec.layer === "overlay" ? WlrLayer.Overlay : spec.layer === "bottom" ? WlrLayer.Bottom : WlrLayer.Top
@@ -156,6 +163,8 @@ PanelWindow {
         height: win.vertical ? win.pillLength : win.thickness
         radius: win.radius
         raised: true
+        fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+        edge: win.border
 
         // slide toward the screen edge when hidden; arrive from it on start
         property real arrived: 0

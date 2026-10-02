@@ -10,7 +10,7 @@ Grid {
     readonly property int count: types.length
 
     columns: bar.vertical ? 1 : Math.max(1, types.length)
-    spacing: Metrics.s1
+    spacing: bar.spacingOverride >= 0 ? bar.spacingOverride : Metrics.s1
     horizontalItemAlignment: Grid.AlignHCenter
     verticalItemAlignment: Grid.AlignVCenter
 

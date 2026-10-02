@@ -11,6 +11,8 @@ Item {
     property real radius: Metrics.radiusLg
     property color fill: Theme.glass
     property bool raised: false
+    // the hairline around the sheet
+    property bool edge: true
     property bool sheen: ExperiencePolicy.effectsQuality !== "minimal"
     readonly property alias sheet: sheet
 
@@ -32,7 +34,7 @@ Item {
         anchors.fill: parent
         radius: root.radius
         color: root.fill
-        border.width: Metrics.hairline
+        border.width: root.edge ? Theme.hairlineWidth : 0
         border.color: Theme.hairline
 
         Rectangle {

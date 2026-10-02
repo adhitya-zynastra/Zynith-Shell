@@ -19,6 +19,7 @@ device-laptop gauge layout-grid leaf lock moon music player-pause-filled player-
 player-skip-forward-filled plus point-filled power rocket settings sparkles sun volume volume-2 volume-3 volume-off
 wifi wifi-1 wifi-2 wifi-off x layers-intersect stack-2 activity disc search apps clipboard clipboard-list photo trash
 corner-down-left bell bell-off bell-ringing microphone microphone-off coffee sunset-2 brightness-down
+keyboard logout refresh zzz power-off grip-vertical dots-vertical calculator window app-window mood-smile math-function
 """.split()
 
 

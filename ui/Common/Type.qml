@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.Services
 
 // Type roles. Inter for reading, Space Grotesk for numerals and display, the Tabler font for glyphs.
 Singleton {
@@ -23,14 +24,16 @@ Singleton {
     readonly property string mono: "JetBrains Mono"
     readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "noctalia-tabler-icons"
 
-    // pixel sizes
-    readonly property int micro: 10
-    readonly property int caption: 11
-    readonly property int label: 12
-    readonly property int body: 13
-    readonly property int title: 15
-    readonly property int headline: 20
-    readonly property int display1: 44
+    // pixel sizes, scaled by appearance.toml font_scale
+    readonly property real scale: Math.max(0.8, Math.min(1.5, Config.appearance.font_scale ?? 1))
+    readonly property int micro: Math.round(10 * scale)
+    readonly property int caption: Math.round(11 * scale)
+    readonly property int label: Math.round(12 * scale)
+    readonly property int body: Math.round(13 * scale)
+    readonly property int title: Math.round(15 * scale)
+    readonly property int headline: Math.round(20 * scale)
+    readonly property int display2: Math.round(32 * scale)
+    readonly property int display1: Math.round(44 * scale)
 
     // uppercase captions are tracked out; everything else is set tight
     readonly property real tracking: 1.4
