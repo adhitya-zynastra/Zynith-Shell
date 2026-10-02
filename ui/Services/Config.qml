@@ -115,6 +115,34 @@ Singleton {
     function setBars(list: var): void {
         barsFile.set("bar", list);
     }
+    // one key of one bar back to its default
+    function clearBarKey(index: int, key: string): void {
+        const list = bars.slice();
+        if (index < 0 || index >= list.length)
+            return;
+        const b = Object.assign({}, list[index]);
+        delete b[key];
+        list[index] = b;
+        barsFile.set("bar", list);
+    }
+    function setBarWidgetKey(name: string, key: string, value: var): void {
+        const table = Object.assign({}, barWidgets[name] ?? {});
+        if (value === undefined)
+            delete table[key];
+        else
+            table[key] = value;
+        setBarWidget(name, table);
+    }
+    function setBarWidgetAction(name: string, gesture: string, action: var): void {
+        const table = Object.assign({}, barWidgets[name] ?? {});
+        const actions = Object.assign({}, table.actions ?? {});
+        if (action === undefined)
+            delete actions[gesture];
+        else
+            actions[gesture] = action;
+        table.actions = actions;
+        setBarWidget(name, table);
+    }
     function setWidgets(list: var): void {
         widgetsFile.set("widget", list);
     }
