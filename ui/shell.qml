@@ -17,7 +17,10 @@ ShellRoot {
     readonly property var ipc: Ipc
 
     // this instance writes the generated niri layout fragment; Settings only edits shell.json
-    Component.onCompleted: WindowBehaviour.writer = true
+    Component.onCompleted: {
+        WindowBehaviour.writer = true;
+        WallpaperOverview.writer = true;
+    }
 
     Bars {}
     PanelHost {}
