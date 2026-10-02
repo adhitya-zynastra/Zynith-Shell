@@ -14,12 +14,35 @@ Singleton {
     readonly property alias bars: adapter.bars
     readonly property alias panels: adapter.panels
     readonly property alias osd: adapter.osd
+    readonly property alias window: adapter.window
     property bool loaded: false
 
     function setExperienceProfile(name: string): void {
         if (adapter.experience.profile === name)
             return;
         adapter.experience.profile = name;
+        file.writeAdapter();
+    }
+
+    function setReducedMotion(on: bool): void {
+        adapter.experience.reducedMotion = on;
+        file.writeAdapter();
+    }
+
+    // one field of one bar; the list is replaced so bindings see the change
+    function updateBar(index: int, key: string, value: var): void {
+        const bars = adapter.bars.slice();
+        if (index < 0 || index >= bars.length)
+            return;
+        bars[index] = Object.assign({}, bars[index], {
+            [key]: value
+        });
+        adapter.bars = bars;
+        file.writeAdapter();
+    }
+
+    function setWindowBehaviour(behaviour: string): void {
+        adapter.window.behaviour = behaviour;
         file.writeAdapter();
     }
 
@@ -71,6 +94,11 @@ Singleton {
 
             property JsonObject panels: JsonObject {
                 property int width: 400
+            }
+
+            // scrolling | tiling-like; the native shell turns it into a niri fragment
+            property JsonObject window: JsonObject {
+                property string behaviour: "scrolling"
             }
 
             // off while the native shell's OSD is still the one in use

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# zynith-ui start|stop|restart|status|log|build|ipc <method> [args...]
+# zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args...]
 # Runs the Quickshell UI beside the native shell. Always the packaged Quickshell (/usr/bin), never a
 # stray build earlier on PATH.
 set -euo pipefail
@@ -27,7 +27,8 @@ start)
     mkdir -p "$RUN"
     if running; then echo "already running ($(cat "$PIDFILE"))"; exit 0; fi
     build_native
-    QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+        QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
         setsid -f "$QS" -p "$SHELL_QML" >"$LOG" 2>&1 </dev/null
     for _ in $(seq 1 50); do
         pid=$(pgrep -n -f "^$QS -p $SHELL_QML\$" || true)
@@ -49,6 +50,17 @@ restart) "$0" stop && "$0" start ;;
 build) build_native && echo "built $NATIVE_BUILD" ;;
 status) running && echo "running ($(cat "$PIDFILE"))" || echo "not running" ;;
 log) sed 's/\x1b\[[0-9;]*m//g' "$LOG" ;;
+settings)
+    build_native
+    route="${2:-home}"
+    if pgrep -f "^$QS -p $HERE/settings.qml\$" >/dev/null; then
+        exec "$QS" -p "$HERE/settings.qml" ipc call settings open "$route"
+    fi
+    ZYNITH_SETTINGS_ROUTE="$route" ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+        QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+        setsid -f "$QS" -p "$HERE/settings.qml" >"$RUN/settings.log" 2>&1 </dev/null
+    echo "settings: $route"
+    ;;
 ipc) shift; exec "$QS" -p "$SHELL_QML" ipc call zynith "$@" ;;
 *) echo "usage: zynith-ui start|stop|restart|status|log|ipc <method> [args]" >&2; exit 2 ;;
 esac
