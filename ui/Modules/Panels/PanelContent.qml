@@ -28,7 +28,8 @@ Item {
             bluetooth: bluetooth,
             launcher: launcher,
             clipboard: clipboard,
-            notifications: notifications
+            notifications: notifications,
+            quick: quick
         })
 
     onPanelIdChanged: {
@@ -93,6 +94,10 @@ Item {
     Component {
         id: notifications
         NotificationsPanel {}
+    }
+    Component {
+        id: quick
+        QuickSettingsPanel {}
     }
 
     Loader {

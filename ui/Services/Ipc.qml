@@ -26,6 +26,9 @@ Singleton {
         function launcher(): void {
             PanelRouter.toggle("launcher", root.focusedScreen(), { edge: "center" });
         }
+        function quick(): void {
+            PanelRouter.toggle("quick", root.focusedScreen(), null);
+        }
         function clipboard(): void {
             PanelRouter.toggle("clipboard", root.focusedScreen(), { edge: "center" });
         }

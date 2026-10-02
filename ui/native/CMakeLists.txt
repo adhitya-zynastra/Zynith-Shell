@@ -24,6 +24,7 @@ qt_add_qml_module(zynith_native
         src/audio_spectrum.h src/audio_spectrum.cpp
         src/niri_config.h src/niri_config.cpp
         src/network_state.h src/network_state.cpp
+        src/backlight.h src/backlight.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
