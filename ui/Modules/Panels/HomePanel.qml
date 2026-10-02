@@ -284,7 +284,7 @@ Column {
                 role: "caption"
                 tone: ExperiencePolicy.automatic ? "accent" : "faint"
                 caps: true
-                text: ExperiencePolicy.automatic ? "Auto" : "Manual  ·  set auto"
+                text: !ExperiencePolicy.automatic ? "Manual  ·  set auto" : ExperiencePolicy.limitedBy ? "Auto  ·  " + ExperiencePolicy.limitedBy : "Auto"
 
                 MouseArea {
                     anchors.fill: parent
@@ -325,7 +325,7 @@ Column {
             wrapMode: Text.WordWrap
             elide: Text.ElideNone
             text: (Hardware.cpuModel || "CPU") + "  ·  " + Hardware.memGiB.toFixed(0) + " GB  ·  " + Hardware.gpuSummary
-                + "\nRecommended: " + (ExperiencePolicy.labels[ExperiencePolicy.recommended] ?? "")
+                + "\nRecommended: " + (ExperiencePolicy.labels[ExperiencePolicy.hardwareProfile] ?? "")
         }
     }
 }

@@ -18,7 +18,26 @@ Singleton {
         })
 
     readonly property string selected: Config.experience.profile
-    readonly property string recommended: Hardware.recommendedProfile
+    readonly property string hardwareProfile: Hardware.recommendedProfile
+
+    // Automatic mode also follows power: at most Balanced on battery, Performance when the battery is low
+    // or power saving is on. A profile the user picked is never changed.
+    readonly property bool adaptive: Config.experience.adaptive
+    readonly property string limitReason: !adaptive ? "" : Power.powerSaver ? "power-saver" : Power.low ? "battery-low" : Power.onBattery ? "battery" : ""
+    readonly property var limitLabels: ({
+            "power-saver": "Power saver",
+            "battery-low": "Battery low",
+            "battery": "On battery"
+        })
+    readonly property string recommended: {
+        if (limitReason === "power-saver" || limitReason === "battery-low")
+            return "performance";
+        if (limitReason === "battery" && profiles.indexOf(hardwareProfile) > profiles.indexOf("balanced"))
+            return "balanced";
+        return hardwareProfile;
+    }
+    // why automatic mode is below the hardware recommendation right now, or ""
+    readonly property string limitedBy: automatic && recommended !== hardwareProfile ? limitLabels[limitReason] ?? "" : ""
     readonly property string profile: profiles.includes(selected) ? selected : recommended
     readonly property bool automatic: !profiles.includes(selected)
 

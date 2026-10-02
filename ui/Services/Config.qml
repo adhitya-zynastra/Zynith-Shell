@@ -24,6 +24,11 @@ Singleton {
         file.writeAdapter();
     }
 
+    function setAdaptive(on: bool): void {
+        adapter.experience.adaptive = on;
+        file.writeAdapter();
+    }
+
     function setReducedMotion(on: bool): void {
         adapter.experience.reducedMotion = on;
         file.writeAdapter();
@@ -71,6 +76,8 @@ Singleton {
                 // per-knob overrides on top of the profile, e.g. { "blurQuality": "off" }
                 property var overrides: ({})
                 property bool reducedMotion: false
+                // automatic mode steps down on battery and power saving
+                property bool adaptive: true
             }
 
             property list<var> bars: [

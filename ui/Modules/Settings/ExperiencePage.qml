@@ -59,7 +59,7 @@ Column {
                             text: ExperiencePolicy.labels[parent.parent.parent.modelData]
                         }
                         Label {
-                            visible: ExperiencePolicy.recommended === parent.parent.parent.modelData
+                            visible: ExperiencePolicy.hardwareProfile === parent.parent.parent.modelData
                             anchors.verticalCenter: parent.verticalCenter
                             role: "caption"
                             tone: "accent"
@@ -95,7 +95,22 @@ Column {
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 role: "body"
-                text: "Follow the recommendation for this hardware (" + (ExperiencePolicy.labels[ExperiencePolicy.recommended] ?? "") + ", " + Hardware.tier + " tier)"
+                text: "Follow the recommendation for this hardware (" + (ExperiencePolicy.labels[ExperiencePolicy.hardwareProfile] ?? "") + ", " + Hardware.tier + " tier)"
+            }
+        }
+        Row {
+            spacing: Metrics.s3
+            opacity: ExperiencePolicy.automatic ? 1 : 0.5
+            Toggle {
+                anchors.verticalCenter: parent.verticalCenter
+                checked: ExperiencePolicy.adaptive
+                onToggled: Config.setAdaptive(!ExperiencePolicy.adaptive)
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "body"
+                text: "Ease off on battery: at most Balanced, Performance when low or power saving"
+                    + (ExperiencePolicy.limitedBy ? "  ·  now: " + ExperiencePolicy.labels[ExperiencePolicy.recommended] + " (" + ExperiencePolicy.limitedBy.toLowerCase() + ")" : "")
             }
         }
         Row {
