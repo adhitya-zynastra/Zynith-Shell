@@ -17,6 +17,43 @@ Singleton {
         return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
     }
 
+    // the keybinding socket (zynith-ui cmd …): the same actions, without a client process per key
+    readonly property Connections commands: Connections {
+        target: CommandServer
+        function onCommand(name: string, args: string): void {
+            const screen = root.focusedScreen();
+            switch (name) {
+            case "launcher":
+                if (args !== "") {
+                    if (PanelRouter.isOpen("launcher", screen) && (PanelRouter.current(screen)?.context ?? "") === args)
+                        PanelRouter.close(screen);
+                    else
+                        PanelRouter.open("launcher", screen, { edge: "center", context: args });
+                } else {
+                    PanelRouter.toggle("launcher", screen, { edge: "center" });
+                }
+                break;
+            case "clipboard":
+            case "wallpaper":
+            case "session":
+                PanelRouter.toggle(name, screen, { edge: "center" });
+                break;
+            case "control":
+            case "notifications":
+                PanelRouter.toggle(name, screen, null);
+                break;
+            case "panel":
+                PanelRouter.toggle(args, screen, null);
+                break;
+            case "close":
+                PanelRouter.closeAll();
+                break;
+            default:
+                console.warn("zynith: unknown command", name);
+            }
+        }
+    }
+
     IpcHandler {
         target: "zynith"
 
@@ -25,6 +62,14 @@ Singleton {
         }
         function launcher(): void {
             PanelRouter.toggle("launcher", root.focusedScreen(), { edge: "center" });
+        }
+        // opens the launcher in a mode: = > @ : !
+        function launcherMode(prefix: string): void {
+            const screen = root.focusedScreen();
+            if (PanelRouter.isOpen("launcher", screen) && (PanelRouter.current(screen)?.context ?? "") === prefix)
+                PanelRouter.close(screen);
+            else
+                PanelRouter.open("launcher", screen, { edge: "center", context: prefix });
         }
         function wallpaper(): void {
             PanelRouter.toggle("wallpaper", root.focusedScreen(), { edge: "center" });

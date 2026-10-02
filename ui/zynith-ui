@@ -68,5 +68,19 @@ settings)
     echo "settings: $route"
     ;;
 ipc) shift; exec "$QS" -p "$SHELL_QML" ipc call zynith "$@" ;;
-*) echo "usage: zynith-ui start|stop|restart|status|log|ipc <method> [args]" >&2; exit 2 ;;
+cmd)
+    # for keybindings: a line to the UI's socket (milliseconds), or the native shell's panel if the UI is not up
+    shift
+    if [[ -S "$RUN/ui.sock" ]] && printf '%s\n' "$*" | socat -t 1 - "UNIX-CONNECT:$RUN/ui.sock" >/dev/null 2>&1; then
+        exit 0
+    fi
+    N="$HOME/.local/opt/noctalia/bin/noctalia"
+    case "${1:-}" in
+    launcher) [[ "${2:-}" == ":" ]] && exec "$N" msg panel-toggle launcher /emo || exec "$N" msg panel-toggle launcher ;;
+    clipboard | wallpaper | session) exec "$N" msg panel-toggle "$1" ;;
+    control) exec "$N" msg panel-toggle control-center ;;
+    notifications) exec "$N" msg panel-toggle control-center notifications ;;
+    esac
+    ;;
+*) echo "usage: zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args]|cmd <command> [args]" >&2; exit 2 ;;
 esac

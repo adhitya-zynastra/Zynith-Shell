@@ -11,6 +11,9 @@ Item {
     property real visibleProgress: 1
     property var history: []
     property bool active: true
+    // what the panel was opened for, e.g. a launcher mode
+    property string context: ""
+    property int showings: 0
 
     // the panel actually shown; lags panelId by one fade when navigating
     property string shownId: panelId
@@ -19,6 +22,8 @@ Item {
     implicitHeight: loader.item?.implicitHeight ?? 0
     // a panel may ask for its own width (0: the configured one)
     readonly property int preferredWidth: loader.item?.preferredWidth ?? 0
+    // where a centred panel's top sits, as a fraction of the screen height
+    readonly property real preferredTop: loader.item?.preferredTop ?? 0.22
 
     readonly property var panels: ({
             home: home,
@@ -120,6 +125,10 @@ Item {
         onLoaded: {
             item.screen = Qt.binding(() => root.screen);
             item.visibleProgress = Qt.binding(() => root.visibleProgress);
+            if (item.context !== undefined)
+                item.context = Qt.binding(() => root.context);
+            if (item.showings !== undefined)
+                item.showings = Qt.binding(() => root.showings);
             if (item.active !== undefined)
                 item.active = Qt.binding(() => root.active);
             if (item.canGoBack !== undefined) {

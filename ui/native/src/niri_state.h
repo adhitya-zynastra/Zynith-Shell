@@ -35,6 +35,10 @@ public:
     // true when the active workspace on `output` has at least one window
     Q_INVOKABLE bool activeWorkspaceOccupied(const QString& output) const;
     Q_INVOKABLE void focusWorkspace(qulonglong id);
+    // every open window, most recently focused first: [{ id, title, appId, workspaceId, focused }]; built on
+    // request so window titles changing all day cost nothing
+    Q_INVOKABLE QVariantList windowList() const;
+    Q_INVOKABLE void focusWindow(qulonglong id);
     // `action` is one niri Action object, e.g. {"FocusWorkspace": {"reference": {"Id": 3}}}
     Q_INVOKABLE void action(const QVariantMap& action);
 

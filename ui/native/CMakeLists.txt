@@ -28,6 +28,7 @@ qt_add_qml_module(zynith_native
         src/backlight.h src/backlight.cpp
         src/core_client.h src/core_client.cpp
         src/config_file.h src/config_file.cpp
+        src/command_server.h src/command_server.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

@@ -212,6 +212,35 @@ void NiriState::focusWorkspace(qulonglong id) {
     action(QVariantMap{{"FocusWorkspace", QVariantMap{{"reference", QVariantMap{{"Id", id}}}}}});
 }
 
+QVariantList NiriState::windowList() const {
+    QList<QJsonObject> windows = m_windows.values();
+    std::sort(windows.begin(), windows.end(), [](const QJsonObject& a, const QJsonObject& b) {
+        // focus timestamps when niri reports them, else focused first
+        const auto stamp = [](const QJsonObject& w) {
+            const QJsonObject ts = w.value("focus_timestamp").toObject();
+            return ts.value("secs").toInteger() * 1000000000LL + ts.value("nanos").toInteger();
+        };
+        if (a.value("is_focused").toBool() != b.value("is_focused").toBool())
+            return a.value("is_focused").toBool();
+        return stamp(a) > stamp(b);
+    });
+    QVariantList out;
+    for (const QJsonObject& w : windows) {
+        out.append(QVariantMap{
+            {"id", idOf(w.value("id"))},
+            {"title", w.value("title").toString()},
+            {"appId", w.value("app_id").toString()},
+            {"workspaceId", idOf(w.value("workspace_id"))},
+            {"focused", w.value("is_focused").toBool()},
+        });
+    }
+    return out;
+}
+
+void NiriState::focusWindow(qulonglong id) {
+    action(QVariantMap{{"FocusWindow", QVariantMap{{"id", id}}}});
+}
+
 void NiriState::action(const QVariantMap& action) {
     const QString path = socketPath();
     if (path.isEmpty())

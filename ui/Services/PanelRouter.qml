@@ -32,6 +32,7 @@ Singleton {
             originY: origin?.y ?? -1,
             edge: origin?.edge ?? "top",
             extent: origin?.extent ?? 42,
+            context: origin?.context ?? "",
             history: []
         });
     }

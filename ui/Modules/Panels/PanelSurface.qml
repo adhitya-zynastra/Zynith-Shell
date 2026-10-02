@@ -40,7 +40,7 @@ PanelWindow {
     // the card's rectangle on screen
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
     readonly property real cardX: edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: edge === "center" ? Math.round(sh * 0.22) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    readonly property real cardY: edge === "center" ? Math.round(sh * content.preferredTop) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
     readonly property real winX: Math.max(0, cardX - pad)
     readonly property real winY: Math.max(0, cardY - pad)
 
@@ -93,10 +93,13 @@ PanelWindow {
     }
     // the entrance plays once per showing, whether the window is new or warm
     property bool entering: false
+    // counts appearances, so content can start fresh each time (warm or not)
+    property int showings: 0
     function begin(): void {
         if (entering)
             return;
         entering = true;
+        showings++;
         leave.stop();
         revealed = 0;
         enter.restart();
@@ -179,6 +182,8 @@ PanelWindow {
                 width: parent.width
                 panelId: win.held?.id ?? ""
                 history: win.held?.history ?? []
+                context: win.held?.context ?? ""
+                showings: win.showings
                 screen: win.screen
                 visibleProgress: win.revealed
                 active: win.visible
