@@ -20,7 +20,7 @@ Singleton {
     readonly property var fragments: ({
             "config": "// Empty on purpose: the layout block in config.kdl applies as written.\n",
             "scrolling": "// Windows open at the width they ask for; the view scrolls and centres the focused column\n// when it does not fit.\nlayout {\n    default-column-width {}\n    center-focused-column \"on-overflow\"\n    always-center-single-column false\n}\n",
-            "tiling-like": "// New windows take half the screen, so two share it side by side. Existing windows are never\n// resized to make room: a third window scrolls the strip.\nlayout {\n    default-column-width { proportion 0.5; }\n    preset-column-widths {\n        proportion 0.33333\n        proportion 0.5\n        proportion 0.66667\n        proportion 1.0\n    }\n    center-focused-column \"never\"\n    always-center-single-column\n}\n"
+            "tiling-like": "// New windows take half the screen, so two share it side by side. Existing windows are never\n// resized to make room: a third window scrolls the strip.\nlayout {\n    default-column-width { proportion 0.5; }\n    preset-column-widths {\n        proportion 0.33333\n        proportion 0.5\n        proportion 0.66667\n        proportion 1.0\n    }\n    center-focused-column \"never\"\n    always-center-single-column\n}\n// expand is Mod+Alt+F and centring one column Mod+C in binds.kdl; this adds centring what is visible\nbinds {\n    Mod+Ctrl+C hotkey-overlay-title=\"Center visible columns\" { center-visible-columns; }\n}\n"
         })
 
     function text(key: string): string {

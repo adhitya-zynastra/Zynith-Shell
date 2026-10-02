@@ -24,7 +24,7 @@ Column {
         {
             key: "tiling-like",
             title: "Tiling-like",
-            text: "New windows take half the screen, so two share it side by side, with ⅓ · ½ · ⅔ · full presets. Existing windows are never resized when one opens; a third window still scrolls. niri has no master/stack tiling."
+            text: "New windows take half the screen, so two share it side by side; a lone window sits centred. ⅓ · ½ · ⅔ · full presets (Mod+R), fill the free width (Mod+Alt+F), centre what is visible (Mod+Ctrl+C). Existing windows are never resized when one opens, and a third window still scrolls: niri stays a scrolling layout, not a traditional tiler."
         }
     ]
 
