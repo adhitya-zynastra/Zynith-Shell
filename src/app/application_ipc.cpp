@@ -746,7 +746,17 @@ void Application::initIpc() {
           {"code", snap.current.weatherCode},
           {"isDay", snap.current.isDay},
           {"wind", snap.current.windSpeedKmh},
+          {"windDirection", snap.current.windDirectionDeg},
+          {"uv", snap.current.uvIndex},
+          {"humidity", snap.current.relativeHumidityPercent},
       };
+      if (snap.current.apparentTemperatureC) {
+        out["current"]["feelsLike"] = m_weatherService.displayTemperature(*snap.current.apparentTemperatureC);
+      }
+      out["timezone"] = snap.timezone;
+      out["utcOffset"] = snap.utcOffsetSeconds;
+      out["elevation"] = snap.elevationM;
+      out["source"] = snap.sourceLabel;
       nlohmann::json days = nlohmann::json::array();
       for (const auto& d : snap.forecastDays) {
         days.push_back({
@@ -754,9 +764,24 @@ void Application::initIpc() {
             {"max", m_weatherService.displayTemperature(d.temperatureMaxC)},
             {"min", m_weatherService.displayTemperature(d.temperatureMinC)},
             {"code", d.weatherCode},
+            {"sunrise", d.sunriseIso},
+            {"sunset", d.sunsetIso},
         });
       }
       out["days"] = days;
+      nlohmann::json hours = nlohmann::json::array();
+      for (const auto& h : snap.forecastHours) {
+        hours.push_back({
+            {"time", h.timeIso},
+            {"temperature", m_weatherService.displayTemperature(h.temperatureC)},
+            {"code", h.weatherCode},
+            {"isDay", h.isDay},
+            {"humidity", h.relativeHumidityPercent},
+            {"rain", h.precipitationProbabilityPercent},
+            {"wind", h.windSpeedKmh},
+        });
+      }
+      out["hours"] = hours;
     }
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
