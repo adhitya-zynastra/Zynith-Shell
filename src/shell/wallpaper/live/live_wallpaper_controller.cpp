@@ -369,10 +369,7 @@ void LiveWallpaperController::onRendererStarted() {
   pushRecent(m_currentId);
 
   handOverToLive(started.outputs);
-  // Palette: the author's preview is a still of this wallpaper that already exists on disk. The theme
-  // service decodes it at 112x112, extracts the palette, frees the pixels and memoizes the result per
-  // (path, mtime, scheme) — no screen capture (which would include the user's windows), no extra render.
-  m_config->setPaletteSourceOverride(m_activeItem->preview.string());
+  // The palette follows the poster through WallpaperState (one owner for every view of the wallpaper).
   armCarousel();
   notify();
 }
@@ -474,7 +471,6 @@ void LiveWallpaperController::restoreStatic() {
   }
   const bool hadManaged = !m_managedOutputs.empty();
   m_managedOutputs.clear();
-  m_config->setPaletteSourceOverride({});
   if (hadManaged) {
     kLog.info("transition: static surfaces restored");
   }

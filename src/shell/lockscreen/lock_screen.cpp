@@ -703,6 +703,9 @@ std::string LockScreen::wallpaperPathForOutput(const std::string& connectorName)
   if (!customWallpaper.empty()) {
     return customWallpaper;
   }
+  if (m_wallpaperPathFor) {
+    return m_wallpaperPathFor(connectorName);
+  }
   return m_configService->getWallpaperPath(connectorName);
 }
 

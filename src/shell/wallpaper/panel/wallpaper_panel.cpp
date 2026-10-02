@@ -900,6 +900,7 @@ void WallpaperPanel::create() {
               m_live->setCategory(static_cast<LiveWallpaperController::Category>(index));
               m_pendingInitialFocus = true;
               rebuildLiveEntries();
+              syncLoadingState();
               resetSelection();
               rebindGrid(true);
               syncBrowseChrome();

@@ -76,6 +76,12 @@ public:
   [[nodiscard]] Mode mode() const noexcept { return m_mode; }
   // What Live mode shows (or will show): the persisted Workshop id.
   [[nodiscard]] const std::string& currentId() const noexcept { return m_currentId; }
+  // The running renderer's poster (the item's author preview) and the outputs it covers; empty in Static
+  // mode or while nothing has started. WallpaperState turns these into what lock/overview/palette show.
+  [[nodiscard]] std::string activePoster() const {
+    return m_mode == Mode::Live && m_activeItem.has_value() ? m_activeItem->preview.string() : std::string();
+  }
+  [[nodiscard]] const std::vector<std::string>& renderOutputs() const noexcept { return m_renderOutputs; }
   // Switches to Live mode with this item. Returns false with a reason when it cannot even be launched
   // (invalid id, not installed, unsupported type, renderer missing). Startup failures are reported
   // asynchronously through lastError()/changed().

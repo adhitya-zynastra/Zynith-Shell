@@ -2,6 +2,7 @@
 
 #include "config/config_types.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,8 +31,12 @@ public:
   void restoreAfterGraphicsReset();
   void finishGraphicsResetRecovery() noexcept;
   void requestLayout();
+  // zynith: what to show per output (WallpaperState::stillFor). Defaults to the static config path.
+  void setPathProvider(std::function<std::string(const std::string&)> provider) { m_pathFor = std::move(provider); }
 
 private:
+  [[nodiscard]] std::string pathFor(const std::string& connector) const;
+  std::function<std::string(const std::string&)> m_pathFor;
   [[nodiscard]] bool isSupportedForCurrentCompositor() const;
   [[nodiscard]] bool shouldHaveInstances() const;
   void reload();

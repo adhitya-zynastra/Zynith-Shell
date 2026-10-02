@@ -61,6 +61,7 @@
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
 #include "shell/wallpaper/live/live_wallpaper_controller.h"
 #include "shell/wallpaper/wallpaper.h"
+#include "shell/wallpaper/wallpaper_state.h"
 #include "system/battery_warning_monitor.h"
 #include "system/dependency_service.h"
 #include "system/desktop_entry_poll_source.h"
@@ -355,6 +356,10 @@ private:
   // back to the static backend and terminates the renderer).
   LiveWallpaperController m_liveWallpaper;
   Backdrop m_backdrop;
+  // zynith: one wallpaper state for desktop, overview, lock and palette. Declared after the views it
+  // drives, so it is destroyed (and disconnected) before any of them.
+  WallpaperState m_wallpaperState;
+  Signal<>::ScopedConnection m_wallpaperStateConn;
   SettingsWindow m_settingsWindow;
   LayerPopupHostRegistry m_layerPopupHosts;
   ColorPickerDialogPopup m_colorPickerDialogPopup;
