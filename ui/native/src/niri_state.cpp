@@ -29,6 +29,13 @@ NiriState::NiriState(QObject* parent)
     connectStream();
 }
 
+// m_retry is destroyed before m_stream, and the stream's teardown emits disconnected: without this the
+// handler would restart a destroyed timer and the event loop would later fire it into freed memory
+NiriState::~NiriState() {
+    m_stream.disconnect(this);
+    m_retry.stop();
+}
+
 void NiriState::connectStream() {
     const QString path = socketPath();
     if (path.isEmpty())

@@ -24,6 +24,7 @@ class NiriState : public QObject {
 
 public:
     explicit NiriState(QObject* parent = nullptr);
+    ~NiriState() override;
 
     bool connected() const { return m_connected; }
     bool overviewOpen() const { return m_overviewOpen; }
