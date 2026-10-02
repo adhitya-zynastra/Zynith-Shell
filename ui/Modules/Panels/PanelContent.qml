@@ -26,7 +26,8 @@ Item {
             system: system,
             network: network,
             bluetooth: bluetooth,
-            launcher: launcher
+            launcher: launcher,
+            clipboard: clipboard
         })
 
     onPanelIdChanged: {
@@ -83,6 +84,10 @@ Item {
     Component {
         id: launcher
         LauncherPanel {}
+    }
+    Component {
+        id: clipboard
+        ClipboardPanel {}
     }
 
     Loader {

@@ -26,6 +26,9 @@ Singleton {
         function launcher(): void {
             PanelRouter.toggle("launcher", root.focusedScreen(), { edge: "center" });
         }
+        function clipboard(): void {
+            PanelRouter.toggle("clipboard", root.focusedScreen(), { edge: "center" });
+        }
         // what the launcher would list for a query, best first
         function apps(query: string): string {
             return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");

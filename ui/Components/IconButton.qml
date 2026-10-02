@@ -9,7 +9,6 @@ Item {
     property int iconSize: Metrics.icon
     property string tone: "ink"
     property bool active: false
-    property bool enabled: true
     signal clicked
 
     implicitWidth: size

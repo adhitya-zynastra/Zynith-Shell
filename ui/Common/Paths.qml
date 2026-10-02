@@ -12,6 +12,9 @@ Singleton {
     readonly property string state: stateHome + "/zynith"
     readonly property string cache: cacheHome + "/zynith"
 
+    // the native shell, which holds the core services (clipboard history, wallpaper, lock) during migration
+    readonly property string core: home + "/.local/opt/noctalia/bin/noctalia"
+
     // Quickshell serves QML from a virtual filesystem, so assets are addressed by real path.
     function asset(rel: string): string {
         return "file://" + Quickshell.shellPath("assets/" + rel);
