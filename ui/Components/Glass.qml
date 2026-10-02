@@ -13,6 +13,11 @@ Item {
     property bool raised: false
     // the hairline around the sheet
     property bool edge: true
+    // per-corner radii [top left, top right, bottom right, bottom left]; null: `radius` everywhere
+    property var corners: null
+    // the edge's colour (a palette role or #hex; empty: the theme's hairline) and width (-1: the theme's)
+    property string edgeColor: ""
+    property real edgeWidth: -1
     property bool sheen: ExperiencePolicy.effectsQuality !== "minimal"
     readonly property alias sheet: sheet
 
@@ -33,9 +38,13 @@ Item {
 
         anchors.fill: parent
         radius: root.radius
+        topLeftRadius: root.corners ? root.corners[0] : -1
+        topRightRadius: root.corners ? root.corners[1] : -1
+        bottomRightRadius: root.corners ? root.corners[2] : -1
+        bottomLeftRadius: root.corners ? root.corners[3] : -1
         color: root.fill
-        border.width: root.edge ? Theme.hairlineWidth : 0
-        border.color: Theme.hairline
+        border.width: !root.edge ? 0 : root.edgeWidth >= 0 ? root.edgeWidth : Theme.hairlineWidth
+        border.color: root.edgeColor !== "" ? Theme.colour(root.edgeColor) : Theme.hairline
 
         Rectangle {
             visible: root.sheen

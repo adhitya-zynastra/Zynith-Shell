@@ -17,12 +17,17 @@ Singleton {
     // the output holding the focused workspace ("" outside niri)
     readonly property string focusedOutput: NiriState.workspaces.find(w => w.focused)?.output ?? ""
 
-    function forScreen(screen: var): var {
+    // the workspaces on this screen's output (all of them when `all`)
+    function forScreen(screen: var, all: bool): var {
         const name = screen?.name ?? "";
         if (niri) {
-            return NiriState.workspaces.filter(w => w.output === name).map(w => ({
+            return NiriState.workspaces.filter(w => all || w.output === name).map(w => ({
                         key: w.id,
+                        idx: w.idx,
+                        name: w.name ?? "",
+                        output: w.output,
                         active: w.active,
+                        focused: w.focused,
                         urgent: w.urgent,
                         windows: w.windows,
                         activate: () => NiriState.focusWorkspace(w.id)

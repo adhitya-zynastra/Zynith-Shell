@@ -1,21 +1,22 @@
 import QtQuick
+import Quickshell
 import qs.Common
 import qs.Components
 import qs.Services
 
+// The connection: its strength or wired, its name if asked.
 BarItem {
     id: root
-
-    onClicked: bar?.openPanel("home", root)
-
-    Icon {
+    active: PanelRouter.isOpen("network", screen?.name ?? "")
+    BarGlyph {
+        item: root
         name: Network.glyph
-        tone: Network.connected ? "ink" : "faint"
+        colour: Network.connected ? root.iconInk : Theme.alpha(root.iconInk, 0.45)
     }
-    Label {
-        visible: root.hovered && !root.vertical && Network.name !== ""
-        role: "label"
-        tone: "muted"
+    BarText {
+        item: root
+        visible: root.opt("show_label") !== false && !root.vertical && Network.name !== ""
+        muted: true
         text: Network.name
     }
 }

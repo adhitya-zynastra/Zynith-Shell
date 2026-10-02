@@ -1,28 +1,24 @@
 import QtQuick
-import Zynith.Native
+import Quickshell
 import qs.Common
 import qs.Components
 import qs.Services
+import Zynith.Native
 
-// Scroll for brightness; the level shows while hovered (and is only read while it shows).
+// The screen's brightness; the level shows if asked. Scrolling changes it (its actions).
 BarItem {
     id: root
-
     shown: Backlight.available
-    onClicked: bar?.openPanel("control", root)
-    onScrolled: delta => Backlight.set(Backlight.value + (delta > 0 ? 0.05 : -0.05))
-    onHoveredChanged: hovered ? Backlight.retain() : Backlight.release()
-    Component.onDestruction: if (hovered)
-        Backlight.release()
-
-    Icon {
+    Component.onCompleted: Backlight.retain()
+    Component.onDestruction: Backlight.release()
+    BarGlyph {
+        item: root
         name: Backlight.value < 0.34 ? "brightness-down" : "brightness-up"
     }
-    Label {
-        visible: root.hovered && !root.vertical
-        role: "label"
-        numeric: true
-        tone: "muted"
+    BarText {
+        item: root
+        visible: root.opt("show_label") !== false && !root.vertical
+        muted: true
         text: Math.round(Backlight.value * 100)
     }
 }

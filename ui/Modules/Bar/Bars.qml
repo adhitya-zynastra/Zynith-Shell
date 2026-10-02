@@ -5,7 +5,7 @@ import qs.Services
 // Every configured bar, on every output it targets ("*" = all).
 Scope {
     Variants {
-        model: Config.bars
+        model: Config.bars.filter(b => b.enabled !== false)
 
         delegate: Scope {
             id: barScope

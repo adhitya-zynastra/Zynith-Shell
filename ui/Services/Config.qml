@@ -25,6 +25,31 @@ Singleton {
     readonly property var appearance: appearanceFile.values
     readonly property var animation: animationFile.values
     readonly property var bars: barsFile.values.bar ?? []
+    // named bar widgets ([widget.<name>] in bars.toml: type, settings, [widget.<name>.actions]) and capsule
+    // groups ([[group]]: id, members, fill, opacity, padding, spacing, accordion, direction)
+    readonly property var barWidgets: barsFile.values.widget ?? ({})
+    readonly property var barGroups: barsFile.values.group ?? []
+    // a bar list entry → what to draw: { name, type, settings, actions }
+    function resolveBarWidget(name: string): var {
+        const table = barWidgets[name] ?? {};
+        const settings = Object.assign({}, table);
+        delete settings.type;
+        delete settings.actions;
+        return {
+            name: name,
+            type: table.type ?? name,
+            settings: settings,
+            actions: table.actions ?? {}
+        };
+    }
+    function setBarWidget(name: string, table: var): void {
+        const all = Object.assign({}, barWidgets);
+        all[name] = table;
+        barsFile.set("widget", all);
+    }
+    function setBarGroups(list: var): void {
+        barsFile.set("group", list);
+    }
     readonly property var panels: panelsFile.values.panels
     readonly property var launcher: panelsFile.values.launcher
     readonly property var controlPanel: panelsFile.values.control_panel

@@ -21,6 +21,8 @@ class NiriState : public QObject {
     Q_PROPERTY(QVariantList workspaces READ workspaces NOTIFY workspacesChanged)
     Q_PROPERTY(QVariantMap focusedWindow READ focusedWindow NOTIFY focusedWindowChanged)
     Q_PROPERTY(QString keyboardLayout READ keyboardLayout NOTIFY keyboardLayoutChanged)
+    // every configured layout, so a single one can be told apart
+    Q_PROPERTY(QStringList keyboardLayouts READ keyboardLayouts NOTIFY keyboardLayoutChanged)
 
 public:
     explicit NiriState(QObject* parent = nullptr);
@@ -31,6 +33,7 @@ public:
     QVariantList workspaces() const { return m_workspacesOut; }
     QVariantMap focusedWindow() const { return m_focusedOut; }
     QString keyboardLayout() const { return m_layoutOut; }
+    QStringList keyboardLayouts() const { return m_layoutNames; }
 
     // true when the active workspace on `output` has at least one window
     Q_INVOKABLE bool activeWorkspaceOccupied(const QString& output) const;

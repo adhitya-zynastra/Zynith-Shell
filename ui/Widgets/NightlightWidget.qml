@@ -1,19 +1,16 @@
 import QtQuick
+import Quickshell
 import qs.Common
 import qs.Components
 import qs.Services
 
-// Night light from the native shell; state is read when the pointer arrives, so nothing polls.
+// Night light: on, off, or forced on.
 BarItem {
     id: root
-
-    onHoveredChanged: if (hovered)
-        Core.refresh()
-    Component.onCompleted: Core.refresh()
-    onClicked: Core.toggleNightlight()
-
-    Icon {
-        name: "sunset-2"
-        tone: Core.nightlight || Core.nightlightForced ? "accent" : "ink"
+    active: Core.nightlight
+    BarGlyph {
+        item: root
+        name: Core.nightlightForced ? "moon-stars" : Core.nightlight ? "moon" : "moon-off"
+        colour: Core.nightlight ? Theme.accent : root.iconInk
     }
 }

@@ -31,6 +31,31 @@ PanelWindow {
     readonly property int padding: spec.padding ?? Metrics.s3
     // a fixed length along the edge (0 = fit the widgets)
     readonly property int fixedLength: spec.length ?? 0
+    // per-corner radii (px), as the native bars had them; left out, the radius above
+    readonly property var corners: [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left].some(v => v !== undefined) ? [spec.radius_top_left ?? radius, spec.radius_top_right ?? radius, spec.radius_bottom_right ?? radius, spec.radius_bottom_left ?? radius] : null
+    readonly property string borderColor: spec.border_color ?? ""
+    readonly property real borderWidth: spec.border_width ?? -1
+    readonly property bool shadow: spec.shadow ?? true
+    // what the widgets on this bar default to
+    readonly property string fontFamily: spec.font_family ?? ""
+    readonly property real fontScale: spec.font_scale ?? 1
+    // what a click or a scroll does on the bar's empty space ([bar.actions]); natively, right click opened the
+    // Control Center
+    function deadZoneAction(gesture: string): string {
+        const own = spec.actions ?? {};
+        if (own[gesture] !== undefined)
+            return own[gesture];
+        return gesture === "right" ? "panel-toggle control-center home" : "";
+    }
+    readonly property bool hoverHighlight: spec.hover_highlight ?? true
+    readonly property bool widgetCapsule: spec.capsule ?? false
+    readonly property string capsuleFill: spec.capsule_fill ?? "surface_variant"
+    readonly property real capsuleOpacity: spec.capsule_opacity ?? 0.5
+    readonly property real capsulePadding: spec.capsule_padding ?? 0
+    // capsule groups: this bar's own ([[bar.group]]), then the shared ones ([[group]])
+    function groupFor(id: string): var {
+        return (spec.group ?? []).find(g => g.id === id) ?? Config.barGroups.find(g => g.id === id) ?? null;
+    }
 
     // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
     readonly property string visibility: spec.visibility ?? "always"
@@ -144,13 +169,14 @@ PanelWindow {
             return h - height - edgeGap;
         return anchorAt === "end" ? h - height - alongGap : anchorAt === "center" ? (h - height) / 2 : alongGap;
     }
-    function openPanel(id: string, item: Item): void {
+    function openPanel(id: string, item: Item, context: string): void {
         const p = item.mapToItem(pill, item.width / 2, item.height / 2);
         PanelRouter.toggle(id, screen.name, {
             x: windowScreenX() + pill.x + p.x,
             y: windowScreenY() + pill.y + p.y,
             edge: edge,
-            extent: margin + thickness
+            extent: margin + thickness,
+            context: context ?? ""
         });
     }
 
@@ -162,9 +188,12 @@ PanelWindow {
         width: win.vertical ? win.thickness : win.pillLength
         height: win.vertical ? win.pillLength : win.thickness
         radius: win.radius
-        raised: true
+        corners: win.corners
+        raised: win.shadow
         fill: Theme.alpha(Theme.glass, win.sheetOpacity)
         edge: win.border
+        edgeColor: win.borderColor
+        edgeWidth: win.borderWidth
 
         // slide toward the screen edge when hidden; arrive from it on start
         property real arrived: 0
@@ -194,6 +223,30 @@ PanelWindow {
             NumberAnimation {
                 duration: Motion.morph
                 easing.type: Motion.enterEasing
+            }
+        }
+
+        // the bar's empty space: under the widgets, so it only sees what they let through
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+            property real rest: 0
+            onClicked: mouse => {
+                const g = mouse.button === Qt.RightButton ? "right" : mouse.button === Qt.MiddleButton ? "middle" : mouse.button === Qt.BackButton ? "back" : mouse.button === Qt.ForwardButton ? "forward" : "left";
+                Actions.run(win.deadZoneAction(g), {
+                    screen: win.screen
+                });
+            }
+            onWheel: wheel => {
+                const horizontal = Math.abs(wheel.angleDelta.x) > Math.abs(wheel.angleDelta.y);
+                rest += horizontal ? wheel.angleDelta.x : wheel.angleDelta.y;
+                while (Math.abs(rest) >= 120) {
+                    const up = rest > 0;
+                    Actions.run(win.deadZoneAction(horizontal ? (up ? "scroll_left" : "scroll_right") : (up ? "scroll_up" : "scroll_down")), {
+                        screen: win.screen
+                    });
+                    rest -= up ? 120 : -120;
+                }
             }
         }
 
