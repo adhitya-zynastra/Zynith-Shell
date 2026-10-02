@@ -130,7 +130,7 @@ lib.warnIf cudaSupport
   meta = with lib; {
     description = "A sleek, customizable desktop shell crafted for Wayland.";
     homepage = "https://github.com/noctalia-dev/noctalia";
-    license = licenses.mit;
+    license = with licenses; [ gpl3Only mit ];
     platforms = platforms.linux;
     mainProgram = "noctalia";
   };

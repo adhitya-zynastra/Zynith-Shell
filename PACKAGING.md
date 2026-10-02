@@ -39,7 +39,7 @@ check, but it only covers repositories it indexes (and may still list v4 as
 | Name | `noctalia` |
 | Homepage | https://github.com/noctalia-dev/noctalia |
 | Docs | https://docs.noctalia.dev |
-| License | MIT ([LICENSE](LICENSE)); also see vendored licenses under `third_party/` for SPDX completeness |
+| License | GPL-3.0-only ([LICENSE](LICENSE)) for Zynith, including MIT-licensed Noctalia code ([LICENSES/Noctalia-MIT.txt](LICENSES/Noctalia-MIT.txt)); also see vendored licenses under `third_party/` for SPDX completeness |
 | Version | Meson `project(... version: ...)` in [`meson.build`](meson.build) |
 | Binary | `noctalia` |
 | Desktop entry | `dev.noctalia.Noctalia.desktop` |

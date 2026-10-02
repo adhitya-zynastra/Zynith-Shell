@@ -129,7 +129,11 @@ Donations are appreciated but completely optional.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Zynith is licensed under the GNU General Public License v3.0 (GPL-3.0-only); see [LICENSE](LICENSE).
+
+It is built on Noctalia (Copyright (c) 2026 noctalia-dev), which is MIT-licensed. Noctalia's license notice is kept
+unchanged in [LICENSES/Noctalia-MIT.txt](LICENSES/Noctalia-MIT.txt). Vendored code under `third_party/` and assets
+under `assets/` and `ui/assets/` keep their own licenses, stored beside them.
 
 ## Packaging
 

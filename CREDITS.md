@@ -70,6 +70,7 @@ External tools Noctalia integrates with at runtime when present:
 
 ## License
 
-Noctalia is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Noctalia is licensed under the MIT License; its notice is kept in [LICENSES/Noctalia-MIT.txt](LICENSES/Noctalia-MIT.txt).
+Zynith, which builds on it, is licensed under GPL-3.0-only; see [LICENSE](LICENSE).
 
 Each dependency listed above is governed by its own respective license. Please refer to their individual projects for licensing information.
