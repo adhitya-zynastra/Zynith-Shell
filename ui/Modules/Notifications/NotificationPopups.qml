@@ -12,10 +12,20 @@ Scope {
     id: root
 
     readonly property string screenName: Quickshell.screens.find(s => s.name === Workspaces.focusedOutput)?.name ?? (Quickshell.screens[0]?.name ?? "")
-    // below a top bar when there is one
-    readonly property int topInset: {
-        const bar = Config.bars.find(b => b.edge === "top");
-        return bar ? (bar.margin ?? 0) + (bar.thickness ?? Metrics.barThickness) : 0;
+    // top-right | top-left | top-center | bottom-right | bottom-left | bottom-center
+    readonly property string location: Config.notifications.location ?? "top-right"
+    readonly property bool atTop: !location.startsWith("bottom")
+    readonly property string side: location.endsWith("left") ? "left" : location.endsWith("center") ? "center" : "right"
+    readonly property bool compact: Config.notifications.density === "compact"
+    readonly property int cardWidth: compact ? 340 : 380
+    // clear of any always-visible bar on the edges the stack touches
+    function inset(edge: string): int {
+        let most = 0;
+        for (const bar of Config.bars) {
+            if (bar.edge === edge && (bar.visibility ?? "always") === "always")
+                most = Math.max(most, (bar.margin ?? 0) + (bar.thickness ?? Metrics.barThickness));
+        }
+        return most;
     }
 
     LazyLoader {
@@ -31,15 +41,19 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             color: "transparent"
             anchors {
-                top: true
-                right: true
+                top: root.atTop
+                bottom: !root.atTop
+                left: root.side === "left"
+                right: root.side === "right"
             }
             margins {
-                top: Math.max(0, root.topInset + Metrics.s3 - win.pad)
-                right: Math.max(0, Metrics.s3 - win.pad)
+                top: Math.max(0, root.inset("top") + Metrics.s3 - win.pad)
+                bottom: Math.max(0, root.inset("bottom") + Metrics.s3 - win.pad)
+                left: Math.max(0, root.inset("left") + Metrics.s3 - win.pad)
+                right: Math.max(0, root.inset("right") + Metrics.s3 - win.pad)
             }
             readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
-            implicitWidth: 380 + pad * 2
+            implicitWidth: root.cardWidth + pad * 2
             implicitHeight: stack.height + pad * 2
 
             mask: Region {
@@ -50,7 +64,7 @@ Scope {
                 id: stack
                 x: win.pad
                 y: win.pad
-                width: 380
+                width: root.cardWidth
                 spacing: Metrics.s2
 
                 Repeater {
@@ -93,13 +107,15 @@ Scope {
                         NotificationCard {
                             id: card
                             width: parent.width
+                            compact: root.compact
                             entry: slot.entry ?? ({ key: -1, actions: [], appName: "", appIcon: "", image: "", summary: "", body: "", time: 0 })
                             onActivated: Notifications.hidePopup(slot.modelData)
                         }
 
                         opacity: shown
                         transform: Translate {
-                            x: (1 - slot.shown) * 24
+                            x: root.side === "center" ? 0 : (1 - slot.shown) * (root.side === "left" ? -24 : 24)
+                            y: root.side === "center" ? (1 - slot.shown) * (root.atTop ? -16 : 16) : 0
                         }
                     }
                 }

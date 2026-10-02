@@ -42,7 +42,9 @@ Singleton {
             location: notificationsFile.values.location,
             density: notificationsFile.values.density,
             grouping: notificationsFile.values.grouping,
-            lockRedaction: notificationsFile.values.lock_redaction
+            lockRedaction: notificationsFile.values.lock_redaction,
+            sound: notificationsFile.values.sound,
+            soundVolume: notificationsFile.values.sound_volume
         })
     readonly property var wallpaper: wallpaperFile.values
     readonly property var window: windowFile.values
@@ -241,7 +243,9 @@ Singleton {
                 density: "comfortable",
                 grouping: true,
                 // hide notification text on the lock screen
-                lock_redaction: true
+                lock_redaction: true,
+                sound: true,
+                sound_volume: 0.6
             })
     }
 

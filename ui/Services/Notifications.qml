@@ -12,7 +12,8 @@ import qs.Common
 Singleton {
     id: root
 
-    readonly property bool wanted: Config.notifications.server || forceServer
+    // the Zynith UI owns notifications when zynith.toml hands them over (or notifications.toml server = true)
+    readonly property bool wanted: (Config.surfaces?.notifications ?? "native") === "zynith" || Config.notifications.server || forceServer
     property bool forceServer: false     // test harness only (private bus)
     property bool nameFree: false
     readonly property bool serving: wanted && nameFree
@@ -80,6 +81,7 @@ Singleton {
         history = [e].concat(rest).slice(0, Config.notifications.historySize);
         if (!dnd || e.urgency === NotificationUrgency.Critical)
             popups = [e.key].concat(popups).slice(0, Config.notifications.maxPopups);
+        chime(e);
         if (e.transient)
             forgetLater(e.key);
     }
@@ -135,18 +137,41 @@ Singleton {
         transientKeys = [];
     }
 
-    // never take the name from someone else
+    // never take the name from someone else; while another owner is letting go (the native shell after a
+    // handover), ask again for a little while
+    property int ownerChecks: 0
+    onWantedChanged: if (wanted) {
+        ownerChecks = 0;
+        owner.running = true;
+    }
+    Component.onCompleted: if (wanted)
+        owner.running = true
+    Timer {
+        id: recheck
+        interval: 1000
+        onTriggered: owner.running = true
+    }
     Process {
         id: owner
-        running: root.wanted && !root.nameFree
         command: ["busctl", "--user", "call", "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner", "s", "org.freedesktop.Notifications"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root.nameFree = text.trim() === "b false";
-                if (!root.nameFree)
+                if (root.nameFree || !root.wanted)
+                    return;
+                if (++root.ownerChecks < 20)
+                    recheck.restart();
+                else
                     console.warn("zynith: org.freedesktop.Notifications is owned by another process; not starting the notification server");
             }
         }
+    }
+
+    // the notification sound, as the native shell played it
+    function chime(e: var): void {
+        if (!(Config.notifications.sound ?? true) || dnd || e.urgency === NotificationUrgency.Low)
+            return;
+        Quickshell.execDetached(["pw-play", "--volume", String(Config.notifications.soundVolume ?? 0.6), Paths.home + "/.local/share/zynith/sounds/notification.wav"]);
     }
 
     LazyLoader {
