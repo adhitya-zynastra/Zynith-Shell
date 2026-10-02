@@ -529,6 +529,34 @@ void Application::initIpc() {
     return *uri + "\n";
   });
 
+  // zynith: the selected text entry, whole up to 16 KB, for the preview pane; nothing else leaves
+  m_ipcService.bind(noctalia::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
+    constexpr std::size_t kMaxPreviewText = 16U * 1024U;
+    const auto index = historyIndex(StringUtils::trim(args));
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    if (m_clipboardService.history()[*index].isImage()) {
+      return "error: not text\n";
+    }
+    if (!m_clipboardService.ensureEntryLoaded(*index)) {
+      return "error: entry unavailable\n";
+    }
+    const ClipboardEntry& entry = m_clipboardService.history()[*index];
+    std::string text(entry.data.begin(), entry.data.end());
+    if (text.size() > kMaxPreviewText) {
+      std::size_t cut = kMaxPreviewText;
+      while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
+        --cut;
+      }
+      text.resize(cut);
+    }
+    if (!m_panelManager.isOpenPanel("clipboard")) {
+      m_clipboardService.evictEntryPayload(*index);
+    }
+    return text;
+  });
+
   // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
   // released keyboard focus; the short wait lets the target window have it back.
   m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {

@@ -423,6 +423,10 @@ namespace noctalia::cli {
         "clipboard-image", "Print an image entry as a data URI (for a preview; refused above 8 MB)", {}, {}, {},
         kMsgClipboardEntryPositionals, {}, false
     };
+    inline constexpr Command clipboardEntryText{
+        "clipboard-entry-text", "Print up to 16 KB of a text entry, for a preview of the selected entry", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
+    };
     inline constexpr Command clipboardPaste{
         "clipboard-paste", "Paste the clipboard into the focused window, as [shell] clipboard_auto_paste says", {}, {},
         {}, kMsgClipboardPastePositionals, {}, false
@@ -1000,6 +1004,7 @@ namespace noctalia::cli {
       msg::clipboardPin,
       msg::clipboardImage,
       msg::clipboardPaste,
+      msg::clipboardEntryText,
       msg::clipboardText,
       msg::surfacesSync,
       msg::weatherStatus,

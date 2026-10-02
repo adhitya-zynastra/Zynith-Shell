@@ -861,6 +861,7 @@ void Application::initWaylandCallbacks() {
     if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
+    zynith::notifyUi("clipboard");
   });
   m_scriptApi.setClipboardText(m_clipboardService.clipboardText());
   m_compositorPlatform.setWorkspaceAlertService(&m_workspaceAlertService);
