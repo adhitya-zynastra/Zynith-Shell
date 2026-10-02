@@ -14,6 +14,8 @@ Singleton {
     readonly property bool overviewOpen: NiriState.overviewOpen
     readonly property var focusedWindow: NiriState.focusedWindow
     readonly property string keyboardLayout: NiriState.keyboardLayout
+    // the output holding the focused workspace ("" outside niri)
+    readonly property string focusedOutput: NiriState.workspaces.find(w => w.focused)?.output ?? ""
 
     function forScreen(screen: var): var {
         const name = screen?.name ?? "";

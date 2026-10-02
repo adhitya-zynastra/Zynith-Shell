@@ -8,7 +8,8 @@ Singleton {
     readonly property string stateHome: Quickshell.env("XDG_STATE_HOME") || home + "/.local/state"
     readonly property string cacheHome: Quickshell.env("XDG_CACHE_HOME") || home + "/.cache"
 
-    readonly property string config: configHome + "/zynith"
+    // ZYNITH_CONFIG_DIR lets a test instance run on its own copy of shell.json
+    readonly property string config: Quickshell.env("ZYNITH_CONFIG_DIR") || configHome + "/zynith"
     readonly property string state: stateHome + "/zynith"
     readonly property string cache: cacheHome + "/zynith"
 

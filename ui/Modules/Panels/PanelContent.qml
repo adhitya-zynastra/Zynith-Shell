@@ -27,7 +27,8 @@ Item {
             network: network,
             bluetooth: bluetooth,
             launcher: launcher,
-            clipboard: clipboard
+            clipboard: clipboard,
+            notifications: notifications
         })
 
     onPanelIdChanged: {
@@ -88,6 +89,10 @@ Item {
     Component {
         id: clipboard
         ClipboardPanel {}
+    }
+    Component {
+        id: notifications
+        NotificationsPanel {}
     }
 
     Loader {

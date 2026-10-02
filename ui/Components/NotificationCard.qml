@@ -1,0 +1,213 @@
+import QtQuick
+import Quickshell
+import Quickshell.Services.Notifications
+import qs.Common
+import qs.Services
+
+// One notification: who sent it, what it says, what can be done about it. Used by the popups and the
+// history panel; `entry` is a Notifications history entry.
+Item {
+    id: root
+
+    required property var entry
+    property bool compact: false
+    readonly property bool critical: entry.urgency === NotificationUrgency.Critical
+    readonly property bool hovered: hover.hovered
+    signal activated
+
+    // An icon name becomes an image://icon URL even when the theme lacks it, which draws Qt's
+    // missing-image checkerboard; only names the theme really has are used.
+    function iconSource(name: string): string {
+        if (name === "")
+            return "";
+        if (name.startsWith("/"))
+            return "file://" + name;
+        if (name.startsWith("file://"))
+            return name;
+        return Quickshell.iconPath(name, true);
+    }
+    readonly property string picture: {
+        const image = entry.image ?? "";
+        if (image.startsWith("image://icon/"))
+            return iconSource(image.substring(13).split("?")[0]);
+        return image !== "" ? image : iconSource(entry.appIcon ?? "");
+    }
+
+    implicitWidth: 360
+    implicitHeight: body.implicitHeight + Metrics.s4 * 2
+
+    HoverHandler {
+        id: hover
+    }
+    MouseArea {
+        anchors.fill: parent
+        cursorShape: Qt.PointingHandCursor
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+        onClicked: mouse => {
+            if (mouse.button === Qt.MiddleButton) {
+                Notifications.dismiss(root.entry.key);
+                return;
+            }
+            const def = root.entry.actions.find(a => a.id === "default");
+            if (def)
+                Notifications.invoke(root.entry.key, "default");
+            root.activated();
+        }
+    }
+
+    // critical carries an accent edge, nothing louder
+    Rectangle {
+        visible: root.critical
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 3
+        height: parent.height - Metrics.s5 * 2
+        radius: 2
+        color: Theme.danger
+    }
+
+    Row {
+        id: body
+        x: Metrics.s4
+        y: Metrics.s4
+        width: parent.width - Metrics.s4 * 2
+        spacing: Metrics.s4
+
+        Item {
+            id: badge
+            width: 36
+            height: 36
+
+            Rectangle {
+                anchors.fill: parent
+                radius: Metrics.radiusMd
+                color: Theme.hover
+                visible: picture.status !== Image.Ready
+            }
+            Image {
+                id: picture
+                anchors.fill: parent
+                sourceSize.width: 72
+                sourceSize.height: 72
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                source: root.picture
+                layer.enabled: root.entry.image !== ""
+            }
+            Text {
+                visible: picture.status !== Image.Ready
+                anchors.centerIn: parent
+                font.family: Type.icons
+                font.pixelSize: 18
+                color: Theme.inkMuted
+                text: Icons.glyph("bell")
+            }
+        }
+
+        Column {
+            width: parent.width - badge.width - parent.spacing
+            spacing: 2
+
+            Item {
+                width: parent.width
+                height: app.implicitHeight
+
+                Label {
+                    id: app
+                    width: parent.width - when.implicitWidth - close.width - Metrics.s3
+                    role: "caption"
+                    tone: "faint"
+                    caps: true
+                    text: root.entry.appName || "Notification"
+                }
+                Label {
+                    id: when
+                    anchors.right: close.left
+                    anchors.rightMargin: Metrics.s2
+                    role: "caption"
+                    tone: "faint"
+                    text: Qt.formatTime(new Date(root.entry.time), "HH:mm")
+                }
+                Text {
+                    id: close
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 14
+                    opacity: root.hovered ? 1 : 0
+                    font.family: Type.icons
+                    font.pixelSize: 13
+                    color: closeArea.containsMouse ? Theme.ink : Theme.inkFaint
+                    text: Icons.glyph("x")
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Motion.focus
+                        }
+                    }
+                    MouseArea {
+                        id: closeArea
+                        anchors.fill: parent
+                        anchors.margins: -6
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Notifications.dismiss(root.entry.key)
+                    }
+                }
+            }
+            Label {
+                width: parent.width
+                role: "body"
+                font.weight: Font.Medium
+                text: root.entry.summary
+            }
+            Label {
+                visible: text !== ""
+                width: parent.width
+                role: "label"
+                tone: "muted"
+                wrapMode: Text.Wrap
+                elide: Text.ElideRight
+                maximumLineCount: root.compact ? 2 : 4
+                textFormat: Text.PlainText
+                text: root.entry.body
+            }
+
+            Flow {
+                visible: !root.compact && actionsRepeater.count > 0
+                width: parent.width
+                spacing: Metrics.s2
+                topPadding: Metrics.s2
+
+                Repeater {
+                    id: actionsRepeater
+                    model: root.entry.n ? root.entry.actions.filter(a => a.id !== "default" && a.text !== "") : []
+
+                    delegate: Item {
+                        required property var modelData
+                        width: actionLabel.implicitWidth + Metrics.s5 * 2
+                        height: 28
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: actionArea.pressed ? Theme.press : actionArea.containsMouse ? Theme.accentSoft : Theme.hover
+                        }
+                        Label {
+                            id: actionLabel
+                            anchors.centerIn: parent
+                            role: "label"
+                            text: parent.modelData.text
+                        }
+                        MouseArea {
+                            id: actionArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Notifications.invoke(root.entry.key, parent.modelData.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

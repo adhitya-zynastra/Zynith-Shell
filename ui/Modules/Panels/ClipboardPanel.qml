@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import qs.Common
 import qs.Components
 import qs.Services
@@ -147,7 +148,10 @@ Column {
         height: Math.min(contentHeight, root.rows * 52)
         clip: true
         spacing: Metrics.s1
-        model: root.results
+        model: ScriptModel {
+            values: root.results
+            objectProp: "id"
+        }
         currentIndex: root.current
         highlightFollowsCurrentItem: false
         boundsBehavior: Flickable.StopAtBounds

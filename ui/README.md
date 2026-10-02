@@ -1,8 +1,9 @@
 # Zynith UI (Quickshell layer)
 
 The QML half of Zynith 2.0. It runs **beside** the native shell during the migration and takes no exclusive
-role: no notification server, tray watcher, polkit or secret agent, and no session lock. Those stay with the
-native shell until each one is moved deliberately.
+role: no tray watcher, polkit or secret agent, and no session lock. Those stay with the native shell until each
+one is moved deliberately. The notification server is built but off (`notifications.server`), and even when on it
+starts only if nobody else owns `org.freedesktop.Notifications`.
 
 ```sh
 ui/zynith-ui start      # builds Zynith.Native if needed, then starts /usr/bin/quickshell
@@ -10,8 +11,16 @@ ui/zynith-ui stop       # rollback: the native shell is untouched and keeps runn
 ui/zynith-ui ipc status
 ui/zynith-ui ipc panel home
 ui/zynith-ui ipc profile balanced     # performance | balanced | enhanced | max | auto
+ui/zynith-ui ipc launcher             # also: clipboard, panel <id>, close
+ui/zynith-ui ipc behaviour tiling-like  # config | scrolling | tiling-like → ~/.config/niri/rice/layout.kdl
+ui/zynith-ui ipc dnd toggle
+ui/zynith-ui settings [route]
 ui/zynith-ui log
+tools/notify-test.sh                  # notification server + popups on a private D-Bus, with sample notifications
 ```
+
+A new QML file needs a second live reload before other files can use it (Quickshell scans the directory once per
+reload). A change to `native/` needs `zynith-ui restart`: a loaded plugin is not replaced by a reload.
 
 Config: `~/.config/zynith/shell.json` (created with defaults on first run; edits reload live).
 Palette: `~/.local/state/zynith/palette.json`, written by the native theme engine from `templates/palette.json`.
@@ -24,8 +33,8 @@ Palette: `~/.local/state/zynith/palette.json`, written by the native theme engin
 | `Services/` | one singleton per domain (Audio, Media, Network, Power, Workspaces, System, Config, ExperiencePolicy, PanelRouter…) | the only place that touches the system; surfaces read these |
 | `Components/` | primitives: Glass, Label, Icon, Interactive, Slider, Segmented, Tile, Meter, BlurRegion | presentation only |
 | `Widgets/` | widget types and their Registry | read services, never poll, never spawn |
-| `Modules/` | surfaces: Bar, Panels | compose components and widgets |
-| `native/` | Zynith.Native, the in-process C++ QML module (niri model; later spectrum, sampler) | Qt public API only |
+| `Modules/` | surfaces: Bar, Panels, Notifications, Osd, Settings | compose components and widgets |
+| `native/` | Zynith.Native, the in-process C++ QML module: niri model, spectrum, validated niri config writes | Qt public API only |
 
 Every quality/cost decision goes through `Services/ExperiencePolicy.qml` (Performance, Balanced, Enhanced,
 Max Experience). Components read knobs such as `ExperiencePolicy.blur` or `Motion.reveal`; none of them checks the

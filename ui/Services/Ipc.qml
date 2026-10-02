@@ -11,7 +11,7 @@ Singleton {
 
     // the output with keyboard focus under niri, else the first one
     function focusedScreen(): string {
-        const focused = NiriState.workspaces.find(w => w.focused)?.output ?? "";
+        const focused = Workspaces.focusedOutput;
         if (focused && Quickshell.screens.some(s => s.name === focused))
             return focused;
         return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "";
@@ -32,6 +32,10 @@ Singleton {
         // what the launcher would list for a query, best first
         function apps(query: string): string {
             return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");
+        }
+        function dnd(on: string): string {
+            Notifications.setDnd(on === "on" || on === "true" || (on === "toggle" && !Notifications.dnd));
+            return Notifications.dnd ? "on" : "off";
         }
         // config | scrolling | tiling-like
         function behaviour(name: string): string {
@@ -71,6 +75,7 @@ Singleton {
                 focused: Workspaces.focusedWindow.appId ?? "",
                 spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
+                notifications: { serving: Notifications.serving, wanted: Notifications.wanted, history: Notifications.history.length, popups: Notifications.popups.length, dnd: Notifications.dnd },
                 windowBehaviour: { value: Config.window.behaviour, included: WindowBehaviour.included, error: WindowBehaviour.status },
                 launchTime: Quickshell.launchTime
             });

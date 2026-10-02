@@ -99,7 +99,9 @@ Column {
         spacing: Metrics.s1
 
         Repeater {
-            model: root.results
+            model: ScriptModel {
+                values: root.results
+            }
 
             delegate: Item {
                 id: row

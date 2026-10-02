@@ -16,6 +16,7 @@ Singleton {
     readonly property alias osd: adapter.osd
     readonly property alias window: adapter.window
     readonly property alias launcher: adapter.launcher
+    readonly property alias notifications: adapter.notifications
     property bool loaded: false
 
     function setExperienceProfile(name: string): void {
@@ -27,6 +28,11 @@ Singleton {
 
     function setAdaptive(on: bool): void {
         adapter.experience.adaptive = on;
+        file.writeAdapter();
+    }
+
+    function setNotificationsDnd(on: bool): void {
+        adapter.notifications.dnd = on;
         file.writeAdapter();
     }
 
@@ -112,6 +118,16 @@ Singleton {
             property JsonObject launcher: JsonObject {
                 // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
                 property list<string> terminal: []
+            }
+
+            property JsonObject notifications: JsonObject {
+                // owning org.freedesktop.Notifications is exclusive; off while the native shell has it
+                property bool server: false
+                property bool dnd: false
+                property int popupMs: 6000
+                property int maxPopups: 4
+                // kept in memory only, never written to disk
+                property int historySize: 100
             }
 
             // off while the native shell's OSD is still the one in use

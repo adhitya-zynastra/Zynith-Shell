@@ -8,6 +8,7 @@ import Quickshell
 import qs.Modules.Bar
 import qs.Modules.Panels
 import qs.Modules.Osd
+import qs.Modules.Notifications
 import qs.Services
 
 ShellRoot {
@@ -20,4 +21,5 @@ ShellRoot {
     Bars {}
     PanelHost {}
     Osd {}
+    NotificationPopups {}
 }
