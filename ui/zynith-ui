@@ -5,6 +5,9 @@
 set -euo pipefail
 
 QS=/usr/bin/quickshell
+# a crash ends the process (systemd-coredump keeps the core); Quickshell's own handler would relaunch
+# an untracked copy and open a report window
+export QS_DISABLE_CRASH_HANDLER=1
 HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 SHELL_QML="$HERE/shell.qml"
 RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/zynith"
