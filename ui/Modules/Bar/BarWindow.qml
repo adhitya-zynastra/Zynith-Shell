@@ -25,6 +25,30 @@ PanelWindow {
     readonly property bool reserve: spec.reserve ?? false
     readonly property real radius: spec.radius ?? thickness / 2
 
+    // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
+    readonly property string visibility: spec.visibility ?? "always"
+    readonly property bool panelHere: PanelRouter.openPanels[screen?.name ?? ""] !== undefined
+    readonly property bool hovered: hover.hovered
+    readonly property bool wantsHidden: {
+        if (panelHere || hovered)
+            return false;
+        if (visibility === "autohide")
+            return true;
+        if (visibility === "smart")
+            return Workspaces.occupied(screen?.name ?? "") && !Workspaces.overviewOpen;
+        return false;
+    }
+    // 1 = in place, 0 = slid away
+    property real shown: wantsHidden ? 0 : 1
+    Behavior on shown {
+        NumberAnimation {
+            duration: win.wantsHidden ? Motion.dismiss : Motion.reveal
+            easing.type: win.wantsHidden ? Motion.exitEasing : Motion.enterEasing
+        }
+    }
+    // a bar that is fully away renders nothing at all
+    updatesEnabled: shown > 0
+
     // Room for the shadow. Whatever part of it would fall off-screen is taken from the margins instead.
     readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
     readonly property int edgeGap: Math.max(0, margin - pad)
@@ -39,8 +63,8 @@ PanelWindow {
     WlrLayershell.namespace: "zynith-bar-" + (spec.id ?? "bar")
     WlrLayershell.layer: spec.layer === "overlay" ? WlrLayer.Overlay : spec.layer === "bottom" ? WlrLayer.Bottom : WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    exclusionMode: reserve ? ExclusionMode.Normal : ExclusionMode.Ignore
-    exclusiveZone: reserve ? thickness + margin : 0
+    exclusionMode: reserve && visibility === "always" ? ExclusionMode.Normal : ExclusionMode.Ignore
+    exclusiveZone: reserve && visibility === "always" ? thickness + margin : 0
     color: "transparent"
 
     anchors {
@@ -63,7 +87,20 @@ PanelWindow {
     implicitHeight: vertical ? alongSize : crossSize
 
     mask: Region {
-        item: pill
+        item: win.shown > 0.01 ? pill : strip
+    }
+
+    HoverHandler {
+        id: hover
+    }
+
+    // where the pointer summons a hidden bar
+    Item {
+        id: strip
+        x: win.vertical ? (win.edge === "left" ? 0 : win.width - 3) : pill.x
+        y: win.vertical ? pill.y : (win.edge === "top" ? 0 : win.height - 3)
+        width: win.vertical ? 3 : pill.width
+        height: win.vertical ? pill.height : 3
     }
 
     BlurRegion {
@@ -120,14 +157,21 @@ PanelWindow {
         radius: win.radius
         raised: true
 
-        // arrive from the edge on start
-        opacity: 0
-        Component.onCompleted: opacity = 1
-        Behavior on opacity {
+        // slide toward the screen edge when hidden; arrive from it on start
+        property real arrived: 0
+        Component.onCompleted: arrived = 1
+        Behavior on arrived {
             NumberAnimation {
                 duration: Motion.reveal
                 easing.type: Motion.enterEasing
             }
+        }
+        readonly property real presence: arrived * win.shown
+        readonly property real away: (1 - presence) * (win.thickness + win.margin + 4)
+        opacity: presence
+        transform: Translate {
+            x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
+            y: win.edge === "top" ? -pill.away : win.edge === "bottom" ? pill.away : 0
         }
         Behavior on width {
             enabled: !win.vertical && win.anchorAt !== "fill"

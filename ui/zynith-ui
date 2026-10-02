@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# zynith-ui start|stop|restart|status|log|ipc <method> [args...]
+# zynith-ui start|stop|restart|status|log|build|ipc <method> [args...]
 # Runs the Quickshell UI beside the native shell. Always the packaged Quickshell (/usr/bin), never a
 # stray build earlier on PATH.
 set -euo pipefail
@@ -10,6 +10,15 @@ SHELL_QML="$HERE/shell.qml"
 RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/zynith"
 PIDFILE="$RUN/ui.pid"
 LOG="$RUN/ui.log"
+NATIVE_SRC="$HERE/native"
+NATIVE_BUILD="${ZYNITH_NATIVE_BUILD:-$HERE/../../build-zynith-native}"
+
+build_native() {
+    if [[ ! -f "$NATIVE_BUILD/qml/Zynith/Native/libzynith_nativeplugin.so" || "$NATIVE_SRC" -nt "$NATIVE_BUILD/build.ninja" ]]; then
+        cmake -S "$NATIVE_SRC" -B "$NATIVE_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null
+    fi
+    nice -n 15 cmake --build "$NATIVE_BUILD" -j 6 >/dev/null
+}
 
 running() { [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; }
 
@@ -17,7 +26,9 @@ case "${1:-status}" in
 start)
     mkdir -p "$RUN"
     if running; then echo "already running ($(cat "$PIDFILE"))"; exit 0; fi
-    setsid -f "$QS" -p "$SHELL_QML" >"$LOG" 2>&1 </dev/null
+    build_native
+    QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+        setsid -f "$QS" -p "$SHELL_QML" >"$LOG" 2>&1 </dev/null
     for _ in $(seq 1 50); do
         pid=$(pgrep -n -f "^$QS -p $SHELL_QML\$" || true)
         [[ -n "$pid" ]] && { echo "$pid" >"$PIDFILE"; break; }
@@ -35,6 +46,7 @@ stop)
     echo stopped
     ;;
 restart) "$0" stop && "$0" start ;;
+build) build_native && echo "built $NATIVE_BUILD" ;;
 status) running && echo "running ($(cat "$PIDFILE"))" || echo "not running" ;;
 log) sed 's/\x1b\[[0-9;]*m//g' "$LOG" ;;
 ipc) shift; exec "$QS" -p "$SHELL_QML" ipc call zynith "$@" ;;

@@ -21,6 +21,7 @@ BarItem {
 
             required property var modelData
             readonly property bool current: modelData.active
+            readonly property bool empty: modelData.windows === 0
             readonly property real length: current ? 18 : modelData.urgent ? 8 : 6
 
             width: root.vertical ? 14 : length + 6
@@ -31,7 +32,7 @@ BarItem {
                 width: root.vertical ? 4 : mark.length
                 height: root.vertical ? mark.length : 4
                 radius: 2
-                color: mark.current ? Theme.accent : mark.modelData.urgent ? Theme.danger : Theme.inkFaint
+                color: mark.current ? Theme.accent : mark.modelData.urgent ? Theme.danger : mark.empty ? Theme.hover : Theme.inkFaint
 
                 Behavior on width {
                     NumberAnimation {
@@ -55,8 +56,7 @@ BarItem {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: if (mark.modelData.canActivate)
-                    mark.modelData.activate()
+                onClicked: mark.modelData.activate()
             }
         }
     }
