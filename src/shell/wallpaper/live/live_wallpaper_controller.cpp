@@ -13,6 +13,7 @@
 #include "wayland/wayland_connection.h"
 
 #include <algorithm>
+#include <nlohmann/json.hpp>
 #include <charconv>
 #include <format>
 #include <random>
@@ -830,6 +831,37 @@ void LiveWallpaperController::registerIpc(IpcService& ipc) {
   });
 
   ipc.bind(msg::wallpaperLiveStatus, [this](const std::string&) -> std::string { return statusJson(); });
+
+  // zynith: ids resolve one by one (a small project.json read each), so this works before discovery has run
+  ipc.bind(msg::wallpaperLiveList, [this](const std::string& args) -> std::string {
+    const std::string source = args.empty() ? std::string("collection") : args;
+    const std::vector<std::string>* ids = source == "favorites" ? &m_favorites
+                                          : source == "recent"  ? &m_recent
+                                                                : &m_collection;
+    nlohmann::json out = nlohmann::json::array();
+    for (const std::string& id : *ids) {
+      const live::Item* known = m_provider->find(id);
+      std::optional<live::Item> resolved;
+      if (known == nullptr) {
+        if (auto item = m_provider->resolve(id); item.has_value()) {
+          resolved = std::move(*item);
+          known = &*resolved;
+        }
+      }
+      if (known == nullptr) {
+        continue; // unsubscribed or removed from the library
+      }
+      out.push_back({
+          {"id", known->id},
+          {"title", known->title},
+          {"kind", std::string(live::kindName(known->kind))},
+          {"preview", known->preview.string()},
+          {"favorite", std::ranges::find(m_favorites, known->id) != m_favorites.end()},
+          {"current", m_activeItem.has_value() && m_activeItem->id == known->id},
+      });
+    }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
 
   ipc.bind(msg::wallpaperLiveNext, [this](const std::string&) -> std::string {
     std::string error;

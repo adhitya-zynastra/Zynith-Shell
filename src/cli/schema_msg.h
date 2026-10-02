@@ -244,6 +244,11 @@ namespace noctalia::cli {
       Positional{"action", {}, kMsgWallpaperLiveListActions, true, false, false},
       Positional{"workshop-id", {}, {}, true, false, false},
   };
+  // zynith: what another UI needs to show a live wallpaper list
+  inline constexpr std::array<std::string_view, 3> kMsgWallpaperLiveListSources{"collection", "favorites", "recent"};
+  inline constexpr std::array kMsgWallpaperLiveListItemsPositionals{
+      Positional{"source", "collection (default), favorites or recent", kMsgWallpaperLiveListSources, false, false, false},
+  };
   inline constexpr std::array kMsgWallpaperLiveCarouselPositionals{
       Positional{"state", "on or off, then optionally an interval in seconds and sequential|shuffle", {}, true,
                  true, false},
@@ -815,6 +820,10 @@ namespace noctalia::cli {
         "wallpaper-live-favorite", "Add or remove a Wallpaper Engine item in the live favorites", {}, {}, {},
         kMsgWallpaperLiveListPositionals, {}, false
     };
+    inline constexpr Command wallpaperLiveList{
+        "wallpaper-live-list", "Print a live wallpaper list as JSON: id, title, kind, preview, favorite, current", {}, {},
+        {}, kMsgWallpaperLiveListItemsPositionals, {}, false
+    };
     inline constexpr Command wallpaperLiveNext{
         "wallpaper-live-next", "Switch to the next wallpaper of the live collection now", {}, {}, {}, {}, {}, false
     };
@@ -1009,6 +1018,7 @@ namespace noctalia::cli {
       msg::wallpaperLiveCarousel,
       msg::wallpaperLiveCollection,
       msg::wallpaperLiveFavorite,
+      msg::wallpaperLiveList,
       msg::wallpaperLiveNext,
       msg::wallpaperLiveSet,
       msg::wallpaperLiveStatus,
