@@ -1,4 +1,5 @@
 #include "app/main_loop.h"
+#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
@@ -353,6 +354,7 @@ void Application::initLockScreenAndSession() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_idleManager.setSessionLocked(true);
         m_screenTimeService.setSessionLocked(true);
+        zynith::notifyUi("lock", "on");
         m_hookManager.fire(HookKind::SessionLocked);
         if (m_logindService != nullptr) {
           m_logindService->setSessionLockedHint(true);
@@ -364,6 +366,7 @@ void Application::initLockScreenAndSession() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_idleManager.setSessionLocked(false);
         m_screenTimeService.setSessionLocked(false);
+        zynith::notifyUi("lock", "off");
         m_hookManager.fire(HookKind::SessionUnlocked);
         releaseSleepDelayInhibitIfPending();
         requestAllSurfacesRedraw();

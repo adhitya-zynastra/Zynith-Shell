@@ -1,4 +1,5 @@
 #include "app/main_loop.h"
+#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
@@ -964,6 +965,7 @@ void Application::initAuxServicesAndHooks() {
     m_backdrop.onStateChange();
     m_lockScreen.onWallpaperChanged();
     m_themeService.onWallpaperChange();
+    zynith::notifyUi("wallpaper");
     if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
     }

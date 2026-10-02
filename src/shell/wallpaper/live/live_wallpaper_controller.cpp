@@ -1,4 +1,5 @@
 #include "shell/wallpaper/live/live_wallpaper_controller.h"
+#include "zynith/ui_events.h"
 
 #include "cli/schema_msg.h"
 #include "config/config_service.h"
@@ -760,7 +761,10 @@ void LiveWallpaperController::setError(std::string message) {
   m_lastError = std::move(message);
 }
 
-void LiveWallpaperController::notify() { m_changed.emit(); }
+void LiveWallpaperController::notify() {
+  m_changed.emit();
+  zynith::notifyUi("wallpaper");
+}
 
 std::string LiveWallpaperController::statusLine() const {
   if (m_pending.has_value()) {
@@ -860,6 +864,67 @@ void LiveWallpaperController::registerIpc(IpcService& ipc) {
           {"current", m_activeItem.has_value() && m_activeItem->id == known->id},
       });
     }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the whole library in one answer, so a browser switches between Installed, Favourites, Recent and
+  // Collection from state it already holds. Asking starts discovery once; its end arrives as a change.
+  ipc.bind(msg::wallpaperLiveLibrary, [this](const std::string&) -> std::string {
+    if (!m_provider->discovered() && !m_provider->discovering()) {
+      m_provider->refresh(false);
+    }
+    nlohmann::json items = nlohmann::json::array();
+    for (const live::Item& item : m_provider->items()) {
+      items.push_back({
+          {"id", item.id},
+          {"title", item.title},
+          {"kind", std::string(live::kindName(item.kind))},
+          {"preview", item.preview.string()},
+          {"renderable", live::isRenderable(item.kind)},
+          {"updated", item.updatedNs / 1000000},
+      });
+    }
+    // list members that are not in the catalog yet (before discovery) still resolve, one project.json each
+    const auto ensure = [&](const std::vector<std::string>& ids) {
+      for (const std::string& id : ids) {
+        if (m_provider->find(id) != nullptr) {
+          continue;
+        }
+        if (m_provider->discovered()) {
+          continue; // unsubscribed or removed
+        }
+        if (auto item = m_provider->resolve(id); item.has_value()) {
+          items.push_back({
+              {"id", item->id},
+              {"title", item->title},
+              {"kind", std::string(live::kindName(item->kind))},
+              {"preview", item->preview.string()},
+              {"renderable", live::isRenderable(item->kind)},
+              {"updated", item->updatedNs / 1000000},
+          });
+        }
+      }
+    };
+    ensure(m_collection);
+    ensure(m_favorites);
+    ensure(m_recent);
+    const nlohmann::json out{
+        {"mode", m_mode == Mode::Live ? "live" : "static"},
+        {"current", m_currentId},
+        {"pending", m_pending.has_value() ? m_pending->item.id : std::string()},
+        {"discovering", m_provider->discovering()},
+        {"discovered", m_provider->discovered()},
+        {"problem", m_provider->problem()},
+        {"error", m_lastError},
+        {"favorites", m_favorites},
+        {"collection", m_collection},
+        {"recent", m_recent},
+        {"carousel",
+         {{"enabled", m_carouselEnabled},
+          {"interval", m_carouselInterval},
+          {"order", m_carouselOrder == CarouselOrder::Shuffle ? "shuffle" : "sequential"}}},
+        {"items", items},
+    };
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 

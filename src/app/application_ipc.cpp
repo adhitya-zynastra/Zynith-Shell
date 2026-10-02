@@ -488,6 +488,66 @@ void Application::initIpc() {
     return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
   });
 
+  m_ipcService.bind(noctalia::cli::msg::clipboardPin, [this, historyIndex](const std::string& args) -> std::string {
+    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+    if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
+      return "error: usage: clipboard-pin <id> <on|off>\n";
+    }
+    const auto index = historyIndex(std::string(tokens[0]));
+    if (!index) {
+      return "error: no clipboard entry " + std::string(tokens[0]) + "\n";
+    }
+    return m_clipboardService.setEntryPinned(*index, tokens[1] == "on") ? "ok\n" : "error: entry not changed\n";
+  });
+
+  // zynith: one image at a time, for the entry the UI has selected; nothing is written to disk
+  m_ipcService.bind(noctalia::cli::msg::clipboardImage, [this, historyIndex](const std::string& args) -> std::string {
+    constexpr std::size_t kMaxPreviewBytes = 8U * 1024U * 1024U;
+    const auto index = historyIndex(StringUtils::trim(args));
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    const ClipboardEntry& entry = m_clipboardService.history()[*index];
+    if (!entry.isImage()) {
+      return "error: not an image\n";
+    }
+    if (entry.byteSize > kMaxPreviewBytes) {
+      return "error: too large for a preview\n";
+    }
+    auto uri = m_clipboardService.imageDataUri(*index);
+    if (!uri.has_value()) {
+      return "error: image unavailable\n";
+    }
+    // the service labels every payload octet-stream; image decoders want the real type
+    constexpr std::string_view kGeneric = "data:application/octet-stream;";
+    if (uri->starts_with(kGeneric) && entry.dataMimeType.starts_with("image/")) {
+      uri->replace(0, kGeneric.size(), "data:" + entry.dataMimeType + ";");
+    }
+    if (!m_panelManager.isOpenPanel("clipboard")) {
+      m_clipboardService.evictEntryPayload(*index);
+    }
+    return *uri + "\n";
+  });
+
+  // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
+  // released keyboard focus; the short wait lets the target window have it back.
+  m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
+    const bool isImage = StringUtils::trim(args) == "image";
+    const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
+    if (mode == ClipboardAutoPasteMode::Off) {
+      return "ok: auto paste is off\n";
+    }
+    m_clipboardAutoPasteTimer.stop();
+    m_clipboardAutoPasteTimer.start(std::chrono::milliseconds(Style::animFast + 30), [this, isImage]() {
+      DeferredCall::callLater([this, isImage]() {
+        (void)clipboard_paste::pasteEntry(
+            isImage, m_configService.config().shell.clipboardAutoPaste, m_virtualKeyboardService
+        );
+      });
+    });
+    return "ok\n";
+  });
+
   // zynith: the weather the shell already polls, for another UI to show without polling again
   m_ipcService.bind(noctalia::cli::msg::weatherStatus, [this](const std::string&) -> std::string {
     const auto& snap = m_weatherService.snapshot();

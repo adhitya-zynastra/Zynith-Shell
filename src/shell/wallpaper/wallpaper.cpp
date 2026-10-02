@@ -1,4 +1,6 @@
 #include "shell/wallpaper/wallpaper.h"
+#include <nlohmann/json.hpp>
+#include "zynith/ui_events.h"
 
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
@@ -745,6 +747,46 @@ void Wallpaper::registerIpc(IpcService& ipc) {
         std::string out = m_config->getWallpaperPath(tokens[0]);
         out.push_back('\n');
         return out;
+      },
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
+  );
+  // zynith: the favourite static wallpapers, for the Zynith UI's browser
+  ipc.bind(
+      noctalia::cli::msg::wallpaperFavorites,
+      [this](const std::string&) -> std::string {
+        if (m_config == nullptr) {
+          return "error: wallpaper service not initialized\n";
+        }
+        nlohmann::json out = nlohmann::json::array();
+        for (const WallpaperFavorite& favorite : m_config->wallpaperFavorites()) {
+          out.push_back(favorite.path);
+        }
+        return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+      },
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
+  );
+  ipc.bind(
+      noctalia::cli::msg::wallpaperFavorite,
+      [this](const std::string& args) -> std::string {
+        if (m_config == nullptr) {
+          return "error: wallpaper service not initialized\n";
+        }
+        const std::string trimmed = StringUtils::trim(args);
+        const auto space = trimmed.find(' ');
+        const std::string action = trimmed.substr(0, space);
+        const std::string path = space == std::string::npos ? std::string() : StringUtils::trim(trimmed.substr(space + 1));
+        if ((action != "add" && action != "remove") || path.empty() || path.front() != '/') {
+          return "error: usage: wallpaper-favorite <add|remove> <absolute path>\n";
+        }
+        if (action == "add") {
+          if (!m_config->isWallpaperFavorite(path)) {
+            m_config->addWallpaperFavorite(path);
+          }
+        } else if (m_config->isWallpaperFavorite(path)) {
+          m_config->removeWallpaperFavorite(path);
+        }
+        zynith::notifyUi("wallpaper");
+        return "ok\n";
       },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );

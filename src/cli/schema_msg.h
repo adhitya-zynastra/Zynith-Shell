@@ -150,6 +150,21 @@ namespace noctalia::cli {
   inline constexpr std::array kMsgClipboardEntryPositionals{
       Positional{"id", "Entry id from clipboard-history", {}, true, false, false},
   };
+  // zynith: what the Zynith UI's clipboard and wallpaper browsers need
+  inline constexpr std::array<std::string_view, 2> kMsgOnOff{"on", "off"};
+  inline constexpr std::array kMsgClipboardPinPositionals{
+      Positional{"id", "Entry id from clipboard-history", {}, true, false, false},
+      Positional{"state", "on or off", kMsgOnOff, true, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgClipboardPasteKinds{"text", "image"};
+  inline constexpr std::array kMsgClipboardPastePositionals{
+      Positional{"kind", "text (default) or image", kMsgClipboardPasteKinds, false, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgFavoriteActions{"add", "remove"};
+  inline constexpr std::array kMsgWallpaperFavoritePositionals{
+      Positional{"action", {}, kMsgFavoriteActions, true, false, false},
+      Positional{"path", "Image path", {}, true, false, true},
+  };
   inline constexpr std::array kMsgEffectsProfileSetPositionals{
       Positional{"kind", {}, kMsgEffectsProfileSetKindChoices, true, false, false},
       Positional{"profile", {}, {}, true, false, false},
@@ -400,6 +415,17 @@ namespace noctalia::cli {
     inline constexpr Command clipboardRemove{
         "clipboard-remove", "Remove one entry from the clipboard history", {}, {}, {}, kMsgClipboardEntryPositionals,
         {}, false
+    };
+    inline constexpr Command clipboardPin{
+        "clipboard-pin", "Pin or unpin a clipboard history entry", {}, {}, {}, kMsgClipboardPinPositionals, {}, false
+    };
+    inline constexpr Command clipboardImage{
+        "clipboard-image", "Print an image entry as a data URI (for a preview; refused above 8 MB)", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
+    };
+    inline constexpr Command clipboardPaste{
+        "clipboard-paste", "Paste the clipboard into the focused window, as [shell] clipboard_auto_paste says", {}, {},
+        {}, kMsgClipboardPastePositionals, {}, false
     };
     inline constexpr Command clipboardSelect{
         "clipboard-select", "Copy a clipboard history entry back to the clipboard", {}, {}, {},
@@ -832,6 +858,19 @@ namespace noctalia::cli {
         {},
         false
     };
+    inline constexpr Command wallpaperFavorites{
+        "wallpaper-favorites", "Print the favourite static wallpapers as a JSON array of paths", {}, {}, {}, {}, {},
+        false
+    };
+    inline constexpr Command wallpaperFavorite{
+        "wallpaper-favorite", "Add or remove a static wallpaper in the favourites", {}, {}, {},
+        kMsgWallpaperFavoritePositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveLibrary{
+        "wallpaper-live-library",
+        "Print the live wallpaper library as JSON: every installed item, the favourites, collection and recent lists",
+        {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command wallpaperLiveCarousel{
         "wallpaper-live-carousel", "Cycle the live wallpaper collection: on|off [seconds] [sequential|shuffle]",
         {}, {}, {}, kMsgWallpaperLiveCarouselPositionals, {}, false
@@ -958,6 +997,9 @@ namespace noctalia::cli {
       msg::clipboardHistory,
       msg::clipboardRemove,
       msg::clipboardSelect,
+      msg::clipboardPin,
+      msg::clipboardImage,
+      msg::clipboardPaste,
       msg::clipboardText,
       msg::surfacesSync,
       msg::weatherStatus,
@@ -1041,6 +1083,9 @@ namespace noctalia::cli {
       msg::volumeSet,
       msg::volumeUp,
       msg::wallpaperGet,
+      msg::wallpaperFavorites,
+      msg::wallpaperFavorite,
+      msg::wallpaperLiveLibrary,
       msg::wallpaperLiveCarousel,
       msg::wallpaperLiveCollection,
       msg::wallpaperLiveFavorite,
