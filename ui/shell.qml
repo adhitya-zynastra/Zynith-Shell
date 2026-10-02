@@ -9,6 +9,7 @@ import qs.Modules.Bar
 import qs.Modules.Panels
 import qs.Modules.Osd
 import qs.Modules.Notifications
+import qs.Modules.Desktop
 import qs.Services
 
 ShellRoot {
@@ -22,4 +23,5 @@ ShellRoot {
     PanelHost {}
     Osd {}
     NotificationPopups {}
+    DesktopLayer {}
 }

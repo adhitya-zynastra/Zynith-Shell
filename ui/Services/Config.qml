@@ -47,6 +47,7 @@ Singleton {
             soundVolume: notificationsFile.values.sound_volume
         })
     readonly property var wallpaper: wallpaperFile.values
+    readonly property var widgets: widgetsFile.values.widget ?? []
     readonly property var window: windowFile.values
     // which visible surfaces this UI draws instead of the native shell (the shell reads the same file)
     readonly property var surfaces: zynithFile.values.surfaces
@@ -101,6 +102,7 @@ Singleton {
             notifications: notificationsFile,
             wallpaper: wallpaperFile,
             window: windowFile,
+            widgets: widgetsFile,
             zynith: zynithFile
         })
 
@@ -260,6 +262,49 @@ Singleton {
                 overview: "poster",
                 lock: "poster"
             })
+    }
+
+    ConfigFile {
+        id: widgetsFile
+        path: Paths.config + "/widgets.toml"
+        header: "Desktop widgets. Each [[widget]]: type (clock label sticker visualizer weather media), output, the\ncentre (cx, cy) and box (width, height) in the reference resolution, rotation in radians, flip, settings."
+        defaults: ({
+                widget: []
+            })
+    }
+
+    // the native shell's widget layout, read once to seed widgets.toml (never written: the Settings GUI owns it)
+    ConfigFile {
+        id: nativeLayout
+        path: widgetsFile.loaded && !widgetsFile.exists ? Paths.home + "/.local/state/noctalia/settings.toml" : ""
+        onLoadedChanged: {
+            const dw = values.desktop_widgets;
+            if (!loaded || !dw || widgetsFile.exists)
+                return;
+            const list = [];
+            for (const id of dw.widget_order ?? []) {
+                const w = (dw.widget ?? {})[id];
+                if (!w)
+                    continue;
+                list.push({
+                    id: id.replace("desktop-widget-", ""),
+                    type: w.type,
+                    output: w.output ?? "",
+                    cx: w.cx ?? 0,
+                    cy: w.cy ?? 0,
+                    width: w.box_width ?? 0,
+                    height: w.box_height ?? 0,
+                    rotation: w.rotation ?? 0,
+                    flip: w.flip_x ?? false,
+                    reference: [w.placement_width ?? 1920, w.placement_height ?? 1080],
+                    settings: w.settings ?? {}
+                });
+            }
+            if (list.length > 0)
+                widgetsFile.create({
+                    widget: list
+                });
+        }
     }
 
     ConfigFile {
