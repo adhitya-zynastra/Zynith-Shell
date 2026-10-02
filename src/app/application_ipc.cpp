@@ -488,6 +488,38 @@ void Application::initIpc() {
     return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
   });
 
+  // zynith: the weather the shell already polls, for another UI to show without polling again
+  m_ipcService.bind(noctalia::cli::msg::weatherStatus, [this](const std::string&) -> std::string {
+    const auto& snap = m_weatherService.snapshot();
+    nlohmann::json out{
+        {"enabled", m_weatherService.enabled()},
+        {"valid", snap.valid},
+        {"loading", m_weatherService.loading()},
+        {"error", m_weatherService.error()},
+        {"unit", m_weatherService.displayTemperatureUnit()},
+        {"location", snap.locationName},
+    };
+    if (snap.valid) {
+      out["current"] = {
+          {"temperature", m_weatherService.displayTemperature(snap.current.temperatureC)},
+          {"code", snap.current.weatherCode},
+          {"isDay", snap.current.isDay},
+          {"wind", snap.current.windSpeedKmh},
+      };
+      nlohmann::json days = nlohmann::json::array();
+      for (const auto& d : snap.forecastDays) {
+        days.push_back({
+            {"date", d.dateIso},
+            {"max", m_weatherService.displayTemperature(d.temperatureMaxC)},
+            {"min", m_weatherService.displayTemperature(d.temperatureMinC)},
+            {"code", d.weatherCode},
+        });
+      }
+      out["days"] = days;
+    }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
   m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
     m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
     return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + "\n";

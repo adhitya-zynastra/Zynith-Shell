@@ -409,6 +409,10 @@ namespace noctalia::cli {
         "surfaces-sync", "Re-read ~/.config/zynith/zynith.toml [surfaces] and hand surfaces to or from the Zynith UI",
         {}, {}, {}, {}, {}, false
     };
+    inline constexpr Command weatherStatus{
+        "weather-status", "Print the current weather and forecast as JSON (what the shell already fetched)", {}, {}, {},
+        {}, {}, false
+    };
     inline constexpr Command clipboardText{
         "clipboard-text",
         "Print the most recent clipboard text (empty when the selection holds no text)",
@@ -956,6 +960,7 @@ namespace noctalia::cli {
       msg::clipboardSelect,
       msg::clipboardText,
       msg::surfacesSync,
+      msg::weatherStatus,
       msg::colorSchemeGet,
       msg::colorSchemeSet,
       msg::controlCenterStyleSet,
