@@ -2,8 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
-import qs.Common
+import Zynith.Native
 
 // Toggles the native shell still owns (night light, stay awake, its notification Do Not Disturb), read from
 // its status and changed through its IPC. Asked when something shows them, never on a timer.
@@ -18,13 +17,23 @@ Singleton {
     property bool dnd: false
 
     function refresh(): void {
-        if (!status.running)
-            status.running = true;
+        CoreClient.call("status", text => {
+            try {
+                const d = JSON.parse(text);
+                if (d.caffeine === undefined)
+                    return; // an older shell without these fields
+                caffeine = d.caffeine;
+                nightlight = d.nightlight.enabled;
+                nightlightForced = d.nightlight.forced;
+                nightlightActive = d.nightlight.active;
+                dnd = d.dnd;
+                known = true;
+            } catch (e) {}
+        });
     }
 
     function run(args: var): void {
-        Quickshell.execDetached([Paths.core, "msg"].concat(args));
-        settle.restart();
+        CoreClient.call(args.join(" "), () => settle.restart());
     }
     function toggleCaffeine(): void {
         caffeine = !caffeine;
@@ -44,25 +53,5 @@ Singleton {
         id: settle
         interval: 300
         onTriggered: root.refresh()
-    }
-
-    Process {
-        id: status
-        command: [Paths.core, "msg", "status"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const d = JSON.parse(text);
-                    if (d.caffeine === undefined)
-                        return; // an older shell without these fields
-                    root.caffeine = d.caffeine;
-                    root.nightlight = d.nightlight.enabled;
-                    root.nightlightForced = d.nightlight.forced;
-                    root.nightlightActive = d.nightlight.active;
-                    root.dnd = d.dnd;
-                    root.known = true;
-                } catch (e) {}
-            }
-        }
     }
 }

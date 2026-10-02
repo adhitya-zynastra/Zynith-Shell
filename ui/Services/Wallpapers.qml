@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Zynith.Native
 import qs.Common
 
 // What can be shown as a wallpaper and what is shown now. The native shell owns the one WallpaperState
@@ -23,24 +24,38 @@ Singleton {
         loading = true;
         if (!files.running)
             files.running = true;
-        if (!status.running)
-            status.running = true;
-        if (!liveList.running)
-            liveList.running = true;
-        if (!currentPath.running)
-            currentPath.running = true;
+        CoreClient.call("wallpaper-get", text => current = text.trim());
+        CoreClient.call("wallpaper-live-status", text => {
+            try {
+                const d = JSON.parse(text);
+                mode = d.mode === "live" ? "live" : "static";
+                liveCurrent = d.current ?? "";
+            } catch (e) {}
+        });
+        CoreClient.call("wallpaper-live-list collection", text => {
+            try {
+                live = JSON.parse(text);
+            } catch (e) {
+                live = [];
+            }
+        });
     }
 
     // a static choice also ends a live wallpaper, so the desktop shows what was picked
     function applyImage(path: string): void {
         current = path;
         mode = "static";
-        Quickshell.execDetached(["sh", "-c", "\"$0\" msg wallpaper-set \"$1\" && \"$0\" msg wallpaper-live-stop >/dev/null", Paths.core, path]);
+        CoreClient.call("wallpaper-set " + path, reply => {
+            if (reply.startsWith("ok"))
+                CoreClient.call("wallpaper-live-stop");
+            else
+                console.warn("zynith: wallpaper not set:", reply.trim());
+        });
     }
     function applyLive(id: string): void {
         liveCurrent = id;
         mode = "live";
-        Quickshell.execDetached([Paths.core, "msg", "wallpaper-live-set", id]);
+        CoreClient.call("wallpaper-live-set " + id);
     }
 
     Process {
@@ -50,39 +65,6 @@ Singleton {
             onStreamFinished: {
                 root.images = text.split("\n").filter(l => l !== "").sort((a, b) => a.localeCompare(b));
                 root.loading = false;
-            }
-        }
-    }
-    Process {
-        id: currentPath
-        command: [Paths.core, "msg", "wallpaper-get"]
-        stdout: StdioCollector {
-            onStreamFinished: root.current = text.trim()
-        }
-    }
-    Process {
-        id: status
-        command: [Paths.core, "msg", "wallpaper-live-status"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const d = JSON.parse(text);
-                    root.mode = d.mode === "live" ? "live" : "static";
-                    root.liveCurrent = d.current ?? "";
-                } catch (e) {}
-            }
-        }
-    }
-    Process {
-        id: liveList
-        command: [Paths.core, "msg", "wallpaper-live-list", "collection"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    root.live = JSON.parse(text);
-                } catch (e) {
-                    root.live = [];
-                }
             }
         }
     }

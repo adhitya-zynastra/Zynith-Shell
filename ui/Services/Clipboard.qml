@@ -2,8 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Io
-import qs.Common
+import Zynith.Native
 
 // Clipboard history as the native core keeps it (encrypted at rest). This side only ever sees short
 // previews; picking an entry asks the core to put it back on the clipboard.
@@ -15,42 +14,30 @@ Singleton {
     property string error: ""
 
     function refresh(): void {
-        if (list.running)
+        if (loading)
             return;
         loading = true;
-        list.running = true;
+        CoreClient.call("clipboard-history 60", text => {
+            loading = false;
+            try {
+                entries = JSON.parse(text);
+                error = "";
+            } catch (e) {
+                entries = [];
+                error = text.trim() || "No answer from the core";
+            }
+        });
     }
 
     function select(id: string): void {
-        run(["clipboard-select", id]);
+        CoreClient.call("clipboard-select " + id);
     }
     function remove(id: string): void {
         entries = entries.filter(e => e.id !== id);
-        run(["clipboard-remove", id]);
+        CoreClient.call("clipboard-remove " + id);
     }
     function clearUnpinned(): void {
         entries = entries.filter(e => e.pinned);
-        run(["clipboard-clear"]);
-    }
-
-    function run(args: var): void {
-        Quickshell.execDetached([Paths.core, "msg"].concat(args));
-    }
-
-    Process {
-        id: list
-        command: [Paths.core, "msg", "clipboard-history", "60"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.loading = false;
-                try {
-                    root.entries = JSON.parse(text);
-                    root.error = "";
-                } catch (e) {
-                    root.entries = [];
-                    root.error = text.trim() || "No answer from the core";
-                }
-            }
-        }
+        CoreClient.call("clipboard-clear");
     }
 }
