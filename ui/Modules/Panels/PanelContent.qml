@@ -10,6 +10,7 @@ Item {
     property var screen: null
     property real visibleProgress: 1
     property var history: []
+    property bool active: true
 
     // the panel actually shown; lags panelId by one fade when navigating
     property string shownId: panelId
@@ -86,6 +87,8 @@ Item {
         onLoaded: {
             item.screen = Qt.binding(() => root.screen);
             item.visibleProgress = Qt.binding(() => root.visibleProgress);
+            if (item.active !== undefined)
+                item.active = Qt.binding(() => root.active);
             if (item.canGoBack !== undefined) {
                 item.canGoBack = Qt.binding(() => root.history.length > 0);
                 item.back.connect(() => PanelRouter.back(root.screen.name));

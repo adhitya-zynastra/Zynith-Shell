@@ -11,6 +11,9 @@ Column {
     property real visibleProgress: 1
     property bool canGoBack: false
     signal back
+    property bool active: true
+    onActiveChanged: if (!active && Bluetooth.adapter?.discovering)
+        Bluetooth.adapter.discovering = false
 
     padding: Metrics.s6
     spacing: Metrics.s4

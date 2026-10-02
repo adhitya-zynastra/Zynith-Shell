@@ -24,6 +24,7 @@ Singleton {
 
     readonly property var table: ({
             performance: {
+                panelKeepAliveMs: 0,     // closed panels stay ready this long, hidden and idle
                 animationQuality: "reduced",   // short fades, no springs, no stagger
                 animationScale: 0.6,
                 springs: false,
@@ -45,6 +46,7 @@ Singleton {
                 artSize: 96
             },
             balanced: {
+                panelKeepAliveMs: 30000,     // closed panels stay ready this long, hidden and idle
                 animationQuality: "standard",
                 animationScale: 1.0,
                 springs: true,
@@ -66,6 +68,7 @@ Singleton {
                 artSize: 192
             },
             enhanced: {
+                panelKeepAliveMs: 120000,     // closed panels stay ready this long, hidden and idle
                 animationQuality: "rich",
                 animationScale: 1.0,
                 springs: true,
@@ -87,6 +90,7 @@ Singleton {
                 artSize: 320
             },
             max: {
+                panelKeepAliveMs: 600000,     // closed panels stay ready this long, hidden and idle
                 animationQuality: "cinematic",
                 animationScale: 1.1,
                 springs: true,
@@ -135,6 +139,7 @@ Singleton {
     readonly property int updateIntervalMs: effective.updateIntervalMs
     readonly property int prefetchRadius: effective.prefetchRadius
     readonly property int artSize: effective.artSize
+    readonly property int panelKeepAliveMs: effective.panelKeepAliveMs
 
     function select(name: string): void {
         Config.setExperienceProfile(name === "auto" || profiles.includes(name) ? name : "auto");

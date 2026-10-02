@@ -11,6 +11,7 @@ Column {
     property real visibleProgress: 1
     property bool canGoBack: false
     signal back
+    property bool active: true
 
     padding: Metrics.s6
     spacing: Metrics.s5
@@ -19,7 +20,7 @@ Column {
 
     // MPRIS does not push position; refresh it once a second while this panel shows a playing track
     Timer {
-        running: root.player !== null && Media.playing
+        running: root.active && root.player !== null && Media.playing
         interval: 1000
         repeat: true
         triggeredOnStart: true

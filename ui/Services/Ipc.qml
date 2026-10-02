@@ -25,6 +25,12 @@ Singleton {
             ExperiencePolicy.select(name);
             return ExperiencePolicy.profile;
         }
+        function stats(): string {
+            return JSON.stringify(Diagnostics.summary());
+        }
+        function resetStats(): void {
+            Diagnostics.reset();
+        }
         function status(): string {
             return JSON.stringify({
                 profile: ExperiencePolicy.profile,

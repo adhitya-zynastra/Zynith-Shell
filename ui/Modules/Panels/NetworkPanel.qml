@@ -13,6 +13,7 @@ Column {
     property real visibleProgress: 1
     property bool canGoBack: false
     signal back
+    property bool active: true
 
     padding: Metrics.s6
     spacing: Metrics.s4
@@ -20,9 +21,13 @@ Column {
 
     readonly property var networks: (Network.wifi?.networks.values ?? []).slice().sort((a, b) => (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength))
 
-    // scan only while this panel is open
-    Component.onCompleted: if (Network.wifi)
-        Network.wifi.scannerEnabled = true
+    // scan only while this panel is on screen
+    function syncScan(): void {
+        if (Network.wifi)
+            Network.wifi.scannerEnabled = active;
+    }
+    onActiveChanged: syncScan()
+    Component.onCompleted: syncScan()
     Component.onDestruction: if (Network.wifi)
         Network.wifi.scannerEnabled = false
 

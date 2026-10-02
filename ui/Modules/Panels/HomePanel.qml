@@ -18,9 +18,23 @@ Column {
     padding: Metrics.s6
     spacing: Metrics.s5
 
-    // the system sampler runs only while this panel exists
-    Component.onCompleted: System.retain()
-    Component.onDestruction: System.release()
+
+    // the sampler runs only while this panel is on screen
+    property bool active: true
+    property bool holding: false
+    function syncSampler(): void {
+        if (active && !holding) {
+            System.retain();
+            holding = true;
+        } else if (!active && holding) {
+            System.release();
+            holding = false;
+        }
+    }
+    onActiveChanged: syncSampler()
+    Component.onCompleted: syncSampler()
+    Component.onDestruction: if (holding)
+        System.release()
 
     readonly property real inner: width - padding * 2
 

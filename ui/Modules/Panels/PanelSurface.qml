@@ -14,7 +14,12 @@ PanelWindow {
     property bool closing: false
     signal dismissed
 
-    readonly property string edge: entry?.edge ?? "top"
+    // the last open entry: a warm, hidden surface keeps its content instead of unloading it
+    property var held: entry
+    onEntryChanged: if (entry)
+        held = entry
+
+    readonly property string edge: held?.edge ?? "top"
     readonly property int panelWidth: Config.panels.width
     readonly property real cardHeight: content.implicitHeight
     // the window grows at once and shrinks after the card has, so it never resizes every frame
@@ -24,9 +29,9 @@ PanelWindow {
     readonly property int screenMargin: Metrics.s3
     readonly property real sw: screen?.width ?? 1920
     readonly property real sh: screen?.height ?? 1080
-    readonly property real ox: (entry?.originX ?? -1) >= 0 ? entry.originX : sw - panelWidth / 2 - screenMargin
-    readonly property real oy: (entry?.originY ?? -1) >= 0 ? entry.originY : 0
-    readonly property real extent: entry?.extent ?? 42
+    readonly property real ox: (held?.originX ?? -1) >= 0 ? held.originX : sw - panelWidth / 2 - screenMargin
+    readonly property real oy: (held?.originY ?? -1) >= 0 ? held.originY : 0
+    readonly property real extent: held?.extent ?? 42
 
     function clamp(v: real, lo: real, hi: real): real {
         return Math.max(lo, Math.min(hi, v));
@@ -74,6 +79,7 @@ PanelWindow {
         to: 1
         duration: Motion.reveal
         easing.type: Motion.enterEasing
+        onFinished: win.entering = false
     }
     NumberAnimation {
         id: leave
@@ -84,7 +90,32 @@ PanelWindow {
         easing.type: Motion.exitEasing
         onFinished: win.dismissed()
     }
-    Component.onCompleted: enter.start()
+    // the entrance plays once per showing, whether the window is new or warm
+    property bool entering: false
+    function begin(): void {
+        if (entering)
+            return;
+        entering = true;
+        leave.stop();
+        revealed = 0;
+        enter.restart();
+    }
+    Component.onCompleted: if (visible)
+        begin()
+    onVisibleChanged: visible ? begin() : (entering = false)
+
+    // frame pacing while the surface animates (Diagnostics; costs nothing when idle)
+    property var frameDeltas: []
+    FrameAnimation {
+        running: enter.running || leave.running
+        onTriggered: win.frameDeltas.push(frameTime * 1000)
+        onRunningChanged: {
+            if (!running && win.frameDeltas.length > 1) {
+                Diagnostics.record(win.closing ? "panel-close" : "panel-open", win.frameDeltas.slice(1));
+                win.frameDeltas = [];
+            }
+        }
+    }
     onClosingChanged: {
         if (closing) {
             enter.stop();
@@ -145,10 +176,11 @@ PanelWindow {
                 id: content
 
                 width: parent.width
-                panelId: win.entry?.id ?? ""
-                history: win.entry?.history ?? []
+                panelId: win.held?.id ?? ""
+                history: win.held?.history ?? []
                 screen: win.screen
                 visibleProgress: win.revealed
+                active: win.visible
             }
         }
     }

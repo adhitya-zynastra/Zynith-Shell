@@ -14,9 +14,12 @@ NATIVE_SRC="$HERE/native"
 NATIVE_BUILD="${ZYNITH_NATIVE_BUILD:-$HERE/../../build-zynith-native}"
 
 build_native() {
-    if [[ ! -f "$NATIVE_BUILD/qml/Zynith/Native/libzynith_nativeplugin.so" || "$NATIVE_SRC" -nt "$NATIVE_BUILD/build.ninja" ]]; then
-        cmake -S "$NATIVE_SRC" -B "$NATIVE_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null
+    local plugin="$NATIVE_BUILD/qml/Zynith/Native/libzynith_nativeplugin.so"
+    # nothing to do when the plugin is newer than every native source (keeps start fast)
+    if [[ -f "$plugin" && -z "$(find "$NATIVE_SRC" -newer "$plugin" -type f -print -quit)" ]]; then
+        return 0
     fi
+    [[ -f "$NATIVE_BUILD/build.ninja" ]] || cmake -S "$NATIVE_SRC" -B "$NATIVE_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release >/dev/null
     nice -n 15 cmake --build "$NATIVE_BUILD" -j 6 >/dev/null
 }
 

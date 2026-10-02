@@ -30,14 +30,25 @@ Scope {
         if (closing) {
             closing = false;
             shown = null;
+            if (ExperiencePolicy.panelKeepAliveMs > 0)
+                cool.restart();
         }
+    }
+
+    // After closing, the windows stay alive but unmapped for a while, so reopening skips surface
+    // creation. Hidden panels do no work (they follow `active`).
+    property bool warm: cool.running
+    Timer {
+        id: cool
+        interval: ExperiencePolicy.panelKeepAliveMs
     }
 
     // Clicks outside the panel close it. Transparent unless the profile dims the desktop behind a panel.
     LazyLoader {
-        active: root.present
+        active: root.present || root.warm
 
         PanelWindow {
+            visible: root.present
             screen: root.modelData
             WlrLayershell.namespace: "zynith-panel-catcher"
             WlrLayershell.layer: WlrLayer.Top
@@ -66,9 +77,10 @@ Scope {
     }
 
     LazyLoader {
-        active: root.present
+        active: root.present || root.warm
 
         PanelSurface {
+            visible: root.present
             screen: root.modelData
             entry: root.shown
             closing: root.closing

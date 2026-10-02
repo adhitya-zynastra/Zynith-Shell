@@ -21,8 +21,23 @@ Column {
     property string model: ""
     property real uptime: 0
 
-    Component.onCompleted: System.retain()
-    Component.onDestruction: System.release()
+
+    // the sampler runs only while this panel is on screen
+    property bool active: true
+    property bool holding: false
+    function syncSampler(): void {
+        if (active && !holding) {
+            System.retain();
+            holding = true;
+        } else if (!active && holding) {
+            System.release();
+            holding = false;
+        }
+    }
+    onActiveChanged: syncSampler()
+    Component.onCompleted: syncSampler()
+    Component.onDestruction: if (holding)
+        System.release()
 
     FileView {
         path: "/proc/sys/kernel/osrelease"
@@ -39,7 +54,7 @@ Column {
         onLoaded: root.uptime = parseFloat(text())
     }
     Timer {
-        running: true
+        running: root.active
         repeat: true
         interval: 60000
         onTriggered: uptimeFile.reload()
