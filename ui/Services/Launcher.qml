@@ -23,14 +23,44 @@ Singleton {
         { prefix: "!", id: "session", label: "Session", glyph: "power" }
     ]
 
-    function modeOf(text: string): var {
+    // the native launcher's commands still work: /calc /emo /win /wall /session
+    readonly property var aliases: ({
+            calc: "=",
+            math: "=",
+            emo: ":",
+            emoji: ":",
+            win: ">",
+            windows: ">",
+            wall: "@",
+            wallpaper: "@",
+            session: "!",
+            power: "!"
+        })
+    // { mode, q }: the mode a text asks for and the query left once its prefix is taken off
+    function parse(text: string): var {
+        const slash = text.match(/^\/(\w+)\s?(.*)$/);
+        if (slash && aliases[slash[1].toLowerCase()] !== undefined) {
+            const prefix = aliases[slash[1].toLowerCase()];
+            return {
+                mode: modes.find(m => m.prefix === prefix),
+                q: slash[2]
+            };
+        }
         const c = text.charAt(0);
-        return modes.find(m => m.prefix !== "" && m.prefix === c) ?? modes[0];
+        const mode = modes.find(m => m.prefix !== "" && m.prefix === c) ?? modes[0];
+        return {
+            mode: mode,
+            q: (mode.prefix ? text.slice(1) : text).trim()
+        };
+    }
+    function modeOf(text: string): var {
+        return parse(text).mode;
     }
 
-    function search(text: string, limit: int): var {
-        const mode = modeOf(text);
-        const q = (mode.prefix ? text.slice(1) : text).trim();
+    function search(text: string, limit: int, category: string): var {
+        const parsed = parse(text);
+        const mode = parsed.mode;
+        const q = parsed.q.trim();
         switch (mode.id) {
         case "calc":
             return calc(q);
@@ -43,19 +73,48 @@ Singleton {
         case "session":
             return session(q);
         }
-        const apps = Apps.search(q, limit).map(e => ({
-                    key: "app:" + e.id,
-                    kind: "app",
-                    title: e.name,
-                    subtitle: e.genericName || e.comment || "",
-                    icon: e.icon,
-                    run: () => Apps.launch(e)
+        const apps = Apps.search(q, limit, category).map(e => app(e));
+        // an action that answers the query directly ("firefox private") follows the apps
+        const actions = category && category !== "all" ? [] : Apps.searchActions(q, 2).map(f => ({
+                    key: "act:" + f.entry.id + ":" + f.action.name,
+                    kind: "action",
+                    title: f.action.name,
+                    subtitle: f.entry.name,
+                    icon: f.action.icon || f.entry.icon,
+                    run: () => Apps.launchAction(f.entry, f.action)
                 }));
-        return Calc.looksLikeMath(q) ? calc(q).concat(apps.slice(0, limit - 1)) : apps;
+        const merged = apps.slice(0, Math.max(1, limit - actions.length)).concat(actions);
+        return Calc.looksLikeMath(q) ? calc(q).concat(merged.slice(0, limit - 1)) : merged;
     }
 
+    function app(e: var): var {
+        return {
+            key: "app:" + e.id,
+            kind: "app",
+            id: e.id,
+            title: e.name,
+            subtitle: e.genericName || e.comment || "",
+            icon: e.icon,
+            pinned: Apps.isPinned(e.id),
+            actions: (e.actions ?? []).map(a => ({
+                        key: "act:" + e.id + ":" + a.name,
+                        kind: "action",
+                        title: a.name,
+                        subtitle: e.name,
+                        icon: a.icon || e.icon,
+                        run: () => Apps.launchAction(e, a)
+                    })),
+            run: () => Apps.launch(e)
+        };
+    }
+
+    // copy results (calculator, emoji) go on the clipboard and, unless launcher auto_paste is off, into the
+    // window the launcher was opened over
     function copy(text: string): void {
-        CoreClient.call("clipboard-copy " + text);
+        CoreClient.call("clipboard-copy " + text, reply => {
+            if (reply.startsWith("ok") && (Config.launcher.auto_paste ?? true))
+                CoreClient.call("clipboard-paste text");
+        });
     }
 
     function calc(q: string): var {

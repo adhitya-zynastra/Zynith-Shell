@@ -216,7 +216,15 @@ Singleton {
                     // center | top
                     position: "center",
                     // comfortable | compact
-                    density: "comfortable"
+                    density: "comfortable",
+                    // list | grid (apps as an icon grid when nothing is typed)
+                    layout: "list",
+                    // category chips under the search line
+                    categories: true,
+                    // an app's actions (New Window, Private Window…) under it, and in search
+                    actions: true,
+                    // copied results (calculator, emoji) are pasted into the window beneath
+                    auto_paste: true
                 },
                 control_panel: {
                     modules: ["header", "levels", "connectivity", "toggles", "media", "power", "system"],

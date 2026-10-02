@@ -188,11 +188,13 @@ Item {
                 clip: true
                 spacing: 2
                 boundsBehavior: Flickable.StopAtBounds
-                currentIndex: root.current
-                highlightFollowsCurrentItem: true
-                highlightMoveDuration: Motion.spatialFast
-                highlightMoveVelocity: -1
-                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
+                // drawn from root.current: the view's own index shifts when entries arrive ahead of it
+                Connections {
+                    target: root
+                    function onCurrentChanged(): void {
+                        list.positionViewAtIndex(root.current, ListView.Contain);
+                    }
+                }
 
                 model: ScriptModel {
                     values: root.results
@@ -200,9 +202,14 @@ Item {
                 }
 
                 // the selection: one shape that glides between rows, with an accent mark
-                highlight: Item {
+                Item {
+                    parent: list.contentItem
+                    z: -1
+                    visible: root.results.length > 0
                     width: list.width
                     height: 54
+                    y: root.current * (54 + list.spacing)
+                    Glide on y {}
                     Rectangle {
                         anchors.fill: parent
                         radius: Metrics.radiusMd
