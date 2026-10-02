@@ -39,11 +39,11 @@ Scope {
             // the union of interactive widgets is approximated by the media card when there is one
             Item {
                 id: interactive
-                x: media ? media.x : 0
-                y: media ? media.y : 0
-                width: media && media.visible ? media.width : 0
-                height: media && media.visible ? media.height : 0
-                property Item media: null
+                property Item card: null
+                x: card ? card.x : 0
+                y: card ? card.y : 0
+                width: card && card.visible ? card.width : 0
+                height: card && card.visible ? card.height : 0
             }
 
             Repeater {
@@ -84,7 +84,7 @@ Scope {
                         onLoaded: {
                             item.settings = Qt.binding(() => slot.modelData.settings ?? {});
                             if (item.interactive)
-                                interactive.media = slot;
+                                interactive.card = slot;
                         }
                     }
                 }
