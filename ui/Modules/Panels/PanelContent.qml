@@ -26,7 +26,7 @@ Item {
     readonly property real preferredTop: loader.item?.preferredTop ?? 0.22
 
     readonly property var panels: ({
-            home: home,
+            home: control,
             media: media,
             system: system,
             network: network,
@@ -34,9 +34,9 @@ Item {
             launcher: launcher,
             clipboard: clipboard,
             notifications: notifications,
-            quick: quick,
+            quick: control,
             wallpaper: wallpaper,
-            control: quick,
+            control: control,
             session: session
         })
 
@@ -114,6 +114,10 @@ Item {
     Component {
         id: session
         SessionPanel {}
+    }
+    Component {
+        id: control
+        ControlPanel {}
     }
 
     Loader {
