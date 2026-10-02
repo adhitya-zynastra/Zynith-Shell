@@ -136,6 +136,13 @@ void Application::initIpc() {
         json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
         json += ",\n  \"locked\": ";
         json += m_lockScreen.isActive() ? "true" : "false";
+        // zynith: toggles another UI shows while the shell still owns them
+        json += std::format(
+            ",\n  \"caffeine\": {},\n  \"nightlight\": {{\"enabled\": {}, \"forced\": {}, \"active\": {}}},\n  \"dnd\": {}",
+            m_idleInhibitor.enabled() ? "true" : "false", m_gammaService.enabled() ? "true" : "false",
+            m_gammaService.forceEnabled() ? "true" : "false", m_gammaService.active() ? "true" : "false",
+            m_notificationManager.doNotDisturb() ? "true" : "false"
+        );
         // The shell is non-dumpable, so /proc/<pid>/fd is root-owned from outside: report our own resources.
         const auto res = security::readSelfResources();
         json += std::format(
