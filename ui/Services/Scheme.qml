@@ -6,7 +6,7 @@ import Quickshell.Io
 import qs.Common
 import "../Common/FallbackPalette.js" as Fallback
 
-// The wallpaper-derived palette. The native theme engine renders it to
+// The wallpaper-derived colour scheme (not named Palette: that is a QtQuick type and would shadow this). The native theme engine renders it to
 // ~/.local/state/zynith/palette.json (templates/palette.json, a user template); this only reads it.
 Singleton {
     id: root
@@ -17,11 +17,21 @@ Singleton {
     property string image: ""
     property bool live: false
 
+    // A file that does not exist yet cannot be watched; until the theme engine first writes it, look
+    // again now and then. Once it exists, changes arrive through the watch.
+    Timer {
+        id: retry
+        interval: 15000
+        onTriggered: paletteFile.reload()
+    }
+
     FileView {
+        id: paletteFile
         path: Paths.state + "/palette.json"
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
+        onLoadFailed: retry.restart()
         onLoaded: {
             try {
                 const data = JSON.parse(text());

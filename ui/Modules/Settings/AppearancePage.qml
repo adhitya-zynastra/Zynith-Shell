@@ -9,7 +9,7 @@ Column {
     PanelHeader {
         width: parent.width
         title: "Appearance"
-        caption: Palette.live ? "Colours from the wallpaper" : "Default colours (no palette from the theme engine yet)"
+        caption: Scheme.live ? "Colours from the wallpaper" : "Default colours (no palette from the theme engine yet)"
     }
 
     Card {
@@ -44,10 +44,10 @@ Column {
         }
         Label {
             width: parent.width
-            visible: Palette.image !== ""
+            visible: Scheme.image !== ""
             role: "caption"
             tone: "faint"
-            text: "Source: " + Palette.image
+            text: "Source: " + Scheme.image
         }
     }
 

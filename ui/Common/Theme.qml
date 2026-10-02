@@ -10,7 +10,7 @@ Singleton {
     id: root
 
     function pal(name: string): color {
-        return (Palette.colors && Palette.colors[name]) || Fallback.colors[name] || "#808080";
+        return (Scheme.colors && Scheme.colors[name]) || Fallback.colors[name] || "#808080";
     }
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);

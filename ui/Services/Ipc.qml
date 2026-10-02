@@ -35,7 +35,7 @@ Singleton {
                 threads: Hardware.cpuThreads,
                 memGiB: Number(Hardware.memGiB.toFixed(1)),
                 gpus: Hardware.gpus.map(g => g.label),
-                palette: Palette.live ? "theme" : "fallback",
+                palette: Scheme.live ? "theme" : "fallback",
                 niri: Workspaces.niri,
                 overview: Workspaces.overviewOpen,
                 workspaces: Workspaces.forScreen(Quickshell.screens[0]).map(w => (w.active ? "*" : "") + w.windows),
