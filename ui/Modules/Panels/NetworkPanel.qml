@@ -1,5 +1,5 @@
 import QtQuick
-import Quickshell.Networking as QsNet
+import Quickshell
 import qs.Common
 import qs.Components
 import qs.Services
@@ -19,17 +19,21 @@ Column {
     spacing: Metrics.s4
     readonly property real inner: width - padding * 2
 
-    readonly property var networks: (Network.wifi?.networks.values ?? []).slice().sort((a, b) => (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength))
-
-    // scan only while this panel is on screen
-    function syncScan(): void {
-        if (Network.wifi)
-            Network.wifi.scannerEnabled = active;
+    // the list (and NetworkManager's per-network signals) exists only while this panel is on screen
+    property bool holding: false
+    function syncList(): void {
+        if (active && !holding) {
+            Network.retain();
+            holding = true;
+        } else if (!active && holding) {
+            Network.release();
+            holding = false;
+        }
     }
-    onActiveChanged: syncScan()
-    Component.onCompleted: syncScan()
-    Component.onDestruction: if (Network.wifi)
-        Network.wifi.scannerEnabled = false
+    onActiveChanged: syncList()
+    Component.onCompleted: syncList()
+    Component.onDestruction: if (holding)
+        Network.release()
 
     PanelHeader {
         width: root.inner
@@ -51,23 +55,26 @@ Column {
         visible: Network.wifiEnabled
 
         Repeater {
-            model: root.networks.slice(0, 9)
+            model: ScriptModel {
+                values: Network.networks.slice(0, 9)
+                objectProp: "ssid"
+            }
 
             delegate: ListRow {
                 required property var modelData
                 width: root.inner
-                icon: modelData.signalStrength > 0.66 ? "wifi" : modelData.signalStrength > 0.33 ? "wifi-2" : "wifi-1"
-                title: modelData.name
-                detail: modelData.security === QsNet.WifiSecurityType.Open ? "Open" : modelData.known ? "Saved" : "Secured"
-                trailing: modelData.connected ? "Connected" : modelData.stateChanging ? "…" : ""
+                icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
+                title: modelData.ssid
+                detail: !modelData.secured ? "Open" : modelData.known ? "Saved" : "Secured"
+                trailing: modelData.connected ? "Connected" : modelData.busy ? "…" : ""
                 active: modelData.connected
-                busy: modelData.stateChanging
-                onClicked: modelData.connected ? modelData.disconnect() : modelData.connect()
+                busy: modelData.busy
+                onClicked: modelData.connected ? Network.disconnect() : Network.connectTo(modelData.ssid)
             }
         }
 
         Label {
-            visible: root.networks.length === 0
+            visible: Network.networks.length === 0
             width: root.inner
             role: "body"
             tone: "faint"

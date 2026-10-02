@@ -2,25 +2,39 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
-import Quickshell.Networking
+import Zynith.Native
 
-// Connection state from NetworkManager. Read-only for now: the secret agent stays native (zynith-secure).
+// Connection state from NetworkManager through the native NetworkState, which follows only NetworkManager
+// itself and the access point in use. Passwords never come here: NetworkManager asks the native secret agent.
 Singleton {
     id: root
 
-    readonly property var devices: Networking.devices.values
-    readonly property var wifi: devices.find(d => d.type === DeviceType.Wifi) ?? null
-    readonly property var wired: devices.find(d => d.type === DeviceType.Wired && d.connected) ?? null
-    readonly property var network: wifi ? (wifi.networks.values.find(n => n.connected) ?? null) : null
+    readonly property bool available: NetworkState.available
+    readonly property bool wifiEnabled: NetworkState.wifiEnabled
+    readonly property bool hasWifi: NetworkState.hasWifi
+    readonly property bool connected: NetworkState.connected
+    readonly property bool wired: NetworkState.kind === "ethernet"
+    readonly property string name: wired ? "Wired" : NetworkState.name
+    readonly property real strength: NetworkState.strength
 
-    readonly property bool wifiEnabled: Networking.wifiEnabled
-    readonly property bool connected: wired !== null || network !== null
-    readonly property string name: wired ? "Wired" : network ? network.name : ""
-    readonly property real strength: network ? network.signalStrength : 0
+    readonly property string glyph: wired ? "device-desktop" : !wifiEnabled || !connected ? "wifi-off" : strength > 0.66 ? "wifi" : strength > 0.33 ? "wifi-2" : "wifi-1"
 
-    readonly property string glyph: wired ? "device-desktop" : !wifiEnabled || !network ? "wifi-off" : strength > 0.66 ? "wifi" : strength > 0.33 ? "wifi-2" : "wifi-1"
+    // nearby networks exist only while something holds them (the Wi-Fi panel)
+    readonly property var networks: NetworkState.networks
+    function retain(): void {
+        NetworkState.retain();
+    }
+    function release(): void {
+        NetworkState.release();
+    }
 
     function setWifiEnabled(on: bool): void {
-        Networking.wifiEnabled = on;
+        NetworkState.setWifiEnabled(on);
+    }
+    function connectTo(ssid: string): void {
+        NetworkState.connectTo(ssid);
+    }
+    function disconnect(): void {
+        NetworkState.disconnectActive();
     }
 }
