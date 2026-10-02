@@ -423,6 +423,14 @@ namespace noctalia::cli {
         "clipboard-image", "Print an image entry as a data URI (for a preview; refused above 8 MB)", {}, {}, {},
         kMsgClipboardEntryPositionals, {}, false
     };
+    inline constexpr Command screenTime{
+        "screen-time", "Print screen time as JSON: total, per app, per hour (today) or per day ([days])", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command chargeLimit{
+        "charge-limit", "Print the battery charge limit as JSON, or turn UPower's preset on|off", {}, {}, {}, {}, {},
+        false
+    };
     inline constexpr Command clipboardEntryText{
         "clipboard-entry-text", "Print up to 16 KB of a text entry, for a preview of the selected entry", {}, {}, {},
         kMsgClipboardEntryPositionals, {}, false
@@ -1005,6 +1013,8 @@ namespace noctalia::cli {
       msg::clipboardImage,
       msg::clipboardPaste,
       msg::clipboardEntryText,
+      msg::screenTime,
+      msg::chargeLimit,
       msg::clipboardText,
       msg::surfacesSync,
       msg::weatherStatus,

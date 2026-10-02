@@ -557,6 +557,74 @@ void Application::initIpc() {
     return text;
   });
 
+  // zynith: what the Control Panel's screen-time module shows
+  m_ipcService.bind(noctalia::cli::msg::screenTime, [this](const std::string& args) -> std::string {
+    int days = 1;
+    try {
+      if (!StringUtils::trim(args).empty()) {
+        days = std::clamp(std::stoi(StringUtils::trim(args)), 1, 30);
+      }
+    } catch (const std::exception&) {
+      return "error: screen-time [days]\n";
+    }
+    const ScreenTimeSnapshot snap = m_screenTimeService.snapshot(days);
+    nlohmann::json apps = nlohmann::json::array();
+    for (const auto& a : snap.apps) {
+      apps.push_back({{"key", a.appKey}, {"name", a.displayName}, {"seconds", a.total.count()}});
+    }
+    nlohmann::json buckets = nlohmann::json::array();
+    for (const auto& b : snap.buckets) {
+      buckets.push_back(b.count());
+    }
+    const nlohmann::json out{
+        {"enabled", m_screenTimeService.enabled()},
+        {"days", snap.rangeDays},
+        {"hourly", snap.hourlyBuckets},
+        {"total", snap.total.count()},
+        {"apps", apps},
+        {"buckets", buckets},
+        {"labels", snap.bucketLabels},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the battery's charge limit (UPower's preset), for the Control Panel's power module
+  m_ipcService.bind(noctalia::cli::msg::chargeLimit, [this](const std::string& args) -> std::string {
+    if (m_upowerService == nullptr) {
+      return "error: no UPower\n";
+    }
+    const UPowerDeviceInfo* battery = m_upowerService->defaultSystemBattery();
+    if (battery == nullptr) {
+      return "error: no battery\n";
+    }
+    const std::string arg = StringUtils::trim(args);
+    if (arg == "on" || arg == "off") {
+      if (!battery->chargeLimit.methodAvailable) {
+        return "error: this battery's limit cannot be changed\n";
+      }
+      return m_upowerService->enableChargeThreshold(battery->path, arg == "on") ? "ok\n" : "error: not changed\n";
+    }
+    const auto& c = battery->chargeLimit;
+    nlohmann::json out{
+        {"supported", c.supported},
+        {"settable", c.methodAvailable},
+        {"enabled", c.enabled},
+        {"pending", c.requestPending},
+    };
+    if (c.configuredStart) {
+      out["start"] = *c.configuredStart;
+    }
+    if (c.configuredEnd) {
+      out["end"] = *c.configuredEnd;
+    }
+    if (battery->healthPercent()) {
+      out["health"] = *battery->healthPercent();
+    }
+    out["energy_full"] = battery->energyFull;
+    out["energy_full_design"] = battery->energyFullDesign;
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
   // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
   // released keyboard focus; the short wait lets the target window have it back.
   m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
