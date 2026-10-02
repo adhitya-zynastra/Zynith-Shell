@@ -431,6 +431,18 @@ namespace noctalia::cli {
         "charge-limit", "Print the battery charge limit as JSON, or turn UPower's preset on|off", {}, {}, {}, {}, {},
         false
     };
+    inline constexpr Command brightnessStatus{
+        "brightness-status", "Print every display's brightness as JSON (id, label, value, controllable)", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command calendarEvents{
+        "calendar-events", "Print the synced calendar events of the next [days] (default 14) as JSON", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command effectsStatus{
+        "effects-status", "Print the EasyEffects output and input profiles, and the active ones, as JSON", {}, {}, {},
+        {}, {}, false
+    };
     inline constexpr Command clipboardEntryText{
         "clipboard-entry-text", "Print up to 16 KB of a text entry, for a preview of the selected entry", {}, {}, {},
         kMsgClipboardEntryPositionals, {}, false
@@ -1015,6 +1027,9 @@ namespace noctalia::cli {
       msg::clipboardEntryText,
       msg::screenTime,
       msg::chargeLimit,
+      msg::brightnessStatus,
+      msg::calendarEvents,
+      msg::effectsStatus,
       msg::clipboardText,
       msg::surfacesSync,
       msg::weatherStatus,

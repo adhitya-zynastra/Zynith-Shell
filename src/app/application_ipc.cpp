@@ -625,6 +625,91 @@ void Application::initIpc() {
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 
+  // zynith: every display's brightness, for the Control Panel's monitor module
+  m_ipcService.bind(noctalia::cli::msg::brightnessStatus, [this](const std::string& /*args*/) -> std::string {
+    nlohmann::json displays = nlohmann::json::array();
+    if (m_brightnessService != nullptr) {
+      for (const auto& d : m_brightnessService->displays()) {
+        displays.push_back({
+            {"id", d.id},
+            {"label", d.label},
+            {"value", d.brightness},
+            {"controllable", d.controllable},
+            {"width", d.physicalWidth},
+            {"height", d.physicalHeight},
+            {"scale", d.scale},
+        });
+      }
+    }
+    const nlohmann::json out{
+        {"available", m_brightnessService != nullptr && m_brightnessService->available()},
+        {"ddc", m_configService.config().brightness.enableDdcutil},
+        {"displays", displays},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the synced calendar's coming events, for the Control Panel's calendar module
+  m_ipcService.bind(noctalia::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
+    int days = 14;
+    try {
+      if (!StringUtils::trim(args).empty()) {
+        days = std::clamp(std::stoi(StringUtils::trim(args)), 1, 90);
+      }
+    } catch (const std::exception&) {
+      return "error: calendar-events [days]\n";
+    }
+    const auto now = std::chrono::system_clock::now();
+    const auto from = std::chrono::floor<std::chrono::days>(now);
+    const auto until = from + std::chrono::days(days);
+    const auto secs = [](std::chrono::system_clock::time_point t) {
+      return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+    };
+    const CalendarSnapshot& snap = m_calendarService.snapshot();
+    nlohmann::json events = nlohmann::json::array();
+    for (const auto& e : snap.events) {
+      if (e.end < from || e.start >= until) {
+        continue;
+      }
+      events.push_back({
+          {"title", e.title},
+          {"calendar", e.calendarName},
+          {"color", e.colorHex},
+          {"location", e.location},
+          {"url", e.url},
+          {"start", secs(e.start)},
+          {"end", secs(e.end)},
+          {"all_day", e.allDay},
+      });
+    }
+    const nlohmann::json out{
+        {"enabled", m_calendarService.enabled()},
+        {"valid", snap.valid},
+        {"events", events},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: EasyEffects' profiles, for the Control Panel's audio module (effects-profile-set applies one)
+  m_ipcService.bind(noctalia::cli::msg::effectsStatus, [this](const std::string& /*args*/) -> std::string {
+    if (m_easyEffectsService == nullptr) {
+      return nlohmann::json{{"available", false}}.dump() + "\n";
+    }
+    m_easyEffectsService->refreshProfiles();
+    const auto kindJson = [this](AudioEffectsProfileKind kind) {
+      return nlohmann::json{
+          {"profiles", m_easyEffectsService->effectsProfiles(kind)},
+          {"active", m_easyEffectsService->activeEffectsProfile(kind)},
+      };
+    };
+    const nlohmann::json out{
+        {"available", true},
+        {"output", kindJson(AudioEffectsProfileKind::Output)},
+        {"input", kindJson(AudioEffectsProfileKind::Input)},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
   // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
   // released keyboard focus; the short wait lets the target window have it back.
   m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
