@@ -11,8 +11,11 @@ Item {
 
     required property var entry
     property bool compact: false
+    // as a popup, × closes the popup (the history keeps it); in the history it removes the entry
+    property bool popup: false
     readonly property bool critical: entry.urgency === NotificationUrgency.Critical
     readonly property bool hovered: hover.hovered
+    readonly property bool typing: replyField.activeFocus
     signal activated
 
     // An icon name becomes an image://icon URL even when the theme lacks it, which draws Qt's
@@ -118,7 +121,7 @@ Item {
                     role: "caption"
                     tone: "faint"
                     caps: true
-                    text: root.entry.appName || "Notification"
+                    text: (Config.notifications.showAppName ?? true) ? (root.entry.appName || "Notification") : ""
                 }
                 Label {
                     id: when
@@ -150,7 +153,7 @@ Item {
                         anchors.margins: -6
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: Notifications.dismiss(root.entry.key)
+                        onClicked: root.popup ? Notifications.close(root.entry.key) : Notifications.dismiss(root.entry.key)
                     }
                 }
             }
@@ -172,8 +175,89 @@ Item {
                 text: root.entry.body
             }
 
+            // progress, when the sender reports one (the "value" hint)
+            Item {
+                visible: (root.entry.progress ?? -1) >= 0
+                width: parent.width
+                height: 14
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - pct.width - Metrics.s3
+                    height: 4
+                    radius: 2
+                    color: Theme.well
+                    Rectangle {
+                        width: parent.width * Math.max(0, Math.min(1, (root.entry.progress ?? 0) / 100))
+                        height: parent.height
+                        radius: 2
+                        color: Theme.accent
+                        Behavior on width {
+                            Anim {
+                                role: "spatialFast"
+                            }
+                        }
+                    }
+                }
+                Label {
+                    id: pct
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "caption"
+                    numeric: true
+                    tone: "muted"
+                    text: Math.round(root.entry.progress ?? 0) + "%"
+                }
+            }
+
+            // a reply, for senders that take one (messengers)
+            Rectangle {
+                visible: (root.entry.reply ?? "") !== "" && root.entry.n
+                width: parent.width
+                height: 32
+                radius: 16
+                color: Theme.well
+                border.width: Metrics.hairline
+                border.color: replyField.activeFocus ? Theme.accentLine : Theme.hairline
+                TextInput {
+                    id: replyField
+                    anchors.left: parent.left
+                    anchors.leftMargin: Metrics.s4
+                    anchors.right: send.left
+                    anchors.rightMargin: Metrics.s2
+                    anchors.verticalCenter: parent.verticalCenter
+                    color: Theme.ink
+                    font.family: Type.ui
+                    font.pixelSize: Type.label
+                    clip: true
+                    Keys.onReturnPressed: {
+                        Notifications.reply(root.entry.key, text);
+                        text = "";
+                    }
+                    Keys.onEscapePressed: focus = false
+                    Label {
+                        visible: replyField.text === ""
+                        anchors.verticalCenter: parent.verticalCenter
+                        role: "label"
+                        tone: "faint"
+                        text: root.entry.reply ?? ""
+                    }
+                }
+                IconButton {
+                    id: send
+                    anchors.right: parent.right
+                    anchors.rightMargin: 3
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 26
+                    iconSize: 13
+                    icon: "corner-down-left"
+                    tone: "accent"
+                    enabled: replyField.text.trim() !== ""
+                    onClicked: Notifications.reply(root.entry.key, replyField.text)
+                }
+            }
+
             Flow {
-                visible: !root.compact && actionsRepeater.count > 0
+                visible: !root.compact && actionsRepeater.count > 0 && (Config.notifications.showActions ?? true)
                 width: parent.width
                 spacing: Metrics.s2
                 topPadding: Metrics.s2

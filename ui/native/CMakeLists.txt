@@ -30,6 +30,7 @@ qt_add_qml_module(zynith_native
         src/config_file.h src/config_file.cpp
         src/command_server.h src/command_server.cpp
         src/thumbnails.h src/thumbnails.cpp
+        src/private_store.h src/private_store.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

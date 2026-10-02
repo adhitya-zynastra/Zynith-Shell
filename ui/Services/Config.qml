@@ -46,7 +46,13 @@ Singleton {
             grouping: notificationsFile.values.grouping,
             lockRedaction: notificationsFile.values.lock_redaction,
             sound: notificationsFile.values.sound,
-            soundVolume: notificationsFile.values.sound_volume
+            soundVolume: notificationsFile.values.sound_volume,
+            historyPersist: notificationsFile.values.history_persist,
+            retentionHours: notificationsFile.values.history_retention_hours,
+            showAppName: notificationsFile.values.show_app_name,
+            showActions: notificationsFile.values.show_actions,
+            monitor: notificationsFile.values.monitor,
+            filters: notificationsFile.values.filter ?? []
         })
     readonly property var wallpaper: wallpaperFile.values
     readonly property var widgets: widgetsFile.values.widget ?? []
@@ -246,7 +252,7 @@ Singleton {
     ConfigFile {
         id: notificationsFile
         path: Paths.config + "/notifications.toml"
-        header: "Notifications. The server runs only when this UI owns notifications (zynith.toml [surfaces])\nor `server = true`, and never takes the bus name from another process."
+        header: "Notifications. The server runs only when this UI owns notifications (zynith.toml [surfaces])\nor `server = true`, and never takes the bus name from another process. max_popups show at once;\nthe rest wait their turn."
         defaults: ({
                 server: false,
                 dnd: false,
@@ -262,7 +268,19 @@ Singleton {
                 // hide notification text on the lock screen
                 lock_redaction: true,
                 sound: true,
-                sound_volume: 0.6
+                sound_volume: 0.6,
+                // keep the history across restarts (~/.local/state/zynith/notifications.json, mode 0600)
+                history_persist: true,
+                // drop history older than this many hours (0 = only history_size limits it)
+                history_retention_hours: 0,
+                show_app_name: true,
+                show_actions: true,
+                // which screen popups use: focused, or an output name
+                monitor: "focused",
+                // per-app rules, as the native shell had them. Each [[filter]]: match (app name, desktop entry
+                // or category, case-insensitive substring), match_content (a regex on summary/body),
+                // show_popup, save_history, play_sound, bypass_dnd, timeout_ms, urgencies (low normal critical)
+                filter: []
             })
     }
 
