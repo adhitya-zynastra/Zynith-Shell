@@ -403,6 +403,11 @@ private:
   Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;
   Timer m_launcherAutoPasteTimer;
+  // zynith: metrics the UI asked sysmon-stats for, held until a lease (renewed by each query) runs out
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_sysmonLeases;
+  Timer m_sysmonLeaseTimer;
+  void sysmonLease(const std::string& key);
+  void sysmonExpireLeases();
   Timer m_pluginAutoUpdateTimer;
   Timer m_pluginAutoUpdateStartTimer; // one-shot: the first background check, a few minutes after startup
   std::unordered_set<std::string> m_notifiedPluginUpdates; // "source:author/plugin version" already announced

@@ -650,6 +650,60 @@ void Application::initIpc() {
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 
+  // zynith: the system monitor's sample for the Zynith UI's sysmon widgets (one sampler, not two)
+  m_ipcService.bind(noctalia::cli::msg::sysmonStats, [this](const std::string& args) -> std::string {
+    if (m_systemMonitor == nullptr) {
+      return "error: system monitor unavailable\n";
+    }
+    const nlohmann::json want = args.empty() ? nlohmann::json::object() : nlohmann::json::parse(args, nullptr, false);
+    std::vector<std::string> disks;
+    if (want.is_object()) {
+      for (const char* key : {"gpu_temp", "gpu_usage", "gpu_vram"}) {
+        if (want.value(key, false)) {
+          sysmonLease(key);
+        }
+      }
+      if (want.contains("disks") && want["disks"].is_array()) {
+        for (const auto& d : want["disks"]) {
+          if (d.is_string() && !d.get<std::string>().empty()) {
+            disks.push_back(d.get<std::string>());
+            sysmonLease("disk:" + d.get<std::string>());
+          }
+        }
+      }
+    }
+    const SystemStats s = m_systemMonitor->latest();
+    nlohmann::json net = nlohmann::json::object();
+    for (const auto& [name, t] : s.netThroughputByInterface) {
+      net[name] = {{"rx", t.rxBytesPerSec}, {"tx", t.txBytesPerSec}};
+    }
+    nlohmann::json diskOut = nlohmann::json::object();
+    for (const auto& path : disks) {
+      if (const auto d = m_systemMonitor->diskStats(path)) {
+        diskOut[path] = {{"used_pct", d->usagePercent}, {"total", d->totalBytes}, {"free", d->freeBytes}, {"available", d->availableBytes}};
+      }
+    }
+    nlohmann::json out{
+        {"cpu", s.cpuUsagePercent},
+        {"cpu_temp", s.cpuTempC ? nlohmann::json(*s.cpuTempC) : nlohmann::json(nullptr)},
+        {"cpu_freq_mhz", s.cpuFreqMhz},
+        {"ram_pct", s.ramUsagePercent},
+        {"ram_used_mb", s.ramUsedMb},
+        {"ram_total_mb", s.ramTotalMb},
+        {"swap_used_mb", s.swapUsedMb},
+        {"swap_total_mb", s.swapTotalMb},
+        {"gpu_temp", s.gpuTempC ? nlohmann::json(*s.gpuTempC) : nlohmann::json(nullptr)},
+        {"gpu_usage", s.gpuUsagePercent ? nlohmann::json(*s.gpuUsagePercent) : nlohmann::json(nullptr)},
+        {"gpu_vram_used", s.gpuVramUsedBytes ? nlohmann::json(*s.gpuVramUsedBytes) : nlohmann::json(nullptr)},
+        {"gpu_vram_total", s.gpuVramTotalBytes ? nlohmann::json(*s.gpuVramTotalBytes) : nlohmann::json(nullptr)},
+        {"net_rx", s.netRxBytesPerSec},
+        {"net_tx", s.netTxBytesPerSec},
+        {"interfaces", net},
+        {"disks", diskOut},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
   m_ipcService.bind(noctalia::cli::msg::brightnessRescan, [this](const std::string& /*args*/) -> std::string {
     if (m_brightnessService == nullptr || !m_configService.config().brightness.enableDdcutil) {
       return "error: DDC/CI is off ([brightness] enable_ddcutil)\n";
@@ -1312,3 +1366,55 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   }
   return false;
 }
+
+// ── zynith: sysmon leases ─────────────────────────────────────────────────────
+
+namespace {
+  constexpr auto kSysmonLease = std::chrono::seconds(15);
+}
+
+void Application::sysmonLease(const std::string& key) {
+  const bool fresh = !m_sysmonLeases.contains(key);
+  m_sysmonLeases[key] = std::chrono::steady_clock::now();
+  if (fresh) {
+    if (key == "gpu_temp") {
+      m_systemMonitor->retainGpuTemp();
+    } else if (key == "gpu_usage") {
+      m_systemMonitor->retainGpuUsage();
+    } else if (key == "gpu_vram") {
+      m_systemMonitor->retainGpuVram();
+    } else if (key.starts_with("disk:")) {
+      m_systemMonitor->retainDiskPath(key.substr(5));
+    }
+  }
+  if (!m_sysmonLeaseTimer.active()) {
+    m_sysmonLeaseTimer.startRepeating(std::chrono::seconds(5), [this]() { sysmonExpireLeases(); });
+  }
+}
+
+void Application::sysmonExpireLeases() {
+  const auto now = std::chrono::steady_clock::now();
+  for (auto it = m_sysmonLeases.begin(); it != m_sysmonLeases.end();) {
+    if (now - it->second < kSysmonLease) {
+      ++it;
+      continue;
+    }
+    const std::string& key = it->first;
+    if (m_systemMonitor != nullptr) {
+      if (key == "gpu_temp") {
+        m_systemMonitor->releaseGpuTemp();
+      } else if (key == "gpu_usage") {
+        m_systemMonitor->releaseGpuUsage();
+      } else if (key == "gpu_vram") {
+        m_systemMonitor->releaseGpuVram();
+      } else if (key.starts_with("disk:")) {
+        m_systemMonitor->releaseDiskPath(key.substr(5));
+      }
+    }
+    it = m_sysmonLeases.erase(it);
+  }
+  if (m_sysmonLeases.empty()) {
+    m_sysmonLeaseTimer.stop();
+  }
+}
+

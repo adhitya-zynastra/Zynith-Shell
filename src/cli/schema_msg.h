@@ -435,6 +435,12 @@ namespace noctalia::cli {
         "brightness-status", "Print every display's brightness as JSON (id, label, value, controllable)", {}, {}, {}, {},
         {}, false
     };
+    inline constexpr Command sysmonStats{
+        "sysmon-stats",
+        "Print the system monitor's sample as JSON; {\"gpu_temp\":true,\"gpu_usage\":true,\"gpu_vram\":true,"
+        "\"disks\":[\"/\"]} holds those on a lease renewed by each query",
+        {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command brightnessRescan{
         "brightness-rescan", "Look for DDC/CI monitors again (with [brightness] enable_ddcutil)", {}, {}, {}, {}, {}, false
     };
@@ -1054,6 +1060,7 @@ namespace noctalia::cli {
       msg::chargeLimit,
       msg::brightnessStatus,
       msg::brightnessRescan,
+      msg::sysmonStats,
       msg::settingsSchema,
       msg::settingsSet,
       msg::settingsReset,
