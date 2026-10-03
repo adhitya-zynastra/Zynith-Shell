@@ -59,10 +59,38 @@ PanelWindow {
 
     // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
     readonly property string visibility: spec.visibility ?? "always"
+    readonly property bool hides: visibility === "autohide" || visibility === "smart"
     readonly property bool panelHere: PanelRouter.openPanels[screen?.name ?? ""] !== undefined
+    // the pointer on the bar, or on the edge strip that summons it; leaving lets it go after hide_delay_ms
+    property bool held: false
     readonly property bool hovered: hover.hovered
+    onHoveredChanged: {
+        if (hovered) {
+            letGo.stop();
+            held = true;
+        } else {
+            letGo.restart();
+        }
+    }
+    Timer {
+        id: letGo
+        interval: Math.max(0, win.spec.hide_delay_ms ?? 350)
+        onTriggered: win.held = false
+    }
+    // a hidden bar shows itself for a moment when the workspace changes (the native show_on_workspace_switch)
+    property bool peeking: false
+    readonly property var activeWorkspace: Workspaces.forScreen(screen).find(w => w.active)?.id ?? -1
+    onActiveWorkspaceChanged: if (hides && (spec.reveal_on_switch ?? true)) {
+        peeking = true;
+        peekEnd.restart();
+    }
+    Timer {
+        id: peekEnd
+        interval: Math.max(200, win.spec.reveal_on_switch_ms ?? 1200)
+        onTriggered: win.peeking = false
+    }
     readonly property bool wantsHidden: {
-        if (panelHere || hovered)
+        if (panelHere || held || peeking)
             return false;
         if (visibility === "autohide")
             return true;
@@ -78,12 +106,16 @@ PanelWindow {
             easing.type: win.wantsHidden ? Motion.exitEasing : Motion.enterEasing
         }
     }
-    // a bar that is fully away renders nothing at all
-    updatesEnabled: shown > 0
+    // how much of the edge summons a hidden bar: reveal_length along it, centred on the bar (0 = the bar's own
+    // length), reveal_size deep. A bar that has shrunk to nothing still has its whole strip.
+    readonly property int revealLength: hides ? Math.max(0, spec.reveal_length ?? 480) : 0
+    readonly property int revealSize: Math.max(1, spec.reveal_size ?? 3)
 
     // Room for the shadow. Whatever part of it would fall off-screen is taken from the margins instead.
     readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
-    readonly property int edgeGap: Math.max(0, margin - pad)
+    // a bar that hides keeps its surface on the screen edge (the margin is inside it), so its summoning strip
+    // is where the pointer stops
+    readonly property int edgeGap: hides ? 0 : Math.max(0, margin - pad)
     readonly property int edgeInset: margin - edgeGap
     readonly property int alongGap: Math.max(0, offset - pad)
     readonly property int alongInset: anchorAt === "center" ? pad : offset - alongGap
@@ -114,12 +146,20 @@ PanelWindow {
 
     // near = the screen edge / anchored corner side, far = the opposite side
     readonly property int crossSize: thickness + edgeInset + pad
-    readonly property int alongSize: pillLength + alongInset + pad
+    readonly property int pillAlong: pillLength + alongInset + pad
+    // wider than the bar when its summoning strip is longer; the extra is transparent and takes no input
+    readonly property int alongSize: anchorAt === "fill" ? pillAlong : Math.max(pillAlong, Math.min(screenLength, revealLength))
+    readonly property int alongExtra: alongSize - pillAlong
     implicitWidth: vertical ? crossSize : alongSize
     implicitHeight: vertical ? alongSize : crossSize
 
+    // input follows where the bar is going, not where its animation is: hidden takes only the strip
+    // (while it shows, its strip stays live too, or a pointer resting on the strip beside it would flicker it)
     mask: Region {
-        item: win.shown > 0.01 ? pill : strip
+        item: win.wantsHidden ? strip : pill
+        Region {
+            item: win.hides && !win.wantsHidden ? strip : null
+        }
     }
 
     HoverHandler {
@@ -129,10 +169,11 @@ PanelWindow {
     // where the pointer summons a hidden bar
     Item {
         id: strip
-        x: win.vertical ? (win.edge === "left" ? 0 : win.width - 3) : pill.x
-        y: win.vertical ? pill.y : (win.edge === "top" ? 0 : win.height - 3)
-        width: win.vertical ? 3 : pill.width
-        height: win.vertical ? pill.height : 3
+        readonly property real length: win.revealLength > 0 ? Math.min(win.vertical ? win.height : win.width, win.revealLength) : (win.vertical ? pill.height : pill.width)
+        x: win.vertical ? (win.edge === "left" ? 0 : win.width - win.revealSize) : Math.max(0, Math.min(win.width - length, pill.x + pill.width / 2 - length / 2))
+        y: win.vertical ? Math.max(0, Math.min(win.height - length, pill.y + pill.height / 2 - length / 2)) : (win.edge === "top" ? 0 : win.height - win.revealSize)
+        width: win.vertical ? win.revealSize : length
+        height: win.vertical ? length : win.revealSize
     }
 
     BlurRegion {
@@ -141,15 +182,21 @@ PanelWindow {
         radius: win.radius
     }
 
+    // along the bar: at its anchor, the extra summoning room on the far side (both sides when centred)
+    function alongPos(): real {
+        if (anchorAt === "center")
+            return alongInset + alongExtra / 2;
+        return anchorAt === "end" ? pad + alongExtra : alongInset;
+    }
     function pillX(): real {
         if (vertical)
             return edge === "left" ? edgeInset : pad;
-        return anchorAt === "end" ? pad : alongInset;
+        return alongPos();
     }
     function pillY(): real {
         if (!vertical)
             return edge === "top" ? edgeInset : pad;
-        return anchorAt === "end" ? pad : alongInset;
+        return alongPos();
     }
 
     // Where the pill sits on the screen, so panels can grow out of the widget that opened them.
@@ -174,7 +221,11 @@ PanelWindow {
             x: windowScreenX() + pill.x + pill.width / 2,
             y: windowScreenY() + pill.y + pill.height / 2,
             edge: edge,
-            extent: margin + thickness
+            extent: margin + thickness,
+            // for diagnostics: where the bar and its summoning strip are, in screen coordinates
+            hidden: wantsHidden,
+            bar: [Math.round(windowScreenX() + pill.x), Math.round(windowScreenY() + pill.y), Math.round(pill.width), Math.round(pill.height)],
+            strip: hides ? [Math.round(windowScreenX() + strip.x), Math.round(windowScreenY() + strip.y), Math.round(strip.width), Math.round(strip.height)] : null
         })
     onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
 
@@ -222,6 +273,7 @@ PanelWindow {
         readonly property real presence: arrived * win.shown
         readonly property real away: (1 - presence) * (win.thickness + win.margin + 4)
         opacity: presence
+        visible: presence > 0.001
         transform: Translate {
             x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
             y: win.edge === "top" ? -pill.away : win.edge === "bottom" ? pill.away : 0

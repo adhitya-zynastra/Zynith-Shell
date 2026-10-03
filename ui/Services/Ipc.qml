@@ -139,6 +139,9 @@ Singleton {
             ExperiencePolicy.select(name);
             return ExperiencePolicy.profile;
         }
+        function bars(): string {
+            return JSON.stringify(PanelRouter.bars);
+        }
         function panelRect(): string {
             return JSON.stringify(PanelRouter.rects[root.focusedScreen()] ?? null);
         }
