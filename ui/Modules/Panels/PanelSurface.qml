@@ -171,7 +171,7 @@ PanelWindow {
         y: win.cardY - win.winY
         width: win.panelWidth
         height: win.cardHeight
-        radius: Metrics.radiusXl
+        radius: Metrics.radiusSurface
         raised: !win.bare
         fill: win.bare ? "transparent" : Theme.glass
         edge: !win.bare

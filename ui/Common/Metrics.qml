@@ -19,6 +19,10 @@ Singleton {
     readonly property int radiusMd: Math.round(10 * radiusScale)
     readonly property int radiusLg: Math.round(16 * radiusScale)
     readonly property int radiusXl: Math.round(22 * radiusScale)
+    // Optics families: a lens's outer shape, a plate inside it, a control
+    readonly property int radiusSurface: Math.round(18 * radiusScale)
+    readonly property int radiusPlate: Math.round(10 * radiusScale)
+    readonly property int radiusControl: Math.round(8 * radiusScale)
 
     readonly property int barThickness: 34
     readonly property int control: 30

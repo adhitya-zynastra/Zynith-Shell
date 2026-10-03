@@ -56,15 +56,14 @@ Column {
         return pct;
     }
 
-    // ── header: the profile in use ──
+    // ── header: the profile in use (the Control Panel's section head names the section; here, the Experience) ──
     Item {
         width: root.width
         height: 16
         Label {
-            role: "caption"
+            role: "data"
             tone: "faint"
-            caps: true
-            text: "Power"
+            text: root.expanded ? "Profile" : ""
             MouseArea {
                 anchors.fill: parent
                 enabled: !root.expanded
@@ -74,8 +73,7 @@ Column {
         }
         Label {
             anchors.right: parent.right
-            role: "caption"
-            caps: true
+            role: "data"
             tone: ExperiencePolicy.automatic ? "accent" : "faint"
             text: "Experience · " + (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? " · auto" : "")
         }
@@ -131,7 +129,7 @@ Column {
                     width: parent.width * Power.level
                     height: parent.height
                     radius: 2
-                    color: Power.low ? Theme.danger : Theme.accent
+                    color: Power.low ? Theme.danger : Theme.alpha(Theme.ink, 0.78)
                     Behavior on width {
                         Anim {
                             role: "spatial"

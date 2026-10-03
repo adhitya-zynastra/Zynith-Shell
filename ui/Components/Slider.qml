@@ -29,7 +29,7 @@ Item {
         width: parent.width
         height: root.track
         radius: height / 2
-        color: Theme.hover
+        color: Theme.rule
 
         Behavior on height {
             NumberAnimation {
@@ -41,7 +41,11 @@ Item {
             width: Math.max(height, parent.width * Math.min(1, root.displayed))
             height: parent.height
             radius: height / 2
-            color: Theme.accent
+            // the level in ink at rest; the accent only while it is being touched (the one live thing)
+            color: area.containsMouse || area.pressed ? Theme.accent : Theme.alpha(Theme.ink, 0.78)
+            Behavior on color {
+                ColorAnim {}
+            }
         }
     }
 

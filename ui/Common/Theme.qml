@@ -72,6 +72,14 @@ Singleton {
     readonly property color sheen: alpha("#ffffff", ExperiencePolicy.richEffects ? 0.08 : 0.045)
 
     // ── interaction ─────────────────────────────────────────────────────────
+    // Optics materials: a plate is a tone step inside a lens; the signal is the accent as light on an edge
+    // (the one current selection of a surface), never a painted block
+    readonly property color plate: alpha(mix(surfaceHigh, surfaceHighest, 0.5), 0.45)
+    readonly property color signalFill: alpha(accent, 0.10)
+    readonly property color signalEdge: alpha(accent, 0.62)
+    readonly property color signalGlow: alpha(accent, 0.16)
+    readonly property color rule: alpha(pal("on_surface"), 0.10)
+
     readonly property color hover: alpha(pal("on_surface"), 0.07)
     readonly property color press: alpha(pal("on_surface"), 0.12)
     readonly property color selected: accentSoft

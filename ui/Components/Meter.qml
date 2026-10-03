@@ -17,9 +17,8 @@ Column {
 
         Label {
             anchors.left: parent.left
-            role: "caption"
+            role: "data"
             tone: "faint"
-            caps: true
             text: root.label
         }
         Label {
@@ -35,13 +34,13 @@ Column {
         width: parent.width
         height: 3
         radius: 1.5
-        color: Theme.hover
+        color: Theme.rule
 
         Rectangle {
             width: parent.width * Math.max(0, Math.min(1, root.value))
             height: parent.height
             radius: parent.radius
-            color: root.value > 0.85 ? Theme.danger : Theme.accent
+            color: root.value > 0.85 ? Theme.danger : Theme.alpha(Theme.ink, 0.78)
 
             Behavior on width {
                 NumberAnimation {

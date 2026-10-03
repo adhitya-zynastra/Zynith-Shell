@@ -108,37 +108,34 @@ Item {
         signal opened
         implicitHeight: button.height + (showLabel ? Metrics.s2 + name.implicitHeight : 0)
 
-        Rectangle {
+        Item {
             id: button
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.min(ct.width, 56)
+            width: Math.min(ct.width, 54)
             height: width
-            radius: ct.lit ? Metrics.radiusLg : width / 2
-            color: ct.lit ? Theme.accent : Theme.hover
-            border.width: Metrics.hairline
-            border.color: ct.lit ? "transparent" : Theme.hairline
-            scale: area.pressed ? 0.92 : area.containsMouse ? 1.04 : 1
+            scale: area.pressed ? 0.94 : area.containsMouse ? 1.03 : 1
             Glide on scale {
                 epsilon: 0.001
             }
-            Behavior on color {
-                ColorAnim {}
+            Plate {
+                anchors.fill: parent
+                radius: width / 2
             }
-            Behavior on radius {
-                Anim {
-                    role: "spatialFast"
-                }
+            Signal {
+                anchors.fill: parent
+                radius: width / 2
+                on: ct.lit
             }
             Icon {
                 anchors.centerIn: parent
                 name: ct.entry?.icon() ?? ""
                 size: 20
-                color: ct.lit ? Theme.onAccent : Theme.ink
+                color: ct.lit ? Theme.accent : Theme.ink
             }
             Interactive {
                 id: area
                 anchors.fill: parent
-                radius: parent.radius
+                radius: width / 2
                 onClicked: mouse => mouse.button === Qt.RightButton && (ct.entry?.more ?? "") !== "" ? ct.opened() : ct.pressed()
             }
         }

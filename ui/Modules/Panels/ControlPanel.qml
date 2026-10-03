@@ -31,6 +31,22 @@ Column {
         return out;
     }
     readonly property bool cards: cfg.module_style === "cards"
+    // [control_panel] section_heads: each module under an indexed head (on by default)
+    readonly property bool heads: cfg.section_heads !== false
+    readonly property var titles: ({
+            shortcuts: "Quick",
+            levels: "Levels",
+            audio: "Sound",
+            media: "Now playing",
+            monitor: "Display",
+            power: "Power",
+            calendar: "Calendar",
+            weather: "Weather",
+            screen_time: "Screen time",
+            system: "System",
+            notifications: "Notifications",
+            clipboard: "Clipboard"
+        })
 
     // the gap between modules is each shown module's own (below it), so a module that has nothing to show
     // takes neither room nor a gap
@@ -76,8 +92,12 @@ Column {
             readonly property real progress: root.stage(index)
             // never hidden itself (a module's own visible is read here, and it would follow this one's)
             readonly property bool shown: loader.item !== null && loader.item.visible && loader.height > 0
+            // a section head names it ("02  LEVELS ───"): hierarchy by type and rule, not by a box
+            readonly property string title: root.titles[modelData] ?? ""
+            readonly property bool headed: root.heads && title !== ""
+            readonly property real headH: headed ? 18 + Metrics.s3 : 0
             width: root.inner
-            height: shown ? loader.height + (root.cards ? Metrics.s4 * 2 : 0) + root.gap : 0
+            height: shown ? loader.height + headH + (root.cards ? Metrics.s4 * 2 : 0) + root.gap : 0
             opacity: progress
             transform: Translate {
                 y: (1 - slot.progress) * 10
@@ -88,15 +108,23 @@ Column {
                 visible: root.cards && slot.shown
                 width: parent.width
                 height: parent.height - root.gap
-                radius: Metrics.radiusXl
-                color: Theme.well
+                radius: Metrics.radiusSurface - Metrics.s2
+                color: Theme.plate
                 border.width: Metrics.hairline
                 border.color: Theme.hairline
+            }
+            SectionHead {
+                visible: slot.headed && slot.shown
+                x: root.cards ? Metrics.s4 : 0
+                y: root.cards ? Metrics.s4 : 0
+                width: parent.width - x * 2
+                index: String(root.modules.filter(m => root.titles[m]).indexOf(slot.modelData) + 1).padStart(2, "0")
+                title: slot.title
             }
             Loader {
                 id: loader
                 x: root.cards ? Metrics.s4 : 0
-                y: root.cards ? Metrics.s4 : 0
+                y: (root.cards ? Metrics.s4 : 0) + slot.headH
                 width: parent.width - x * 2
                 sourceComponent: ({
                         header: header,
@@ -168,63 +196,76 @@ Column {
         }
     }
 
-    // ── header: who, when ───────────────────────────────────────────────────
+    // ── header: the time as the one big readout, the day beneath it in the data voice; who and the two
+    // ways out (session, Settings) kept small and quiet at the right ──
     Component {
         id: header
         Item {
-            implicitHeight: 52
+            implicitHeight: clock.implicitHeight + date.implicitHeight + Metrics.s1
 
-            Avatar {
-                id: avatarFrame
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                size: 44
-            }
-            Column {
-                anchors.left: avatarFrame.right
-                anchors.leftMargin: Metrics.s4
-                anchors.verticalCenter: parent.verticalCenter
+            Row {
+                id: clock
                 spacing: 2
                 Label {
-                    role: "title"
-                    text: About.realName || About.user
+                    id: hm
+                    role: "display"
+                    numeric: true
+                    text: Qt.formatTime(Time.now, "HH:mm")
                 }
                 Label {
-                    role: "caption"
+                    visible: root.cfg.header_seconds === true
+                    anchors.baseline: hm.baseline
+                    role: "data"
                     tone: "faint"
-                    caps: true
-                    text: Qt.formatDate(Time.now, "dddd  ·  d MMMM") + (Power.present ? "  ·  " + Math.round(Power.level * 100) + "%" : "")
+                    text: Qt.formatTime(Time.now, "ss")
                 }
             }
             Label {
-                id: headerClock
-                anchors.right: sessionButton.visible ? sessionButton.left : settingsButton.left
-                anchors.rightMargin: Metrics.s2
-                anchors.verticalCenter: parent.verticalCenter
-                role: "display2"
-                numeric: true
-                text: Qt.formatTime(Time.now, "HH:mm")
-            }
-            // the session: lock, log out, restart (the native Control Center's button)
-            IconButton {
-                id: sessionButton
-                visible: root.cfg.session_button !== false
-                anchors.right: settingsButton.left
-                anchors.verticalCenter: parent.verticalCenter
-                icon: "power"
+                id: date
+                anchors.top: clock.bottom
+                anchors.topMargin: Metrics.s1
+                role: "data"
                 tone: "muted"
-                onClicked: Actions.run("panel session", { screen: root.screen })
+                text: Qt.formatDate(Time.now, "ddd  ·  dd MMM") + (Power.present ? "  ·  " + Math.round(Power.level * 100) + "%" + (Power.charging ? " ⚡" : "") : "")
             }
-            IconButton {
-                id: settingsButton
+
+            Row {
+                id: actions
                 anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                icon: "settings"
-                tone: "muted"
-                onClicked: {
-                    PanelRouter.close(root.screen.name);
-                    Actions.run("settings-open control");
+                anchors.top: parent.top
+                anchors.topMargin: Metrics.s2
+                spacing: Metrics.s1
+                Avatar {
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 28
                 }
+                Item {
+                    width: Metrics.s2
+                    height: 1
+                }
+                // the session: lock, log out, restart (the native Control Center's button)
+                IconButton {
+                    visible: root.cfg.session_button !== false
+                    icon: "power"
+                    tone: "muted"
+                    onClicked: Actions.run("panel session", { screen: root.screen })
+                }
+                IconButton {
+                    icon: "settings"
+                    tone: "muted"
+                    onClicked: {
+                        PanelRouter.close(root.screen.name);
+                        Actions.run("settings-open control");
+                    }
+                }
+            }
+            Label {
+                anchors.right: parent.right
+                anchors.rightMargin: Metrics.s2
+                anchors.bottom: date.bottom
+                role: "caption"
+                tone: "faint"
+                text: About.realName || About.user
             }
         }
     }
@@ -268,10 +309,9 @@ Column {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 40
                         horizontalAlignment: Text.AlignRight
-                        role: "label"
-                        numeric: true
-                        tone: levelArea.containsMouse ? "accent" : "muted"
-                        text: Math.round(level.value * 100)
+                        role: "data"
+                        tone: levelArea.containsMouse ? "accent" : level.off ? "faint" : "muted"
+                        text: level.off ? "off" : String(Math.round(level.value * 100)).padStart(3, "0")
                         MouseArea {
                             id: levelArea
                             anchors.fill: parent
@@ -412,12 +452,6 @@ Column {
         Column {
             visible: Notifications.serving && Notifications.history.length > 0
             spacing: Metrics.s1
-            Label {
-                role: "caption"
-                tone: "faint"
-                caps: true
-                text: "Notifications"
-            }
             Repeater {
                 model: Notifications.history.slice(0, 3)
                 delegate: NotificationCard {
@@ -436,12 +470,6 @@ Column {
         Column {
             spacing: Metrics.s1
             Component.onCompleted: Clipboard.refresh()
-            Label {
-                role: "caption"
-                tone: "faint"
-                caps: true
-                text: "Clipboard"
-            }
             Repeater {
                 model: Clipboard.entries.slice(0, 3)
                 delegate: ListRow {

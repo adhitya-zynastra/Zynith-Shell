@@ -23,25 +23,43 @@ Item {
         epsilon: 0.001
     }
 
+    // a neutral plate; on, its edge takes the accent as light (Optics: never a painted tile)
+    Plate {
+        anchors.fill: parent
+        radius: Metrics.radiusPlate
+    }
+    // on: a breath of the accent in the face and an exposure mark on the leading edge — light, not paint,
+    // so a panel with several things on is still calm
     Rectangle {
         anchors.fill: parent
-        radius: Metrics.radiusLg
-        color: root.on ? Theme.accentSoft : Theme.hover
-        border.width: Metrics.hairline
-        border.color: root.on ? Theme.accentLine : "transparent"
-
-        Behavior on color {
-            ColorAnim {}
+        radius: Metrics.radiusPlate
+        color: Theme.signalFill
+        opacity: root.on ? 1 : 0
+        Behavior on opacity {
+            Anim {
+                role: "effects"
+            }
         }
-        Behavior on border.color {
-            ColorAnim {}
+    }
+    Rectangle {
+        anchors.left: parent.left
+        anchors.leftMargin: 1
+        anchors.verticalCenter: parent.verticalCenter
+        width: 2
+        height: root.on ? parent.height * 0.42 : 0
+        radius: 1
+        color: Theme.accent
+        Behavior on height {
+            Anim {
+                role: "spatialFast"
+            }
         }
     }
 
     Interactive {
         id: main
         anchors.fill: parent
-        radius: Metrics.radiusLg
+        radius: Metrics.radiusPlate
         onClicked: mouse => mouse.button === Qt.RightButton && root.more ? root.opened() : root.toggled()
     }
 
@@ -74,26 +92,16 @@ Item {
         anchors.rightMargin: Metrics.s3 + moreArea.width
         spacing: Metrics.s3
 
-        // the glyph on a badge that fills with the accent when on
-        Rectangle {
+        // the glyph: the accent's when on, quiet otherwise
+        Item {
             anchors.verticalCenter: parent.verticalCenter
             width: 34
             height: 34
-            radius: root.on ? Metrics.radiusMd : 17
-            color: root.on ? Theme.accent : Theme.well
-            Behavior on color {
-                ColorAnim {}
-            }
-            Behavior on radius {
-                Anim {
-                    role: "spatialFast"
-                }
-            }
             Icon {
                 anchors.centerIn: parent
                 name: root.icon
-                size: 17
-                color: root.on ? Theme.onAccent : Theme.inkMuted
+                size: 18
+                color: root.on ? Theme.accent : Theme.inkMuted
             }
         }
 
@@ -113,7 +121,7 @@ Item {
                 visible: text !== ""
                 width: parent.width
                 role: "caption"
-                tone: "faint"
+                tone: root.on ? "muted" : "faint"
                 elide: Text.ElideRight
                 text: root.detail
             }

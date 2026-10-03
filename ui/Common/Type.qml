@@ -34,6 +34,10 @@ Singleton {
     readonly property int headline: Math.round(20 * scale)
     readonly property int display2: Math.round(32 * scale)
     readonly property int display1: Math.round(44 * scale)
+    readonly property int displayXL: Math.round(96 * scale)
+    // the data voice: values, units, keys, section heads — mono, uppercase, tracked, tabular
+    readonly property int data: Math.round(10.5 * scale)
+    readonly property real dataTracking: 1.3
 
     // uppercase captions are tracked out; everything else is set tight
     readonly property real tracking: 1.4
