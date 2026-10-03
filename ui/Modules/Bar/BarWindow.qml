@@ -68,6 +68,10 @@ PanelWindow {
     readonly property string capsuleBorder: spec.capsule_border ?? ""
     readonly property string capsuleForeground: spec.capsule_foreground ?? ""
     readonly property real capsuleThickness: spec.capsule_thickness ?? 1
+    // values under the glyphs of a vertical bar (volume, brightness, battery) in the data voice
+    readonly property bool readouts: spec.readouts ?? true
+    // how groups look unless a group says: rule (hairline ticks, no box) · capsule · plate
+    readonly property string groupStyle: spec.group_style ?? "rule"
     // how far a panel opened from here tucks under the bar's edge (hides the seam)
     readonly property int panelOverlap: spec.panel_overlap ?? 0
     // "centred" against the whole output, or what other bars and docks leave of it

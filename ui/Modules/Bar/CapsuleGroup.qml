@@ -71,13 +71,38 @@ Item {
     implicitHeight: vertical ? shownLength + pad * 2 : bar.thickness - 6
     clip: true
 
+    // capsule (a filled pill) · plate (a tone step) · rule (no box: a hairline tick at each end, so a bar
+    // reads as one surface with its groups set apart by space and rule)
+    readonly property string look: group?.style ?? bar.groupStyle ?? "rule"
     Rectangle {
         anchors.fill: parent
-        radius: Math.min(width, height) / 2
-        visible: group?.enabled !== false
-        color: Theme.alpha(Theme.colour(root.group?.fill ?? "surface_variant"), root.group?.opacity ?? 0.5)
+        radius: root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2
+        visible: group?.enabled !== false && root.look !== "rule"
+        color: root.look === "plate" ? Theme.plate : Theme.alpha(Theme.colour(root.group?.fill ?? "surface_variant"), root.group?.opacity ?? 0.5)
         border.width: (root.group?.border ?? "") !== "" ? 1 : 0
         border.color: Theme.colour(root.group?.border ?? "outline")
+    }
+    // the rule look: a soft wash only while the pointer is in the group (an accordion is opening)
+    Rectangle {
+        anchors.fill: parent
+        visible: root.look === "rule"
+        radius: Math.min(width, height) / 2
+        color: hover.hovered ? Theme.hover : "transparent"
+        Behavior on color {
+            ColorAnim {}
+        }
+    }
+    Repeater {
+        model: root.look === "rule" && group?.enabled !== false ? [0, 1] : []
+        delegate: Rectangle {
+            required property int modelData
+            readonly property real across: (root.vertical ? root.width : root.height) * 0.38
+            x: root.vertical ? (root.width - across) / 2 : (modelData === 0 ? 0 : root.width - 1)
+            y: root.vertical ? (modelData === 0 ? 0 : root.height - 1) : (root.height - across) / 2
+            width: root.vertical ? across : 1
+            height: root.vertical ? 1 : across
+            color: Theme.rule
+        }
     }
 
     Grid {

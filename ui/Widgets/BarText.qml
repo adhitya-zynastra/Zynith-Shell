@@ -9,10 +9,14 @@ Text {
     required property Item item
     property real size: Type.label
     property bool muted: false
-    color: muted ? Theme.alpha(item.ink, 0.7) : item.ink
-    font.family: item.family
-    font.pixelSize: Math.round(size * item.fontScale)
-    font.weight: item.weight
+    // on a vertical bar a value is a readout: small, mono, tracked, under its glyph
+    readonly property bool readout: item.vertical
+    color: muted ? Theme.alpha(item.ink, readout ? 0.62 : 0.7) : item.ink
+    font.family: readout ? Type.mono : item.family
+    font.pixelSize: Math.round((readout ? Type.data * 0.86 : size) * item.fontScale)
+    font.weight: readout ? Font.Medium : item.weight
+    font.letterSpacing: readout ? 0.6 : 0
+    horizontalAlignment: readout ? Text.AlignHCenter : Text.AlignLeft
     font.features: Type.tabular
     elide: Text.ElideRight
     verticalAlignment: Text.AlignVCenter
