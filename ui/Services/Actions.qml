@@ -64,12 +64,21 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", args]);
             return;
         case "panel":
+            if ((Config.surfaces?.[words[0] ?? ""] ?? "zynith") === "native") {
+                CoreClient.call("panel-toggle " + words.join(" "), () => {});
+                return;
+            }
             openPanel(words[0] ?? "control", words.slice(1).join(" "), origin, {});
             return;
         case "panel-toggle":
         case "panel-open":
             {
                 const id = words[0] ?? "";
+                // a surface zynith.toml [surfaces] leaves with the native shell is the native shell's to open
+                // (the session menu: its own sleek floating one)
+                const owner = ({ "control-center": "control_center" })[id] ?? id;
+                if ((Config.surfaces?.[owner] ?? "zynith") === "native")
+                    break;
                 const options = {
                     open: verb === "panel-open",
                     transient: origin?.transient ?? null

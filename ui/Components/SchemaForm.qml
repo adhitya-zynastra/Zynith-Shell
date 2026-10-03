@@ -83,6 +83,7 @@ Column {
                             image: imageControl,
                             glyph: glyphControl,
                             list: listControl,
+                            pairs: pairsControl,
                             multi: multiControl,
                             pick: pickControl,
                             path: pathControl,
@@ -393,6 +394,49 @@ Column {
                 onCommitted: t => {
                     if (t.trim() !== "") {
                         ctl.apply(ctl.items.concat([t.trim()]));
+                        text = "";
+                    }
+                }
+            }
+        }
+    }
+
+    // a table of names to values ({ "Bass boost" = "music" }): each pair a chip, a new one typed as
+    // "name = value"
+    Component {
+        id: pairsControl
+        Column {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            readonly property var table: ctl.val && typeof ctl.val === "object" ? Object.assign({}, ctl.val) : ({})
+            spacing: 4
+            Flow {
+                width: parent.width
+                spacing: 4
+                Repeater {
+                    model: Object.keys(ctl.table)
+                    delegate: Chip {
+                        required property string modelData
+                        text: modelData + " → " + ctl.table[modelData] + "  ×"
+                        onClicked: {
+                            const t = Object.assign({}, ctl.table);
+                            delete t[modelData];
+                            ctl.apply(t);
+                        }
+                    }
+                }
+            }
+            Field {
+                width: parent.width
+                placeholder: ctl.spec.placeholder ?? "name = value, then Enter"
+                onCommitted: t => {
+                    const at = t.indexOf("=");
+                    if (at > 0 && t.slice(at + 1).trim() !== "") {
+                        const table = Object.assign({}, ctl.table);
+                        table[t.slice(0, at).trim()] = t.slice(at + 1).trim();
+                        ctl.apply(table);
                         text = "";
                     }
                 }

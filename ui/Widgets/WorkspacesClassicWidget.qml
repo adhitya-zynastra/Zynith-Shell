@@ -44,7 +44,9 @@ BarItem {
             readonly property bool current: modelData.active
             readonly property bool occupied: modelData.windows > 0
             readonly property bool hot: hover.containsMouse && root.opt("change_color_on_hover") !== false
-            readonly property color tint: modelData.urgent ? Theme.colour(root.opt("urgent_color") ?? "error") : current || hot ? Theme.colour(root.opt("focused_color") ?? "primary") : occupied ? Theme.colour(root.opt("occupied_color") ?? "secondary") : Theme.alpha(Theme.colour(root.opt("empty_color") ?? "secondary"), 0.45)
+            // as the native workspaces: focused, urgent, occupied in their colours; empty in its colour at
+            // empty_opacity (native 0.55)
+            readonly property color tint: modelData.urgent ? Theme.colour(root.opt("urgent_color") ?? "error") : current || hot ? Theme.colour(root.opt("focused_color") ?? "primary") : occupied ? Theme.colour(root.opt("occupied_color") ?? "secondary") : Theme.alpha(Theme.colour(root.opt("empty_color") ?? "secondary"), root.opt("empty_opacity") ?? 0.55)
             readonly property string label: {
                 if (!root.labels || (root.opt("labels_only_when_occupied") === true && !occupied && !current))
                     return "";
@@ -62,8 +64,9 @@ BarItem {
                 visible: root.style !== "focus_hint" || mark.current
                 width: root.vertical ? (root.style === "minimal" ? root.unit : root.unit * 2.4) : mark.length
                 height: root.vertical ? mark.length : (root.style === "minimal" ? root.unit : root.unit * 2.4)
-                radius: Math.min(width, height) / 2
-                color: root.style === "focus_hint" ? "transparent" : mark.current ? mark.tint : mark.occupied ? Theme.alpha(mark.tint, 0.5) : Theme.alpha(mark.tint, 0.35)
+                // capsule_radius (native): px, held to round; -1 round
+                radius: (root.opt("capsule_radius") ?? -1) >= 0 ? Math.min(root.opt("capsule_radius"), Math.min(width, height) / 2) : Math.min(width, height) / 2
+                color: root.style === "focus_hint" ? "transparent" : mark.tint
                 border.width: root.style === "focus_hint" ? 1.5 : 0
                 border.color: mark.tint
 

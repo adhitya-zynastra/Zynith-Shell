@@ -7,6 +7,7 @@
 #include <QDBusVariant>
 
 #include <algorithm>
+#include <memory>
 
 namespace {
 
@@ -132,7 +133,38 @@ void NetworkState::applyManager(const QVariantMap& props) {
         findWifiDevice();
     if (primaryMoved)
         followPrimary();
+    if (props.contains("ActiveConnections")) {
+        QVariantList paths;
+        for (const QDBusObjectPath& p : qdbus_cast<QList<QDBusObjectPath>>(props.value("ActiveConnections")))
+            paths << QVariant::fromValue(p);
+        followActive(paths);
+    }
     emit changed();
+}
+
+// the active connections, read only when the list changes: the first activated VPN/WireGuard one names the VPN
+void NetworkState::followActive(const QVariantList& paths) {
+    const int query = ++m_vpnQuery;
+    auto found = std::make_shared<QString>();
+    auto pending = std::make_shared<int>(int(paths.size()));
+    auto finish = [this, query, found]() {
+        if (query != m_vpnQuery || *found == m_vpnName)
+            return;
+        m_vpnName = *found;
+        emit changed();
+    };
+    if (paths.isEmpty())
+        return finish();
+    for (const QVariant& v : paths) {
+        getAll(pathOf(v), kActive, [found, pending, finish](const QVariantMap& props) {
+            const QString type = props.value("Type").toString();
+            // State 2 = activated
+            if ((type == QLatin1String("vpn") || type == QLatin1String("wireguard")) && props.value("State").toUInt() == 2 && found->isEmpty())
+                *found = props.value("Id").toString();
+            if (--*pending == 0)
+                finish();
+        });
+    }
 }
 
 void NetworkState::followPrimary() {

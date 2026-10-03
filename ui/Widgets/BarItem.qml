@@ -41,8 +41,11 @@ Item {
 
     // ── styling the widget's content reads ──
     // the widget's own colour, else its capsule's foreground, else the bar's widget colour, else the theme's
-    readonly property color ink: (opt("color") ?? "") !== "" ? Theme.colour(opt("color")) : capsule && (bar?.capsuleForeground ?? "") !== "" ? Theme.colour(bar.capsuleForeground) : (bar?.widgetColor ?? "") !== "" ? Theme.colour(bar.widgetColor) : Theme.ink
-    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : (bar?.widgetIconColor ?? "") !== "" && !(capsule && (bar?.capsuleForeground ?? "") !== "") ? Theme.colour(bar.widgetIconColor) : ink
+    // the capsule group it sits in; its foreground (native capsule_group foreground) colours the widget
+    property var group: null
+    readonly property string groupForeground: group?.foreground ?? ""
+    readonly property color ink: (opt("color") ?? "") !== "" ? Theme.colour(opt("color")) : groupForeground !== "" ? Theme.colour(groupForeground) : capsule && (bar?.capsuleForeground ?? "") !== "" ? Theme.colour(bar.capsuleForeground) : (bar?.widgetColor ?? "") !== "" ? Theme.colour(bar.widgetColor) : Theme.ink
+    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : groupForeground !== "" ? Theme.colour(groupForeground) : (bar?.widgetIconColor ?? "") !== "" && !(capsule && (bar?.capsuleForeground ?? "") !== "") ? Theme.colour(bar.widgetIconColor) : ink
     // label weight: the widget's, else the bar's (100–900)
     readonly property int weight: Number(opt("font_weight") ?? bar?.fontWeight ?? 400)
     readonly property string family: (opt("font_family") ?? "") !== "" ? opt("font_family") : (bar?.fontFamily ?? "") !== "" ? bar.fontFamily : Type.ui

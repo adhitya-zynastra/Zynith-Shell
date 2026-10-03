@@ -10,13 +10,38 @@ import QtQuick.Shapes
 BarItem {
     id: root
     readonly property string stat: opt("stat") ?? "cpu_usage"
-    readonly property var reading: System.read(stat)
+    // the widget's own path, interface and units for the disk and network stats
+    readonly property var statOptions: ({
+            path: opt("path") ?? "",
+            iface: opt("interface") ?? "",
+            unit: opt("network_speed_unit") ?? "auto",
+            compact: opt("network_speed_compact") === true
+        })
+    readonly property var reading: System.read(stat, statOptions)
+    // what it asks the native monitor for, held while the widget is there
+    readonly property string nativeNeed: System.needsFor(stat, statOptions)
+    property string held: ""
+    onNativeNeedChanged: holdNative()
+    function holdNative(): void {
+        if (held !== "")
+            System.unneed(held);
+        held = nativeNeed;
+        if (held !== "")
+            System.need(held);
+    }
     readonly property bool high: reading.level >= 0.85
     readonly property string viz: opt("visualization") ?? "gauge"
     readonly property color tint: high ? Theme.colour(opt("highlight_color") ?? "error") : root.iconInk
-    readonly property string glyphName: (opt("glyph") || "") !== "" ? opt("glyph") : ({ cpu_usage: "cpu", cpu_temp: "temperature", cpu_freq: "gauge", ram_pct: "database", swap_pct: "database", net_rx: "arrow-down", net_tx: "arrow-up" })[stat] ?? "activity"
-    Component.onCompleted: System.retain()
-    Component.onDestruction: System.release()
+    readonly property string glyphName: (opt("glyph") || "") !== "" ? opt("glyph") : ({ cpu_usage: "cpu", cpu_temp: "temperature", cpu_freq: "gauge", ram_pct: "database", ram_used: "database", swap_pct: "database", gpu_temp: "temperature", gpu_usage: "device-desktop", gpu_vram: "cpu-2", gpu_vram_used: "cpu-2", disk_used_pct: "server", disk_used: "server", disk_free_pct: "server", disk_free: "server", net_rx: "arrow-down", net_tx: "arrow-up" })[stat] ?? "activity"
+    Component.onCompleted: {
+        System.retain();
+        holdNative();
+    }
+    Component.onDestruction: {
+        System.release();
+        if (held !== "")
+            System.unneed(held);
+    }
     tooltip: reading.label + "  " + reading.text
 
     BarGlyph {

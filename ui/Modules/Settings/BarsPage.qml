@@ -208,6 +208,11 @@ Column {
                     schema: [
                         { key: "opacity", label: "Opacity (0 follows the profile)", kind: "slider", default: 0, from: 0, to: 1, step: 0.01 },
                         { key: "radius", label: "Corner radius (-1 is a pill)", kind: "int", default: -1, from: -1, to: 48, step: 1 },
+                        // each corner on its own (the native per-corner radii); left out, the radius above
+                        { key: "radius_top_left", label: "Top left corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
+                        { key: "radius_top_right", label: "Top right corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
+                        { key: "radius_bottom_right", label: "Bottom right corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
+                        { key: "radius_bottom_left", label: "Bottom left corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
                         { key: "border", label: "Border", kind: "toggle", default: true },
                         { key: "border_color", label: "Border colour", kind: "colour", default: "", when: { border: [true] } },
                         { key: "border_width", label: "Border width (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 4, step: 1, when: { border: [true] } },
@@ -361,14 +366,18 @@ Column {
                             SchemaForm {
                                 width: parent.width
                                 schema: [
+                                    { key: "enabled", label: "Drawn (off: the members sit loose)", kind: "toggle", default: true },
                                     { key: "members", label: "Widgets in it (in order)", kind: "list", default: [] },
+                                    { key: "style", label: "Looks like (left out: the bar's)", kind: "choice", default: "", options: [{ key: "", label: "As the bar" }, { key: "capsule", label: "Capsule" }, { key: "plate", label: "Tone step" }, { key: "rule", label: "Rules" }] },
                                     { key: "accordion", label: "Accordion", kind: "toggle", default: false },
-                                    { key: "direction", label: "Opens towards", kind: "choice", default: "end", options: [{ key: "start", label: "Start" }, { key: "end", label: "End" }], when: { accordion: [true] } },
+                                    { key: "accordion_direction", label: "Opens towards", kind: "choice", default: "end", options: [{ key: "start", label: "Start" }, { key: "end", label: "End" }], when: { accordion: [true] } },
                                     { key: "fill", label: "Fill", kind: "colour", default: "surface_variant" },
                                     { key: "opacity", label: "Opacity", kind: "slider", default: 0.5, from: 0, to: 1, step: 0.01 },
                                     { key: "padding", label: "Padding", kind: "int", default: 8, from: 0, to: 32, step: 1 },
                                     { key: "widget_spacing", label: "Spacing", kind: "int", default: 4, from: 0, to: 32, step: 1 },
-                                    { key: "border", label: "Border colour", kind: "colour", default: "" }
+                                    { key: "border", label: "Border colour", kind: "colour", default: "" },
+                                    { key: "foreground", label: "Widget colour inside", kind: "colour", default: "" },
+                                    { key: "radius", label: "Corner radius (-1 is a pill)", kind: "int", default: -1, from: -1, to: 40, step: 1 }
                                 ]
                                 valueOf: key => groupItem.modelData[key] ?? schema.find(s => s.key === key)?.default
                                 shows: spec => !spec.when || Object.entries(spec.when).every(([k, v]) => v.includes(groupItem.modelData[k] ?? false))

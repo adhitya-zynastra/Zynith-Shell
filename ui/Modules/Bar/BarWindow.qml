@@ -50,7 +50,8 @@ PanelWindow {
             right: [0, 3]
         })[edge]
     readonly property var corners: {
-        const own = [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left];
+        // a corner left out, or set below 0 (Settings' "follows the radius"), takes the radius
+        const own = [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left].map(v => v === undefined || v < 0 ? undefined : v);
         if (!concave && !own.some(v => v !== undefined))
             return null;
         const c = own.map(v => v ?? radius);

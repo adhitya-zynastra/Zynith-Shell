@@ -34,7 +34,7 @@ screen-share screen-share-off coffee-off
 mouse device-mobile sunrise sunset uv-index chart-bar headset device-gamepad-2 terminal-2 brightness-half calendar-off
 speakerphone battery-eco battery-off plug-connected cloud-sun umbrella temperature-sun arrows-exchange device-watch
 wand windmill haze gauge-filled bolt-off moon-2 dashboard calendar-week calendar-month hourglass-high ripple
-adjustments-alt shield-half arrow-narrow-up scale battery-charging-2 bolt-filled plug-filled brightness-up-filled brightness-down-filled repeat repeat-once
+adjustments-alt shield-half arrow-narrow-up scale battery-charging-2 bolt-filled plug-filled brightness-up-filled brightness-down-filled repeat repeat-once shield-check
 """.split()
 
 

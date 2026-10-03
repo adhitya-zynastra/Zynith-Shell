@@ -14,6 +14,8 @@ Column {
     property real visibleProgress: 1
     property bool active: true
     readonly property int preferredWidth: 520
+    // in the middle of the screen
+    readonly property real preferredTop: -1
 
     property string armed: ""
     onActiveChanged: if (active) {

@@ -16,6 +16,10 @@ Item {
     readonly property bool vertical: bar.vertical
     readonly property real pad: group?.padding ?? 8
     readonly property real gap: group?.widget_spacing ?? group?.spacing ?? Metrics.s1
+    // an accordion opens towards accordion_direction (native) / direction: end (after its first member) or
+    // start (the first member stays at the end and the rest unfold before it)
+    readonly property bool towardStart: (group?.accordion_direction ?? group?.direction ?? "end") === "start"
+    readonly property var ordered: towardStart && vertical ? members.slice().reverse() : members
 
     property bool open: !accordion
     HoverHandler {
@@ -58,7 +62,8 @@ Item {
     }
 
     // the members laid out; closed, only the first takes room
-    readonly property real firstLength: list.count > 0 && list.itemAt(0) ? (vertical ? list.itemAt(0).height : list.itemAt(0).width) : 0
+    readonly property int firstIndex: towardStart && vertical ? list.count - 1 : 0
+    readonly property real firstLength: list.count > 0 && list.itemAt(firstIndex) ? (vertical ? list.itemAt(firstIndex).height : list.itemAt(firstIndex).width) : 0
     readonly property real fullLength: vertical ? grid.implicitHeight : grid.implicitWidth
     property real shownLength: open ? fullLength : firstLength
     Behavior on shownLength {
@@ -73,10 +78,11 @@ Item {
 
     // capsule (a filled pill) · plate (a tone step) · rule (no box: a hairline tick at each end, so a bar
     // reads as one surface with its groups set apart by space and rule)
-    readonly property string look: group?.style ?? bar.groupStyle ?? "capsule"
+    readonly property string look: (group?.style ?? "") !== "" ? group.style : (bar.groupStyle ?? "capsule")
     Rectangle {
         anchors.fill: parent
-        radius: root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2
+        // radius (native capsule_group radius): px, held to a pill; left out, the look's
+        radius: (root.group?.radius ?? -1) >= 0 ? Math.min(root.group.radius, Math.min(width, height) / 2) : root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2
         visible: group?.enabled !== false && root.look !== "rule"
         color: root.look === "plate" ? Theme.plate : Theme.alpha(Theme.colour(root.group?.fill ?? "surface_variant"), root.group?.opacity ?? 0.5)
         border.width: (root.group?.border ?? "") !== "" ? 1 : 0
@@ -107,23 +113,25 @@ Item {
 
     Grid {
         id: grid
-        x: root.vertical ? (root.width - width) / 2 : root.pad
-        y: root.vertical ? root.pad : (root.height - height) / 2
+        x: root.vertical ? (root.width - width) / 2 : root.towardStart ? root.width - root.pad - width : root.pad
+        y: root.vertical ? (root.towardStart ? root.height - root.pad - height : root.pad) : (root.height - height) / 2
         columns: root.vertical ? 1 : Math.max(1, root.members.length)
+        layoutDirection: !root.vertical && root.towardStart ? Qt.RightToLeft : Qt.LeftToRight
         spacing: root.gap
         horizontalItemAlignment: Grid.AlignHCenter
         verticalItemAlignment: Grid.AlignVCenter
 
         Repeater {
             id: list
-            model: root.members
+            model: root.ordered
             delegate: BarWidget {
                 required property string modelData
                 required property int index
                 bar: root.bar
+                group: root.group
                 name: modelData
                 // the hidden members fade as the accordion closes over them
-                opacity: index === 0 || root.open ? 1 : 0
+                opacity: index === root.firstIndex || root.open ? 1 : 0
                 Behavior on opacity {
                     Anim {
                         role: "effects"

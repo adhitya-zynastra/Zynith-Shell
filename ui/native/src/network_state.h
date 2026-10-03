@@ -28,6 +28,9 @@ class NetworkState : public QObject {
     Q_PROPERTY(QString name READ name NOTIFY changed)       // active connection's name
     Q_PROPERTY(qreal strength READ strength NOTIFY changed) // 0..1, Wi-Fi only
     Q_PROPERTY(bool hasWifi READ hasWifi NOTIFY changed)
+    // an active VPN (NetworkManager "vpn" or "wireguard" connection): its name, "" when none (the native
+    // network widget's vpn_status / show_vpn_label)
+    Q_PROPERTY(QString vpnName READ vpnName NOTIFY changed)
     // [{ ssid, strength, secured, known, connected, busy }], strongest first; empty unless retained
     Q_PROPERTY(QVariantList networks READ networks NOTIFY networksChanged)
     Q_PROPERTY(int consumers READ consumers NOTIFY consumersChanged)
@@ -43,6 +46,7 @@ public:
     QString name() const { return m_name; }
     qreal strength() const { return m_strength / 100.0; }
     bool hasWifi() const { return !m_wifiDevice.isEmpty(); }
+    QString vpnName() const { return m_vpnName; }
     QVariantList networks() const { return m_networksOut; }
     int consumers() const { return m_consumers; }
 
@@ -75,6 +79,7 @@ private:
     void refreshManager();
     void applyManager(const QVariantMap& props);
     void followPrimary();
+    void followActive(const QVariantList& paths);
     void watchActiveAp(const QString& path);
     void findWifiDevice();
 
@@ -96,6 +101,8 @@ private:
     QString m_wifiDevice;
     QString m_activeAp;
     QString m_activeConnection;
+    QString m_vpnName;
+    int m_vpnQuery = 0;
 
     int m_consumers = 0;
     bool m_listing = false;

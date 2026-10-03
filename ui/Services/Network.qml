@@ -15,6 +15,8 @@ Singleton {
     readonly property bool connected: NetworkState.connected
     readonly property bool wired: NetworkState.kind === "ethernet"
     readonly property string name: wired ? "Wired" : NetworkState.name
+    // the active VPN's name ("" when none)
+    readonly property string vpn: NetworkState.vpnName ?? ""
     readonly property real strength: NetworkState.strength
 
     readonly property string glyph: wired ? "device-desktop" : !wifiEnabled || !connected ? "wifi-off" : strength > 0.66 ? "wifi" : strength > 0.33 ? "wifi-2" : "wifi-1"

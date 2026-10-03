@@ -9,6 +9,8 @@ Loader {
 
     required property var bar
     required property string name
+    // the capsule group it sits in (its foreground colours the widget), or null
+    property var group: null
     readonly property var spec: Config.resolveBarWidget(name)
 
     // workspaces: the native styles (regular · minimal · focus_hint, the default) are the one-to-one widget;
@@ -19,6 +21,8 @@ Loader {
         item.vertical = Qt.binding(() => root.bar.vertical);
         item.screen = Qt.binding(() => root.bar.screen);
         item.bar = root.bar;
+        if (item.group !== undefined)
+            item.group = Qt.binding(() => root.group);
         item.type = Qt.binding(() => BarWidgetTypes.canonical(root.spec.type));
         item.name = Qt.binding(() => root.name);
         item.settings = Qt.binding(() => root.spec.settings);

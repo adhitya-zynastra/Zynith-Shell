@@ -23,7 +23,9 @@ BarItem {
     readonly property var inDrawer: drawer ? items.filter(i => !pinned.includes(idOf(i))) : []
     shown: items.length > 0
     interactive: false
-    spacing: Metrics.s3
+    // match_adjacent_spacing (native): the gaps between tray icons widened by the bar's capsule padding on
+    // both sides, so they read like the gaps between capsuled widgets beside them
+    spacing: Metrics.s3 + (opt("match_adjacent_spacing") === true && (bar?.widgetCapsule ?? false) ? 2 * (bar?.capsulePadding ?? 0) : 0)
 
     component TrayIcon: Item {
         id: entry
@@ -111,10 +113,13 @@ BarItem {
             anchor.item: handle
             anchor.edges: root.vertical ? (root.bar?.edge === "right" ? Edges.Left : Edges.Right) : (root.bar?.edge === "bottom" ? Edges.Top : Edges.Bottom)
             anchor.gravity: anchor.edges
-            anchor.margins.top: 10
-            anchor.margins.bottom: 10
-            anchor.margins.left: 10
-            anchor.margins.right: 10
+            // detached_panel (native): the drawer floats clear of the bar, a card of its own, instead of
+            // opening against its edge
+            readonly property int gap: root.opt("detached_panel") === true ? (root.bar?.thickness ?? 30) + 16 : 10
+            anchor.margins.top: gap
+            anchor.margins.bottom: gap
+            anchor.margins.left: gap
+            anchor.margins.right: gap
             color: "transparent"
             readonly property int cols: root.opt("drawer_columns") ?? 3
             readonly property real cell: (root.opt("drawer_item_size") ?? 18) + 18

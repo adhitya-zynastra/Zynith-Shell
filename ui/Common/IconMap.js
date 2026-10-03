@@ -186,6 +186,7 @@ var glyphs = {
     "server": "\ueb1f",
     "settings": "\ueb20",
     "shield": "\ueb24",
+    "shield-check": "\ueb22",
     "shield-half": "\uf358",
     "shield-lock": "\ued58",
     "sort-ascending": "\ueb26",

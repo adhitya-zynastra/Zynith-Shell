@@ -23,7 +23,8 @@ Item {
         reset()
     readonly property var options: Config.launcher
     readonly property int preferredWidth: grid ? Math.max(options.width ?? 600, 640) : (options.width ?? 600)
-    readonly property real preferredTop: options.position === "top" ? 0.1 : 0.2
+    // center: in the middle of the screen (the card's own height, gliding as results change) | top
+    readonly property real preferredTop: options.position === "top" ? 0.1 : -1
     readonly property bool compact: options.density === "compact"
     readonly property int rows: options.rows ?? 8
     readonly property int rowHeight: compact ? 42 : 54

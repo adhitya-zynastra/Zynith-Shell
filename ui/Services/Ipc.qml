@@ -154,7 +154,8 @@ Singleton {
             return JSON.stringify(PanelRouter.bars);
         }
         function panelRect(): string {
-            return JSON.stringify(PanelRouter.rects[root.focusedScreen()] ?? null);
+            const r = PanelRouter.rects[root.focusedScreen()] ?? null;
+            return JSON.stringify(r ? Object.assign({ window: PanelRouter.windowSizes[root.focusedScreen()] ?? null }, r) : null);
         }
         function stats(): string {
             return JSON.stringify(Diagnostics.summary());
@@ -182,7 +183,7 @@ Singleton {
                 focused: Workspaces.focusedWindow.appId ?? "",
                 spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
-                network: { connected: Network.connected, kind: NetworkState.kind, strength: Number(Network.strength.toFixed(2)), wifi: Network.wifiEnabled, listed: Network.networks.length, consumers: NetworkState.consumers },
+                network: { connected: Network.connected, kind: NetworkState.kind, strength: Number(Network.strength.toFixed(2)), wifi: Network.wifiEnabled, listed: Network.networks.length, consumers: NetworkState.consumers, nameLength: Network.name.length, nativeNameLength: NetworkState.name.length, vpn: Network.vpn !== "" },
                 core: { known: Core.known, clipboardEntries: Clipboard.entries.length, wallpaperMode: Wallpapers.mode, liveItems: Object.keys(Wallpapers.liveItems).length, staticKnown: Wallpapers.current !== "" },
                 notifications: { serving: Notifications.serving, wanted: Notifications.wanted, history: Notifications.history.length, popups: Notifications.popups.length, dnd: Notifications.dnd },
                 windowBehaviour: { value: Config.window.behaviour, included: WindowBehaviour.included, error: WindowBehaviour.status },

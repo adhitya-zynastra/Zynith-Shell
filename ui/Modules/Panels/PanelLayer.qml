@@ -17,8 +17,23 @@ Scope {
     property bool closing: false
     readonly property bool present: shown !== null
 
+    // the panel the warm (closed, kept-alive) window last held: reopening as a different one makes a fresh
+    // window — a warm window shown again as another panel kept a stale compositor size (the wallpaper browser
+    // after the session menu stayed 432 px wide)
+    property string warmId: ""
+    property bool recycling: false
     onEntryChanged: {
         if (entry) {
+            if (!shown && warm && warmId !== "" && warmId !== entry.id) {
+                cool.stop();
+                recycling = true;
+                Qt.callLater(() => {
+                    root.recycling = false;
+                    root.closing = false;
+                    root.shown = root.entry;
+                });
+                return;
+            }
             closing = false;
             shown = entry;
         } else if (shown) {
@@ -28,9 +43,13 @@ Scope {
 
     function finishClose(): void {
         if (closing) {
+            warmId = shown?.id ?? "";
+            // a bare panel (the wallpaper browser) is never kept warm: hidden, its content stops being bare,
+            // the window shrank, and shown again it kept that size (432 px). It reopens on a fresh window.
+            const wasBare = surface.item?.bare ?? false;
             closing = false;
             shown = null;
-            if (ExperiencePolicy.panelKeepAliveMs > 0)
+            if (ExperiencePolicy.panelKeepAliveMs > 0 && !wasBare)
                 cool.restart();
         }
     }
@@ -87,7 +106,8 @@ Scope {
     }
 
     LazyLoader {
-        active: root.present || root.warm
+        id: surface
+        active: (root.present || root.warm) && !root.recycling
 
         PanelSurface {
             visible: root.present

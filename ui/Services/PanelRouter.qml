@@ -137,6 +137,8 @@ Singleton {
     }
     // where each output's panel card sits, in global coordinates (for diagnostics and cropped captures)
     property var rects: ({})
+    // the panel window's actual size per output (diagnostics: should match its card's span)
+    property var windowSizes: ({})
     function noteRect(screenName: string, rect: var): void {
         rects[screenName] = rect;
     }

@@ -102,10 +102,18 @@ PanelWindow {
         };
     }
     onTargetChanged: {
+        // only a panel already on screen glides; one appearing (or a bare one) takes its size at once — a
+        // window resized twice while it was being shown kept the stale size (the wallpaper browser at 432 px)
+        if (!morphReady) {
+            settle.stop();
+            span = target;
+            return;
+        }
         const now = { x: ax, y: ay, w: aw, h: ah };
         span = unite(settle.running ? unite(span, now) : now, target);
         settle.restart();
     }
+
     Timer {
         id: settle
         interval: win.morphMs + 60
@@ -127,7 +135,7 @@ PanelWindow {
     // the card's rectangle on screen
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
     readonly property real cardX: bare ? 0 : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: bare ? 0 : edge === "center" ? Math.round(sh * content.preferredTop) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    readonly property real cardY: bare ? 0 : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
     readonly property var cardRect: ({
             x: Math.round((screen?.x ?? 0) + cardX),
             y: Math.round((screen?.y ?? 0) + cardY),
@@ -153,8 +161,33 @@ PanelWindow {
         left: winX
         top: winY
     }
-    implicitWidth: span.x - winX + span.w + pad
+    // +nudge: a window that changed size while it was being shown kept the stale one (the wallpaper browser
+    // reopened warm stayed 432 px wide); asking once more a tick later lands the real size
+    property int nudge: 0
+    implicitWidth: span.x - winX + span.w + pad + nudge
     implicitHeight: span.y - winY + span.h + pad
+    function reassert(): void {
+        nudge = 1;
+        unnudge.restart();
+    }
+    Timer {
+        id: unnudge
+        interval: 60
+        onTriggered: win.nudge = 0
+    }
+    // after the surface is mapped again, once more (the first configure can swallow a size change)
+    Timer {
+        id: settleSize
+        interval: 120
+        onTriggered: if (Math.abs(win.width - win.implicitWidth) > 1 || Math.abs(win.height - win.implicitHeight) > 1)
+            win.reassert()
+    }
+    onWidthChanged: {
+        PanelRouter.windowSizes[screen?.name ?? ""] = [Math.round(width), Math.round(height)];
+        if (visible && Math.abs(width - implicitWidth) > 1)
+            settleSize.restart();
+    }
+    onHeightChanged: PanelRouter.windowSizes[screen?.name ?? ""] = [Math.round(width), Math.round(height)]
 
     mask: Region {
         item: card
@@ -216,7 +249,13 @@ PanelWindow {
     }
     // content can turn out bare only once it has loaded: the entrance restarts on the bare timing from
     // where it is, so the choreography still gets its full length
-    onBareChanged: if (bare && enter.running) {
+    onBareChanged: {
+        span = target;
+        settleSize.restart();
+        if (bare && enter.running)
+            restartEnter();
+    }
+    function restartEnter(): void {
         enter.stop();
         enter.start();
     }
@@ -236,7 +275,16 @@ PanelWindow {
     }
     Component.onCompleted: if (visible)
         begin()
-    onVisibleChanged: visible ? begin() : (entering = false)
+    onVisibleChanged: {
+        if (visible) {
+            settle.stop();
+            span = target;
+            begin();
+            settleSize.restart();
+        } else {
+            entering = false;
+        }
+    }
 
     // frame pacing while the surface animates (Diagnostics; costs nothing when idle)
     property var frameDeltas: []

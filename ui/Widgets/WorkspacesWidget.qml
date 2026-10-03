@@ -44,7 +44,7 @@ BarItem {
     readonly property color emptyTint: Theme.colour(opt("empty_color") ?? "secondary")
     readonly property color urgentTint: Theme.colour(opt("urgent_color") ?? "error")
     readonly property color labelTint: (opt("label_color") ?? "") !== "" ? Theme.colour(opt("label_color")) : ink
-    readonly property real emptyOpacity: opt("empty_opacity") ?? 0.45
+    readonly property real emptyOpacity: opt("empty_opacity") ?? 0.55
 
     // ── the indicator ──
     readonly property string indicatorShape: {
