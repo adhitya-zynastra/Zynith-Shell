@@ -216,9 +216,10 @@ PanelWindow {
         height: win.vertical ? length : win.revealSize
     }
 
+    // the compositor blurs behind the bar only while it is there: a hidden bar must leave no frosted patch
     BlurRegion {
         window: win
-        item: pill
+        item: pill.presence > 0.02 ? pill : null
         radius: win.radius
     }
 

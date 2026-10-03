@@ -487,8 +487,18 @@ Item {
             role: "spatialSlow"
         }
     }
-    onAppliedChanged: if (carousel && !Motion.reduced)
-        reveal.restart()
+    // both layouts lift the backdrop; [wallpaper] close_on_apply closes once the change has had its moment
+    onAppliedChanged: {
+        if (!Motion.reduced)
+            reveal.restart();
+        if (Config.wallpaper.close_on_apply === true)
+            closeAfter.restart();
+    }
+    Timer {
+        id: closeAfter
+        interval: Motion.reduced ? 0 : 650
+        onTriggered: root.close()
+    }
 
     Component {
         id: carouselLayout
@@ -1243,6 +1253,30 @@ Item {
                     required property var modelData
                     required property int index
                     readonly property bool focused: index === root.focusIndex
+                    // the applied one answers with a small swell, then wears a check while it shows
+                    property real pulse: 1
+                    SequentialAnimation {
+                        id: cellSwell
+                        Anim {
+                            target: cell
+                            property: "pulse"
+                            to: 1.06
+                            role: "spatialFast"
+                        }
+                        Anim {
+                            target: cell
+                            property: "pulse"
+                            to: 1
+                            role: "spatialSlow"
+                        }
+                    }
+                    Connections {
+                        target: root
+                        function onAppliedChanged(): void {
+                            if (cell.focused && !Motion.reduced)
+                                cellSwell.restart();
+                        }
+                    }
 
                     width: grid.cellWidth
                     height: grid.cellHeight
@@ -1253,7 +1287,7 @@ Item {
                         y: 4
                         width: parent.width - 8
                         height: Math.round(width * 0.62)
-                        scale: cell.focused ? 1.0 : hover.containsMouse ? 0.985 : 0.965
+                        scale: (cell.focused ? 1.0 : hover.containsMouse ? 0.985 : 0.965) * cell.pulse
 
                         Glide on scale {
                             epsilon: 0.001
@@ -1308,17 +1342,28 @@ Item {
                             border.width: cell.focused ? 2 : cell.modelData.current ? 1 : 0
                             border.color: cell.focused ? Theme.accent : Theme.accentLine
                         }
+                        // what shows now: a check that scales in when it becomes so
                         Rectangle {
-                            visible: cell.modelData.current
                             anchors.left: parent.left
                             anchors.bottom: parent.bottom
                             anchors.margins: Metrics.s2
-                            width: 8
-                            height: 8
-                            radius: 4
+                            width: 20
+                            height: 20
+                            radius: 10
                             color: Theme.accent
                             border.width: 2
                             border.color: Theme.alpha(Theme.base, 0.7)
+                            scale: cell.modelData.current ? 1 : 0
+                            visible: scale > 0.01
+                            Glide on scale {
+                                epsilon: 0.001
+                            }
+                            Icon {
+                                anchors.centerIn: parent
+                                name: "check"
+                                size: 12
+                                color: Theme.onAccent
+                            }
                         }
                         Row {
                             anchors.right: parent.right
