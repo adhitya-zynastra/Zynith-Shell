@@ -154,6 +154,9 @@ FloatingWindow {
                     lock: lockPage,
                     bars: barsPage,
                     control: controlPage,
+                    widgets: widgetsPage,
+                    osd: osdPage,
+                    shell: shellPage,
                     launcher: launcherPage,
                     notifications: notificationsPage,
                     media: mediaPage,
@@ -165,7 +168,12 @@ FloatingWindow {
                     about: aboutPage
                 })[win.route] ?? homePage
 
-            onLoaded: fadeIn.restart()
+            onLoaded: {
+                fadeIn.restart();
+                // a page may send you to another (the native settings page to Zynith's own)
+                if (item.navigate !== undefined)
+                    item.navigate.connect(r => win.route = Routes.find(r).id);
+            }
             NumberAnimation {
                 id: fadeIn
                 target: page
@@ -219,6 +227,18 @@ FloatingWindow {
     Component {
         id: controlPage
         ControlPanelPage {}
+    }
+    Component {
+        id: widgetsPage
+        WidgetsPage {}
+    }
+    Component {
+        id: osdPage
+        OsdPage {}
+    }
+    Component {
+        id: shellPage
+        ShellSettingsPage {}
     }
     Component {
         id: launcherPage

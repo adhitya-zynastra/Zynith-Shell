@@ -13,6 +13,8 @@ Singleton {
         { id: "lock", title: "Lock screen", icon: "lock", group: "Personalization", keywords: "lock redaction" },
         { id: "experience", title: "Experience", icon: "gauge", group: "Personalization", keywords: "performance balanced enhanced max profile quality battery" },
         { id: "bars", title: "Bars", icon: "layers-intersect", group: "Desktop", keywords: "bar edge anchor widgets autohide smart" },
+        { id: "widgets", title: "Desktop widgets", icon: "layout-dashboard", group: "Desktop", keywords: "desktop widgets clock editor place" },
+        { id: "osd", title: "On-screen display", icon: "message", group: "Desktop", keywords: "osd volume brightness popup card" },
         { id: "control", title: "Control Panel", icon: "adjustments-horizontal", group: "Desktop", keywords: "modules quick settings" },
         { id: "launcher", title: "Launcher", icon: "search", group: "Desktop", keywords: "apps search position density" },
         { id: "notifications", title: "Notifications", icon: "bell", group: "Desktop", keywords: "popups dnd sound grouping location" },
@@ -22,6 +24,7 @@ Singleton {
         { id: "network", title: "Wi‑Fi", icon: "wifi", group: "Connections", keywords: "network wireless" },
         { id: "bluetooth", title: "Bluetooth", icon: "bluetooth", group: "Connections", keywords: "devices pairing" },
         { id: "plugins", title: "Plugins", icon: "apps", group: "System", keywords: "luau capabilities permissions" },
+        { id: "shell", title: "Shell settings", icon: "settings", group: "System", keywords: "native noctalia weather calendar idle keybinds lock screen dock screenshot location power hooks templates theme services security audio sounds brightness battery" },
         { id: "about", title: "About", icon: "cpu", group: "System", keywords: "version hardware kernel quickshell niri" }
     ]
 

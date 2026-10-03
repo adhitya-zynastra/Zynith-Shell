@@ -7,7 +7,7 @@ import qs.Services
 // A form drawn from a settings schema ({ key, label, kind, default, options, from, to, step, when, hint }):
 // one control per setting, shown only while its `when` holds. `valueOf(key)` gives the current value,
 // `shows(spec)` whether a setting applies, and every change is reported as changed(key, value).
-// Kinds: toggle choice select slider int text colour font image glyph list.
+// Kinds: toggle choice select slider int text colour font image glyph list multi pick path number button.
 Column {
     id: root
 
@@ -82,7 +82,12 @@ Column {
                             font: fontControl,
                             image: imageControl,
                             glyph: glyphControl,
-                            list: listControl
+                            list: listControl,
+                            multi: multiControl,
+                            pick: pickControl,
+                            path: pathControl,
+                            number: numberControl,
+                            button: buttonControl
                         })[row.modelData.kind] ?? textControl
                     onLoaded: {
                         item.spec = Qt.binding(() => row.modelData);
@@ -216,7 +221,7 @@ Column {
             property var apply: v => {}
             spacing: 6
             Repeater {
-                model: ["on_surface", "on_surface_variant", "primary", "secondary", "tertiary", "surface", "surface_variant", "outline", "error"]
+                model: ctl.spec.roles ?? ["on_surface", "on_surface_variant", "primary", "secondary", "tertiary", "surface", "surface_variant", "outline", "error"]
                 delegate: Rectangle {
                     required property var modelData
                     width: 26
@@ -391,6 +396,121 @@ Column {
                         text = "";
                     }
                 }
+            }
+        }
+    }
+
+    // several of the options at once: each chip toggles its own
+    Component {
+        id: multiControl
+        Flow {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            readonly property var chosen: ctl.val && typeof ctl.val !== "string" && ctl.val.length !== undefined ? Array.from(ctl.val) : []
+            spacing: 4
+            Repeater {
+                model: ctl.spec.options ?? []
+                delegate: Chip {
+                    required property var modelData
+                    readonly property bool on: ctl.chosen.includes(modelData.key)
+                    text: modelData.label
+                    active: on
+                    onClicked: ctl.apply(on ? ctl.chosen.filter(k => k !== modelData.key) : ctl.chosen.concat([modelData.key]))
+                }
+            }
+        }
+    }
+    // one of many (fonts, palettes, outputs): what is chosen, and a search over the rest
+    Component {
+        id: pickControl
+        Column {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            property string typed: ""
+            readonly property var current: (ctl.spec.options ?? []).find(o => o.key === String(ctl.val))
+            spacing: 4
+            Field {
+                width: parent.width
+                placeholder: (ctl.current?.label ?? String(ctl.val ?? "")) || "Search…"
+                onEdited: t => ctl.typed = t
+            }
+            Flow {
+                width: parent.width
+                spacing: 4
+                Repeater {
+                    model: (ctl.spec.options ?? []).filter(o => ctl.typed === "" ? o.key === String(ctl.val) : o.label.toLowerCase().includes(ctl.typed.toLowerCase())).slice(0, 24)
+                    delegate: Chip {
+                        required property var modelData
+                        text: modelData.label
+                        active: String(ctl.val) === modelData.key
+                        onClicked: ctl.apply(modelData.key)
+                    }
+                }
+            }
+        }
+    }
+    // a file or a folder: typed, or chosen in a dialog (spec.browse: file · folder)
+    Component {
+        id: pathControl
+        Row {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            spacing: Metrics.s2
+            Field {
+                width: parent.width - browse.width - Metrics.s2
+                placeholder: ctl.spec.placeholder || (ctl.spec.browse === "folder" ? "/path/to/folder" : "/path/to/file")
+                text: ctl.val ?? ""
+                onCommitted: t => ctl.apply(t)
+            }
+            Chip {
+                id: browse
+                icon: "folder"
+                text: "Choose"
+                onClicked: chooser.running = true
+            }
+            Process {
+                id: chooser
+                command: ["zenity", "--file-selection", "--title=Choose"].concat(ctl.spec.browse === "folder" ? ["--directory"] : [])
+                stdout: StdioCollector {
+                    onStreamFinished: if (text.trim() !== "")
+                        ctl.apply(text.trim())
+                }
+            }
+        }
+    }
+    // a number that may be left unset (empty)
+    Component {
+        id: numberControl
+        Field {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            width: 160
+            placeholder: ctl.spec.placeholder || "not set"
+            text: ctl.val === null || ctl.val === undefined ? "" : String(ctl.val)
+            onCommitted: t => ctl.apply(t.trim() === "" ? null : Number(t))
+        }
+    }
+    // an action rather than a value (spec.action: its label)
+    Component {
+        id: buttonControl
+        Item {
+            id: ctl
+            property var spec: ({})
+            property var val
+            property var apply: v => {}
+            implicitHeight: 30
+            Chip {
+                icon: ctl.spec.icon ?? "external-link"
+                text: ctl.spec.action ?? "Open"
+                onClicked: ctl.apply(true)
             }
         }
     }
