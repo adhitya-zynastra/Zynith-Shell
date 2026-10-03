@@ -18,7 +18,10 @@ Singleton {
     id: root
 
     // the Zynith UI owns notifications when zynith.toml hands them over (or notifications.toml server = true)
-    readonly property bool wanted: (Config.surfaces?.notifications ?? "native") === "zynith" || Config.notifications.server || forceServer
+    // never from the Settings app (a second process of this project): it once took the bus name while the
+    // shell restarted, and the shell's notifications stopped
+    readonly property bool shellProcess: Quickshell.env("ZYNITH_ROLE") !== "settings"
+    readonly property bool wanted: shellProcess && ((Config.surfaces?.notifications ?? "native") === "zynith" || Config.notifications.server || forceServer)
     property bool forceServer: false     // test harness only (private bus)
     // once this process owns the name it keeps it across live reloads (keepOnReload), so a reload must not
     // mistake its own server for someone else's
