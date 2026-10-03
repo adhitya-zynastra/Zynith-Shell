@@ -438,6 +438,17 @@ namespace noctalia::cli {
     inline constexpr Command brightnessRescan{
         "brightness-rescan", "Look for DDC/CI monitors again (with [brightness] enable_ddcutil)", {}, {}, {}, {}, {}, false
     };
+    inline constexpr Command settingsSchema{
+        "settings-schema", "Print the native settings registry as JSON: the sections, or one [section]'s settings", {},
+        {}, {}, {}, {}, false
+    };
+    inline constexpr Command settingsSet{
+        "settings-set", "Set one native setting: {\"path\": [...], \"value\": ...} (as the native Settings would)", {},
+        {}, {}, {}, {}, false
+    };
+    inline constexpr Command settingsReset{
+        "settings-reset", "Remove one native setting's override: {\"path\": [...]}", {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command calendarEvents{
         "calendar-events", "Print the synced calendar events of the next [days] (default 14) as JSON", {}, {}, {}, {},
         {}, false
@@ -1032,6 +1043,9 @@ namespace noctalia::cli {
       msg::chargeLimit,
       msg::brightnessStatus,
       msg::brightnessRescan,
+      msg::settingsSchema,
+      msg::settingsSet,
+      msg::settingsReset,
       msg::calendarEvents,
       msg::effectsStatus,
       msg::clipboardText,

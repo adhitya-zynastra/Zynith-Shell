@@ -1,3 +1,4 @@
+#include "zynith/settings_bridge.h"
 #include "zynith/surfaces.h"
 #include "app/main_loop.h"
 #include "application.h"
@@ -655,6 +656,26 @@ void Application::initIpc() {
     }
     m_brightnessService->requestDdcRescan();
     return "ok\n";
+  });
+
+  // zynith: the native settings, for the Zynith Settings app. Writes go through ConfigService overrides like
+  // the native Settings window's, and never while locked (a config reload under the lock once crashed the shell).
+  m_ipcService.bind(noctalia::cli::msg::settingsSchema, [this](const std::string& args) -> std::string {
+    return zynith::settings_bridge::schemaJson(
+        m_settingsWindow.registrySnapshot(), m_configService, StringUtils::trim(args)
+    );
+  });
+  m_ipcService.bind(noctalia::cli::msg::settingsSet, [this](const std::string& args) -> std::string {
+    if (m_lockScreen.isActive()) {
+      return "error: locked\n";
+    }
+    return zynith::settings_bridge::set(m_settingsWindow.registrySnapshot(), m_configService, args);
+  });
+  m_ipcService.bind(noctalia::cli::msg::settingsReset, [this](const std::string& args) -> std::string {
+    if (m_lockScreen.isActive()) {
+      return "error: locked\n";
+    }
+    return zynith::settings_bridge::reset(m_settingsWindow.registrySnapshot(), m_configService, args);
   });
 
   // zynith: the synced calendar's coming events, for the Control Panel's calendar module

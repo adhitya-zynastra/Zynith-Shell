@@ -738,6 +738,13 @@ void SettingsWindow::scrollFocusedAreaIntoView(InputArea* area) {
   }
 }
 
+std::vector<settings::SettingEntry> SettingsWindow::registrySnapshot() const {
+  if (m_config == nullptr) {
+    return {};
+  }
+  return settings::buildSettingsRegistry(m_config->config(), nullptr, nullptr, buildRegistryEnvironment());
+}
+
 settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   settings::RegistryEnvironment env;
   if (m_config != nullptr) {
