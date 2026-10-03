@@ -27,6 +27,9 @@ FloatingWindow {
         function capture(path: string): void {
             page.grabToImage(r => r.saveToFile(path));
         }
+        function captureSidebar(path: string): void {
+            sidebar.grabToImage(r => r.saveToFile(path));
+        }
     }
 
     Rectangle {
@@ -107,9 +110,8 @@ FloatingWindow {
 
                     Label {
                         visible: parent.groupStart
-                        role: "caption"
+                        role: "data"
                         tone: "faint"
-                        caps: true
                         topPadding: Metrics.s4
                         bottomPadding: Metrics.s2
                         leftPadding: Metrics.s3

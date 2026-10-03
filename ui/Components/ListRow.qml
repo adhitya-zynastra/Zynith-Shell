@@ -16,10 +16,34 @@ Item {
     implicitHeight: 44
     implicitWidth: 300
 
+    // the current row: a tone step and an exposure mark at its edge (not an accent fill)
+    Rectangle {
+        anchors.fill: parent
+        radius: Metrics.radiusPlate
+        color: Theme.plate
+        opacity: root.active ? 1 : 0
+        Behavior on opacity {
+            Anim {
+                role: "effects"
+            }
+        }
+    }
+    Rectangle {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 2
+        height: root.active ? parent.height * 0.42 : 0
+        radius: 1
+        color: Theme.accent
+        Behavior on height {
+            Anim {
+                role: "spatialFast"
+            }
+        }
+    }
     Interactive {
         anchors.fill: parent
-        radius: Metrics.radiusMd
-        active: root.active
+        radius: Metrics.radiusPlate
         onClicked: root.clicked()
     }
 

@@ -1,200 +1,309 @@
 import QtQuick
+import QtQuick.Effects
 import qs.Common
 import qs.Components
 import qs.Services
 
-// Settings opens on a picture of the machine and the person using it, not a list.
+// Settings opens on the scene: the wallpaper as a band with the person and the hour composed on it, the
+// machine as one line of readouts, then every category as typeset rows under indexed heads — each saying
+// where it stands now. No grid of equal cards.
 Column {
     id: root
 
     signal navigate(string id)
 
-    spacing: Metrics.s5
+    spacing: Metrics.s6
 
     Component.onCompleted: System.retain()
     Component.onDestruction: System.release()
 
-    // ── who ─────────────────────────────────────────────────────────────────
-    Row {
-        spacing: Metrics.s5
+    readonly property string greeting: {
+        const h = Time.now.getHours();
+        return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    }
+    readonly property string firstName: (About.realName || About.user).split(/[\s.]+/).filter(p => p.length > 1)[0] ?? ""
 
+    // ── the scene ───────────────────────────────────────────────────────────
+    Item {
+        id: hero
+        width: parent.width
+        height: 200
+
+        Image {
+            id: scene
+            anchors.fill: parent
+            source: Scheme.image !== "" ? (Scheme.image.startsWith("/") ? "file://" + Scheme.image : Scheme.image) : ""
+            sourceSize.width: width * 2
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            visible: false
+        }
         Rectangle {
-            width: 72
-            height: 72
-            radius: 36
-            color: Theme.hover
-            clip: true
-
-            Image {
-                id: avatar
-                anchors.fill: parent
-                source: About.avatar
-                sourceSize.width: 144
-                sourceSize.height: 144
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                visible: status === Image.Ready
-            }
-            Label {
-                anchors.centerIn: parent
-                visible: avatar.status !== Image.Ready
-                role: "headline"
-                tone: "muted"
-                text: (About.realName || "?").charAt(0).toUpperCase()
-            }
+            id: heroMask
+            anchors.fill: parent
+            radius: Metrics.radiusSurface
+            visible: false
+            layer.enabled: true
         }
-
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 2
-
-            Label {
-                role: "headline"
-                text: About.realName
-            }
-            Label {
-                role: "body"
-                tone: "muted"
-                text: About.user + "  ·  " + (About.host || About.os)
-            }
+        Rectangle {
+            anchors.fill: parent
+            radius: Metrics.radiusSurface
+            color: Theme.surfaceHigh
+            visible: scene.status !== Image.Ready
         }
-    }
-
-    // ── now ─────────────────────────────────────────────────────────────────
-    Row {
-        width: parent.width
-        spacing: Metrics.s4
-
-        Card {
-            width: (parent.width - parent.spacing) / 2
-            caption: "Date & time"
-
-            Label {
-                role: "display"
-                numeric: true
-                text: Qt.formatTime(Time.now, "HH:mm")
-            }
-            Label {
-                role: "body"
-                tone: "muted"
-                text: Qt.formatDate(Time.now, "dddd, d MMMM yyyy") + (About.timezone ? "  ·  " + About.timezone : "")
-            }
-        }
-
-        Card {
-            width: (parent.width - parent.spacing) / 2
-            caption: "Status"
-
-            Meter {
-                width: parent.width
-                label: "CPU"
-                value: System.cpu
-            }
-            Meter {
-                width: parent.width
-                label: "Memory"
-                value: System.memUsed
-                readout: (System.memUsed * System.memTotalGiB).toFixed(1) + " / " + System.memTotalGiB.toFixed(0) + " GB"
-            }
-            Meter {
-                visible: Power.present
-                width: parent.width
-                label: Power.charging ? "Battery · charging" : "Battery"
-                value: Power.level
-            }
-            Label {
-                role: "label"
-                tone: "muted"
-                text: (Network.connected ? Network.name : "Offline") + "  ·  Bluetooth " + Bluetooth.summary.toLowerCase()
-            }
-        }
-    }
-
-    // ── system / software ───────────────────────────────────────────────────
-    Row {
-        width: parent.width
-        spacing: Metrics.s4
-
-        Card {
-            width: (parent.width - parent.spacing) / 2
-            caption: "System"
-
-            Repeater {
-                model: [About.os, Hardware.cpuModel + " · " + Hardware.cpuThreads + " threads", Hardware.memGiB.toFixed(0) + " GB memory", Hardware.gpuSummary, "Linux " + About.kernel]
-                delegate: Label {
-                    required property string modelData
-                    role: "label"
-                    tone: "muted"
-                    text: modelData
+        MultiEffect {
+            anchors.fill: parent
+            source: scene
+            maskEnabled: true
+            maskSource: heroMask
+            maskThresholdMin: 0.5
+            maskSpreadAtMin: 1
+            opacity: scene.status === Image.Ready ? 1 : 0
+            Behavior on opacity {
+                Anim {
+                    role: "effects"
                 }
             }
         }
-
-        Card {
-            width: (parent.width - parent.spacing) / 2
-            caption: "Software"
-
-            Repeater {
-                model: ["Zynith " + About.zynithVersion, "niri " + About.niriVersion, "Quickshell " + About.quickshellVersion, "Experience: " + (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? " · auto" : "")]
-                delegate: Label {
-                    required property string modelData
-                    role: "label"
-                    tone: "muted"
-                    text: modelData
+        // the ink side of the scene: shade so the type reads on any image
+        Rectangle {
+            anchors.fill: parent
+            radius: Metrics.radiusSurface
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop {
+                    position: 0
+                    color: Theme.alpha(Theme.base, 0.88)
+                }
+                GradientStop {
+                    position: 0.55
+                    color: Theme.alpha(Theme.base, 0.62)
+                }
+                GradientStop {
+                    position: 1
+                    color: Theme.alpha(Theme.base, 0.28)
                 }
             }
         }
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: Metrics.s6
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: Metrics.s6
+            spacing: Metrics.s5
+            Avatar {
+                anchors.bottom: parent.bottom
+                size: 56
+            }
+            Column {
+                anchors.bottom: parent.bottom
+                spacing: 2
+                Label {
+                    role: "data"
+                    tone: "muted"
+                    text: Qt.formatDate(Time.now, "dddd  ·  dd MMMM")
+                }
+                Label {
+                    role: "display2"
+                    text: root.greeting + (root.firstName !== "" ? ", " + root.firstName : "")
+                }
+                Label {
+                    role: "caption"
+                    tone: "muted"
+                    text: About.user + "  ·  " + (About.host || About.os)
+                }
+            }
+        }
+        Label {
+            anchors.right: parent.right
+            anchors.rightMargin: Metrics.s6
+            anchors.top: parent.top
+            anchors.topMargin: Metrics.s5
+            role: "display"
+            numeric: true
+            text: Qt.formatTime(Time.now, "HH:mm")
+            style: Text.Raised
+            styleColor: Theme.alpha(Theme.base, 0.35)
+        }
     }
 
-    // ── categories ──────────────────────────────────────────────────────────
+    // ── the machine, as readouts ────────────────────────────────────────────
+    Row {
+        width: parent.width
+        spacing: Metrics.s7
+        Readout {
+            caption: "CPU"
+            value: Math.round(System.cpu * 100)
+            unit: "%"
+            size: "title"
+        }
+        Readout {
+            caption: "Memory"
+            value: (System.memUsed * System.memTotalGiB).toFixed(1)
+            unit: "/ " + System.memTotalGiB.toFixed(0) + " GB"
+            size: "title"
+        }
+        Readout {
+            visible: Power.present
+            caption: "Battery" + (Power.charging ? " · charging" : "")
+            value: Math.round(Power.level * 100)
+            unit: "%"
+            size: "title"
+        }
+        Readout {
+            caption: "Experience"
+            value: ExperiencePolicy.labels[ExperiencePolicy.profile] ?? ""
+            unit: ExperiencePolicy.automatic ? "auto" : ""
+            size: "title"
+        }
+    }
+
+    // ── every category, as typeset rows ─────────────────────────────────────
+    // where each one stands now, in a phrase
+    function summary(id: string): string {
+        switch (id) {
+        case "appearance":
+            return "Tint " + Math.round((Config.appearance.tint ?? 0.35) * 100) + "%  ·  " + ((Config.appearance.accent ?? "wallpaper") === "wallpaper" ? "accent from the wallpaper" : "own accent");
+        case "animation":
+            return (Config.animation.style ?? "fluid") + "  ·  speed " + (Config.animation.speed ?? 1) + "×";
+        case "wallpaper":
+            return (Wallpapers.mode === "live" ? "Live" : "Still") + "  ·  " + (Config.wallpaper.layout ?? "carousel");
+        case "experience":
+            return (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? "  ·  automatic" : "");
+        case "bars":
+            return Config.bars.length + (Config.bars.length === 1 ? " bar" : " bars");
+        case "widgets":
+            return Config.widgets.length + " on the desktop";
+        case "control":
+            return (Config.controlPanel?.modules ?? []).length + " modules";
+        case "launcher":
+            return (Config.launcher?.layout ?? "list") + "  ·  " + (Config.launcher?.density ?? "comfortable");
+        case "notifications":
+            return (Config.notifications.location ?? "top-right").replace("-", " ") + (Config.notifications.dnd ? "  ·  do not disturb" : "");
+        case "network":
+            return Network.wifiEnabled ? (Network.name || "Not connected") : "Off";
+        case "bluetooth":
+            return Bluetooth.available ? Bluetooth.summary : "Unavailable";
+        case "osd":
+            return (Config.osd.position ?? "bottom") + "  ·  " + (Config.osd.durationMs ?? 1400) + " ms";
+        case "shell":
+            return "Every native setting";
+        default:
+            return "";
+        }
+    }
+    readonly property var groups: {
+        const out = [];
+        for (const r of Routes.routes.filter(r => r.id !== "home")) {
+            const name = r.group || "General";
+            let g = out.find(x => x.name === name);
+            if (!g) {
+                g = { name: name, routes: [] };
+                out.push(g);
+            }
+            g.routes.push(r);
+        }
+        return out;
+    }
+
     Grid {
         width: parent.width
-        columns: 3
-        spacing: Metrics.s3
+        columns: 2
+        columnSpacing: Metrics.s7
+        rowSpacing: Metrics.s6
+        readonly property real col: (width - columnSpacing) / 2
 
         Repeater {
-            model: Routes.routes.filter(r => r.id !== "home")
-
-            delegate: Item {
+            model: root.groups
+            delegate: Column {
+                id: group
                 required property var modelData
-                width: (parent.width - parent.spacing * 2) / 3
-                height: 64
+                required property int index
+                width: parent.col
+                spacing: Metrics.s1
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Metrics.radiusLg
-                    color: Theme.surfaceLow
-                    border.width: Metrics.hairline
-                    border.color: Theme.hairline
+                SectionHead {
+                    width: parent.width
+                    index: String(group.index + 1).padStart(2, "0")
+                    title: group.modelData.name
                 }
-                Interactive {
-                    anchors.fill: parent
-                    radius: Metrics.radiusLg
-                    onClicked: root.navigate(parent.modelData.id)
+                Item {
+                    width: 1
+                    height: Metrics.s2
                 }
-                Row {
-                    anchors.left: parent.left
-                    anchors.leftMargin: Metrics.s4
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: Metrics.s3
+                Repeater {
+                    model: group.modelData.routes
+                    delegate: Item {
+                        id: entry
+                        required property var modelData
+                        width: group.width
+                        height: 44
 
-                    Icon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        name: parent.parent.modelData.icon
-                        tone: "accent"
-                        size: 18
-                    }
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        Label {
-                            role: "body"
-                            font.weight: Font.Medium
-                            text: parent.parent.parent.modelData.title
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Metrics.radiusPlate
+                            color: area.containsMouse ? Theme.plate : "transparent"
+                            Behavior on color {
+                                ColorAnim {}
+                            }
                         }
-                        Label {
-                            role: "caption"
+                        Rectangle {
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 2
+                            height: area.containsMouse ? parent.height * 0.42 : 0
+                            radius: 1
+                            color: Theme.accent
+                            Behavior on height {
+                                Anim {
+                                    role: "spatialFast"
+                                }
+                            }
+                        }
+                        Icon {
+                            id: glyph
+                            anchors.left: parent.left
+                            anchors.leftMargin: Metrics.s3
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: entry.modelData.icon
+                            size: 16
+                            tone: area.containsMouse ? "accent" : "muted"
+                        }
+                        Column {
+                            anchors.left: glyph.right
+                            anchors.leftMargin: Metrics.s4
+                            anchors.right: arrow.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 1
+                            Label {
+                                width: parent.width
+                                role: "body"
+                                text: entry.modelData.title
+                            }
+                            Label {
+                                visible: text !== ""
+                                width: parent.width
+                                role: "caption"
+                                tone: "faint"
+                                text: root.summary(entry.modelData.id)
+                            }
+                        }
+                        Icon {
+                            id: arrow
+                            anchors.right: parent.right
+                            anchors.rightMargin: Metrics.s3
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "chevron-right"
+                            size: 13
                             tone: "faint"
-                            text: parent.parent.parent.modelData.group
+                            opacity: area.containsMouse ? 1 : 0.4
+                        }
+                        MouseArea {
+                            id: area
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.navigate(entry.modelData.id)
                         }
                     }
                 }
