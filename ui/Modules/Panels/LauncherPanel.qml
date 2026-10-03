@@ -132,7 +132,9 @@ Item {
                 height: 28
                 width: root.mode.prefix ? chipRow.implicitWidth + Metrics.s4 * 2 : 28
                 radius: 14
-                color: root.mode.prefix ? Theme.accentSoft : "transparent"
+                color: root.mode.prefix ? Theme.signalFill : "transparent"
+                border.width: root.mode.prefix ? 1 : 0
+                border.color: Theme.signalEdge
 
                 Behavior on width {
                     Anim {
@@ -155,8 +157,7 @@ Item {
                     Label {
                         visible: root.mode.prefix !== ""
                         anchors.verticalCenter: parent.verticalCenter
-                        role: "caption"
-                        caps: true
+                        role: "data"
                         tone: "accent"
                         text: root.mode.label
                     }
@@ -261,24 +262,45 @@ Item {
                         role: "effects"
                     }
                 }
-                Row {
+                Item {
                     id: catRow
-                    spacing: 2
-                    Chip {
-                        text: "All"
-                        icon: "apps"
-                        active: root.category === "all"
-                        onClicked: root.category = "all"
-                    }
-                    Repeater {
-                        model: Apps.presentCategories
-                        delegate: Chip {
-                            required property var modelData
-                            text: modelData.label
-                            icon: modelData.icon
-                            active: root.category === modelData.key
-                            onClicked: root.category = modelData.key
+                    implicitWidth: tabs.implicitWidth
+                    height: 30
+                    readonly property var keys: ["all"].concat(Apps.presentCategories.map(c => c.key))
+                    Row {
+                        id: tabs
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Metrics.s5
+                        Repeater {
+                            model: [{ key: "all", label: "All" }].concat(Apps.presentCategories)
+                            delegate: Label {
+                                id: tab
+                                required property var modelData
+                                role: "data"
+                                tone: root.category === modelData.key ? "ink" : tabArea.containsMouse ? "muted" : "faint"
+                                text: modelData.label
+                                MouseArea {
+                                    id: tabArea
+                                    anchors.fill: parent
+                                    anchors.margins: -6
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.category = tab.modelData.key
+                                }
+                            }
                         }
+                    }
+                    // the current tab's mark glides under it
+                    Rectangle {
+                        readonly property Item under: tabs.children[Math.max(0, catRow.keys.indexOf(root.category))] ?? null
+                        x: under ? under.x : 0
+                        width: under ? under.width : 0
+                        y: tabs.y + tabs.height + 4
+                        height: 1.5
+                        radius: 1
+                        color: Theme.accent
+                        Glide on x {}
+                        Glide on width {}
                     }
                 }
             }
@@ -324,8 +346,8 @@ Item {
                 Glide on y {}
                 Rectangle {
                     anchors.fill: parent
-                    radius: Metrics.radiusMd
-                    color: root.armed !== "" ? Theme.alpha(Theme.danger, 0.16) : Theme.selected
+                    radius: Metrics.radiusPlate
+                    color: root.armed !== "" ? Theme.alpha(Theme.danger, 0.16) : Theme.plate
                     Behavior on color {
                         ColorAnim {}
                     }
@@ -333,9 +355,9 @@ Item {
                 Rectangle {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 3
-                    height: parent.height * 0.5
-                    radius: 1.5
+                    width: 2
+                    height: parent.height * 0.42
+                    radius: 1
                     color: root.armed !== "" ? Theme.danger : Theme.accent
                 }
             }
@@ -617,31 +639,43 @@ Item {
             height: 36
 
             Row {
+                id: legend
                 anchors.verticalCenter: parent.verticalCenter
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: Metrics.s5
+                spacing: Metrics.s4
 
                 Repeater {
                     model: Launcher.modes.filter(m => m.prefix !== "")
                     delegate: Row {
                         required property var modelData
                         spacing: Metrics.s1
-                        Label {
-                            role: "caption"
-                            numeric: true
-                            tone: root.mode.id === modelData.id ? "accent" : "muted"
-                            text: modelData.prefix
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 16
+                            height: 16
+                            radius: 4
+                            color: "transparent"
+                            border.width: 1
+                            border.color: root.mode.id === modelData.id ? Theme.signalEdge : Theme.rule
+                            Label {
+                                anchors.centerIn: parent
+                                role: "data"
+                                tone: root.mode.id === modelData.id ? "accent" : "muted"
+                                text: modelData.prefix
+                            }
                         }
                         Label {
-                            role: "caption"
+                            anchors.verticalCenter: parent.verticalCenter
+                            role: "data"
                             tone: root.mode.id === modelData.id ? "accent" : "faint"
-                            text: modelData.label.toLowerCase()
+                            text: ({ calc: "calc", windows: "win", wallpapers: "wall", emoji: "emoji", session: "power" })[modelData.id] ?? modelData.label
                         }
                     }
                 }
                 Label {
-                    visible: root.appsMode
-                    role: "caption"
+                    visible: root.appsMode && column.inner > 560
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "data"
                     tone: "faint"
                     text: "→ actions   ⌃P pin"
                 }
