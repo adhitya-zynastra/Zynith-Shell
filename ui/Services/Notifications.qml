@@ -197,12 +197,15 @@ Singleton {
         promote();
     }
 
-    // a popup closed (×, swipe): the sender is told, the history keeps it, as the native shell did
+    // a popup closed (×, swipe): the sender is told; the history keeps it unless keep_dismissed is off
     function close(key: int): void {
         const e = entry(key);
         if (e?.n)
             e.n.dismiss();
-        hidePopup(key);
+        if (Config.notifications.keepDismissed === false)
+            remove(key);
+        else
+            hidePopup(key);
     }
 
     // the user closed it: tell the sender, drop it from the history

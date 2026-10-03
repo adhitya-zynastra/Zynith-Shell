@@ -56,6 +56,9 @@ Singleton {
     function search(query: string, limit: int, category: string): var {
         const q = query.trim().toLowerCase();
         const now = Date.now();
+        // [launcher] sort_by_usage: how often and how lately an app was opened lifts it
+        const byUsage = Config.launcher?.sort_by_usage !== false;
+        const boost = (id, t) => byUsage ? root.boost(id, t) : 0;
         const pool = category && category !== "all" ? all.filter(e => categoryOf(e) === category) : all;
         if (q === "") {
             const pins = store.pinned.map(id => pool.find(e => e.id === id)).filter(e => e !== undefined);

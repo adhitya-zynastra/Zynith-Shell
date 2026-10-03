@@ -15,6 +15,8 @@ Column {
             position: Config.osd.position,
             margin: Config.osd.margin,
             duration_ms: Config.osd.durationMs,
+            align: Config.osd.align,
+            side_margin: Config.osd.sideMargin,
             hidden: Config.osd.hidden
         })
     readonly property var kinds: [
@@ -73,7 +75,9 @@ Column {
             width: parent.width
             schema: [
                 { key: "position", label: "Where", kind: "choice", default: "bottom", options: [{ key: "top", label: "Top" }, { key: "bottom", label: "Bottom" }] },
+                { key: "align", label: "Along it", kind: "choice", default: "center", options: [{ key: "left", label: "Left" }, { key: "center", label: "Centre" }, { key: "right", label: "Right" }] },
                 { key: "margin", label: "From the edge", kind: "int", default: 72, from: 0, to: 400, step: 4 },
+                { key: "side_margin", label: "From the side", kind: "int", default: 20, from: 0, to: 400, step: 4 },
                 { key: "duration_ms", label: "Stays for (ms)", kind: "int", default: 1400, from: 400, to: 6000, step: 100 }
             ]
             valueOf: key => root.osd[key] ?? schema.find(s => s.key === key)?.default

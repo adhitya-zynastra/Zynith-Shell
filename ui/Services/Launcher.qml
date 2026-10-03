@@ -14,43 +14,80 @@ import "../Common/Calc.js" as Calc
 Singleton {
     id: root
 
+    // [launcher.providers.<id>] prefix and global (also in the plain search); the native launcher's providers
+    // (its calculator with units and currencies, and every plugin provider) answer through launcher-query
+    readonly property var cfg: Config.launcher ?? ({})
+    function pfx(id: string, fallback: string): string {
+        return cfg.providers?.[id]?.prefix ?? fallback;
+    }
+    function inGlobal(id: string, fallback: bool): bool {
+        return cfg.providers?.[id]?.global ?? fallback;
+    }
+    readonly property string commandPrefix: cfg.command_prefix ?? "/"
+
+    // the native shell's providers: what it can answer for us
+    property var nativeProviders: []
+    readonly property bool nativeCalc: nativeProviders.some(p => p.id === "Calculator")
+    readonly property var plugins: nativeProviders.filter(p => p.dynamic)
+    function readProviders(): void {
+        CoreClient.call("launcher-providers", text => {
+            try {
+                root.nativeProviders = JSON.parse(text);
+            } catch (e) {}
+        });
+    }
+    Component.onCompleted: readProviders()
+
     readonly property var modes: [
         { prefix: "", id: "apps", label: "Apps", glyph: "apps" },
-        { prefix: "=", id: "calc", label: "Calculate", glyph: "calculator" },
-        { prefix: ">", id: "windows", label: "Windows", glyph: "app-window" },
-        { prefix: "@", id: "wallpapers", label: "Wallpapers", glyph: "photo" },
-        { prefix: ":", id: "emoji", label: "Emoji", glyph: "mood-smile" },
-        { prefix: "!", id: "session", label: "Session", glyph: "power" }
-    ]
+        { prefix: pfx("calculator", "="), id: "calc", label: "Calculate", glyph: "calculator" },
+        { prefix: pfx("windows", ">"), id: "windows", label: "Windows", glyph: "app-window" },
+        { prefix: pfx("wallpapers", "@"), id: "wallpapers", label: "Wallpapers", glyph: "photo" },
+        { prefix: pfx("emoji", ":"), id: "emoji", label: "Emoji", glyph: "mood-smile" },
+        { prefix: pfx("session", "!"), id: "session", label: "Session", glyph: "power" }
+    ].concat(plugins.map(p => ({
+                prefix: "",
+                command: p.prefix.replace(/^\//, ""),
+                id: "native:" + p.id,
+                provider: p.id,
+                label: p.name,
+                glyph: Icons.has(p.glyph) ? p.glyph : "puzzle"
+            })))
 
-    // the native launcher's commands still work: /calc /emo /win /wall /session
-    readonly property var aliases: ({
-            calc: "=",
-            math: "=",
-            emo: ":",
-            emoji: ":",
-            win: ">",
-            windows: ">",
-            wall: "@",
-            wallpaper: "@",
-            session: "!",
-            power: "!"
-        })
+    // the native launcher's commands still work: /calc /emo /win /wall /session, and each plugin's own
+    readonly property var aliases: {
+        const out = {
+            calc: "calc",
+            math: "calc",
+            emo: "emoji",
+            emoji: "emoji",
+            win: "windows",
+            windows: "windows",
+            wall: "wallpapers",
+            wallpaper: "wallpapers",
+            session: "session",
+            power: "session"
+        };
+        for (const m of modes)
+            if (m.command)
+                out[m.command.toLowerCase()] = m.id;
+        return out;
+    }
     // { mode, q }: the mode a text asks for and the query left once its prefix is taken off
     function parse(text: string): var {
-        const slash = text.match(/^\/(\w+)\s?(.*)$/);
-        if (slash && aliases[slash[1].toLowerCase()] !== undefined) {
-            const prefix = aliases[slash[1].toLowerCase()];
-            return {
-                mode: modes.find(m => m.prefix === prefix),
-                q: slash[2]
-            };
+        if (commandPrefix !== "" && text.startsWith(commandPrefix)) {
+            const rest = text.slice(commandPrefix.length);
+            const word = rest.match(/^(\S+)\s?(.*)$/);
+            if (word && aliases[word[1].toLowerCase()] !== undefined)
+                return {
+                    mode: modes.find(m => m.id === aliases[word[1].toLowerCase()]),
+                    q: word[2]
+                };
         }
-        const c = text.charAt(0);
-        const mode = modes.find(m => m.prefix !== "" && m.prefix === c) ?? modes[0];
+        const mode = modes.find(m => m.prefix !== "" && text.startsWith(m.prefix)) ?? modes[0];
         return {
             mode: mode,
-            q: (mode.prefix ? text.slice(1) : text).trim()
+            q: (mode.prefix ? text.slice(mode.prefix.length) : text).trim()
         };
     }
     function modeOf(text: string): var {
@@ -61,6 +98,8 @@ Singleton {
         const parsed = parse(text);
         const mode = parsed.mode;
         const q = parsed.q.trim();
+        if (mode.provider)
+            return remote(mode.provider, q);
         switch (mode.id) {
         case "calc":
             return calc(q);
@@ -84,9 +123,79 @@ Singleton {
                     run: () => Apps.launchAction(f.entry, f.action)
                 }));
         const merged = apps.slice(0, Math.max(1, limit - actions.length)).concat(actions);
-        return Calc.looksLikeMath(q) ? calc(q).concat(merged.slice(0, limit - 1)) : merged;
+        // the providers that also answer the plain search ([launcher.providers.<id>] global)
+        let extra = [];
+        if (q !== "") {
+            if (inGlobal("calculator", true))
+                extra = extra.concat(nativeCalc ? remote("Calculator", q) : Calc.looksLikeMath(q) ? calc(q) : []);
+            if (inGlobal("windows", false))
+                extra = extra.concat(windows(q, 3));
+            if (inGlobal("emoji", false))
+                extra = extra.concat(emoji(q, 3));
+            if (inGlobal("session", false))
+                extra = extra.concat(session(q).slice(0, 3));
+            if (inGlobal("wallpapers", false))
+                extra = extra.concat(wallpapers(q, 3));
+        }
+        return extra.concat(merged).slice(0, Math.max(limit, extra.length + 1));
     }
 
+    // ── answers from the native shell's providers, asked once per query and kept a while ──
+    property var answers: ({})
+    property var lastFor: ({})
+    property var asking: ({})
+    function remote(provider: string, q: string): var {
+        const key = provider + "\u0001" + q;
+        if (answers[key] !== undefined)
+            return answers[key];
+        if (!asking[key]) {
+            asking[key] = true;
+            CoreClient.call("launcher-query " + provider + " " + q, text => {
+                let list = [];
+                try {
+                    list = JSON.parse(text).map(r => root.nativeResult(provider, q, r));
+                } catch (e) {}
+                delete root.asking[key];
+                const next = Object.keys(root.answers).length > 80 ? {} : Object.assign({}, root.answers);
+                next[key] = list;
+                root.answers = next;
+                root.lastFor = Object.assign({}, root.lastFor, { [provider]: list });
+            });
+        }
+        // what it said last, until it answers this one (no flicker while typing)
+        return lastFor[provider] ?? [];
+    }
+    function nativeResult(provider: string, q: string, r: var): var {
+        return {
+            key: "n:" + provider + ":" + r.id,
+            kind: provider === "Calculator" ? "calc" : "native",
+            title: r.title.replace(/^= /, ""),
+            subtitle: r.subtitle + (provider === "Calculator" ? "  ·  Enter copies" : ""),
+            glyph: Icons.has(r.glyph) ? r.glyph : provider === "Calculator" ? "calculator" : "puzzle",
+            icon: r.icon || r.iconPath || "",
+            emoji: r.badge || "",
+            run: () => CoreClient.call("launcher-activate " + JSON.stringify({ provider: provider, result: r.id, text: q }), reply => {
+                if (reply.startsWith("ok copied") && (Config.launcher.auto_paste ?? true))
+                    CoreClient.call("clipboard-paste text");
+            })
+        };
+    }
+    // a plugin's results came in later: ask again
+    Connections {
+        target: Events
+        function onLauncher(): void {
+            const keep = {};
+            for (const k in root.answers)
+                if (!root.plugins.some(p => k.startsWith(p.id + "\u0001")))
+                    keep[k] = root.answers[k];
+            root.answers = keep;
+        }
+    }
+
+    function originOf(e: var): string {
+        const x = (e.execString ?? "").toLowerCase();
+        return x.includes("flatpak run") ? "flatpak" : x.includes("/snap/") || x.startsWith("snap ") ? "snap" : x.includes(".appimage") ? "appimage" : "";
+    }
     function app(e: var): var {
         return {
             key: "app:" + e.id,
@@ -96,6 +205,8 @@ Singleton {
             subtitle: e.genericName || e.comment || "",
             icon: e.icon,
             pinned: Apps.isPinned(e.id),
+            // where it was installed from, for the origin badge (the native show_app_origin_indicator)
+            origin: originOf(e),
             actions: (e.actions ?? []).map(a => ({
                         key: "act:" + e.id + ":" + a.name,
                         kind: "action",
@@ -118,6 +229,8 @@ Singleton {
     }
 
     function calc(q: string): var {
+        if (nativeCalc && q !== "")
+            return remote("Calculator", q);
         const v = Calc.evaluate(q);
         if (v === null)
             return [];

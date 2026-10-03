@@ -14,6 +14,7 @@ Singleton {
 
     signal wallpaper
     signal clipboard
+    signal launcher
     signal osd(var content)
 
     function dispatch(args: string): void {
@@ -27,9 +28,19 @@ Singleton {
         case "clipboard":
             clipboard();
             break;
+        case "launcher":
+            launcher();
+            break;
         case "lock":
             locked = payload === "on";
             break;
+        case "panel":
+            {
+                // the native shell hands over a panel Zynith draws: "toggle|open <id> [context]"
+                const verb = payload.split(" ")[0];
+                Actions.run((verb === "open" ? "panel-open " : "panel-toggle ") + payload.slice(verb.length + 1), {});
+                break;
+            }
         case "osd":
             try {
                 osd(JSON.parse(payload));

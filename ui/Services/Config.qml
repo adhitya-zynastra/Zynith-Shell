@@ -58,6 +58,9 @@ Singleton {
             durationMs: panelsFile.values.osd.duration_ms,
             margin: panelsFile.values.osd.margin,
             position: panelsFile.values.osd.position,
+            // left | center | right, and how far from that side
+            align: panelsFile.values.osd.align ?? "center",
+            sideMargin: panelsFile.values.osd.side_margin ?? 20,
             hidden: panelsFile.values.osd.hidden ?? []
         })
     readonly property var notifications: ({
@@ -77,6 +80,11 @@ Singleton {
             showAppName: notificationsFile.values.show_app_name,
             showActions: notificationsFile.values.show_actions,
             monitor: notificationsFile.values.monitor,
+            // the native offset_x / offset_y, layer, keep_dismissed_in_history
+            marginX: notificationsFile.values.margin_x ?? 10,
+            marginY: notificationsFile.values.margin_y ?? 6,
+            layer: notificationsFile.values.layer ?? "overlay",
+            keepDismissed: notificationsFile.values.keep_dismissed ?? true,
             filters: notificationsFile.values.filter ?? []
         })
     readonly property var wallpaper: wallpaperFile.values
@@ -182,7 +190,10 @@ Singleton {
                     notifications: "native",
                     osd: "native",
                     control_center: "native",
-                    desktop_widgets: "native"
+                    desktop_widgets: "native",
+                    wallpaper: "native",
+                    clipboard: "native",
+                    session: "native"
                 }
             })
     }

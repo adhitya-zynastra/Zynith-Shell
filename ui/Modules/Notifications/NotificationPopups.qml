@@ -15,6 +15,8 @@ Scope {
 
     readonly property string screenName: {
         const wanted = Config.notifications.monitor ?? "focused";
+        if (wanted === "primary")
+            return Quickshell.screens[0]?.name ?? "";
         const named = Quickshell.screens.find(s => s.name === wanted);
         if (named)
             return named.name;
@@ -61,7 +63,7 @@ Scope {
 
             screen: Quickshell.screens.find(s => s.name === root.screenName) ?? Quickshell.screens[0]
             WlrLayershell.namespace: "zynith-notifications"
-            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.layer: Config.notifications.layer === "top" ? WlrLayer.Top : WlrLayer.Overlay
             // a popup with a reply field can take the keyboard when clicked; otherwise popups never do
             WlrLayershell.keyboardFocus: Notifications.popups.some(k => (Notifications.entry(k)?.reply ?? "") !== "") ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             exclusionMode: ExclusionMode.Ignore
@@ -73,10 +75,10 @@ Scope {
                 right: root.side === "right"
             }
             margins {
-                top: Math.max(0, root.inset("top") + Metrics.s3 - win.pad)
-                bottom: Math.max(0, root.inset("bottom") + Metrics.s3 - win.pad)
-                left: Math.max(0, root.inset("left") + Metrics.s3 - win.pad)
-                right: Math.max(0, root.inset("right") + Metrics.s3 - win.pad)
+                top: Math.max(0, root.inset("top") + Config.notifications.marginY - win.pad)
+                bottom: Math.max(0, root.inset("bottom") + Config.notifications.marginY - win.pad)
+                left: Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
+                right: Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
             }
             readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
             implicitWidth: root.cardWidth + pad * 2 + 40

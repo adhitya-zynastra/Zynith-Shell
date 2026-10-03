@@ -138,8 +138,12 @@ Scope {
                     exclusionMode: ExclusionMode.Ignore
                     anchors.bottom: !top
                     anchors.top: top
+                    anchors.left: Config.osd.align === "left"
+                    anchors.right: Config.osd.align === "right"
                     margins.bottom: Config.osd.margin - pad
                     margins.top: Config.osd.margin - pad
+                    margins.left: Math.max(0, Config.osd.sideMargin - pad)
+                    margins.right: Math.max(0, Config.osd.sideMargin - pad)
                     color: "transparent"
                     readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
                     implicitWidth: 360 + pad * 2

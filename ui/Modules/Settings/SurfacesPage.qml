@@ -14,7 +14,12 @@ Column {
         { id: "bar", label: "Bars", detail: "Applied at once" },
         { id: "notifications", label: "Notifications", detail: "Also set [notification] enable_daemon in rice.toml to match" },
         { id: "osd", label: "On-screen display", detail: "Also set [osd] enabled in rice.toml to match" },
-        { id: "desktop_widgets", label: "Desktop widgets" }
+        { id: "desktop_widgets", label: "Desktop widgets" },
+        { id: "control_center", label: "Control Panel", detail: "Native requests for its Control Center (hot corners, its keys) come here" },
+        { id: "launcher", label: "Launcher" },
+        { id: "wallpaper", label: "Wallpaper browser" },
+        { id: "clipboard", label: "Clipboard" },
+        { id: "session", label: "Session menu" }
     ]
 
     PanelHeader {

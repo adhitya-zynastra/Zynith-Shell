@@ -399,13 +399,15 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: row.child ? Metrics.s7 + Metrics.s2 : Metrics.s4
                     anchors.verticalCenter: parent.verticalCenter
-                    width: row.child ? 20 : root.compact ? 24 : 32
+                    // [launcher] icon_size (0 by density) and show_icons (apps' own icons; others keep their glyph)
+                    readonly property bool iconsOff: root.options.show_icons === false && row.modelData.kind === "app"
+                    width: row.child ? 20 : (root.options.icon_size ?? 0) > 0 ? root.options.icon_size : root.compact ? 24 : 32
                     height: width
 
                     readonly property string iconSource: row.modelData.icon ? Quickshell.iconPath(row.modelData.icon, true) : ""
                     Image {
                         anchors.fill: parent
-                        visible: source != ""
+                        visible: source != "" && !lead.iconsOff
                         source: row.modelData.image ? row.modelData.image : lead.iconSource
                         sourceSize.width: 64
                         sourceSize.height: 64
@@ -418,9 +420,28 @@ Item {
                         text: row.modelData.emoji ?? ""
                         font.pixelSize: root.compact ? 18 : 22
                     }
+                    // installed as a Flatpak, a Snap, an AppImage
+                    Rectangle {
+                        visible: (row.modelData.origin ?? "") !== "" && root.options.show_origin !== false && !lead.iconsOff
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: -3
+                        width: 14
+                        height: 14
+                        radius: 7
+                        color: Theme.surfaceHigh
+                        border.width: 1
+                        border.color: Theme.hairline
+                        Icon {
+                            anchors.centerIn: parent
+                            name: row.modelData.origin === "flatpak" ? "stack-2" : row.modelData.origin === "snap" ? "category" : "app-window"
+                            size: 9
+                            tone: "muted"
+                        }
+                    }
                     Icon {
                         anchors.centerIn: parent
-                        visible: !row.modelData.emoji && !row.modelData.image && lead.iconSource === ""
+                        visible: !row.modelData.emoji && !row.modelData.image && (lead.iconSource === "" || lead.iconsOff)
                         name: row.modelData.glyph ?? (row.child ? "corner-down-left" : "apps")
                         size: root.compact ? 16 : 20
                         tone: row.selected ? "accent" : "muted"
