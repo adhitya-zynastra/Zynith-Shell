@@ -298,10 +298,14 @@ PanelWindow {
             context: context ?? "",
             history: options?.history ?? []
         };
-        if (options?.open)
+        if (options?.transient) {
+            const t = options.transient;
+            PanelRouter.peek(id, screen.name, origin, t.owner, t.closeDelay, t.closeOnLeave);
+        } else if (options?.open) {
             PanelRouter.open(id, screen.name, origin);
-        else
+        } else {
             PanelRouter.toggle(id, screen.name, origin);
+        }
     }
 
     // everything the bar draws, in one item (so it can be captured for diagnostics)

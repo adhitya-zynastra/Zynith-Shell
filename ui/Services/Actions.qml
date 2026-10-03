@@ -37,6 +37,11 @@ Singleton {
             origin.bar.openPanel(id, origin.item, context, options);
             return;
         }
+        if (options?.transient) {
+            const t = options.transient;
+            PanelRouter.peek(id, screen, { context: context, history: options?.history ?? [] }, t.owner, t.closeDelay, t.closeOnLeave);
+            return;
+        }
         const where = ["launcher", "clipboard", "wallpaper", "session"].includes(id) ? { edge: "center", context: context } : { context: context };
         where.history = options?.history ?? [];
         if (options?.open)
@@ -66,7 +71,8 @@ Singleton {
             {
                 const id = words[0] ?? "";
                 const options = {
-                    open: verb === "panel-open"
+                    open: verb === "panel-open",
+                    transient: origin?.transient ?? null
                 };
                 if (id === "control-center") {
                     const tab = words[1] ?? "home";

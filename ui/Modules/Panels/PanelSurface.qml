@@ -58,7 +58,8 @@ PanelWindow {
     WlrLayershell.namespace: "zynith-panel"
     WlrLayershell.layer: WlrLayer.Overlay
     // a closing panel lets go of the keyboard at once, so typing (and a paste) reaches the window beneath
-    WlrLayershell.keyboardFocus: win.closing ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
+    // a hover-opened panel leaves the keyboard where it is until it is clicked (pinned)
+    WlrLayershell.keyboardFocus: win.closing || (win.entry?.transient ?? false) ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     anchors {
@@ -76,6 +77,18 @@ PanelWindow {
         item: card
     }
 
+    // the pointer on the card holds a hover-opened panel; a press in it pins it
+    HoverHandler {
+        id: cardHover
+        enabled: !win.closing
+        onHoveredChanged: PanelRouter.hold(win.screen?.name ?? "", "panel", hovered)
+    }
+    TapHandler {
+        gesturePolicy: TapHandler.DragThreshold
+        grabPermissions: PointerHandler.TakeOverForbidden
+        onPressedChanged: if (pressed)
+            PanelRouter.pin(win.screen?.name ?? "")
+    }
     BlurRegion {
         window: win
         item: win.bare ? content.blurItem : card
@@ -156,6 +169,7 @@ PanelWindow {
     }
     onClosingChanged: {
         if (closing) {
+            PanelRouter.hold(screen?.name ?? "", "panel", false);
             enter.stop();
             leave.start();
         } else {

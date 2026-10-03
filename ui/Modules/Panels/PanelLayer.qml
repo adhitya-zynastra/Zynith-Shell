@@ -43,12 +43,22 @@ Scope {
         interval: ExperiencePolicy.panelKeepAliveMs
     }
 
-    // Clicks outside the panel close it. Transparent unless the profile dims the desktop behind a panel.
+    // A hover-opened panel closes a moment after the pointer has left it and what opened it.
+    readonly property bool transientIdle: (entry?.transient ?? false) && (entry?.closeOnLeave ?? true) && !PanelRouter.held(screenName)
+    Timer {
+        interval: Math.max(0, root.entry?.closeDelay ?? 300)
+        running: root.transientIdle
+        onTriggered: if (PanelRouter.current(root.screenName)?.transient)
+            PanelRouter.close(root.screenName)
+    }
+
+    // Clicks outside the panel close it. A hover-opened panel has none: it closes on leaving, and a catcher
+    // over the bars would take the pointer from the icon that opened it. Transparent unless the profile dims the desktop behind a panel.
     LazyLoader {
         active: root.present || root.warm
 
         PanelWindow {
-            visible: root.present
+            visible: root.present && !(root.shown?.transient ?? false)
             screen: root.modelData
             WlrLayershell.namespace: "zynith-panel-catcher"
             WlrLayershell.layer: WlrLayer.Top

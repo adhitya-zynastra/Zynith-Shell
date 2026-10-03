@@ -55,6 +55,42 @@ Singleton {
             history: origin?.history ?? []
         });
     }
+    // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,
+    // gone a moment after it leaves both (the bar's hover_close_delay). A transient panel never replaces a
+    // pinned one; a click pins it (open() without the flag).
+    function peek(id: string, screenName: string, origin: var, owner: string, closeDelay: int, closeOnLeave: bool): void {
+        const cur = openPanels[screenName];
+        if (cur && !cur.transient && cur.id !== id)
+            return;
+        if (cur && !cur.transient && cur.id === id)
+            return;
+        open(id, screenName, origin);
+        set(screenName, Object.assign({}, openPanels[screenName], {
+            transient: true,
+            owner: owner,
+            closeDelay: closeDelay,
+            closeOnLeave: closeOnLeave
+        }));
+    }
+    function pin(screenName: string): void {
+        const cur = openPanels[screenName];
+        if (cur?.transient)
+            set(screenName, Object.assign({}, cur, { transient: false }));
+    }
+    // what the pointer is on, per output: keys of hovered owners (bar items) and "panel"
+    property var holds: ({})
+    function hold(screenName: string, key: string, on: bool): void {
+        const keys = (holds[screenName] ?? []).filter(k => k !== key);
+        if (on)
+            keys.push(key);
+        const next = Object.assign({}, holds);
+        next[screenName] = keys;
+        holds = next;
+    }
+    function held(screenName: string): bool {
+        return (holds[screenName] ?? []).length > 0;
+    }
+
     function close(screenName: string): void {
         if (openPanels[screenName])
             set(screenName, null);

@@ -57,7 +57,10 @@ Singleton {
         { key: "capsule_radius", label: "Capsule radius", kind: "int", default: -1, from: -1, to: 32, step: 1, when: { capsule: [true] }, hint: "-1 is a pill" },
         { key: "capsule_border", label: "Capsule border", kind: "colour", default: "", when: { capsule: [true] } },
         { key: "interactive", label: "Takes clicks", kind: "toggle", default: true },
-        { key: "hover_delay", label: "Rest before its hover action (ms)", kind: "int", default: 350, from: 0, to: 2000, step: 50 },
+        { key: "open_on_hover", label: "Open its panel on hover", kind: "choice", default: "bar", options: [{ key: "bar", label: "As the bar" }, { key: "on", label: "On hover" }, { key: "off", label: "On click" }] },
+        { key: "hover_delay", label: "Hover before it opens (ms)", kind: "int", default: -1, from: -1, to: 2000, step: 25, hint: "-1 follows the bar" },
+        { key: "hover_close", label: "Close when the pointer leaves", kind: "choice", default: "bar", options: [{ key: "bar", label: "As the bar" }, { key: "on", label: "Yes" }, { key: "off", label: "No, click away" }] },
+        { key: "hover_close_delay", label: "Leave before it closes (ms)", kind: "int", default: -1, from: -1, to: 3000, step: 25, hint: "-1 follows the bar" },
         { key: "tooltip", label: "Tooltip", kind: "text", default: "" }
     ]
     // a button that is a glyph or your own picture

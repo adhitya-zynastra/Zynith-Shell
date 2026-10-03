@@ -113,6 +113,8 @@ Item {
         // a click on what the pointer's rest just opened confirms it rather than closing it (as the native bar)
         if (gesture === "left" && hoverOpened && action.startsWith("panel-toggle "))
             action = "panel-open " + action.slice(13);
+        if (gesture === "left" && hoverOpened)
+            PanelRouter.pin(root.screen?.name ?? "");
         hoverOpened = false;
         if (action !== "")
             Actions.run(action, {
@@ -170,12 +172,32 @@ Item {
         scale: root.sizeScale
     }
 
-    // the hover gesture: the pointer resting here for hover_delay runs it, once per visit
-    readonly property string hoverAction: BarWidgetTypes.action(type, settings, actions, "hover")
+    // Resting the pointer here. open_on_hover (the widget's, else its bar's): the panel its click opens shows
+    // after hover_delay (the widget's, else the bar's; 0 = at once) and goes when the pointer leaves it and the
+    // panel (hover_close / hover_close_delay); a click pins it. A `hover` action of its own runs instead.
+    readonly property var barSpec: bar?.spec ?? ({})
+    function flag(v: var): var {
+        return v === true || v === "on" ? true : v === false || v === "off" ? false : undefined;
+    }
+    readonly property bool openOnHover: flag(settings.open_on_hover) ?? flag(barSpec.open_on_hover) ?? false
+    readonly property int hoverDelay: (settings.hover_delay ?? -1) >= 0 ? settings.hover_delay : Math.max(0, barSpec.hover_delay ?? 0)
+    readonly property int hoverCloseDelay: (settings.hover_close_delay ?? -1) >= 0 ? settings.hover_close_delay : Math.max(0, barSpec.hover_close_delay ?? 300)
+    readonly property bool hoverClose: flag(settings.hover_close) ?? flag(barSpec.hover_close) ?? true
+    readonly property string hoverAction: {
+        const own = BarWidgetTypes.action(type, settings, actions, "hover");
+        if (own !== "")
+            return own;
+        if (!openOnHover)
+            return "";
+        const click = BarWidgetTypes.action(type, settings, actions, "left");
+        return /^panel(-toggle|-open)? /.test(click) ? click : "";
+    }
+    // unique per widget instance (two clocks on one bar are two owners)
+    readonly property string ownerKey: String(root)
     property bool hoverOpened: false
     Timer {
         id: hoverIntent
-        interval: Math.max(0, root.opt("hover_delay") ?? 350)
+        interval: root.hoverDelay
         running: root.hovered && root.hoverAction !== "" && !root.hoverOpened
         onTriggered: root.restOpen()
     }
@@ -184,18 +206,29 @@ Item {
         if (hoverAction === "")
             return;
         hoverOpened = true;
-        Actions.run(hoverAction.startsWith("panel-toggle ") ? "panel-open " + hoverAction.slice(13) : hoverAction, {
+        const panel = /^panel(-toggle|-open)? /.test(hoverAction);
+        Actions.run(panel ? "panel-open " + hoverAction.replace(/^panel(-toggle|-open)? /, "") : hoverAction, {
             screen: root.screen,
             bar: root.bar,
             item: root,
-            widget: root.name
+            widget: root.name,
+            transient: panel ? {
+                owner: root.ownerKey,
+                closeDelay: root.hoverCloseDelay,
+                closeOnLeave: root.hoverClose
+            } : null
         });
     }
+    Component.onDestruction: PanelRouter.hold(root.screen?.name ?? "", root.ownerKey, false)
     // a tooltip, after the pointer has rested a moment
     property bool tipReady: false
-    onHoveredChanged: if (!hovered) {
-        tipReady = false;
-        hoverOpened = false;
+    onHoveredChanged: {
+        // the pointer on this widget holds the panel it opened
+        PanelRouter.hold(root.screen?.name ?? "", root.ownerKey, root.hovered);
+        if (!hovered) {
+            tipReady = false;
+            hoverOpened = false;
+        }
     }
     Timer {
         interval: 600
