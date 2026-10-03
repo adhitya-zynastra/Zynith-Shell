@@ -12,6 +12,7 @@ Text {
     color: muted ? Theme.alpha(item.ink, 0.7) : item.ink
     font.family: item.family
     font.pixelSize: Math.round(size * item.fontScale)
+    font.weight: item.weight
     font.features: Type.tabular
     elide: Text.ElideRight
     verticalAlignment: Text.AlignVCenter

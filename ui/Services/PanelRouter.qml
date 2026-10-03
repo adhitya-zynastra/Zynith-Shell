@@ -28,6 +28,7 @@ Singleton {
     // the Control Panel and its pages, opened from nowhere (a key, IPC), sit by [control_panel] anchor_bar
     readonly property var controlPages: ["control", "home", "quick", "audio", "power", "monitor", "calendar", "weather", "screen-time", "network", "bluetooth", "notifications", "media", "system"]
     property var bars: ({})
+    property var barItems: ({})
     function noteBar(id: string, screenName: string, origin: var): void {
         if (id !== "")
             bars[id + "@" + screenName] = origin;

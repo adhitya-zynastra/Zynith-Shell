@@ -32,7 +32,46 @@ PanelWindow {
     // a fixed length along the edge (0 = fit the widgets)
     readonly property int fixedLength: spec.length ?? 0
     // per-corner radii (px), as the native bars had them; left out, the radius above
-    readonly property var corners: [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left].some(v => v !== undefined) ? [spec.radius_top_left ?? radius, spec.radius_top_right ?? radius, spec.radius_bottom_right ?? radius, spec.radius_bottom_left ?? radius] : null
+    // concave_edge_corners (with no edge margin): fillets where the bar meets the screen — at its ends on the
+    // screen edge, or on its inner edge when it also reaches the screen's ends; those corners are square
+    readonly property bool concave: spec.concave_edge_corners === true && margin === 0
+    readonly property string concaveMode: anchorAt === "fill" && offset === 0 ? "inner" : "edge"
+    // which of the pill's corners touch the screen edge (tl tr br bl)
+    readonly property var edgeCorners: ({
+            top: [0, 1],
+            bottom: [3, 2],
+            left: [0, 3],
+            right: [1, 2]
+        })[edge]
+    readonly property var innerCorners: ({
+            top: [3, 2],
+            bottom: [0, 1],
+            left: [1, 2],
+            right: [0, 3]
+        })[edge]
+    readonly property var corners: {
+        const own = [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left];
+        if (!concave && !own.some(v => v !== undefined))
+            return null;
+        const c = own.map(v => v ?? radius);
+        if (concave)
+            for (const i of (concaveMode === "edge" ? edgeCorners : innerCorners))
+                c[i] = 0;
+        return c;
+    }
+    // bar-wide defaults the widgets read
+    readonly property real contentScale: spec.scale ?? 1
+    readonly property int fontWeight: Number(spec.font_weight ?? 400)
+    readonly property string widgetColor: spec.color ?? ""
+    readonly property string widgetIconColor: spec.icon_color ?? ""
+    readonly property var capsuleRadius: spec.capsule_radius
+    readonly property string capsuleBorder: spec.capsule_border ?? ""
+    readonly property string capsuleForeground: spec.capsule_foreground ?? ""
+    readonly property real capsuleThickness: spec.capsule_thickness ?? 1
+    // how far a panel opened from here tucks under the bar's edge (hides the seam)
+    readonly property int panelOverlap: spec.panel_overlap ?? 0
+    // "centred" against the whole output, or what other bars and docks leave of it
+    readonly property string reference: spec.reference ?? "output"
     readonly property string borderColor: spec.border_color ?? ""
     readonly property real borderWidth: spec.border_width ?? -1
     readonly property bool shadow: spec.shadow ?? true
@@ -127,8 +166,9 @@ PanelWindow {
     WlrLayershell.namespace: "zynith-bar-" + (spec.id ?? "bar")
     WlrLayershell.layer: spec.layer === "overlay" ? WlrLayer.Overlay : spec.layer === "bottom" ? WlrLayer.Bottom : WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    exclusionMode: reserve && visibility === "always" ? ExclusionMode.Normal : ExclusionMode.Ignore
-    exclusiveZone: reserve && visibility === "always" ? thickness + margin : 0
+    exclusionMode: reserve && visibility === "always" ? ExclusionMode.Normal : reference === "workspace" ? ExclusionMode.Auto : ExclusionMode.Ignore
+    // margin_opposite: more reserved room on the inner side, for windows that ignore the zone's edge
+    exclusiveZone: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : 0
     color: "transparent"
 
     anchors {
@@ -221,13 +261,15 @@ PanelWindow {
             x: windowScreenX() + pill.x + pill.width / 2,
             y: windowScreenY() + pill.y + pill.height / 2,
             edge: edge,
-            extent: margin + thickness,
+            extent: margin + thickness - panelOverlap,
             // for diagnostics: where the bar and its summoning strip are, in screen coordinates
             hidden: wantsHidden,
             bar: [Math.round(windowScreenX() + pill.x), Math.round(windowScreenY() + pill.y), Math.round(pill.width), Math.round(pill.height)],
             strip: hides ? [Math.round(windowScreenX() + strip.x), Math.round(windowScreenY() + strip.y), Math.round(strip.width), Math.round(strip.height)] : null
         })
     onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
+    // for diagnostics: the bar's own pixels, nothing behind them
+    Component.onCompleted: PanelRouter.barItems[(spec.id ?? "") + "@" + (screen?.name ?? "")] = scene
 
     // options: { open: open rather than toggle, history: where back goes }
     function openPanel(id: string, item: Item, context: string, options: var): void {
@@ -236,7 +278,7 @@ PanelWindow {
             x: windowScreenX() + pill.x + p.x,
             y: windowScreenY() + pill.y + p.y,
             edge: edge,
-            extent: margin + thickness,
+            extent: margin + thickness - panelOverlap,
             context: context ?? "",
             history: options?.history ?? []
         };
@@ -246,84 +288,148 @@ PanelWindow {
             PanelRouter.toggle(id, screen.name, origin);
     }
 
-    Glass {
-        id: pill
+    // everything the bar draws, in one item (so it can be captured for diagnostics)
+    Item {
+        id: scene
+        anchors.fill: parent
 
-        x: win.pillX()
-        y: win.pillY()
-        width: win.vertical ? win.thickness : win.pillLength
-        height: win.vertical ? win.pillLength : win.thickness
-        radius: win.radius
-        corners: win.corners
-        raised: win.shadow
-        fill: Theme.alpha(Theme.glass, win.sheetOpacity)
-        edge: win.border
-        edgeColor: win.borderColor
-        edgeWidth: win.borderWidth
-
-        // slide toward the screen edge when hidden; arrive from it on start
-        property real arrived: 0
-        Component.onCompleted: arrived = 1
-        Behavior on arrived {
-            NumberAnimation {
-                duration: Motion.reveal
-                easing.type: Motion.enterEasing
+        // ── concave fillets ──
+        Repeater {
+            model: win.concave ? scene.fillets() : []
+            delegate: ConcaveCorner {
+                required property var modelData
+                x: modelData.x
+                y: modelData.y
+                r: modelData.r
+                solid: modelData.solid
+                fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+                opacity: pill.presence
+                transform: Translate {
+                    x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
+                    y: win.edge === "top" ? -pill.away : win.edge === "bottom" ? pill.away : 0
+                }
             }
         }
-        readonly property real presence: arrived * win.shown
-        readonly property real away: (1 - presence) * (win.thickness + win.margin + 4)
-        opacity: presence
-        visible: presence > 0.001
-        transform: Translate {
-            x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
-            y: win.edge === "top" ? -pill.away : win.edge === "bottom" ? pill.away : 0
-        }
-        Behavior on width {
-            enabled: !win.vertical && win.anchorAt !== "fill"
-            NumberAnimation {
-                duration: Motion.morph
-                easing.type: Motion.enterEasing
-            }
-        }
-        Behavior on height {
-            enabled: win.vertical && win.anchorAt !== "fill"
-            NumberAnimation {
-                duration: Motion.morph
-                easing.type: Motion.enterEasing
-            }
+        function fillets(): var {
+            const r = Math.max(0, Math.min(spec.concave_radius ?? radius, concaveMode === "edge" ? alongInset : pad));
+            if (r < 1)
+                return [];
+            const px = pill.x, py = pill.y, pw = pill.width, ph = pill.height;
+            const table = {
+                top: { inner: [[px, py + ph, "tl"], [px + pw - r, py + ph, "tr"]], edge: [[px - r, py, "tr"], [px + pw, py, "tl"]] },
+                bottom: { inner: [[px, py - r, "bl"], [px + pw - r, py - r, "br"]], edge: [[px - r, py + ph - r, "br"], [px + pw, py + ph - r, "bl"]] },
+                left: { inner: [[px + pw, py, "tl"], [px + pw, py + ph - r, "bl"]], edge: [[px, py - r, "bl"], [px, py + ph, "tl"]] },
+                right: { inner: [[px - r, py, "tr"], [px - r, py + ph - r, "br"]], edge: [[px + pw - r, py - r, "br"], [px + pw - r, py + ph, "tr"]] }
+            };
+            return table[edge][concaveMode].map(f => ({ x: f[0], y: f[1], solid: f[2], r: r }));
         }
 
-        // the bar's empty space: under the widgets, so it only sees what they let through
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
-            property real rest: 0
-            onClicked: mouse => {
-                const g = mouse.button === Qt.RightButton ? "right" : mouse.button === Qt.MiddleButton ? "middle" : mouse.button === Qt.BackButton ? "back" : mouse.button === Qt.ForwardButton ? "forward" : "left";
-                Actions.run(win.deadZoneAction(g), {
-                    screen: win.screen
-                });
+        // ── contact shadow: depth at the seam while a panel opened from this bar is attached ──
+        Rectangle {
+            readonly property real depth: 12
+            visible: win.spec.contact_shadow === true && opacity > 0
+            opacity: win.panelHere ? pill.presence : 0
+            Behavior on opacity {
+                Anim {
+                    role: "effects"
+                }
             }
-            onWheel: wheel => {
-                const horizontal = Math.abs(wheel.angleDelta.x) > Math.abs(wheel.angleDelta.y);
-                rest += horizontal ? wheel.angleDelta.x : wheel.angleDelta.y;
-                while (Math.abs(rest) >= 120) {
-                    const up = rest > 0;
-                    Actions.run(win.deadZoneAction(horizontal ? (up ? "scroll_left" : "scroll_right") : (up ? "scroll_up" : "scroll_down")), {
-                        screen: win.screen
-                    });
-                    rest -= up ? 120 : -120;
+            x: win.vertical ? (win.edge === "left" ? pill.x + pill.width : pill.x - depth) : pill.x + pill.height / 2
+            y: win.vertical ? pill.y + pill.width / 2 : (win.edge === "top" ? pill.y + pill.height : pill.y - depth)
+            width: win.vertical ? depth : pill.width - pill.height
+            height: win.vertical ? pill.height - pill.width : depth
+            gradient: Gradient {
+                orientation: win.vertical ? Gradient.Horizontal : Gradient.Vertical
+                GradientStop {
+                    position: 0
+                    color: win.edge === "top" || win.edge === "left" ? Theme.alpha(Theme.shadow, 0.5) : "transparent"
+                }
+                GradientStop {
+                    position: 1
+                    color: win.edge === "top" || win.edge === "left" ? "transparent" : Theme.alpha(Theme.shadow, 0.5)
                 }
             }
         }
 
-        BarSections {
-            id: sections
+        Glass {
+            id: pill
 
-            anchors.fill: parent
-            anchors.margins: Metrics.s1
-            bar: win
-            fill: win.anchorAt === "fill"
+            x: win.pillX()
+            y: win.pillY()
+            width: win.vertical ? win.thickness : win.pillLength
+            height: win.vertical ? win.pillLength : win.thickness
+            radius: win.radius
+            corners: win.corners
+            raised: win.shadow
+            fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+            edge: win.border
+            edgeColor: win.borderColor
+            edgeWidth: win.borderWidth
+
+            // slide toward the screen edge when hidden; arrive from it on start
+            property real arrived: 0
+            Component.onCompleted: arrived = 1
+            Behavior on arrived {
+                NumberAnimation {
+                    duration: Motion.reveal
+                    easing.type: Motion.enterEasing
+                }
+            }
+            readonly property real presence: arrived * win.shown
+            readonly property real away: (1 - presence) * (win.thickness + win.margin + 4)
+            opacity: presence
+            visible: presence > 0.001
+            transform: Translate {
+                x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
+                y: win.edge === "top" ? -pill.away : win.edge === "bottom" ? pill.away : 0
+            }
+            Behavior on width {
+                enabled: !win.vertical && win.anchorAt !== "fill"
+                NumberAnimation {
+                    duration: Motion.morph
+                    easing.type: Motion.enterEasing
+                }
+            }
+            Behavior on height {
+                enabled: win.vertical && win.anchorAt !== "fill"
+                NumberAnimation {
+                    duration: Motion.morph
+                    easing.type: Motion.enterEasing
+                }
+            }
+
+            // the bar's empty space: under the widgets, so it only sees what they let through
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+                property real rest: 0
+                onClicked: mouse => {
+                    const g = mouse.button === Qt.RightButton ? "right" : mouse.button === Qt.MiddleButton ? "middle" : mouse.button === Qt.BackButton ? "back" : mouse.button === Qt.ForwardButton ? "forward" : "left";
+                    Actions.run(win.deadZoneAction(g), {
+                        screen: win.screen
+                    });
+                }
+                onWheel: wheel => {
+                    const horizontal = Math.abs(wheel.angleDelta.x) > Math.abs(wheel.angleDelta.y);
+                    rest += horizontal ? wheel.angleDelta.x : wheel.angleDelta.y;
+                    while (Math.abs(rest) >= 120) {
+                        const up = rest > 0;
+                        Actions.run(win.deadZoneAction(horizontal ? (up ? "scroll_left" : "scroll_right") : (up ? "scroll_up" : "scroll_down")), {
+                            screen: win.screen
+                        });
+                        rest -= up ? 120 : -120;
+                    }
+                }
+            }
+
+            BarSections {
+                id: sections
+
+                anchors.fill: parent
+                anchors.margins: Metrics.s1
+                bar: win
+                fill: win.anchorAt === "fill"
+            }
         }
     }
 }

@@ -139,6 +139,13 @@ Singleton {
             ExperiencePolicy.select(name);
             return ExperiencePolicy.profile;
         }
+        function captureBar(key: string, path: string): string {
+            const item = PanelRouter.barItems[key];
+            if (!item)
+                return "no such bar";
+            item.grabToImage(r => r.saveToFile(path));
+            return "ok";
+        }
         function bars(): string {
             return JSON.stringify(PanelRouter.bars);
         }

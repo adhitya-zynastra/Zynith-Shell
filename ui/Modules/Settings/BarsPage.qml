@@ -162,11 +162,20 @@ Column {
                         { key: "visibility", label: "Shows", kind: "choice", default: "always", options: [{ key: "always", label: "Always" }, { key: "smart", label: "When the desktop is clear" }, { key: "autohide", label: "On hover at the edge" }] },
                         { key: "layer", label: "Layer", kind: "choice", default: "top", options: [{ key: "bottom", label: "Under windows" }, { key: "top", label: "Above windows" }, { key: "overlay", label: "Above everything" }] },
                         { key: "reserve", label: "Windows keep clear of it", kind: "toggle", default: false },
+                        { key: "margin_opposite", label: "Extra room kept on its inner side", kind: "int", default: 0, from: 0, to: 200, step: 1, when: { reserve: [true] } },
+                        { key: "reveal_length", label: "Summoned along this much of the edge (0 = its own length)", kind: "int", default: 480, from: 0, to: 3840, step: 10, when: { visibility: ["smart", "autohide"] } },
+                        { key: "reveal_size", label: "That strip's depth", kind: "int", default: 3, from: 1, to: 24, step: 1, when: { visibility: ["smart", "autohide"] } },
+                        { key: "hide_delay_ms", label: "Hides this long after the pointer leaves (ms)", kind: "int", default: 350, from: 0, to: 3000, step: 50, when: { visibility: ["smart", "autohide"] } },
+                        { key: "reveal_on_switch", label: "Shows briefly on a workspace switch", kind: "toggle", default: true, when: { visibility: ["smart", "autohide"] } },
+                        { key: "reveal_on_switch_ms", label: "For (ms)", kind: "int", default: 1200, from: 200, to: 5000, step: 100, when: { visibility: ["smart", "autohide"] } },
+                        { key: "reference", label: "Centred against", kind: "choice", default: "output", options: [{ key: "output", label: "The whole screen" }, { key: "workspace", label: "What other bars leave" }] },
+                        { key: "panel_overlap", label: "Panels tuck under its edge by", kind: "int", default: 0, from: -2, to: 12, step: 1 },
                         { key: "screens", label: "Screens", kind: "list", default: ["*"], hint: "* is every screen; or output names, e.g. eDP-1" }
                     ]
                     valueOf: key => root.bar?.[key] ?? schema.find(s => s.key === key)?.default
                     isSet: key => root.bar?.[key] !== undefined
                     onChanged: (key, value) => root.setBar(key, value)
+                    shows: spec => !spec.when || Object.entries(spec.when).every(([k, v]) => v.includes(root.bar?.[k] ?? schema.find(s => s.key === k)?.default))
                     onCleared: key => Config.clearBarKey(root.barIndex, key)
                 }
             }
@@ -205,11 +214,22 @@ Column {
                         { key: "shadow", label: "Shadow", kind: "toggle", default: true },
                         { key: "font_family", label: "Font", kind: "font", default: "" },
                         { key: "font_scale", label: "Text size", kind: "slider", default: 1, from: 0.6, to: 1.6, step: 0.01 },
+                        { key: "font_weight", label: "Text weight", kind: "select", default: "400", options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => ({ key: String(w), label: String(w) })) },
+                        { key: "scale", label: "Content size", kind: "slider", default: 1, from: 0.5, to: 2, step: 0.01 },
+                        { key: "color", label: "Widget colour", kind: "colour", default: "" },
+                        { key: "icon_color", label: "Widget icon colour", kind: "colour", default: "" },
+                        { key: "concave_edge_corners", label: "Flows into the screen edge (with no edge margin)", kind: "toggle", default: false },
+                        { key: "concave_radius", label: "Its curve", kind: "int", default: 18, from: 2, to: 48, step: 1, when: { concave_edge_corners: [true] } },
+                        { key: "contact_shadow", label: "Shadow at the seam with an open panel", kind: "toggle", default: false },
                         { key: "hover_highlight", label: "Widgets light up on hover", kind: "toggle", default: true },
                         { key: "capsule", label: "Every widget in a capsule", kind: "toggle", default: false },
                         { key: "capsule_fill", label: "Capsule fill", kind: "colour", default: "surface_variant", when: { capsule: [true] } },
                         { key: "capsule_opacity", label: "Capsule opacity", kind: "slider", default: 0.5, from: 0, to: 1, step: 0.01, when: { capsule: [true] } },
-                        { key: "capsule_padding", label: "Capsule padding", kind: "int", default: 0, from: 0, to: 24, step: 1, when: { capsule: [true] } }
+                        { key: "capsule_padding", label: "Capsule padding", kind: "int", default: 0, from: 0, to: 24, step: 1, when: { capsule: [true] } },
+                        { key: "capsule_thickness", label: "Capsule thickness (of the bar)", kind: "slider", default: 1, from: 0.1, to: 1, step: 0.01 },
+                        { key: "capsule_radius", label: "Capsule radius (-1 a pill)", kind: "int", default: -1, from: -1, to: 32, step: 1 },
+                        { key: "capsule_border", label: "Capsule border", kind: "colour", default: "" },
+                        { key: "capsule_foreground", label: "Inside a capsule, widgets are", kind: "colour", default: "" }
                     ]
                     valueOf: key => root.bar?.[key] ?? schema.find(s => s.key === key)?.default
                     shows: spec => !spec.when || Object.entries(spec.when).every(([k, v]) => v.includes(root.bar?.[k] ?? schema.find(s => s.key === k)?.default))

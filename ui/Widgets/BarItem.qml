@@ -37,12 +37,15 @@ Item {
     signal scrolled(int delta)
 
     // ── styling the widget's content reads ──
-    readonly property color ink: (opt("color") ?? "") !== "" ? Theme.colour(opt("color")) : Theme.ink
-    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : ink
+    // the widget's own colour, else its capsule's foreground, else the bar's widget colour, else the theme's
+    readonly property color ink: (opt("color") ?? "") !== "" ? Theme.colour(opt("color")) : capsule && (bar?.capsuleForeground ?? "") !== "" ? Theme.colour(bar.capsuleForeground) : (bar?.widgetColor ?? "") !== "" ? Theme.colour(bar.widgetColor) : Theme.ink
+    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : (bar?.widgetIconColor ?? "") !== "" && !(capsule && (bar?.capsuleForeground ?? "") !== "") ? Theme.colour(bar.widgetIconColor) : ink
+    // label weight: the widget's, else the bar's (100–900)
+    readonly property int weight: Number(opt("font_weight") ?? bar?.fontWeight ?? 400)
     readonly property string family: (opt("font_family") ?? "") !== "" ? opt("font_family") : (bar?.fontFamily ?? "") !== "" ? bar.fontFamily : Type.ui
     // the widget's own text size times its bar's
     readonly property real fontScale: (opt("font_scale") ?? 1) * (bar?.fontScale ?? 1)
-    readonly property real sizeScale: opt("scale") ?? 1
+    readonly property real sizeScale: (opt("scale") ?? 1) * (bar?.contentScale ?? 1)
 
     // a capsule: the widget's own setting, else the bar's default
     readonly property bool capsule: settings.capsule !== undefined ? settings.capsule === true : (bar?.widgetCapsule ?? false)
@@ -76,15 +79,19 @@ Item {
 
     Rectangle {
         visible: root.capsule
-        anchors.fill: parent
-        anchors.margins: 1
+        anchors.centerIn: parent
+        // across the bar: capsule_thickness of it (the widget's, else the bar's; 1 fills)
+        readonly property real across: (root.vertical ? parent.width : parent.height) * Math.max(0.1, Math.min(1, root.settings.capsule_thickness ?? root.bar?.capsuleThickness ?? 1)) - 2
+        width: root.vertical ? across : parent.width - 2
+        height: root.vertical ? parent.height - 2 : across
         radius: {
-            const r = root.opt("capsule_radius");
+            const r = root.settings.capsule_radius ?? root.bar?.capsuleRadius;
             return r === undefined || r === "auto" || r < 0 ? Math.min(width, height) / 2 : r;
         }
         color: Theme.alpha(Theme.colour(root.settings.capsule_fill ?? root.bar?.capsuleFill ?? "surface_variant"), root.settings.capsule_opacity ?? root.bar?.capsuleOpacity ?? 0.5)
-        border.width: (root.settings.capsule_border ?? "") !== "" ? 1 : 0
-        border.color: Theme.colour(root.settings.capsule_border ?? "outline")
+        readonly property string edgeColour: root.settings.capsule_border ?? root.bar?.capsuleBorder ?? ""
+        border.width: edgeColour !== "" ? 1 : 0
+        border.color: edgeColour !== "" ? Theme.colour(edgeColour) : "transparent"
     }
 
     // which gesture a button or a wheel step is
