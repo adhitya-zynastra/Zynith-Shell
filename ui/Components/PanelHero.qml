@@ -13,7 +13,11 @@ Item {
 
     property bool active: true
     readonly property var cfg: Config.controlPanel ?? ({})
-    readonly property real radius: Metrics.radiusSurface
+    // hero_style: card (the wallpaper as an inset, rounded card, clear but for a shade under the type, as the
+    // native Control Center's home) | band (full-bleed across the top of the panel)
+    readonly property bool card: (cfg.hero_style ?? "card") === "card"
+    readonly property real inset: card ? Metrics.s3 : 0
+    readonly property real radius: card ? Metrics.radiusSurface - Metrics.s1 : Metrics.radiusSurface
     readonly property bool showClock: cfg.hero_clock ?? true
     readonly property bool showWeather: cfg.hero_weather ?? true
     readonly property bool showDetails: cfg.hero_details ?? true
@@ -21,9 +25,9 @@ Item {
     // narrow (a page, a small screen): the details step aside so nothing overlaps
     readonly property bool narrow: width < 820
     // how dark the band is under the type, 0 – 1
-    readonly property real shade: Math.max(0, Math.min(1, cfg.hero_shade ?? 0.78))
+    readonly property real shade: Math.max(0, Math.min(1, cfg.hero_shade ?? 0.7))
 
-    implicitHeight: cfg.hero_height ?? 120
+    implicitHeight: cfg.hero_height ?? 150
 
     Hold {
         service: "weather"
@@ -53,6 +57,7 @@ Item {
     Item {
         id: band
         anchors.fill: parent
+        anchors.margins: root.inset
         layer.enabled: true
         layer.effect: MultiEffect {
             maskEnabled: true
@@ -102,11 +107,11 @@ Item {
             gradient: Gradient {
                 GradientStop {
                     position: 0
-                    color: Theme.alpha(Theme.base, root.shade * 0.15)
+                    color: Theme.alpha(Theme.base, root.card ? 0 : root.shade * 0.15)
                 }
                 GradientStop {
-                    position: 0.55
-                    color: Theme.alpha(Theme.base, root.shade * 0.45)
+                    position: root.card ? 0.45 : 0.55
+                    color: Theme.alpha(Theme.base, root.card ? root.shade * 0.08 : root.shade * 0.45)
                 }
                 GradientStop {
                     position: 1
@@ -120,7 +125,7 @@ Item {
                 orientation: Gradient.Horizontal
                 GradientStop {
                     position: 0
-                    color: Theme.alpha(Theme.base, root.shade * 0.55)
+                    color: Theme.alpha(Theme.base, root.shade * (root.card ? 0.35 : 0.55))
                 }
                 GradientStop {
                     position: 0.6
@@ -131,11 +136,13 @@ Item {
     }
     Rectangle {
         id: bandMask
-        anchors.fill: parent
+        anchors.fill: band
         visible: false
         layer.enabled: true
         radius: root.radius
+        // the band's bottom meets the content square; the card is rounded all round
         Rectangle {
+            visible: !root.card
             anchors.bottom: parent.bottom
             width: parent.width
             height: parent.radius
@@ -145,9 +152,9 @@ Item {
     // ── who ──
     Row {
         anchors.left: parent.left
-        anchors.leftMargin: Metrics.s6
+        anchors.leftMargin: Metrics.s6 + root.inset
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Metrics.s5
+        anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0)
         spacing: Metrics.s5
 
         // the picture, ringed in the accent
@@ -198,9 +205,9 @@ Item {
     // ── when, and what it is like out ──
     Column {
         anchors.right: parent.right
-        anchors.rightMargin: Metrics.s6
+        anchors.rightMargin: Metrics.s6 + root.inset
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Metrics.s5
+        anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0)
         spacing: 2
         Label {
             visible: root.showClock

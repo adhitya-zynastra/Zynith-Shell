@@ -352,9 +352,11 @@ Singleton {
                     // pieces show
                     hero: true,
                     hero_pages: "all",
-                    hero_height: 120,
+                    // card (an inset, rounded wallpaper card, clear but under the type) | band (full-bleed)
+                    hero_style: "card",
+                    hero_height: 150,
                     hero_avatar_size: 64,
-                    hero_shade: 0.78,
+                    hero_shade: 0.7,
                     hero_clock: true,
                     hero_weather: true,
                     hero_details: true,
