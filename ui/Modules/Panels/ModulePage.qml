@@ -15,8 +15,13 @@ Column {
     property bool active: true
     signal back
 
-    readonly property int preferredWidth: Math.max(Config.controlPanel?.width ?? 420, 460)
+    // a page among the Control Panel's tabs is as wide as the dashboard (tab_page_width; 0 = the dashboard's),
+    // so switching tabs only changes the height, and its module lays out in columns
+    readonly property var cfg: Config.controlPanel ?? ({})
+    readonly property bool tabbed: (cfg.tab_bar ?? true) && Array.from(cfg.tabs ?? ["control", "media", "audio", "power", "weather", "calendar"]).includes(kind)
+    readonly property int preferredWidth: tabbed ? ((cfg.tab_page_width ?? 0) > 0 ? cfg.tab_page_width : (cfg.dashboard_width ?? 1080)) : Math.max(cfg.width ?? 420, 460)
     readonly property var pages: ({
+            media: { title: "Now playing", caption: Media.app, component: mediaPage },
             audio: { title: "Sound", caption: "Devices and apps", component: audio },
             power: { title: "Power", caption: "Profiles and battery", component: power },
             monitor: { title: "Displays", caption: "Brightness and colour", component: monitor },
@@ -55,6 +60,14 @@ Column {
         }
     }
 
+    Component {
+        id: mediaPage
+        MediaModule {
+            screen: root.screen
+            active: root.active
+            expanded: true
+        }
+    }
     Component {
         id: audio
         AudioModule {

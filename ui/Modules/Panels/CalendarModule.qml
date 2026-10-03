@@ -7,8 +7,44 @@ import qs.Services
 // The month, and what is coming up in the calendars the native shell syncs (calendar-events). Week numbers,
 // the first day of the week and the events list are [control_panel] calendar_week_numbers, week_start and
 // calendar_events. A wheel or the arrows turn the month; the title goes back to today.
-Column {
+Flow {
     id: root
+    // On its page the module flows into columns — top to bottom, wrapping at a height that balances them
+    // ([control_panel] page_columns); in the Control Panel it is one stack, as before.
+    readonly property int pageColumns: expanded ? Math.max(1, Config.controlPanel?.page_columns ?? 2) : 1
+    readonly property real colW: pageColumns > 1 ? (width - spacing * (pageColumns - 1)) / pageColumns : width
+    flow: pageColumns > 1 ? Flow.TopToBottom : Flow.LeftToRight
+    height: pageColumns > 1 ? balancedHeight() : implicitHeight
+    function columnsFor(h: real): int {
+        let cols = 1, used = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            const need = (used > 0 ? used + spacing : 0) + c.height;
+            if (need > h && used > 0) {
+                cols++;
+                used = c.height;
+            } else {
+                used = need;
+            }
+        }
+        return cols;
+    }
+    function balancedHeight(): real {
+        let total = 0, tallest = 0, n = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            total += c.height;
+            tallest = Math.max(tallest, c.height);
+            n++;
+        }
+        total += spacing * Math.max(0, n - 1);
+        let h = Math.max(tallest, total / pageColumns);
+        for (let i = 0; i < 60 && columnsFor(h) > pageColumns; i++)
+            h += 12;
+        return Math.ceil(h);
+    }
 
     property var screen: null
     property bool active: true
@@ -91,7 +127,7 @@ Column {
 
     // ── the month and the way through it ──
     Item {
-        width: root.width
+        width: root.colW
         height: 30
         Label {
             id: title
@@ -137,7 +173,7 @@ Column {
     property real slideFrom: 0
     Item {
         id: gridBox
-        width: root.width
+        width: root.colW
         height: weekdays.height + Metrics.s1 + grid.height
         clip: true
 
@@ -268,7 +304,7 @@ Column {
     // ── what is coming up ──
     Column {
         visible: root.showEvents && (root.expanded || root.events.length > 0)
-        width: root.width
+        width: root.colW
         spacing: Metrics.s1
 
         Label {
@@ -292,7 +328,7 @@ Column {
                 required property var modelData
                 readonly property date start: new Date(modelData.start * 1000)
                 readonly property date end: new Date(modelData.end * 1000)
-                width: root.width
+                width: root.colW
                 height: 40
                 Rectangle {
                     id: bar

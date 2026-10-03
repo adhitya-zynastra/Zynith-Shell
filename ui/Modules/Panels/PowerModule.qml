@@ -8,8 +8,44 @@ import qs.Services
 // Power: the system profile and Zynith's Experience profile, the battery, its charge limit (UPower's preset,
 // through the native charge-limit), and the batteries of what is paired. The page adds the battery's health
 // and capacity, every peripheral, and the Experience profile picker.
-Column {
+Flow {
     id: root
+    // On its page the module flows into columns — top to bottom, wrapping at a height that balances them
+    // ([control_panel] page_columns); in the Control Panel it is one stack, as before.
+    readonly property int pageColumns: expanded ? Math.max(1, Config.controlPanel?.page_columns ?? 2) : 1
+    readonly property real colW: pageColumns > 1 ? (width - spacing * (pageColumns - 1)) / pageColumns : width
+    flow: pageColumns > 1 ? Flow.TopToBottom : Flow.LeftToRight
+    height: pageColumns > 1 ? balancedHeight() : implicitHeight
+    function columnsFor(h: real): int {
+        let cols = 1, used = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            const need = (used > 0 ? used + spacing : 0) + c.height;
+            if (need > h && used > 0) {
+                cols++;
+                used = c.height;
+            } else {
+                used = need;
+            }
+        }
+        return cols;
+    }
+    function balancedHeight(): real {
+        let total = 0, tallest = 0, n = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            total += c.height;
+            tallest = Math.max(tallest, c.height);
+            n++;
+        }
+        total += spacing * Math.max(0, n - 1);
+        let h = Math.max(tallest, total / pageColumns);
+        for (let i = 0; i < 60 && columnsFor(h) > pageColumns; i++)
+            h += 12;
+        return Math.ceil(h);
+    }
 
     property var screen: null
     property bool active: true
@@ -58,7 +94,7 @@ Column {
 
     // ── header: the profile in use (the Control Panel's section head names the section; here, the Experience) ──
     Item {
-        width: root.width
+        width: root.colW
         height: 16
         Label {
             role: "data"
@@ -79,14 +115,14 @@ Column {
         }
     }
     Segmented {
-        width: root.width
+        width: root.colW
         current: ControlShortcuts.profile
         options: PowerProfiles.hasPerformanceProfile ? [{ key: "saver", label: "Saver" }, { key: "balanced", label: "Balanced" }, { key: "performance", label: "Performance" }] : [{ key: "saver", label: "Saver" }, { key: "balanced", label: "Balanced" }]
         onPicked: key => PowerProfiles.profile = key === "saver" ? PowerProfile.PowerSaver : key === "performance" ? PowerProfile.Performance : PowerProfile.Balanced
     }
     Label {
         visible: PowerProfiles.degradationReason !== PerformanceDegradationReason.None && ControlShortcuts.profile === "performance"
-        width: root.width
+        width: root.colW
         role: "caption"
         tone: "faint"
         wrapMode: Text.WordWrap
@@ -96,7 +132,7 @@ Column {
     // ── the battery ──
     Item {
         visible: Power.present
-        width: root.width
+        width: root.colW
         height: 44
         Icon {
             id: battIcon
@@ -178,7 +214,7 @@ Column {
     Grid {
         id: facts
         visible: root.expanded && Power.present
-        width: root.width
+        width: root.colW
         columns: 3
         rowSpacing: Metrics.s3
         columnSpacing: Metrics.s3
@@ -216,7 +252,7 @@ Column {
     }
     Label {
         visible: root.expanded && root.limit.supported === true && root.limit.start !== undefined
-        width: root.width
+        width: root.colW
         role: "caption"
         tone: "faint"
         wrapMode: Text.WordWrap
@@ -230,7 +266,7 @@ Column {
     }
     Column {
         visible: root.peripherals.length > 0
-        width: root.width
+        width: root.colW
         spacing: Metrics.s1
         Label {
             visible: root.expanded
@@ -246,7 +282,7 @@ Column {
                 model: root.expanded ? root.peripherals : root.peripherals.slice(0, 4)
                 delegate: Rectangle {
                     required property var modelData
-                    width: root.expanded ? root.width : chipRow.implicitWidth + Metrics.s4 * 2
+                    width: root.expanded ? root.colW : chipRow.implicitWidth + Metrics.s4 * 2
                     height: root.expanded ? 40 : 28
                     radius: height / 2
                     color: Theme.well
@@ -284,7 +320,7 @@ Column {
     // ── the Experience profile (the page) ──
     Column {
         visible: root.expanded
-        width: root.width
+        width: root.colW
         spacing: Metrics.s2
         Label {
             role: "caption"

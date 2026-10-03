@@ -5,8 +5,44 @@ import qs.Services
 
 // The weather the native shell already fetches: now, and the days or hours ahead ([control_panel]
 // weather_forecast). Its page adds the details: feels like, humidity, wind, UV, sunrise and sunset.
-Column {
+Flow {
     id: root
+    // On its page the module flows into columns — top to bottom, wrapping at a height that balances them
+    // ([control_panel] page_columns); in the Control Panel it is one stack, as before.
+    readonly property int pageColumns: expanded ? Math.max(1, Config.controlPanel?.page_columns ?? 2) : 1
+    readonly property real colW: pageColumns > 1 ? (width - spacing * (pageColumns - 1)) / pageColumns : width
+    flow: pageColumns > 1 ? Flow.TopToBottom : Flow.LeftToRight
+    height: pageColumns > 1 ? balancedHeight() : implicitHeight
+    function columnsFor(h: real): int {
+        let cols = 1, used = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            const need = (used > 0 ? used + spacing : 0) + c.height;
+            if (need > h && used > 0) {
+                cols++;
+                used = c.height;
+            } else {
+                used = need;
+            }
+        }
+        return cols;
+    }
+    function balancedHeight(): real {
+        let total = 0, tallest = 0, n = 0;
+        for (const c of children) {
+            if (!c.visible || c.height <= 0)
+                continue;
+            total += c.height;
+            tallest = Math.max(tallest, c.height);
+            n++;
+        }
+        total += spacing * Math.max(0, n - 1);
+        let h = Math.max(tallest, total / pageColumns);
+        for (let i = 0; i < 60 && columnsFor(h) > pageColumns; i++)
+            h += 12;
+        return Math.ceil(h);
+    }
 
     property var screen: null
     property bool active: true
@@ -27,7 +63,7 @@ Column {
     // ── not there yet ──
     Label {
         visible: !Weather.valid
-        width: root.width
+        width: root.colW
         role: "label"
         tone: "faint"
         wrapMode: Text.WordWrap
@@ -37,7 +73,7 @@ Column {
     // ── now ──
     Item {
         visible: Weather.valid
-        width: root.width
+        width: root.colW
         height: 64
         Interactive {
             anchors.fill: parent
@@ -89,7 +125,7 @@ Column {
     Grid {
         id: details
         visible: Weather.valid && root.expanded
-        width: root.width
+        width: root.colW
         columns: 3
         rowSpacing: Metrics.s3
         columnSpacing: Metrics.s3
@@ -144,7 +180,7 @@ Column {
     // ── ahead: the days, or the hours ──
     Segmented {
         visible: Weather.valid && root.expanded
-        width: root.width
+        width: root.colW
         current: root.view
         options: [{ key: "daily", label: "Days" }, { key: "hourly", label: "Hours" }]
         onPicked: key => {
@@ -155,7 +191,7 @@ Column {
     Item {
         id: forecast
         visible: Weather.valid
-        width: root.width
+        width: root.colW
         height: 92
         clip: true
 

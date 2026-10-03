@@ -53,6 +53,7 @@ Singleton {
     readonly property var panels: panelsFile.values.panels
     readonly property var launcher: panelsFile.values.launcher
     readonly property var controlPanel: panelsFile.values.control_panel
+    readonly property var media: panelsFile.values.media
     readonly property var osd: ({
             enabled: panelsFile.values.osd.enabled,
             durationMs: panelsFile.values.osd.duration_ms,
@@ -278,8 +279,50 @@ Singleton {
         path: Paths.config + "/panels.toml"
         header: "Panels: the launcher, the Control Panel and the OSD."
         defaults: ({
+                // the media module (the dashboard's and its page)
+                media: {
+                    // the words of the song from lrclib.net, asked only while lyrics are on screen (sends the
+                    // artist, title, album and length); false never asks
+                    lyrics: true,
+                    // lrclib | none
+                    lyrics_provider: "lrclib",
+                    // lines of lyrics on the dashboard (the page shows the whole sheet, in a column this share wide)
+                    lyrics_lines: 2,
+                    lyrics_column: 0.36,
+                    // the spectrum: ring (around the record) | bars (a strip under the controls) | both | and
+                    // how far the ring reaches (px), how many bars, how tall, their second colour
+                    visualizer: true,
+                    visualizer_style: "both",
+                    visualizer_reach: 18,
+                    bars: 32,
+                    bars_height: 26,
+                    bars_color_2: "tertiary",
+                    // the record turns while it plays
+                    spin: true,
+                    // seconds per turn
+                    spin_seconds: 24,
+                    // the record's size on the dashboard and on the page
+                    art_size: 104,
+                    page_art_size: 180,
+                    // the art's colour washes the module's plate
+                    art_tint: true,
+                    // chips to pick among players when more than one is open
+                    player_chips: true
+                },
                 panels: {
-                    width: 400
+                    width: 400,
+                    // how a panel changes into another (another icon's, a tab, a page): morph (the card glides
+                    // and resizes, contents cross-fade) | fade (contents cross-fade in place) | none
+                    switch: "morph",
+                    // liquid (a slight overshoot) | emphasized | smooth | style (the animation style's)
+                    morph_curve: "liquid",
+                    // the glide's length in ms; 0 follows the animation speed
+                    morph_ms: 0,
+                    // how far the outgoing and incoming contents shrink while they cross (1 = not at all)
+                    content_scale: 0.94,
+                    // the list panels (Wi‑Fi, Bluetooth): wide, their rows in columns
+                    list_width: 760,
+                    list_columns: 2
                 },
                 launcher: {
                     // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
@@ -304,18 +347,37 @@ Singleton {
                     // screen_time system notifications clipboard
                     // dashboard (modules in columns, wide and short) | column (one tall column of `modules`)
                     layout: "dashboard",
+                    // the hero: the wallpaper across the top with you on it; hero_pages all (over every tab) |
+                    // dashboard; its height, the picture's size, the shade under the type (0 – 1), and which
+                    // pieces show
+                    hero: true,
+                    hero_pages: "all",
+                    hero_height: 120,
+                    hero_avatar_size: 64,
+                    hero_shade: 0.78,
+                    hero_clock: true,
+                    hero_weather: true,
+                    hero_details: true,
+                    hero_drift: true,
+                    // the hero on a panel opened by hovering a bar icon (a quick look) too
+                    hero_on_peek: false,
                     // the dashboard: its width and its columns, each a list of modules top to bottom, and a
                     // weight per column (1 each when left out)
-                    dashboard_width: 1180,
-                    columns: [["header", "levels", "system"], ["shortcuts", "media"], ["calendar"], ["weather", "power"]],
-                    column_widths: [1, 1, 1.05, 1.05],
+                    dashboard_width: 1080,
+                    columns: [["media"], ["shortcuts", "levels"], ["weather"]],
+                    column_widths: [1.6, 1, 1],
                     // a row of tabs over the Control Panel and its pages; which, in order (control media audio
                     // power monitor calendar weather screen-time system network bluetooth notifications), and
                     // tab_labels / tab_icons to rename or re-icon one: { audio = "Sound" }
                     tab_bar: true,
+                    // inline (icon beside label, a sliding pill) | stacked (icon over label, an underline)
+                    tab_style: "inline",
                     tabs: ["control", "media", "audio", "power", "weather", "calendar"],
                     tab_labels: {},
                     tab_icons: {},
+                    // a tab's page: its width (0 = the dashboard's) and how many columns its module flows into
+                    tab_page_width: 0,
+                    page_columns: 2,
                     tab_icons_shown: true,
                     tab_labels_shown: true,
                     // the column layout: in order
@@ -328,6 +390,8 @@ Singleton {
                     // auto (cards on the dashboard, plain in a column) | plain | cards (each module on its own
                     // soft card)
                     module_style: "auto",
+                    // indexed heads over the modules: auto (in a column, not on the dashboard's cards) | true | false
+                    section_heads: "auto",
                     // the session button in the header (the native Control Center's)
                     session_button: true,
                     // shortcut tiles, in order (ControlShortcuts holds the catalogue; custom:<name> are yours)

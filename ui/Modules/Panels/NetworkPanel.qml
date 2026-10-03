@@ -18,6 +18,10 @@ Column {
     padding: Metrics.s6
     spacing: Metrics.s4
     readonly property real inner: width - padding * 2
+    // wide rather than tall: [panels] list_width, and the list in list_columns columns
+    readonly property int preferredWidth: Config.panels?.list_width ?? 760
+    readonly property int listColumns: Math.max(1, Config.panels?.list_columns ?? 2)
+    readonly property real cell: (inner - Metrics.s2 * (listColumns - 1)) / listColumns
 
     // the list (and NetworkManager's per-network signals) exists only while this panel is on screen
     property bool holding: false
@@ -49,9 +53,11 @@ Column {
         }
     }
 
-    Column {
+    Grid {
         width: root.inner
-        spacing: Metrics.s1
+        columns: root.listColumns
+        rowSpacing: Metrics.s1
+        columnSpacing: Metrics.s2
         visible: Network.wifiEnabled
 
         Repeater {
@@ -62,7 +68,7 @@ Column {
 
             delegate: ListRow {
                 required property var modelData
-                width: root.inner
+                width: root.cell
                 icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
                 title: modelData.ssid
                 detail: !modelData.secured ? "Open" : modelData.known ? "Saved" : "Secured"
@@ -75,7 +81,7 @@ Column {
 
         Label {
             visible: Network.networks.length === 0
-            width: root.inner
+            width: root.cell
             role: "body"
             tone: "faint"
             text: "Looking for networks…"

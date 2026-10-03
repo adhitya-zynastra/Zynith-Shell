@@ -21,7 +21,7 @@ Column {
     // [control_panel] layout: dashboard (modules in columns side by side, wide and short — Caelestia's
     // dashboard) | column (one tall column, the earlier look)
     readonly property bool dashboard: (cfg.layout ?? "dashboard") === "dashboard"
-    readonly property int preferredWidth: dashboard ? (cfg.dashboard_width ?? 1180) : (cfg.width ?? 420)
+    readonly property int preferredWidth: dashboard ? (cfg.dashboard_width ?? 1080) : (cfg.width ?? 420)
 
     function canonical(m: string): string {
         return m === "connectivity" || m === "toggles" ? "shortcuts" : m === "screen-time" ? "screen_time" : m;
@@ -42,7 +42,7 @@ Column {
     // [control_panel] columns: the dashboard's columns, each a list of modules top to bottom
     readonly property var columns: {
         const seen = [];
-        const given = Array.from(cfg.columns ?? [["header", "levels", "system"], ["shortcuts", "media"], ["calendar"], ["weather", "power"]]);
+        const given = Array.from(cfg.columns ?? [["media"], ["shortcuts", "levels"], ["weather"]]);
         return given.map(c => dedupe(typeof c === "string" ? [c] : Array.from(c), seen)).filter(c => c.length > 0);
     }
     // [control_panel] column_widths: a weight per column (missing or 0 = 1)
@@ -54,7 +54,7 @@ Column {
     readonly property string moduleStyle: cfg.module_style ?? "auto"
     readonly property bool cards: moduleStyle === "cards" || (moduleStyle === "auto" && dashboard)
     // [control_panel] section_heads: each module under an indexed head (on by default)
-    readonly property bool heads: cfg.section_heads !== false
+    readonly property bool heads: cfg.section_heads === true || ((cfg.section_heads ?? "auto") === "auto" && !dashboard)
     readonly property var titles: ({
             shortcuts: "Quick",
             levels: "Levels",
@@ -391,93 +391,12 @@ Column {
         }
     }
 
-    // ── media ───────────────────────────────────────────────────────────────
+    // ── media: now playing, with the spectrum, the timeline and the words ──
     Component {
         id: media
-        Item {
-            visible: Media.present
-            implicitHeight: Media.present ? 64 : 0
-
-            Interactive {
-                anchors.fill: parent
-                anchors.rightMargin: 116
-                anchors.margins: -Metrics.s2
-                radius: Metrics.radiusLg
-                onClicked: root.go("media")
-            }
-            Rectangle {
-                id: art
-                width: 64
-                height: 64
-                radius: Metrics.radiusMd
-                color: Theme.well
-                clip: true
-                Image {
-                    anchors.fill: parent
-                    source: Media.art
-                    sourceSize.width: ExperiencePolicy.artSize
-                    sourceSize.height: ExperiencePolicy.artSize
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    opacity: status === Image.Ready ? 1 : 0
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Motion.contentIn
-                        }
-                    }
-                }
-                Icon {
-                    anchors.centerIn: parent
-                    visible: Media.art === ""
-                    name: "music"
-                    tone: "faint"
-                    size: 22
-                }
-            }
-            Column {
-                anchors.left: art.right
-                anchors.leftMargin: Metrics.s4
-                anchors.right: controls.left
-                anchors.rightMargin: Metrics.s2
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                Label {
-                    width: parent.width
-                    role: "body"
-                    font.weight: Font.Medium
-                    text: Media.title
-                }
-                Label {
-                    width: parent.width
-                    role: "label"
-                    tone: "muted"
-                    text: Media.artist || Media.app
-                }
-            }
-            Row {
-                id: controls
-                anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
-                IconButton {
-                    icon: "player-skip-back-filled"
-                    iconSize: 14
-                    tone: "muted"
-                    onClicked: Media.previous()
-                }
-                IconButton {
-                    icon: Media.playing ? "player-pause-filled" : "player-play-filled"
-                    size: 36
-                    iconSize: 16
-                    active: Media.playing
-                    onClicked: Media.toggle()
-                }
-                IconButton {
-                    icon: "player-skip-forward-filled"
-                    iconSize: 14
-                    tone: "muted"
-                    onClicked: Media.next()
-                }
-            }
+        MediaModule {
+            screen: root.screen
+            active: root.active
         }
     }
 
@@ -492,17 +411,21 @@ Column {
                 radius: Metrics.radiusMd
                 onClicked: root.go("system")
             }
-            Row {
+            // side by side where there is room, stacked in a narrow column
+            Grid {
                 id: systemRow
                 width: parent.width
-                spacing: Metrics.s5
+                columns: width >= 320 ? 2 : 1
+                columnSpacing: Metrics.s5
+                rowSpacing: Metrics.s3
+                readonly property real cell: columns === 2 ? (width - columnSpacing) / 2 : width
                 Meter {
-                    width: (parent.width - parent.spacing) / 2
+                    width: systemRow.cell
                     label: "CPU"
                     value: System.cpu
                 }
                 Meter {
-                    width: (parent.width - parent.spacing) / 2
+                    width: systemRow.cell
                     label: "Memory"
                     value: System.memUsed
                     readout: (System.memUsed * System.memTotalGiB).toFixed(1) + " / " + System.memTotalGiB.toFixed(0) + " GB"

@@ -172,6 +172,8 @@ var glyphs = {
     "power": "\ueb0d",
     "puzzle": "\ueb10",
     "refresh": "\ueb13",
+    "repeat": "\ueb72",
+    "repeat-once": "\ueb71",
     "ripple": "\ued82",
     "rocket": "\uec45",
     "rotate": "\ueb16",

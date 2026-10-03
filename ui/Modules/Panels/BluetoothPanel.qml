@@ -18,6 +18,10 @@ Column {
     padding: Metrics.s6
     spacing: Metrics.s4
     readonly property real inner: width - padding * 2
+    // wide rather than tall: [panels] list_width, and the list in list_columns columns
+    readonly property int preferredWidth: Config.panels?.list_width ?? 760
+    readonly property int listColumns: Math.max(1, Config.panels?.list_columns ?? 2)
+    readonly property real cell: (inner - Metrics.s2 * (listColumns - 1)) / listColumns
 
     readonly property var devices: (Bluetooth.adapter?.devices.values ?? []).filter(d => d.paired || d.name).slice().sort((a, b) => (b.connected - a.connected) || (b.paired - a.paired) || a.name.localeCompare(b.name))
 
@@ -47,9 +51,11 @@ Column {
     Component.onDestruction: if (Bluetooth.adapter?.discovering)
         Bluetooth.adapter.discovering = false
 
-    Column {
+    Grid {
         width: root.inner
-        spacing: Metrics.s1
+        columns: root.listColumns
+        rowSpacing: Metrics.s1
+        columnSpacing: Metrics.s2
         visible: Bluetooth.enabled
 
         Repeater {
@@ -57,7 +63,7 @@ Column {
 
             delegate: ListRow {
                 required property var modelData
-                width: root.inner
+                width: root.cell
                 icon: modelData.connected ? "bluetooth-connected" : "bluetooth"
                 title: modelData.name
                 detail: modelData.batteryAvailable ? Math.round(modelData.battery * 100) + "%" : modelData.paired ? "Paired" : ""

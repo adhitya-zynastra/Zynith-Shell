@@ -26,8 +26,91 @@ PanelWindow {
     // never taller than the screen leaves room for: past that, the content scrolls inside the card
     readonly property real maxCardHeight: edge === "top" || edge === "bottom" ? sh - 2 * (extent + gap) : sh - 2 * screenMargin
     readonly property real cardHeight: bare ? sh : Math.min(content.implicitHeight, maxCardHeight)
-    // the window grows at once and shrinks after the card has, so it never resizes every frame
-    readonly property real windowCardHeight: Math.max(cardHeight, card.height)
+    // ── the morph: a panel that changes (another icon's panel, a tab, content that grows) glides there ──
+    // [panels] switch: morph (the card moves and resizes, contents cross-fade) | fade | none;
+    // morph_curve: liquid (a slight overshoot) | emphasized | smooth | style (the animation style's);
+    // morph_ms: 0 follows the animation speed
+    readonly property var pcfg: Config.panels ?? ({})
+    readonly property bool morphs: (pcfg.switch ?? "morph") === "morph" && !bare
+    readonly property int morphMs: (pcfg.morph_ms ?? 0) > 0 ? Motion.ms(pcfg.morph_ms) : Motion.spatial
+    readonly property var morphCurve: ({
+            liquid: Motion.curves.expressiveDefaultSpatial,
+            emphasized: Motion.curves.emphasized,
+            smooth: Motion.curves.emphasizedDecel,
+            style: Motion.spatialCurve
+        })[pcfg.morph_curve ?? "liquid"] ?? Motion.curves.expressiveDefaultSpatial
+    // the card where it is going, and where it is drawn (animated towards it)
+    readonly property var target: ({
+            x: cardX,
+            y: cardY,
+            w: panelWidth,
+            h: cardHeight
+        })
+    readonly property bool morphReady: morphs && revealed > 0.99 && !closing
+    property real ax: cardX
+    property real ay: cardY
+    property real aw: panelWidth
+    property real ah: cardHeight
+    Behavior on ax {
+        enabled: win.morphReady
+        NumberAnimation {
+            duration: win.morphMs
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: win.morphCurve
+        }
+    }
+    Behavior on ay {
+        enabled: win.morphReady
+        NumberAnimation {
+            duration: win.morphMs
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: win.morphCurve
+        }
+    }
+    Behavior on aw {
+        enabled: win.morphReady
+        NumberAnimation {
+            duration: win.morphMs
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: win.morphCurve
+        }
+    }
+    Behavior on ah {
+        enabled: win.morphReady || (win.revealed > 0.99 && !win.closing)
+        NumberAnimation {
+            duration: win.morphReady ? win.morphMs : Motion.morph
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: win.morphReady ? win.morphCurve : Motion.enterCurve
+        }
+    }
+    // The window spans where the card was and where it is going while it glides, so the surface is
+    // resized once per change, never every frame; it settles on the target afterwards. (The overshoot of
+    // the liquid curve stays inside the shadow pad.)
+    property var span: ({
+            x: cardX,
+            y: cardY,
+            w: panelWidth,
+            h: cardHeight
+        })
+    function unite(a: var, b: var): var {
+        const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+        return {
+            x: x,
+            y: y,
+            w: Math.max(a.x + a.w, b.x + b.w) - x,
+            h: Math.max(a.y + a.h, b.y + b.h) - y
+        };
+    }
+    onTargetChanged: {
+        const now = { x: ax, y: ay, w: aw, h: ah };
+        span = unite(settle.running ? unite(span, now) : now, target);
+        settle.restart();
+    }
+    Timer {
+        id: settle
+        interval: win.morphMs + 60
+        onTriggered: win.span = win.target
+    }
     readonly property int pad: bare ? 0 : ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
     readonly property int gap: Metrics.s3
     readonly property int screenMargin: Metrics.s3
@@ -52,8 +135,8 @@ PanelWindow {
             h: Math.round(cardHeight)
         })
     onCardRectChanged: PanelRouter.noteRect(screen?.name ?? "", cardRect)
-    readonly property real winX: Math.max(0, cardX - pad)
-    readonly property real winY: Math.max(0, cardY - pad)
+    readonly property real winX: Math.max(0, span.x - pad)
+    readonly property real winY: Math.max(0, span.y - pad)
 
     WlrLayershell.namespace: "zynith-panel"
     WlrLayershell.layer: WlrLayer.Overlay
@@ -70,8 +153,8 @@ PanelWindow {
         left: winX
         top: winY
     }
-    implicitWidth: cardX - winX + panelWidth + pad
-    implicitHeight: cardY - winY + windowCardHeight + pad
+    implicitWidth: span.x - winX + span.w + pad
+    implicitHeight: span.y - winY + span.h + pad
 
     mask: Region {
         item: card
@@ -183,23 +266,16 @@ PanelWindow {
         // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
         Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
 
-        x: win.cardX - win.winX
-        y: win.cardY - win.winY
-        width: win.panelWidth
-        height: win.cardHeight
+        x: win.ax - win.winX
+        y: win.ay - win.winY
+        width: win.aw
+        height: win.ah
         radius: Metrics.radiusSurface
         raised: !win.bare
         fill: win.bare ? "transparent" : Theme.glass
         edge: !win.bare
         sheen: !win.bare && ExperiencePolicy.effectsQuality !== "minimal"
 
-        Behavior on height {
-            enabled: win.revealed > 0.99
-            NumberAnimation {
-                duration: Motion.morph
-                easing.type: Motion.enterEasing
-            }
-        }
         opacity: win.bare ? 1 : win.revealed
 
         // grow from the bar side, a few pixels of travel
@@ -246,8 +322,12 @@ PanelWindow {
             PanelContent {
                 id: content
 
-                width: parent.width
+                // laid out at the size it is going to, centred in the card while the card glides there (the
+                // card clips it), so nothing reflows every frame
+                width: win.panelWidth
+                x: Math.round((scroller.width - width) / 2)
                 panelId: win.held?.id ?? ""
+                peek: win.held?.transient ?? false
                 history: win.held?.history ?? []
                 context: win.held?.context ?? ""
                 showings: win.showings
