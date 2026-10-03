@@ -66,7 +66,10 @@ Scope {
 
                 // the widgets step back while the editor shows them
                 Item {
+                    id: stage
                     anchors.fill: parent
+                    // for diagnostics: the desktop's own pixels, windows or not
+                    Component.onCompleted: PanelRouter.barItems["desktop@" + perScreen.modelData.name] = stage
                     opacity: Desktop.editing ? 0 : 1
                     visible: opacity > 0
                     Behavior on opacity {
