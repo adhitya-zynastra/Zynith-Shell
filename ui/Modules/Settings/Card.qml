@@ -11,19 +11,17 @@ Rectangle {
     property alias spacing: body.spacing
 
     implicitHeight: body.implicitHeight + Metrics.s5 * 2 + (caption ? 22 : 0)
-    radius: Metrics.radiusLg
-    color: Theme.surfaceLow
-    border.width: Metrics.hairline
-    border.color: Theme.hairline
+    // an Optics plate: a tone step, no edge
+    radius: Metrics.radiusPlate
+    color: Theme.plate
 
     Label {
         id: head
         visible: root.caption !== ""
         x: Metrics.s5
         y: Metrics.s5
-        role: "caption"
+        role: "data"
         tone: "faint"
-        caps: true
         text: root.caption
     }
 
