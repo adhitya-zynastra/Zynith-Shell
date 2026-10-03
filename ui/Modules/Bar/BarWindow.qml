@@ -200,10 +200,19 @@ PanelWindow {
     // input follows where the bar is going, not where its animation is: hidden takes only the strip
     // (while it shows, its strip stays live too, or a pointer resting on the strip beside it would flicker it)
     mask: Region {
-        item: win.wantsHidden ? strip : pill
+        item: win.wantsHidden ? strip : hitbox
         Region {
             item: win.hides && !win.wantsHidden ? strip : null
         }
+    }
+    // the bar's input shape, a plain item directly in the window: naming the pill (inside the scene, with its
+    // slide transform) here left the bars taking no input at all — tested with a real pointer
+    Item {
+        id: hitbox
+        x: scene.x + pill.x
+        y: scene.y + pill.y
+        width: pill.width
+        height: pill.height
     }
 
     HoverHandler {
