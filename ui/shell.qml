@@ -28,4 +28,5 @@ ShellRoot {
     NotificationPopups {}
     DesktopLayer {}
     WallpaperReveal {}
+    OverviewCompanion {}
 }
