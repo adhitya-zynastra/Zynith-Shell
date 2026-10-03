@@ -18,19 +18,41 @@ Column {
     signal back
     property bool active: true
     readonly property var cfg: Config.controlPanel ?? ({})
-    readonly property int preferredWidth: cfg.width ?? 420
+    // [control_panel] layout: dashboard (modules in columns side by side, wide and short — Caelestia's
+    // dashboard) | column (one tall column, the earlier look)
+    readonly property bool dashboard: (cfg.layout ?? "dashboard") === "dashboard"
+    readonly property int preferredWidth: dashboard ? (cfg.dashboard_width ?? 1180) : (cfg.width ?? 420)
 
+    function canonical(m: string): string {
+        return m === "connectivity" || m === "toggles" ? "shortcuts" : m === "screen-time" ? "screen_time" : m;
+    }
     // the old switch rows are the shortcut tiles now; a list that still names them gets the tiles, once
-    readonly property var modules: {
+    function dedupe(list: var, seen: var): var {
         const out = [];
-        for (const m of Array.from(cfg.modules ?? ["header", "shortcuts", "levels", "media", "power", "system"])) {
-            const id = m === "connectivity" || m === "toggles" ? "shortcuts" : m === "screen-time" ? "screen_time" : m;
-            if (!out.includes(id))
+        for (const m of Array.from(list ?? [])) {
+            const id = canonical(String(m));
+            if (!seen.includes(id)) {
+                seen.push(id);
                 out.push(id);
+            }
         }
         return out;
     }
-    readonly property bool cards: cfg.module_style === "cards"
+    readonly property var modules: dedupe(cfg.modules ?? ["header", "shortcuts", "levels", "media", "power", "system"], [])
+    // [control_panel] columns: the dashboard's columns, each a list of modules top to bottom
+    readonly property var columns: {
+        const seen = [];
+        const given = Array.from(cfg.columns ?? [["header", "levels", "system"], ["shortcuts", "media"], ["calendar"], ["weather", "power"]]);
+        return given.map(c => dedupe(typeof c === "string" ? [c] : Array.from(c), seen)).filter(c => c.length > 0);
+    }
+    // [control_panel] column_widths: a weight per column (missing or 0 = 1)
+    readonly property var weights: columns.map((c, i) => Math.max(0.1, Number((cfg.column_widths ?? [])[i] ?? 1) || 1))
+    readonly property real weightSum: weights.reduce((a, b) => a + b, 0)
+    // every module shown, in reading order (numbers the section heads)
+    readonly property var order: dashboard ? columns.reduce((all, c) => all.concat(c), []) : modules
+    // cards: each module on its own soft plate (the dashboard's default, as Caelestia's blocks)
+    readonly property string moduleStyle: cfg.module_style ?? "auto"
+    readonly property bool cards: moduleStyle === "cards" || (moduleStyle === "auto" && dashboard)
     // [control_panel] section_heads: each module under an indexed head (on by default)
     readonly property bool heads: cfg.section_heads !== false
     readonly property var titles: ({
@@ -47,7 +69,6 @@ Column {
             notifications: "Notifications",
             clipboard: "Clipboard"
         })
-
     // the gap between modules is each shown module's own (below it), so a module that has nothing to show
     // takes neither room nor a gap
     readonly property real gap: cfg.spacing ?? Metrics.s5
@@ -70,11 +91,11 @@ Column {
     // what this panel holds while it is on screen
     Hold {
         service: "system"
-        when: root.active && root.modules.includes("system")
+        when: root.active && root.order.includes("system")
     }
     Hold {
         service: "backlight"
-        when: root.active && root.modules.includes("levels")
+        when: root.active && root.order.includes("levels")
     }
     onActiveChanged: if (active)
         Core.refresh()
@@ -82,66 +103,108 @@ Column {
 
     readonly property bool dnd: ControlShortcuts.dnd
 
+    // ── the column layout ──
     Repeater {
-        model: root.modules
-
-        delegate: Item {
-            id: slot
+        model: root.dashboard ? [] : root.modules
+        delegate: Slot {
             required property string modelData
             required property int index
-            readonly property real progress: root.stage(index)
-            // never hidden itself (a module's own visible is read here, and it would follow this one's)
-            readonly property bool shown: loader.item !== null && loader.item.visible && loader.height > 0
-            // a section head names it ("02  LEVELS ───"): hierarchy by type and rule, not by a box
-            readonly property string title: root.titles[modelData] ?? ""
-            readonly property bool headed: root.heads && title !== ""
-            readonly property real headH: headed ? 18 + Metrics.s3 : 0
+            host: root
+            moduleId: modelData
+            order: index
             width: root.inner
-            height: shown ? loader.height + headH + (root.cards ? Metrics.s4 * 2 : 0) + root.gap : 0
-            opacity: progress
-            transform: Translate {
-                y: (1 - slot.progress) * 10
-            }
+        }
+    }
 
-            // the cards style: each module on its own soft card
-            Rectangle {
-                visible: root.cards && slot.shown
-                width: parent.width
-                height: parent.height - root.gap
-                radius: Metrics.radiusSurface - Metrics.s2
-                color: Theme.plate
-                border.width: Metrics.hairline
-                border.color: Theme.hairline
+    // ── the dashboard layout: columns side by side, each module on its plate ──
+    Row {
+        id: dash
+        visible: root.dashboard
+        width: root.inner
+        spacing: root.gap
+        readonly property real share: (width - spacing * Math.max(0, root.columns.length - 1)) / Math.max(0.1, root.weightSum)
+        Repeater {
+            model: root.dashboard ? root.columns : []
+            delegate: Column {
+                id: column
+                required property var modelData
+                required property int index
+                width: dash.share * (root.weights[index] ?? 1)
+                Repeater {
+                    model: column.modelData
+                    delegate: Slot {
+                        required property string modelData
+                        host: root
+                        moduleId: modelData
+                        order: root.order.indexOf(modelData)
+                        width: column.width
+                    }
+                }
             }
-            SectionHead {
-                visible: slot.headed && slot.shown
-                x: root.cards ? Metrics.s4 : 0
-                y: root.cards ? Metrics.s4 : 0
-                width: parent.width - x * 2
-                index: String(root.modules.filter(m => root.titles[m]).indexOf(slot.modelData) + 1).padStart(2, "0")
-                title: slot.title
-            }
-            Loader {
-                id: loader
-                x: root.cards ? Metrics.s4 : 0
-                y: (root.cards ? Metrics.s4 : 0) + slot.headH
-                width: parent.width - x * 2
-                sourceComponent: ({
-                        header: header,
-                        shortcuts: shortcuts,
-                        levels: levels,
-                        audio: audio,
-                        media: media,
-                        monitor: monitor,
-                        power: power,
-                        calendar: calendar,
-                        weather: weather,
-                        screen_time: screenTime,
-                        system: system,
-                        notifications: notifications,
-                        clipboard: clipboard
-                    })[slot.modelData] ?? null
-            }
+        }
+    }
+
+    function componentFor(id: string): Component {
+        return ({
+                header: header,
+                shortcuts: shortcuts,
+                levels: levels,
+                audio: audio,
+                media: media,
+                monitor: monitor,
+                power: power,
+                calendar: calendar,
+                weather: weather,
+                screen_time: screenTime,
+                system: system,
+                notifications: notifications,
+                clipboard: clipboard
+            })[id] ?? null;
+    }
+
+    // one module where it sits: its head, its plate, the module itself
+    component Slot: Item {
+        id: slot
+        property var host: null
+        property string moduleId: ""
+        property int order: 0
+        readonly property real progress: host.stage(order)
+        // never hidden itself (a module's own visible is read here, and it would follow this one's)
+        readonly property bool shown: loader.item !== null && loader.item.visible && loader.height > 0
+        // a section head names it ("02  LEVELS ───"): hierarchy by type and rule, not by a box
+        readonly property string title: host.titles[moduleId] ?? ""
+        readonly property bool headed: host.heads && title !== ""
+        readonly property real headH: headed ? 18 + Metrics.s3 : 0
+        readonly property real inset: host.cards ? Metrics.s4 : 0
+        height: shown ? loader.height + headH + inset * 2 + host.gap : 0
+        opacity: progress
+        transform: Translate {
+            y: (1 - slot.progress) * 10
+        }
+
+        Rectangle {
+            visible: slot.host.cards && slot.shown
+            width: parent.width
+            height: parent.height - slot.host.gap
+            radius: Metrics.radiusSurface - Metrics.s2
+            color: Theme.plate
+            border.width: Metrics.hairline
+            border.color: Theme.hairline
+        }
+        SectionHead {
+            visible: slot.headed && slot.shown
+            x: slot.inset
+            y: slot.inset
+            width: parent.width - x * 2
+            index: String(slot.host.order.filter(m => slot.host.titles[m]).indexOf(slot.moduleId) + 1).padStart(2, "0")
+            title: slot.title
+        }
+        Loader {
+            id: loader
+            x: slot.inset
+            y: slot.inset + slot.headH
+            width: parent.width - x * 2
+            sourceComponent: slot.host.componentFor(slot.moduleId)
         }
     }
 
@@ -263,6 +326,8 @@ Column {
                 anchors.right: parent.right
                 anchors.rightMargin: Metrics.s2
                 anchors.bottom: date.bottom
+                // only where it fits beside the date
+                visible: parent.width - date.implicitWidth - Metrics.s4 >= implicitWidth
                 role: "caption"
                 tone: "faint"
                 text: About.realName || About.user
@@ -285,7 +350,7 @@ Column {
                     required property string modelData
                     readonly property string key: modelData
                     visible: key === "volume" ? Audio.ready : key === "mic" ? Audio.micReady : Backlight.available
-                    width: root.inner
+                    width: parent?.width ?? 0
                     spacing: Metrics.s3
 
                     readonly property real value: key === "volume" ? Audio.volume : key === "mic" ? Audio.micVolume : Backlight.value
@@ -456,7 +521,7 @@ Column {
                 model: Notifications.history.slice(0, 3)
                 delegate: NotificationCard {
                     required property var modelData
-                    width: root.inner
+                    width: parent?.width ?? 0
                     compact: true
                     entry: modelData
                 }
@@ -474,7 +539,7 @@ Column {
                 model: Clipboard.entries.slice(0, 3)
                 delegate: ListRow {
                     required property var modelData
-                    width: root.inner
+                    width: parent?.width ?? 0
                     icon: modelData.image ? "photo" : "clipboard-list"
                     title: modelData.image ? "Image" : modelData.preview.replace(/\s+/g, " ").trim()
                     onClicked: {

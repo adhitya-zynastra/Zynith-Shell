@@ -113,6 +113,17 @@ Singleton {
             history: (cur.history ?? []).concat([cur.id])
         }));
     }
+    // a tab: another page of the same surface, side by side rather than deeper (no history)
+    function switchTo(id: string, screenName: string): void {
+        const cur = openPanels[screenName];
+        if (!cur)
+            return open(id, screenName, null);
+        if (cur.id !== id)
+            set(screenName, Object.assign({}, cur, {
+                id: id,
+                history: []
+            }));
+    }
     function back(screenName: string): void {
         const cur = openPanels[screenName];
         if (!cur || (cur.history ?? []).length === 0)

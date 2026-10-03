@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Common
+import qs.Components
 import qs.Services
 
 // Picks the panel by id and cross-fades when navigating within one surface. New panels register here.
@@ -19,7 +20,32 @@ Item {
     property string shownId: panelId
     property real fade: 1
 
-    implicitHeight: loader.item?.implicitHeight ?? 0
+    // [control_panel] tab_bar / tabs: the Control Panel and its pages under one row of tabs (Caelestia's
+    // dashboard); a tab switches the page in place
+    readonly property var cfg: Config.controlPanel ?? ({})
+    readonly property var tabNames: ({
+            control: { label: "Dashboard", icon: "layout-dashboard" },
+            audio: { label: "Sound", icon: "volume" },
+            media: { label: "Media", icon: "music" },
+            power: { label: "Power", icon: "bolt" },
+            monitor: { label: "Display", icon: "device-desktop" },
+            calendar: { label: "Calendar", icon: "calendar" },
+            weather: { label: "Weather", icon: "cloud" },
+            "screen-time": { label: "Screen time", icon: "hourglass" },
+            system: { label: "System", icon: "cpu" },
+            network: { label: "Network", icon: "wifi" },
+            bluetooth: { label: "Bluetooth", icon: "bluetooth" },
+            notifications: { label: "Notifications", icon: "bell" }
+        })
+    readonly property var tabs: (cfg.tab_bar ?? true) ? Array.from(cfg.tabs ?? ["control", "media", "audio", "power", "weather", "calendar"]).map(t => String(t) === "home" ? "control" : String(t)).filter(t => panels[t] !== undefined).map(t => ({
+                    id: t,
+                    label: (cfg.tab_labels ?? {})[t] ?? tabNames[t]?.label ?? t,
+                    icon: (cfg.tab_icons ?? {})[t] ?? tabNames[t]?.icon ?? ""
+                })) : []
+    readonly property string tabId: shownId === "home" || shownId === "quick" ? "control" : shownId
+    readonly property bool tabbed: tabs.length > 1 && tabs.some(t => t.id === tabId)
+
+    implicitHeight: (tabbed ? tabStrip.height : 0) + (loader.item?.implicitHeight ?? 0)
     // a panel may ask for its own width (0: the configured one)
     readonly property int preferredWidth: loader.item?.preferredWidth ?? 0
     // where a centred panel's top sits, as a fraction of the screen height
@@ -169,9 +195,24 @@ Item {
         }
     }
 
+    PanelTabs {
+        id: tabStrip
+        visible: root.tabbed
+        x: Metrics.s5
+        y: Metrics.s3
+        width: parent.width - Metrics.s5 * 2
+        height: root.tabbed ? implicitHeight + Metrics.s3 : 0
+        tabs: root.tabs
+        current: root.tabId
+        showIcons: root.cfg.tab_icons_shown ?? true
+        showLabels: root.cfg.tab_labels_shown ?? true
+        onPicked: id => PanelRouter.switchTo(id, root.screen.name)
+    }
+
     Loader {
         id: loader
 
+        y: root.tabbed ? tabStrip.height : 0
         width: parent.width
         opacity: root.fade
         sourceComponent: root.panels[root.shownId] ?? null

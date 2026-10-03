@@ -302,20 +302,40 @@ Singleton {
                 control_panel: {
                     // in order; any of: header shortcuts levels audio media monitor power calendar weather
                     // screen_time system notifications clipboard
+                    // dashboard (modules in columns, wide and short) | column (one tall column of `modules`)
+                    layout: "dashboard",
+                    // the dashboard: its width and its columns, each a list of modules top to bottom, and a
+                    // weight per column (1 each when left out)
+                    dashboard_width: 1180,
+                    columns: [["header", "levels", "system"], ["shortcuts", "media"], ["calendar"], ["weather", "power"]],
+                    column_widths: [1, 1, 1.05, 1.05],
+                    // a row of tabs over the Control Panel and its pages; which, in order (control media audio
+                    // power monitor calendar weather screen-time system network bluetooth notifications), and
+                    // tab_labels / tab_icons to rename or re-icon one: { audio = "Sound" }
+                    tab_bar: true,
+                    tabs: ["control", "media", "audio", "power", "weather", "calendar"],
+                    tab_labels: {},
+                    tab_icons: {},
+                    tab_icons_shown: true,
+                    tab_labels_shown: true,
+                    // the column layout: in order
                     modules: ["header", "shortcuts", "levels", "media", "power", "system"],
                     width: 420,
                     // the bar (its id) a Control Panel opened by a key sits by; "" is the top right corner
                     anchor_bar: "",
                     // gap between modules
                     spacing: 16,
-                    // plain | cards (each module on its own soft card)
-                    module_style: "plain",
+                    // auto (cards on the dashboard, plain in a column) | plain | cards (each module on its own
+                    // soft card)
+                    module_style: "auto",
                     // the session button in the header (the native Control Center's)
                     session_button: true,
                     // shortcut tiles, in order (ControlShortcuts holds the catalogue; custom:<name> are yours)
                     shortcuts: ["wifi", "bluetooth", "caffeine", "nightlight", "notification", "power_profile"],
                     // compact (round buttons) | regular (two-line tiles) | wide (one per row)
                     shortcut_size: "regular",
+                    // the same on the dashboard (its columns are narrow)
+                    dashboard_shortcut_size: "compact",
                     // tiles per row; 0 picks by size (compact 4, regular 2, wide 1)
                     shortcut_columns: 0,
                     shortcut_labels: true,

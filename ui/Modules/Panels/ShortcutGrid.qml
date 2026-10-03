@@ -14,7 +14,9 @@ Item {
 
     readonly property var cfg: Config.controlPanel ?? ({})
     readonly property var entries: Array.from(cfg.shortcuts ?? []).map(id => ControlShortcuts.find(id)).filter(e => ControlShortcuts.available(e))
-    readonly property string size: cfg.shortcut_size ?? "regular"
+    // the dashboard's columns are narrow: its own size (dashboard_shortcut_size), else shortcut_size
+    readonly property bool onDashboard: (cfg.layout ?? "dashboard") === "dashboard"
+    readonly property string size: onDashboard ? (cfg.dashboard_shortcut_size ?? cfg.shortcut_size ?? "compact") : (cfg.shortcut_size ?? "regular")
     readonly property int columns: (cfg.shortcut_columns ?? 0) > 0 ? cfg.shortcut_columns : size === "compact" ? 4 : size === "wide" ? 1 : 2
     readonly property bool labels: cfg.shortcut_labels !== false
     readonly property real gap: Metrics.s3
