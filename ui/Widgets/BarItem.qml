@@ -99,7 +99,11 @@ Item {
                 clicked(event);
             return;
         }
-        const action = BarWidgetTypes.action(type, settings, actions, gesture);
+        let action = BarWidgetTypes.action(type, settings, actions, gesture);
+        // a click on what the pointer's rest just opened confirms it rather than closing it (as the native bar)
+        if (gesture === "left" && hoverOpened && action.startsWith("panel-toggle "))
+            action = "panel-open " + action.slice(13);
+        hoverOpened = false;
         if (action !== "")
             Actions.run(action, {
                 screen: root.screen,
@@ -154,10 +158,33 @@ Item {
         scale: root.sizeScale
     }
 
+    // the hover gesture: the pointer resting here for hover_delay runs it, once per visit
+    readonly property string hoverAction: BarWidgetTypes.action(type, settings, actions, "hover")
+    property bool hoverOpened: false
+    Timer {
+        id: hoverIntent
+        interval: Math.max(0, root.opt("hover_delay") ?? 350)
+        running: root.hovered && root.hoverAction !== "" && !root.hoverOpened
+        onTriggered: root.restOpen()
+    }
+    // also run by a capsule group the pointer rests on (resting anywhere on the group counts)
+    function restOpen(): void {
+        if (hoverAction === "")
+            return;
+        hoverOpened = true;
+        Actions.run(hoverAction.startsWith("panel-toggle ") ? "panel-open " + hoverAction.slice(13) : hoverAction, {
+            screen: root.screen,
+            bar: root.bar,
+            item: root,
+            widget: root.name
+        });
+    }
     // a tooltip, after the pointer has rested a moment
     property bool tipReady: false
-    onHoveredChanged: if (!hovered)
-        tipReady = false
+    onHoveredChanged: if (!hovered) {
+        tipReady = false;
+        hoverOpened = false;
+    }
     Timer {
         interval: 600
         running: root.hovered && root.tooltip !== "" && !root.tipReady

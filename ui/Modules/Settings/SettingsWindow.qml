@@ -23,6 +23,10 @@ FloatingWindow {
         function open(route: string): void {
             win.route = Routes.find(route).id;
         }
+        // the whole current page, as an image of this window's own content only (for documentation)
+        function capture(path: string): void {
+            page.grabToImage(r => r.saveToFile(path));
+        }
     }
 
     Rectangle {

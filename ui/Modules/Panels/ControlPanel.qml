@@ -6,8 +6,9 @@ import qs.Common
 import qs.Components
 import qs.Services
 
-// The Control Panel: quick interaction, not configuration. Built from modules whose order is
-// panels.toml [control_panel] modules; each module holds what it needs only while the panel shows.
+// The Control Panel: quick interaction, not configuration. Built from modules in [control_panel] modules
+// order; each holds what it reads only while the panel shows. The native Control Center's tabs are modules
+// here too (audio, monitor, power, calendar, weather, screen_time), each with a page of its own one click in.
 Column {
     id: root
 
@@ -16,75 +17,154 @@ Column {
     property bool canGoBack: false
     signal back
     property bool active: true
-    readonly property int preferredWidth: Config.controlPanel?.width ?? 420
+    readonly property var cfg: Config.controlPanel ?? ({})
+    readonly property int preferredWidth: cfg.width ?? 420
 
-    readonly property var modules: Config.controlPanel?.modules ?? ["header", "levels", "connectivity", "toggles", "media", "power", "system"]
+    // the old switch rows are the shortcut tiles now; a list that still names them gets the tiles, once
+    readonly property var modules: {
+        const out = [];
+        for (const m of Array.from(cfg.modules ?? ["header", "shortcuts", "levels", "media", "power", "system"])) {
+            const id = m === "connectivity" || m === "toggles" ? "shortcuts" : m === "screen-time" ? "screen_time" : m;
+            if (!out.includes(id))
+                out.push(id);
+        }
+        return out;
+    }
+    readonly property bool cards: cfg.module_style === "cards"
 
+    // the gap between modules is each shown module's own (below it), so a module that has nothing to show
+    // takes neither room nor a gap
+    readonly property real gap: cfg.spacing ?? Metrics.s5
     padding: Metrics.s5
-    spacing: Metrics.s5
+    bottomPadding: Math.max(0, Metrics.s5 - gap)
+    spacing: 0
     readonly property real inner: width - padding * 2
 
     function go(id: string): void {
         PanelRouter.navigate(id, screen.name);
     }
-    // content settles a beat after the surface
+    // content settles a beat after the surface, one module after another
     function stage(i: int): real {
         if (!ExperiencePolicy.stagger)
             return visibleProgress;
-        const delay = Math.min(0.5, 0.08 * i);
+        const delay = Math.min(0.5, 0.07 * i);
         return Math.max(0, Math.min(1, (visibleProgress - delay) / (1 - delay)));
     }
 
     // what this panel holds while it is on screen
-    property bool holding: false
-    function sync(): void {
-        const needs = active;
-        if (needs && !holding) {
-            System.retain();
-            Backlight.retain();
-            Core.refresh();
-            holding = true;
-        } else if (!needs && holding) {
-            System.release();
-            Backlight.release();
-            holding = false;
-        }
+    Hold {
+        service: "system"
+        when: root.active && root.modules.includes("system")
     }
-    onActiveChanged: sync()
-    Component.onCompleted: sync()
-    Component.onDestruction: if (holding) {
-        System.release();
-        Backlight.release();
+    Hold {
+        service: "backlight"
+        when: root.active && root.modules.includes("levels")
     }
+    onActiveChanged: if (active)
+        Core.refresh()
+    Component.onCompleted: Core.refresh()
 
-    // DND belongs to whichever notification server runs
-    readonly property bool dnd: Notifications.serving ? Notifications.dnd : Core.dnd
-    function setDnd(on: bool): void {
-        if (Notifications.serving)
-            Notifications.setDnd(on);
-        else
-            Core.setDnd(on);
-    }
+    readonly property bool dnd: ControlShortcuts.dnd
 
     Repeater {
         model: root.modules
 
-        delegate: Loader {
+        delegate: Item {
+            id: slot
             required property string modelData
             required property int index
+            readonly property real progress: root.stage(index)
+            // never hidden itself (a module's own visible is read here, and it would follow this one's)
+            readonly property bool shown: loader.item !== null && loader.item.visible && loader.height > 0
             width: root.inner
-            opacity: root.stage(index)
-            sourceComponent: ({
-                    header: header,
-                    levels: levels,
-                    connectivity: connectivity,
-                    toggles: toggles,
-                    media: media,
-                    power: power,
-                    system: system,
-                    notifications: notifications,
-                    clipboard: clipboard
-                })[modelData] ?? null
+            height: shown ? loader.height + (root.cards ? Metrics.s4 * 2 : 0) + root.gap : 0
+            opacity: progress
+            transform: Translate {
+                y: (1 - slot.progress) * 10
+            }
+
+            // the cards style: each module on its own soft card
+            Rectangle {
+                visible: root.cards && slot.shown
+                width: parent.width
+                height: parent.height - root.gap
+                radius: Metrics.radiusXl
+                color: Theme.well
+                border.width: Metrics.hairline
+                border.color: Theme.hairline
+            }
+            Loader {
+                id: loader
+                x: root.cards ? Metrics.s4 : 0
+                y: root.cards ? Metrics.s4 : 0
+                width: parent.width - x * 2
+                sourceComponent: ({
+                        header: header,
+                        shortcuts: shortcuts,
+                        levels: levels,
+                        audio: audio,
+                        media: media,
+                        monitor: monitor,
+                        power: power,
+                        calendar: calendar,
+                        weather: weather,
+                        screen_time: screenTime,
+                        system: system,
+                        notifications: notifications,
+                        clipboard: clipboard
+                    })[slot.modelData] ?? null
+            }
+        }
+    }
+
+    // ── modules with files of their own ──
+    Component {
+        id: shortcuts
+        ShortcutGrid {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: audio
+        AudioModule {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: monitor
+        MonitorModule {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: power
+        PowerModule {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: calendar
+        CalendarModule {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: weather
+        WeatherModule {
+            screen: root.screen
+            active: root.active
+        }
+    }
+    Component {
+        id: screenTime
+        ScreenTimeModule {
+            screen: root.screen
+            active: root.active
         }
     }
 
@@ -118,12 +198,22 @@ Column {
             }
             Label {
                 id: headerClock
-                anchors.right: settingsButton.left
+                anchors.right: sessionButton.visible ? sessionButton.left : settingsButton.left
                 anchors.rightMargin: Metrics.s2
                 anchors.verticalCenter: parent.verticalCenter
                 role: "display2"
                 numeric: true
                 text: Qt.formatTime(Time.now, "HH:mm")
+            }
+            // the session: lock, log out, restart (the native Control Center's button)
+            IconButton {
+                id: sessionButton
+                visible: root.cfg.session_button !== false
+                anchors.right: settingsButton.left
+                anchors.verticalCenter: parent.verticalCenter
+                icon: "power"
+                tone: "muted"
+                onClicked: Actions.run("panel session", { screen: root.screen })
             }
             IconButton {
                 id: settingsButton
@@ -133,7 +223,7 @@ Column {
                 tone: "muted"
                 onClicked: {
                     PanelRouter.close(root.screen.name);
-                    Quickshell.execDetached([Quickshell.shellPath("zynith-ui"), "settings"]);
+                    Actions.run("settings-open control");
                 }
             }
         }
@@ -146,17 +236,14 @@ Column {
             spacing: Metrics.s2
 
             Repeater {
-                model: [
-                    { key: "volume", shown: Audio.ready },
-                    { key: "mic", shown: Audio.micReady },
-                    { key: "brightness", shown: Backlight.available }
-                ]
+                // which sliders, in order: [control_panel] levels
+                model: Array.from(root.cfg.levels ?? ["volume", "mic", "brightness"]).filter(k => ["volume", "mic", "brightness"].includes(k))
 
                 delegate: Row {
                     id: level
-                    required property var modelData
-                    readonly property string key: modelData.key
-                    visible: modelData.shown
+                    required property string modelData
+                    readonly property string key: modelData
+                    visible: key === "volume" ? Audio.ready : key === "mic" ? Audio.micReady : Backlight.available
                     width: root.inner
                     spacing: Metrics.s3
 
@@ -167,7 +254,7 @@ Column {
                         anchors.verticalCenter: parent.verticalCenter
                         icon: level.key === "volume" ? Audio.glyph : level.key === "mic" ? (Audio.micMuted ? "microphone-off" : "microphone") : "brightness-up"
                         tone: level.off ? "faint" : "ink"
-                        onClicked: level.key === "volume" ? Audio.toggleMute() : level.key === "mic" ? Audio.toggleMicMute() : undefined
+                        onClicked: level.key === "volume" ? Audio.toggleMute() : level.key === "mic" ? Audio.toggleMicMute() : root.go("monitor")
                     }
                     Slider {
                         anchors.verticalCenter: parent.verticalCenter
@@ -176,90 +263,25 @@ Column {
                         opacity: level.off ? 0.5 : 1
                         onMoved: v => level.key === "volume" ? Audio.setVolume(v) : level.key === "mic" ? Audio.setMicVolume(v) : Backlight.set(v)
                     }
+                    // the number opens the page: devices and apps, or every display
                     Label {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 40
                         horizontalAlignment: Text.AlignRight
                         role: "label"
                         numeric: true
-                        tone: "muted"
+                        tone: levelArea.containsMouse ? "accent" : "muted"
                         text: Math.round(level.value * 100)
+                        MouseArea {
+                            id: levelArea
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.go(level.key === "brightness" ? "monitor" : "audio")
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    // ── connectivity ────────────────────────────────────────────────────────
-    Component {
-        id: connectivity
-        Row {
-            spacing: Metrics.s3
-            Tile {
-                width: (root.inner - Metrics.s3) / 2
-                icon: Network.glyph
-                title: "Wi‑Fi"
-                detail: !Network.wifiEnabled ? "Off" : Network.name || "Not connected"
-                on: Network.wifiEnabled
-                more: true
-                onToggled: Network.setWifiEnabled(!Network.wifiEnabled)
-                onOpened: root.go("network")
-            }
-            Tile {
-                width: (root.inner - Metrics.s3) / 2
-                icon: Bluetooth.enabled ? (Bluetooth.connected.length > 0 ? "bluetooth-connected" : "bluetooth") : "bluetooth-off"
-                title: "Bluetooth"
-                detail: Bluetooth.available ? Bluetooth.summary : "Unavailable"
-                on: Bluetooth.enabled
-                more: true
-                onToggled: Bluetooth.setEnabled(!Bluetooth.enabled)
-                onOpened: root.go("bluetooth")
-            }
-        }
-    }
-
-    // ── switches ────────────────────────────────────────────────────────────
-    Component {
-        id: toggles
-        Grid {
-            columns: 2
-            columnSpacing: Metrics.s3
-            rowSpacing: Metrics.s3
-            readonly property real cell: (root.inner - columnSpacing) / 2
-
-            Tile {
-                width: parent.cell
-                icon: root.dnd ? "bell-off" : "bell"
-                title: "Do not disturb"
-                detail: root.dnd ? "Popups held back" : Notifications.unread > 0 ? Notifications.unread + " waiting" : "Off"
-                on: root.dnd
-                more: Notifications.serving
-                onToggled: root.setDnd(!root.dnd)
-                onOpened: root.go("notifications")
-            }
-            Tile {
-                width: parent.cell
-                icon: "sunset-2"
-                title: "Night light"
-                detail: !Core.known ? "…" : Core.nightlightForced ? "On now" : Core.nightlight ? (Core.nightlightActive ? "On · scheduled" : "Scheduled") : "Off"
-                on: Core.nightlight || Core.nightlightForced
-                onToggled: Core.toggleNightlight()
-            }
-            Tile {
-                width: parent.cell
-                icon: "coffee"
-                title: "Stay awake"
-                detail: !Core.known ? "…" : Core.caffeine ? "Screen stays on" : "Off"
-                on: Core.caffeine
-                onToggled: Core.toggleCaffeine()
-            }
-            Tile {
-                width: parent.cell
-                icon: Audio.micMuted ? "microphone-off" : "microphone"
-                title: "Microphone"
-                detail: !Audio.micReady ? "None" : Audio.micMuted ? "Muted" : "Live"
-                on: Audio.micReady && !Audio.micMuted
-                onToggled: Audio.toggleMicMute()
             }
         }
     }
@@ -350,38 +372,6 @@ Column {
                     tone: "muted"
                     onClicked: Media.next()
                 }
-            }
-        }
-    }
-
-    // ── power: the system profile and Zynith's Experience profile ───────────
-    Component {
-        id: power
-        Column {
-            spacing: Metrics.s3
-
-            Item {
-                width: root.inner
-                height: 16
-                Label {
-                    role: "caption"
-                    tone: "faint"
-                    caps: true
-                    text: "Power"
-                }
-                Label {
-                    anchors.right: parent.right
-                    role: "caption"
-                    caps: true
-                    tone: ExperiencePolicy.automatic ? "accent" : "faint"
-                    text: "Experience · " + (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? " · auto" : "")
-                }
-            }
-            Segmented {
-                width: root.inner
-                current: PowerProfiles.profile === PowerProfile.PowerSaver ? "saver" : PowerProfiles.profile === PowerProfile.Performance ? "performance" : "balanced"
-                options: PowerProfiles.hasPerformanceProfile ? [{ key: "saver", label: "Saver" }, { key: "balanced", label: "Balanced" }, { key: "performance", label: "Performance" }] : [{ key: "saver", label: "Saver" }, { key: "balanced", label: "Balanced" }]
-                onPicked: key => PowerProfiles.profile = key === "saver" ? PowerProfile.PowerSaver : key === "performance" ? PowerProfile.Performance : PowerProfile.Balanced
             }
         }
     }

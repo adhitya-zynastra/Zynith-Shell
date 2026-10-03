@@ -43,7 +43,13 @@ Item {
             quick: control,
             wallpaper: wallpaper,
             control: control,
-            session: session
+            session: session,
+            audio: audioPage,
+            power: powerPage,
+            monitor: monitorPage,
+            calendar: calendarPage,
+            weather: weatherPage,
+            "screen-time": screenTimePage
         })
 
     onPanelIdChanged: {
@@ -124,6 +130,43 @@ Item {
     Component {
         id: control
         ControlPanel {}
+    }
+    // the native Control Center's tabs, as pages of their own
+    Component {
+        id: audioPage
+        ModulePage {
+            kind: "audio"
+        }
+    }
+    Component {
+        id: powerPage
+        ModulePage {
+            kind: "power"
+        }
+    }
+    Component {
+        id: monitorPage
+        ModulePage {
+            kind: "monitor"
+        }
+    }
+    Component {
+        id: calendarPage
+        ModulePage {
+            kind: "calendar"
+        }
+    }
+    Component {
+        id: weatherPage
+        ModulePage {
+            kind: "weather"
+        }
+    }
+    Component {
+        id: screenTimePage
+        ModulePage {
+            kind: "screen-time"
+        }
     }
 
     Loader {

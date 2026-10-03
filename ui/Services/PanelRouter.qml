@@ -25,7 +25,24 @@ Singleton {
             delete next[screenName];
         openPanels = next;
     }
+    // the Control Panel and its pages, opened from nowhere (a key, IPC), sit by [control_panel] anchor_bar
+    readonly property var controlPages: ["control", "home", "quick", "audio", "power", "monitor", "calendar", "weather", "screen-time", "network", "bluetooth", "notifications", "media", "system"]
+    property var bars: ({})
+    function noteBar(id: string, screenName: string, origin: var): void {
+        if (id !== "")
+            bars[id + "@" + screenName] = origin;
+    }
+
     function open(id: string, screenName: string, origin: var): void {
+        if ((origin?.x ?? -1) < 0 && origin?.edge !== "center" && controlPages.includes(id)) {
+            const anchor = Config.controlPanel?.anchor_bar ?? "";
+            const at = anchor !== "" ? bars[anchor + "@" + screenName] : null;
+            if (at)
+                origin = Object.assign({}, at, {
+                    context: origin?.context ?? "",
+                    history: origin?.history ?? []
+                });
+        }
         set(screenName, {
             id: id,
             originX: origin?.x ?? -1,
@@ -33,7 +50,8 @@ Singleton {
             edge: origin?.edge ?? "top",
             extent: origin?.extent ?? 42,
             context: origin?.context ?? "",
-            history: []
+            // where back goes: a Control Center tab opened from a bar goes back to the Control Panel
+            history: origin?.history ?? []
         });
     }
     function close(screenName: string): void {
@@ -69,6 +87,12 @@ Singleton {
             history: history
         }));
     }
+    // where each output's panel card sits, in global coordinates (for diagnostics and cropped captures)
+    property var rects: ({})
+    function noteRect(screenName: string, rect: var): void {
+        rects[screenName] = rect;
+    }
+
     function closeAll(): void {
         openPanels = {};
     }

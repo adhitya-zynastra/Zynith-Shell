@@ -289,8 +289,41 @@ Singleton {
                     auto_paste: true
                 },
                 control_panel: {
-                    modules: ["header", "levels", "connectivity", "toggles", "media", "power", "system"],
-                    width: 420
+                    // in order; any of: header shortcuts levels audio media monitor power calendar weather
+                    // screen_time system notifications clipboard
+                    modules: ["header", "shortcuts", "levels", "media", "power", "system"],
+                    width: 420,
+                    // the bar (its id) a Control Panel opened by a key sits by; "" is the top right corner
+                    anchor_bar: "",
+                    // gap between modules
+                    spacing: 16,
+                    // plain | cards (each module on its own soft card)
+                    module_style: "plain",
+                    // the session button in the header (the native Control Center's)
+                    session_button: true,
+                    // shortcut tiles, in order (ControlShortcuts holds the catalogue; custom:<name> are yours)
+                    shortcuts: ["wifi", "bluetooth", "caffeine", "nightlight", "notification", "power_profile"],
+                    // compact (round buttons) | regular (two-line tiles) | wide (one per row)
+                    shortcut_size: "regular",
+                    // tiles per row; 0 picks by size (compact 4, regular 2, wide 1)
+                    shortcut_columns: 0,
+                    shortcut_labels: true,
+                    // a regular tile that spans the whole row: { wifi = "wide" }
+                    tile_sizes: {},
+                    // [control_panel.custom.<name>] icon, label, action, detail — a tile of your own
+                    custom: {},
+                    // the sliders in Levels, in order
+                    levels: ["volume", "mic", "brightness"],
+                    // apps shown in the Audio module's mixer (all in its own page)
+                    mixer_apps: 3,
+                    calendar_week_numbers: false,
+                    calendar_events: true,
+                    // monday | sunday
+                    week_start: "monday",
+                    // daily | hourly
+                    weather_forecast: "daily",
+                    // 1 | 3 | 14 days
+                    screen_time_range: 1
                 },
                 osd: {
                     enabled: false,

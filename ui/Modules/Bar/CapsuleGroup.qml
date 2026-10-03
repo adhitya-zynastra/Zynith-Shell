@@ -24,9 +24,31 @@ Item {
             if (hovered) {
                 closer.stop();
                 root.open = true;
-            } else if (root.accordion) {
-                closer.restart();
+            } else {
+                root.rested = false;
+                if (root.accordion)
+                    closer.restart();
             }
+        }
+    }
+    // resting anywhere on the group runs the hover gesture of the member that has one (the clock, say)
+    function hoverMember(): var {
+        for (let i = 0; i < list.count; i++) {
+            const it = list.itemAt(i)?.item;
+            if (it && it.hoverAction !== "")
+                return it;
+        }
+        return null;
+    }
+    property bool rested: false
+    Timer {
+        interval: Math.max(0, root.hoverMember()?.opt("hover_delay") ?? 350)
+        running: hover.hovered && !root.rested && root.hoverMember() !== null
+        onTriggered: {
+            root.rested = true;
+            const m = root.hoverMember();
+            if (m && !m.hoverOpened)
+                m.restOpen();
         }
     }
     Timer {

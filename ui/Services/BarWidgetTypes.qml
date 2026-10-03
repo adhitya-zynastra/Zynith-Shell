@@ -28,7 +28,7 @@ Singleton {
         return aliases[type] ?? type;
     }
 
-    readonly property var gestures: ["left", "right", "middle", "back", "forward", "scroll_up", "scroll_down", "scroll_left", "scroll_right"]
+    readonly property var gestures: ["left", "right", "middle", "back", "forward", "scroll_up", "scroll_down", "scroll_left", "scroll_right", "hover"]
     readonly property var gestureLabels: ({
             left: "Click",
             right: "Right click",
@@ -38,7 +38,9 @@ Singleton {
             scroll_up: "Scroll up",
             scroll_down: "Scroll down",
             scroll_left: "Scroll left",
-            scroll_right: "Scroll right"
+            scroll_right: "Scroll right",
+            // the pointer resting on it for hover_delay (the native Control Center's hover_open)
+            hover: "Rest the pointer"
         })
 
     // settings every bar widget has
@@ -55,6 +57,7 @@ Singleton {
         { key: "capsule_radius", label: "Capsule radius", kind: "int", default: -1, from: -1, to: 32, step: 1, when: { capsule: [true] }, hint: "-1 is a pill" },
         { key: "capsule_border", label: "Capsule border", kind: "colour", default: "", when: { capsule: [true] } },
         { key: "interactive", label: "Takes clicks", kind: "toggle", default: true },
+        { key: "hover_delay", label: "Rest before its hover action (ms)", kind: "int", default: 350, from: 0, to: 2000, step: 50 },
         { key: "tooltip", label: "Tooltip", kind: "text", default: "" }
     ]
     // a button that is a glyph or your own picture

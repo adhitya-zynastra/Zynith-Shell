@@ -66,7 +66,8 @@ start)
         kill "$pid" 2>/dev/null || true
         snap="$RUN/fallback"
         rm -rf "$snap" && mkdir -p "$snap"
-        git -C "$HERE" archive "HEAD:$(git -C "$HERE" rev-parse --show-prefix)" | tar -x -C "$snap"
+        # from the top level: run from ui/, git archive keeps only ui/ within the tree it is given (nothing)
+        git -C "$(git -C "$HERE" rev-parse --show-toplevel)" archive "HEAD:$(git -C "$HERE" rev-parse --show-prefix)" | tar -x -C "$snap"
         # the snapshot shares the repository's assets (fonts, emoji)
         ln -sfn "$HERE/../assets" "$RUN/assets" 2>/dev/null || true
         cp "$LOG" "$RUN/ui-failed.log"

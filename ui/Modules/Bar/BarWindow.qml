@@ -169,15 +169,30 @@ PanelWindow {
             return h - height - edgeGap;
         return anchorAt === "end" ? h - height - alongGap : anchorAt === "center" ? (h - height) / 2 : alongGap;
     }
-    function openPanel(id: string, item: Item, context: string): void {
+    // where a Control Panel opened from nowhere (a key) attaches, when [control_panel] anchor_bar names this bar
+    readonly property var anchorOrigin: ({
+            x: windowScreenX() + pill.x + pill.width / 2,
+            y: windowScreenY() + pill.y + pill.height / 2,
+            edge: edge,
+            extent: margin + thickness
+        })
+    onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
+
+    // options: { open: open rather than toggle, history: where back goes }
+    function openPanel(id: string, item: Item, context: string, options: var): void {
         const p = item.mapToItem(pill, item.width / 2, item.height / 2);
-        PanelRouter.toggle(id, screen.name, {
+        const origin = {
             x: windowScreenX() + pill.x + p.x,
             y: windowScreenY() + pill.y + p.y,
             edge: edge,
             extent: margin + thickness,
-            context: context ?? ""
-        });
+            context: context ?? "",
+            history: options?.history ?? []
+        };
+        if (options?.open)
+            PanelRouter.open(id, screen.name, origin);
+        else
+            PanelRouter.toggle(id, screen.name, origin);
     }
 
     Glass {

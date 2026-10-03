@@ -31,6 +31,10 @@ playlist square-rounded-plus minus arrow-back-up history clock-hour-4 alarm moon
 capture screenshot texture wallpaper picture-in-picture layout-bottombar layout-navbar layout-sidebar-right
 toggle-left toggle-right letter-a scan photo-heart grid-dots layout-collage keyboard-off sun-moon
 screen-share screen-share-off coffee-off
+mouse device-mobile sunrise sunset uv-index chart-bar headset device-gamepad-2 terminal-2 brightness-half calendar-off
+speakerphone battery-eco battery-off plug-connected cloud-sun umbrella temperature-sun arrows-exchange device-watch
+wand windmill haze gauge-filled bolt-off moon-2 dashboard calendar-week calendar-month hourglass-high ripple
+adjustments-alt shield-half arrow-narrow-up
 """.split()
 
 

@@ -17,11 +17,12 @@ Singleton {
     // the native Control Center's tabs, and the Zynith panel that answers each
     readonly property var controlTabs: ({
             home: "control",
-            audio: "control",
-            power: "control",
-            monitor: "control",
-            calendar: "control",
-            weather: "control",
+            audio: "audio",
+            power: "power",
+            monitor: "monitor",
+            calendar: "calendar",
+            weather: "weather",
+            "screen-time": "screen-time",
             system: "system",
             network: "network",
             bluetooth: "bluetooth",
@@ -29,13 +30,19 @@ Singleton {
             notifications: "notifications"
         })
 
-    function openPanel(id: string, context: string, origin: var): void {
+    // options: { open: open rather than toggle, history: where back goes }
+    function openPanel(id: string, context: string, origin: var, options: var): void {
         const screen = origin?.screen?.name ?? Workspaces.focusedOutput ?? Quickshell.screens[0]?.name ?? "";
         if (origin?.bar && origin?.item) {
-            origin.bar.openPanel(id, origin.item, context);
+            origin.bar.openPanel(id, origin.item, context, options);
             return;
         }
-        PanelRouter.toggle(id, screen, ["launcher", "clipboard", "wallpaper", "session"].includes(id) ? { edge: "center", context: context } : { context: context });
+        const where = ["launcher", "clipboard", "wallpaper", "session"].includes(id) ? { edge: "center", context: context } : { context: context };
+        where.history = options?.history ?? [];
+        if (options?.open)
+            PanelRouter.open(id, screen, where);
+        else
+            PanelRouter.toggle(id, screen, where);
     }
 
     function run(action: string, origin: var): void {
@@ -52,26 +59,33 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", args]);
             return;
         case "panel":
-            openPanel(words[0] ?? "control", words.slice(1).join(" "), origin);
+            openPanel(words[0] ?? "control", words.slice(1).join(" "), origin, {});
             return;
         case "panel-toggle":
         case "panel-open":
             {
                 const id = words[0] ?? "";
+                const options = {
+                    open: verb === "panel-open"
+                };
                 if (id === "control-center") {
                     const tab = words[1] ?? "home";
-                    openPanel(controlTabs[tab] ?? "control", tab, origin);
+                    const page = controlTabs[tab] ?? "control";
+                    // a tab is a page within the Control Panel: back goes there
+                    if (page !== "control")
+                        options.history = ["control"];
+                    openPanel(page, tab, origin, options);
                 } else if (id === "launcher") {
-                    openPanel("launcher", words.slice(1).join(" "), origin);
-                } else if (["clipboard", "wallpaper", "session", "notifications", "media", "network", "bluetooth", "system"].includes(id)) {
-                    openPanel(id, words.slice(1).join(" "), origin);
+                    openPanel("launcher", words.slice(1).join(" "), origin, options);
+                } else if (["clipboard", "wallpaper", "session", "notifications", "media", "network", "bluetooth", "system", "audio", "power", "monitor", "calendar", "weather", "screen-time"].includes(id)) {
+                    openPanel(id, words.slice(1).join(" "), origin, options);
                 } else {
                     break; // a panel this UI does not draw: the native shell's
                 }
                 return;
             }
         case "launcher-mode":
-            openPanel("launcher", args, origin);
+            openPanel("launcher", args, origin, {});
             return;
         case "desktop-edit":
             Desktop.toggleEditing();

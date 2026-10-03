@@ -23,7 +23,9 @@ PanelWindow {
     // a bare panel (the wallpaper carousel) covers the screen and draws its own surfaces over a dimmed desktop
     readonly property bool bare: content.bare
     readonly property int panelWidth: bare ? sw : content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width
-    readonly property real cardHeight: bare ? sh : content.implicitHeight
+    // never taller than the screen leaves room for: past that, the content scrolls inside the card
+    readonly property real maxCardHeight: edge === "top" || edge === "bottom" ? sh - 2 * (extent + gap) : sh - 2 * screenMargin
+    readonly property real cardHeight: bare ? sh : Math.min(content.implicitHeight, maxCardHeight)
     // the window grows at once and shrinks after the card has, so it never resizes every frame
     readonly property real windowCardHeight: Math.max(cardHeight, card.height)
     readonly property int pad: bare ? 0 : ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
@@ -43,6 +45,13 @@ PanelWindow {
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
     readonly property real cardX: bare ? 0 : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
     readonly property real cardY: bare ? 0 : edge === "center" ? Math.round(sh * content.preferredTop) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    readonly property var cardRect: ({
+            x: Math.round((screen?.x ?? 0) + cardX),
+            y: Math.round((screen?.y ?? 0) + cardY),
+            w: Math.round(panelWidth),
+            h: Math.round(cardHeight)
+        })
+    onCardRectChanged: PanelRouter.noteRect(screen?.name ?? "", cardRect)
     readonly property real winX: Math.max(0, cardX - pad)
     readonly property real winY: Math.max(0, cardY - pad)
 
@@ -199,10 +208,24 @@ PanelWindow {
             Keys.onBackPressed: PanelRouter.back(win.screen.name)
         }
 
-        // clips content while the card height animates; the shadow stays outside
-        Item {
+        // clips content while the card height animates; the shadow stays outside. Content taller than the
+        // card scrolls (only then: a panel that fits keeps its own wheel and drag).
+        Flickable {
+            id: scroller
             anchors.fill: parent
             clip: true
+            contentWidth: width
+            contentHeight: content.implicitHeight
+            interactive: !win.bare && content.implicitHeight > height + 1
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+            // a new panel starts at its top
+            Connections {
+                target: content
+                function onShownIdChanged(): void {
+                    scroller.contentY = 0;
+                }
+            }
 
             PanelContent {
                 id: content
@@ -215,6 +238,20 @@ PanelWindow {
                 screen: win.screen
                 visibleProgress: win.revealed
                 active: win.visible
+            }
+        }
+        // where in a scrolled panel you are
+        Rectangle {
+            visible: scroller.interactive
+            anchors.right: parent.right
+            anchors.rightMargin: 3
+            y: scroller.visibleArea.yPosition * scroller.height + 6
+            width: 3
+            height: Math.max(24, scroller.visibleArea.heightRatio * scroller.height - 12)
+            radius: 2
+            color: Theme.alpha(Theme.ink, scroller.moving ? 0.35 : 0.14)
+            Behavior on color {
+                ColorAnim {}
             }
         }
     }

@@ -49,6 +49,12 @@ Singleton {
             case "close":
                 PanelRouter.closeAll();
                 break;
+            case "action":
+                // any action a bar gesture can name: panel-toggle control-center audio, media next, exec …
+                Actions.run(args, {
+                    screen: Quickshell.screens.find(s => s.name === screen) ?? null
+                });
+                break;
             case "event":
                 Events.dispatch(args);
                 break;
@@ -132,6 +138,9 @@ Singleton {
         function profile(name: string): string {
             ExperiencePolicy.select(name);
             return ExperiencePolicy.profile;
+        }
+        function panelRect(): string {
+            return JSON.stringify(PanelRouter.rects[root.focusedScreen()] ?? null);
         }
         function stats(): string {
             return JSON.stringify(Diagnostics.summary());
