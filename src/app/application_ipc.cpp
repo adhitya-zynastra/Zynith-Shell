@@ -649,6 +649,14 @@ void Application::initIpc() {
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 
+  m_ipcService.bind(noctalia::cli::msg::brightnessRescan, [this](const std::string& /*args*/) -> std::string {
+    if (m_brightnessService == nullptr || !m_configService.config().brightness.enableDdcutil) {
+      return "error: DDC/CI is off ([brightness] enable_ddcutil)\n";
+    }
+    m_brightnessService->requestDdcRescan();
+    return "ok\n";
+  });
+
   // zynith: the synced calendar's coming events, for the Control Panel's calendar module
   m_ipcService.bind(noctalia::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
     int days = 14;

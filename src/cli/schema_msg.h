@@ -435,6 +435,9 @@ namespace noctalia::cli {
         "brightness-status", "Print every display's brightness as JSON (id, label, value, controllable)", {}, {}, {}, {},
         {}, false
     };
+    inline constexpr Command brightnessRescan{
+        "brightness-rescan", "Look for DDC/CI monitors again (with [brightness] enable_ddcutil)", {}, {}, {}, {}, {}, false
+    };
     inline constexpr Command calendarEvents{
         "calendar-events", "Print the synced calendar events of the next [days] (default 14) as JSON", {}, {}, {}, {},
         {}, false
@@ -1028,6 +1031,7 @@ namespace noctalia::cli {
       msg::screenTime,
       msg::chargeLimit,
       msg::brightnessStatus,
+      msg::brightnessRescan,
       msg::calendarEvents,
       msg::effectsStatus,
       msg::clipboardText,
