@@ -122,6 +122,12 @@ Item {
         else
             apply(entries[index]);
     }
+    // where the chosen card is on the screen: the new wallpaper grows from there (the centre for the carousel's
+    // focused card, which sits mid-screen)
+    readonly property var revealOrigin: ({
+            x: (screen?.x ?? 0) + (screen?.width ?? 0) / 2,
+            y: (screen?.y ?? 0) + (screen?.height ?? 0) / 2
+        })
     function apply(entry: var): void {
         if (!entry)
             return;
@@ -129,9 +135,9 @@ Item {
         if (live)
             Wallpapers.applyLive(entry.key);
         else if ((Wallpapers.browse.output ?? "") !== "" && Quickshell.screens.length > 1)
-            Wallpapers.applyImageOn(Wallpapers.browse.output, entry.key);
+            Wallpapers.applyImageOn(Wallpapers.browse.output, entry.key, revealOrigin);
         else
-            Wallpapers.applyImage(entry.key);
+            Wallpapers.applyImage(entry.key, revealOrigin);
     }
     function toggleFavorite(entry: var): void {
         if (!entry)

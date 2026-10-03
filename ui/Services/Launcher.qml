@@ -265,7 +265,7 @@ Singleton {
                     title: i.name,
                     subtitle: i.folder !== "" ? i.folder : "Image",
                     image: Thumbnails.url(i.path, 96),
-                    run: () => Wallpapers.applyImage(i.path)
+                    run: () => Wallpapers.applyImage(i.path, {})
                 }));
         const live = Wallpapers.liveFor("installed", q, "az").slice(0, limit).map(i => ({
                     key: "live:" + i.id,

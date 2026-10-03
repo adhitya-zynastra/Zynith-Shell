@@ -217,7 +217,10 @@ Singleton {
     }
 
     // ── actions (state changes here first, so the browser answers at once; the shell's event confirms) ──
-    function applyImage(path: string): void {
+    // a change in progress, for the reveal: { path, output ("" = every screen), x, y } in screen coordinates
+    property var reveal: null
+    function applyImage(path: string, origin: var): void {
+        reveal = { path: path, output: "", x: origin?.x ?? -1, y: origin?.y ?? -1 };
         current = path;
         mode = "static";
         rememberRecent(path);
@@ -228,7 +231,8 @@ Singleton {
                 console.warn("zynith: wallpaper not set:", reply.trim());
         });
     }
-    function applyImageOn(output: string, path: string): void {
+    function applyImageOn(output: string, path: string, origin: var): void {
+        reveal = { path: path, output: output, x: origin?.x ?? -1, y: origin?.y ?? -1 };
         rememberRecent(path);
         CoreClient.call("wallpaper-set " + output + " " + path);
     }
@@ -279,7 +283,7 @@ Singleton {
     }
     function random(): void {
         if (images.length > 0)
-            applyImage(images[Math.floor(Math.random() * images.length)].path);
+            applyImage(images[Math.floor(Math.random() * images.length)].path, {});
     }
 
     // images picked here recently; the shell keeps no such list for static wallpapers

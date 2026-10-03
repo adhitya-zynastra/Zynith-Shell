@@ -146,6 +146,10 @@ Singleton {
             item.grabToImage(r => r.saveToFile(path));
             return "ok";
         }
+        // for diagnostics: apply a wallpaper as the browser would, the reveal growing from (x, y)
+        function applyWallpaper(path: string, x: int, y: int): void {
+            Wallpapers.applyImage(path, { x: x, y: y });
+        }
         function bars(): string {
             return JSON.stringify(PanelRouter.bars);
         }
