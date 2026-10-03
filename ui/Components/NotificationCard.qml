@@ -63,9 +63,9 @@ Item {
         visible: root.critical
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        width: 3
-        height: parent.height - Metrics.s5 * 2
-        radius: 2
+        width: 2
+        height: parent.height * 0.42
+        radius: 1
         color: Theme.danger
     }
 
@@ -83,8 +83,8 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                radius: Metrics.radiusMd
-                color: Theme.hover
+                radius: Metrics.radiusPlate
+                color: Theme.plate
                 visible: picture.status !== Image.Ready
             }
             Image {
@@ -118,16 +118,15 @@ Item {
                 Label {
                     id: app
                     width: parent.width - when.implicitWidth - close.width - Metrics.s3
-                    role: "caption"
+                    role: "data"
                     tone: "faint"
-                    caps: true
                     text: (Config.notifications.showAppName ?? true) ? (root.entry.appName || "Notification") : ""
                 }
                 Label {
                     id: when
                     anchors.right: close.left
                     anchors.rightMargin: Metrics.s2
-                    role: "caption"
+                    role: "data"
                     tone: "faint"
                     text: Qt.formatTime(new Date(root.entry.time), "HH:mm")
                 }
@@ -183,14 +182,14 @@ Item {
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - pct.width - Metrics.s3
-                    height: 4
+                    height: 3
                     radius: 2
-                    color: Theme.well
+                    color: Theme.rule
                     Rectangle {
                         width: parent.width * Math.max(0, Math.min(1, (root.entry.progress ?? 0) / 100))
                         height: parent.height
                         radius: 2
-                        color: Theme.accent
+                        color: Theme.alpha(Theme.ink, 0.78)
                         Behavior on width {
                             Anim {
                                 role: "spatialFast"

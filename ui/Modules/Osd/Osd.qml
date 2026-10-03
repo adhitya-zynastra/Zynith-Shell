@@ -161,8 +161,8 @@ Scope {
                         readonly property bool gauge: root.value >= 0
                         x: win.pad + (360 - width) / 2
                         y: win.pad
-                        width: gauge ? 340 : Math.min(360, Math.max(220, content.implicitWidth + Metrics.s5 * 2))
-                        height: gauge ? 64 : 52
+                        width: gauge ? 300 : Math.min(360, Math.max(200, content.implicitWidth + Metrics.s5 * 2))
+                        height: gauge ? 52 : 44
                         radius: height / 2
                         raised: true
                         opacity: perScreen.presence
@@ -197,16 +197,14 @@ Scope {
                                 width: card.height - Metrics.s3 * 2
                                 height: width
                                 radius: width / 2
-                                color: root.inactive ? Theme.hover : Theme.accentSoft
-                                border.width: Metrics.hairline
-                                border.color: root.inactive ? Theme.hairline : Theme.accentLine
+                                color: "transparent"
 
                                 Icon {
                                     id: glyph
                                     anchors.centerIn: parent
                                     name: root.icon
-                                    size: card.gauge ? 20 : 17
-                                    tone: root.inactive ? "faint" : "accent"
+                                    size: card.gauge ? 19 : 16
+                                    tone: root.inactive ? "faint" : "ink"
                                 }
                                 // a small acknowledgement on every change
                                 SequentialAnimation {
@@ -248,42 +246,50 @@ Scope {
                                     Label {
                                         anchors.left: parent.left
                                         anchors.verticalCenter: parent.verticalCenter
-                                        role: "micro"
-                                        caps: true
-                                        tone: "muted"
+                                        role: "data"
+                                        tone: "faint"
                                         text: root.title
                                     }
                                     Label {
                                         anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
-                                        role: "label"
-                                        numeric: true
+                                        role: "data"
                                         tone: root.value > 1 ? "danger" : "ink"
-                                        text: root.label
+                                        text: /^\d+%?$/.test(root.label) ? String(parseInt(root.label)).padStart(3, "0") : root.label
                                     }
                                 }
                                 Item {
                                     visible: card.gauge
                                     width: parent.width
-                                    height: 6
+                                    height: 3
 
                                     Rectangle {
                                         anchors.fill: parent
-                                        radius: 3
-                                        color: Theme.well
+                                        radius: 2
+                                        color: Theme.rule
                                     }
                                     Rectangle {
                                         id: fill
                                         width: parent.width * Math.min(1, Math.max(0, root.value))
                                         height: parent.height
-                                        radius: 3
-                                        color: root.inactive ? Theme.inkFaint : Theme.accent
+                                        radius: 2
+                                        color: root.inactive ? Theme.inkFaint : Theme.alpha(Theme.ink, 0.82)
                                         Behavior on width {
                                             NumberAnimation {
                                                 duration: Motion.focus
                                                 easing.type: Motion.standardEasing
                                             }
                                         }
+                                    }
+                                    // the level's head: a small mark of light where it stands
+                                    Rectangle {
+                                        visible: !root.inactive
+                                        x: Math.max(0, fill.width - 1)
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: 2
+                                        height: 9
+                                        radius: 1
+                                        color: Theme.accent
                                     }
                                     // past 100 %: the boost shows over the full bar in the warning colour
                                     Rectangle {
@@ -298,8 +304,7 @@ Scope {
                                 }
                                 Label {
                                     visible: !card.gauge && root.title !== ""
-                                    role: "micro"
-                                    caps: true
+                                    role: "data"
                                     tone: "faint"
                                     text: root.title
                                 }
