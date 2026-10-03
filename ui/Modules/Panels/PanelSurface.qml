@@ -166,6 +166,8 @@ PanelWindow {
 
     Glass {
         id: card
+        // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
+        Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
 
         x: win.cardX - win.winX
         y: win.cardY - win.winY

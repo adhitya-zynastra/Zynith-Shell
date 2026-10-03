@@ -17,8 +17,8 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: Metrics.radiusMd
-        color: Theme.hover
+        radius: Metrics.radiusPlate
+        color: Theme.plate
     }
 
     Rectangle {
@@ -27,10 +27,10 @@ Item {
         y: 3
         width: root.cell - 6
         height: parent.height - 6
-        radius: Metrics.radiusMd - 3
-        color: Theme.glassRaised
+        radius: Metrics.radiusPlate - 3
+        color: Theme.signalFill
         border.width: Metrics.hairline
-        border.color: Theme.accentLine
+        border.color: Theme.signalEdge
 
         Glide on x {}
     }

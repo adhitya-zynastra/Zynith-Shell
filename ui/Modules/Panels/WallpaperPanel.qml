@@ -315,19 +315,59 @@ Item {
             boundsBehavior: Flickable.StopAtBounds
             clip: true
 
-            Row {
+            // the views as tracked tabs with their counts; the current one's mark glides under it
+            Item {
                 id: viewRow
-                spacing: Metrics.s1
-                Repeater {
-                    model: root.views
-                    delegate: Chip {
-                        required property var modelData
-                        text: modelData.label
-                        icon: modelData.icon
-                        count: modelData.count
-                        active: root.view === modelData.key
-                        onClicked: root.setView(modelData.key)
+                implicitWidth: viewTabs.implicitWidth
+                height: 32
+                Row {
+                    id: viewTabs
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Metrics.s6
+                    Repeater {
+                        model: root.views
+                        delegate: Item {
+                            id: viewTab
+                            required property var modelData
+                            readonly property bool current: root.view === modelData.key
+                            implicitWidth: tabText.implicitWidth
+                            implicitHeight: tabText.implicitHeight
+                            Row {
+                                id: tabText
+                                spacing: Metrics.s2
+                                Label {
+                                    role: "data"
+                                    tone: viewTab.current ? "ink" : viewArea.containsMouse ? "muted" : "faint"
+                                    text: viewTab.modelData.label
+                                }
+                                Label {
+                                    visible: (viewTab.modelData.count ?? -1) >= 0
+                                    role: "data"
+                                    tone: viewTab.current ? "accent" : "faint"
+                                    text: viewTab.modelData.count ?? ""
+                                }
+                            }
+                            MouseArea {
+                                id: viewArea
+                                anchors.fill: parent
+                                anchors.margins: -6
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.setView(viewTab.modelData.key)
+                            }
+                        }
                     }
+                }
+                Rectangle {
+                    readonly property Item under: viewTabs.children[Math.max(0, root.views.findIndex(v => v.key === root.view))] ?? null
+                    x: under ? under.x : 0
+                    width: under ? under.width : 0
+                    y: viewTabs.y + viewTabs.height + 4
+                    height: 1.5
+                    radius: 1
+                    color: Theme.accent
+                    Glide on x {}
+                    Glide on width {}
                 }
             }
         }
@@ -396,7 +436,7 @@ Item {
 
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
-                    role: "caption"
+                    role: "data"
                     tone: "faint"
                     text: Wallpapers.images.length + " images in " + Wallpapers.directory.replace(Paths.home, "~")
                 }
@@ -540,8 +580,12 @@ Item {
                 y: Math.round(parent.height * 0.06) - (1 - p) * 28
                 width: Math.min(1000, parent.width - Metrics.s6 * 2)
                 height: controlColumn.implicitHeight + Metrics.s4 * 2
-                radius: Metrics.radiusXl
-                raised: true
+                radius: Metrics.radiusSurface
+                // unboxed: the controls float on the scene (the dimmed desktop); the wallpapers are the subject
+                fill: "transparent"
+                edge: false
+                raised: false
+                sheen: false
                 opacity: p
 
                 TapHandler {}
@@ -563,7 +607,7 @@ Item {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: Theme.hairline
+                        color: Theme.rule
                     }
                     Loader {
                         width: parent.width
@@ -1014,20 +1058,23 @@ Item {
                                 width: parent.width
                                 horizontalAlignment: Text.AlignHCenter
                                 role: "headline"
+                                font.family: Type.display
                                 font.weight: Font.Light
                                 text: root.focused?.title ?? ""
                             }
+                            // where it is from, and where it stands in the set, as a readout
                             Label {
                                 width: parent.width
                                 horizontalAlignment: Text.AlignHCenter
-                                role: "caption"
-                                tone: "muted"
+                                role: "data"
+                                tone: "faint"
                                 text: {
                                     const f = root.focused;
                                     if (!f)
                                         return "";
                                     const where = root.live ? "Wallpaper Engine · " + f.subtitle : f.subtitle;
-                                    return [where, (root.focusIndex + 1) + " of " + root.entries.length].filter(s => s !== "").join("  ·  ");
+                                    const n = String(root.entries.length).length;
+                                    return [where, String(root.focusIndex + 1).padStart(n, "0") + " / " + root.entries.length].filter(s => s !== "").join("  ·  ");
                                 }
                             }
                         }
