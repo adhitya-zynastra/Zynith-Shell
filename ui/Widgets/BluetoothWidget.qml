@@ -13,7 +13,6 @@ BarItem {
     BarGlyph {
         item: root
         name: !Bluetooth.enabled ? "bluetooth-off" : Bluetooth.connected.length > 0 ? "bluetooth-connected" : "bluetooth"
-        colour: Bluetooth.enabled ? root.iconInk : Theme.alpha(root.iconInk, 0.45)
     }
     BarText {
         item: root

@@ -52,8 +52,8 @@ Scope {
             "numlock": "numbers",
             "scrolllock": "arrows-sort",
             "power-saver": "leaf",
-            "balanced": "gauge",
-            "performance": "rocket"
+            "balanced": "scale",
+            "performance": "gauge"
         })
     readonly property var titles: ({
             "keyboard-backlight": "Keyboard light",

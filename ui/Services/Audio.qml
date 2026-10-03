@@ -20,7 +20,8 @@ Singleton {
     readonly property real micVolume: micReady ? source.audio.volume : 0
     readonly property bool micMuted: micReady ? source.audio.muted : true
 
-    readonly property string glyph: !ready || muted || volume <= 0.001 ? "volume-off" : volume < 0.34 ? "volume-3" : volume < 0.67 ? "volume-2" : "volume"
+    // as the native glyphs: muted or 0 % → off, under 40 % → low, else high
+    readonly property string glyph: !ready || muted || Math.round(volume * 100) === 0 ? "volume-off" : volume < 0.4 ? "volume-2" : "volume"
 
     function setVolume(v: real): void {
         if (ready)

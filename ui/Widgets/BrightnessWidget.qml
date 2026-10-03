@@ -13,11 +13,11 @@ BarItem {
     Component.onDestruction: Backlight.release()
     BarGlyph {
         item: root
-        name: Backlight.value < 0.34 ? "brightness-down" : "brightness-up"
+        name: Backlight.value < 0.4 ? "brightness-down-filled" : "brightness-up-filled"
     }
     BarText {
         item: root
-        visible: root.vertical ? (root.bar?.readouts ?? true) && root.opt("readout") !== false : root.opt("show_label") !== false
+        visible: root.vertical ? (root.bar?.readouts ?? false) && root.opt("readout") !== false : root.opt("show_label") !== false
         muted: true
         text: Math.round(Backlight.value * 100)
     }

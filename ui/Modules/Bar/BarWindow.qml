@@ -69,9 +69,9 @@ PanelWindow {
     readonly property string capsuleForeground: spec.capsule_foreground ?? ""
     readonly property real capsuleThickness: spec.capsule_thickness ?? 1
     // values under the glyphs of a vertical bar (volume, brightness, battery) in the data voice
-    readonly property bool readouts: spec.readouts ?? true
+    readonly property bool readouts: spec.readouts ?? false
     // how groups look unless a group says: rule (hairline ticks, no box) · capsule · plate
-    readonly property string groupStyle: spec.group_style ?? "rule"
+    readonly property string groupStyle: spec.group_style ?? "capsule"
     // how far a panel opened from here tucks under the bar's edge (hides the seam)
     readonly property int panelOverlap: spec.panel_overlap ?? 0
     // "centred" against the whole output, or what other bars and docks leave of it
@@ -172,7 +172,9 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: reserve && visibility === "always" ? ExclusionMode.Normal : reference === "workspace" ? ExclusionMode.Auto : ExclusionMode.Ignore
     // margin_opposite: more reserved room on the inner side, for windows that ignore the zone's edge
-    exclusiveZone: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : 0
+    // (setting exclusiveZone turns the mode to Normal, so a bar placed on the whole output says -1 itself:
+    // with 0, niri laid the centred bars out beside the rail's zone, 58 px narrower and off-centre)
+    exclusiveZone: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : reference === "workspace" ? 0 : -1
     color: "transparent"
 
     anchors {
@@ -233,7 +235,7 @@ PanelWindow {
     BlurRegion {
         window: win
         item: pill.presence > 0.02 ? pill : null
-        radius: win.radius
+        radius: Math.min(win.radius, win.thickness / 2)
     }
 
     // along the bar: at its anchor, the extra summoning room on the far side (both sides when centred)

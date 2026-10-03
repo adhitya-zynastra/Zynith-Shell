@@ -11,6 +11,6 @@ BarItem {
     readonly property int profile: PowerProfiles.profile
     BarGlyph {
         item: root
-        name: root.profile === PowerProfile.PowerSaver ? "leaf" : root.profile === PowerProfile.Performance ? "rocket" : "gauge"
+        name: root.profile === PowerProfile.PowerSaver ? "leaf" : root.profile === PowerProfile.Performance ? "gauge" : "scale"
     }
 }

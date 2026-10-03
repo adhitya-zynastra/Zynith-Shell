@@ -11,7 +11,10 @@ Loader {
     required property string name
     readonly property var spec: Config.resolveBarWidget(name)
 
-    sourceComponent: Registry.component(BarWidgetTypes.canonical(spec.type))
+    // workspaces: the native styles (regular · minimal · focus_hint, the default) are the one-to-one widget;
+    // pills · numbers · dots · icons · line are the evolved one
+    readonly property string kind: BarWidgetTypes.canonical(spec.type)
+    sourceComponent: kind === "workspaces" && ["regular", "minimal", "focus_hint"].includes(spec.settings?.style ?? "regular") ? Registry.workspacesClassic : Registry.component(kind)
     onLoaded: {
         item.vertical = Qt.binding(() => root.bar.vertical);
         item.screen = Qt.binding(() => root.bar.screen);

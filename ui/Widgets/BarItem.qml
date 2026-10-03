@@ -26,7 +26,10 @@ Item {
     property bool shown: true
     property bool active: false
     property bool interactive: opt("interactive") !== false
-    property int pad: Metrics.s3
+    // room around the content along the bar: none, as the native bar (its widget_spacing separates widgets —
+    // with 8 a side the rail's icons stood 44 px apart instead of the native 28); `widget_padding` on a widget
+    // or its bar adds some
+    property int pad: settings.widget_padding ?? bar?.spec?.widget_padding ?? 0
     property alias spacing: grid.spacing
     default property alias content: grid.data
     readonly property bool hovered: area.containsMouse
@@ -144,8 +147,10 @@ Item {
             }
         }
 
+        // the highlight reaches a little past an unpadded widget, so it frames the glyph rather than clips it
         Rectangle {
             anchors.fill: parent
+            anchors.margins: -Math.max(0, 4 - root.pad)
             radius: Metrics.radiusMd
             color: area.pressed ? Theme.press : root.active ? Theme.accentSoft : area.containsMouse && (root.bar?.hoverHighlight ?? true) ? Theme.hover : "transparent"
             Behavior on color {

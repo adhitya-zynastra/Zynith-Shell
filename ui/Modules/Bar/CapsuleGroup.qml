@@ -73,7 +73,7 @@ Item {
 
     // capsule (a filled pill) · plate (a tone step) · rule (no box: a hairline tick at each end, so a bar
     // reads as one surface with its groups set apart by space and rule)
-    readonly property string look: group?.style ?? bar.groupStyle ?? "rule"
+    readonly property string look: group?.style ?? bar.groupStyle ?? "capsule"
     Rectangle {
         anchors.fill: parent
         radius: root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2

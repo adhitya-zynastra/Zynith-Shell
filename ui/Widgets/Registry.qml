@@ -52,6 +52,10 @@ Singleton {
     readonly property Component workspaces: Component {
         WorkspacesWidget {}
     }
+    // the native shell's own workspace styles, reproduced one to one (the baseline)
+    readonly property Component workspacesClassic: Component {
+        WorkspacesClassicWidget {}
+    }
     readonly property Component taskbar: Component {
         TaskbarWidget {}
     }

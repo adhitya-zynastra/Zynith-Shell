@@ -74,7 +74,7 @@ Singleton {
         {
             type: "workspaces", label: "Workspaces", icon: "layout-grid",
             settings: [
-                { key: "style", label: "Style", kind: "choice", default: "pills", options: [{ key: "pills", label: "Pills" }, { key: "numbers", label: "Numbers" }, { key: "dots", label: "Dots" }, { key: "icons", label: "App icons" }, { key: "line", label: "Line" }] },
+                { key: "style", label: "Style", kind: "select", default: "regular", options: [{ key: "regular", label: "Classic pills" }, { key: "minimal", label: "Classic dots" }, { key: "focus_hint", label: "Classic focus hint" }, { key: "pills", label: "Pills" }, { key: "numbers", label: "Numbers" }, { key: "dots", label: "Dots" }, { key: "icons", label: "App icons" }, { key: "line", label: "Line" }] },
                 { key: "indicator", label: "Active marker", kind: "choice", default: "auto", options: [{ key: "auto", label: "By style" }, { key: "pill", label: "Pill" }, { key: "mark", label: "Mark" }, { key: "dot", label: "Dot" }, { key: "line", label: "Line" }, { key: "ring", label: "Ring" }] },
                 { key: "indicator_motion", label: "It moves", kind: "choice", default: "trail", options: [{ key: "trail", label: "Stretching" }, { key: "slide", label: "Gliding" }, { key: "none", label: "At once" }] },
                 { key: "cell_size", label: "Cell size (0 fits the bar)", kind: "int", default: 0, from: 0, to: 64, step: 1 },

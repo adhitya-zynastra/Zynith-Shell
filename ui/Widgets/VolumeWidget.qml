@@ -21,7 +21,7 @@ BarItem {
     }
     BarText {
         item: root
-        visible: root.vertical ? (root.bar?.readouts ?? true) && root.opt("readout") !== false : root.opt("show_label") !== false
+        visible: root.vertical ? (root.bar?.readouts ?? false) && root.opt("readout") !== false : root.opt("show_label") !== false
         muted: true
         text: root.muted ? "" : Math.round(root.level * 100)
     }

@@ -111,7 +111,7 @@ Singleton {
         {
             id: "power_profile",
             label: () => "Power profile",
-            icon: () => root.profile === "saver" ? "leaf" : root.profile === "performance" ? "rocket" : "gauge",
+            icon: () => root.profile === "saver" ? "leaf" : root.profile === "performance" ? "gauge" : "scale",
             on: () => root.profile !== "balanced",
             detail: () => root.profileLabels[root.profile],
             press: () => root.cycleProfile(),
