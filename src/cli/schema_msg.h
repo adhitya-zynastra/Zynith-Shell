@@ -449,6 +449,17 @@ namespace noctalia::cli {
     inline constexpr Command settingsReset{
         "settings-reset", "Remove one native setting's override: {\"path\": [...]}", {}, {}, {}, {}, {}, false
     };
+    inline constexpr Command launcherProviders{
+        "launcher-providers", "Print the launcher's providers as JSON (built-in and plugin)", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command launcherQuery{
+        "launcher-query", "Query one launcher provider: <provider-id> <text>; prints its results as JSON", {}, {}, {},
+        {}, {}, false
+    };
+    inline constexpr Command launcherActivate{
+        "launcher-activate", "Activate a result: {\"provider\": id, \"result\": id, \"text\": query}", {}, {}, {}, {},
+        {}, false
+    };
     inline constexpr Command calendarEvents{
         "calendar-events", "Print the synced calendar events of the next [days] (default 14) as JSON", {}, {}, {}, {},
         {}, false
@@ -1046,6 +1057,9 @@ namespace noctalia::cli {
       msg::settingsSchema,
       msg::settingsSet,
       msg::settingsReset,
+      msg::launcherProviders,
+      msg::launcherQuery,
+      msg::launcherActivate,
       msg::calendarEvents,
       msg::effectsStatus,
       msg::clipboardText,

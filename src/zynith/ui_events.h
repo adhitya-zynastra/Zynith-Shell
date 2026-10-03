@@ -12,6 +12,7 @@
 
 namespace zynith {
 
-  void notifyUi(std::string_view name, std::string_view payload = {});
+  // true when the UI was listening and took the line
+  bool notifyUi(std::string_view name, std::string_view payload = {});
 
 } // namespace zynith

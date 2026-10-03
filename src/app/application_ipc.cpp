@@ -678,6 +678,32 @@ void Application::initIpc() {
     return zynith::settings_bridge::reset(m_settingsWindow.registrySnapshot(), m_configService, args);
   });
 
+  // zynith: the launcher's providers (calculator with units and currencies, plugins…) for the Zynith launcher
+  m_ipcService.bind(noctalia::cli::msg::launcherProviders, [this](const std::string& /*args*/) -> std::string {
+    return m_launcherPanel != nullptr ? m_launcherPanel->zynithProvidersJson() : "[]\n";
+  });
+  m_ipcService.bind(noctalia::cli::msg::launcherQuery, [this](const std::string& args) -> std::string {
+    if (m_launcherPanel == nullptr) {
+      return "[]\n";
+    }
+    const auto space = args.find(' ');
+    const std::string id = space == std::string::npos ? args : args.substr(0, space);
+    const std::string text = space == std::string::npos ? std::string() : args.substr(space + 1);
+    return m_launcherPanel->zynithQueryJson(id, text);
+  });
+  m_ipcService.bind(noctalia::cli::msg::launcherActivate, [this](const std::string& args) -> std::string {
+    if (m_launcherPanel == nullptr) {
+      return "error: no launcher\n";
+    }
+    const nlohmann::json req = nlohmann::json::parse(args, nullptr, false);
+    if (!req.is_object() || !req.contains("provider") || !req.contains("result")) {
+      return "error: launcher-activate {\"provider\": …, \"result\": …, \"text\": …}\n";
+    }
+    return m_launcherPanel->zynithActivate(
+        req.value("provider", std::string()), req.value("result", std::string()), req.value("text", std::string())
+    );
+  });
+
   // zynith: the synced calendar's coming events, for the Control Panel's calendar module
   m_ipcService.bind(noctalia::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
     int days = 14;
