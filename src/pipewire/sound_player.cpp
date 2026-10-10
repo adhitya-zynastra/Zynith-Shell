@@ -333,6 +333,22 @@ void SoundPlayer::markFinished(ActiveStream& streamState) {
     DeferredCall::callLater(std::move(streamState.onFinished));
     streamState.onFinished = nullptr;
   }
+  scheduleSweep();
+}
+
+void SoundPlayer::scheduleSweep() {
+  if (m_sweepScheduled) {
+    return;
+  }
+  m_sweepScheduled = true;
+  // Deferred like the continuation above: a stream is never destroyed inside its own callback.
+  DeferredCall::callLater([this, alive = std::weak_ptr<bool>(m_alive)]() {
+    if (alive.expired()) {
+      return;
+    }
+    m_sweepScheduled = false;
+    removeFinished();
+  });
 }
 
 void SoundPlayer::removeFinished() {

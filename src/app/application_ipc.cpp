@@ -897,7 +897,9 @@ void Application::initIpc() {
 
   m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
     m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
-    return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + "\n";
+    m_desktopWidgetsController.syncOwnership();
+    return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + ", desktop_widgets "
+        + (zynith::uiOwns("desktop_widgets") ? "zynith" : "native") + "\n";
   });
 
   m_ipcService.bind(
