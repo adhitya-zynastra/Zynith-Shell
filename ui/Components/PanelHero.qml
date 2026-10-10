@@ -85,18 +85,18 @@ Item {
                 }
             }
             SequentialAnimation on x {
-                running: root.active && ExperiencePolicy.richEffects && (root.cfg.hero_drift ?? true)
+                running: root.active && ExperiencePolicy.richEffects && !Motion.reduced && (root.cfg.hero_drift ?? true)
                 loops: Animation.Infinite
                 NumberAnimation {
                     from: -8
                     to: 8
-                    duration: 14000
+                    duration: Motion.ms(14000)
                     easing.type: Easing.InOutSine
                 }
                 NumberAnimation {
                     from: 8
                     to: -8
-                    duration: 14000
+                    duration: Motion.ms(14000)
                     easing.type: Easing.InOutSine
                 }
             }

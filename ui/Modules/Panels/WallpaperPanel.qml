@@ -813,12 +813,12 @@ Item {
                                 loops: Animation.Infinite
                                 NumberAnimation {
                                     to: 0.6
-                                    duration: 2200
+                                    duration: Motion.ms(2200)
                                     easing.type: Easing.InOutSine
                                 }
                                 NumberAnimation {
                                     to: 1
-                                    duration: 2200
+                                    duration: Motion.ms(2200)
                                     easing.type: Easing.InOutSine
                                 }
                             }

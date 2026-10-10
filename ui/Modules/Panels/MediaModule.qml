@@ -217,7 +217,7 @@ Item {
                     to: 360
                     duration: Math.max(4, root.cfg.spin_seconds ?? 24) * 1000
                     loops: Animation.Infinite
-                    running: (root.cfg.spin ?? true) && Media.playing && root.live && ExperiencePolicy.richEffects
+                    running: (root.cfg.spin ?? true) && Media.playing && root.live && ExperiencePolicy.richEffects && !Motion.reduced
                 }
             }
         }

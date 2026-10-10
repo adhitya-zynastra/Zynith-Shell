@@ -57,15 +57,15 @@ Item {
         opacity: root.busy ? 0.4 : 1
 
         SequentialAnimation on opacity {
-            running: root.busy
+            running: root.busy && !Motion.reduced
             loops: Animation.Infinite
             NumberAnimation {
                 to: 1
-                duration: 500
+                duration: Motion.ms(500)
             }
             NumberAnimation {
                 to: 0.35
-                duration: 500
+                duration: Motion.ms(500)
             }
         }
     }

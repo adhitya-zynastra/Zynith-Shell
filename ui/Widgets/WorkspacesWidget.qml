@@ -298,12 +298,12 @@ BarItem {
                     alwaysRunToEnd: true
                     NumberAnimation {
                         to: 0.45
-                        duration: 520
+                        duration: Motion.scene
                         easing.type: Easing.InOutSine
                     }
                     NumberAnimation {
                         to: 1
-                        duration: 520
+                        duration: Motion.scene
                         easing.type: Easing.InOutSine
                     }
                 }
