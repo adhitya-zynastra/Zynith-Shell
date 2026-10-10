@@ -87,6 +87,9 @@ private:
     // a wake that finds only silence (a stream carrying a noise floor above kWakePeak) backs off before the
     // next one, so a quiet stream does not keep the UI thread analysing nothing; audible sound always wakes
     std::atomic<qint64> m_wakeNotBefore{0};
+    // when the stream last delivered audio: a paused stream (its sink idle) delivers none, and the ring would
+    // otherwise hold its last sound forever — the analysis never reads silence and never sleeps
+    std::atomic<qint64> m_lastAudioMs{0};
     int m_fruitlessWakes = 0;
     bool m_heardSinceWake = false;
 

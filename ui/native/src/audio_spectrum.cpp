@@ -25,6 +25,8 @@ constexpr float kSilence = 0.01F;
 constexpr float kWakePeak = 0.0005F;
 // clearly audible: wakes the analyser at once, whatever the back-off
 constexpr float kLoudPeak = 0.05F;
+// no buffer for this long: the stream has paused, and what the ring holds is no longer playing
+constexpr qint64 kStaleAudioMs = 250;
 // the back-off after fruitless wakes: 250 ms, doubling, at most this
 constexpr qint64 kMaxWakeBackoffMs = 4000;
 
@@ -185,6 +187,7 @@ void AudioSpectrum::onProcess() {
         const auto* samples = reinterpret_cast<const float*>(static_cast<const uint8_t*>(d.data) + d.chunk->offset);
         const int frames = static_cast<int>(d.chunk->size / sizeof(float)) / channels;
         float peak = 0.0F;
+        m_lastAudioMs = QDateTime::currentMSecsSinceEpoch();
         if (m_sleeping.load()) {
             // asleep: only listen for the wake (no lock, no ring — the ring refills within ~40 ms of waking)
             const int samplesN = frames * channels;
@@ -249,6 +252,11 @@ void AudioSpectrum::resetState() {
 void AudioSpectrum::tick() {
     {
         QMutexLocker lock(&m_lock);
+        if (QDateTime::currentMSecsSinceEpoch() - m_lastAudioMs.load() > kStaleAudioMs) {
+            // paused: analyse silence, so the bars fall away and the analysis sleeps as it does in silence
+            std::fill(m_ring.begin(), m_ring.end(), 0.0F);
+            m_ringFull = true;
+        }
         if (!m_ringFull)
             return;
         for (int i = 0; i < kFftSize; ++i)
