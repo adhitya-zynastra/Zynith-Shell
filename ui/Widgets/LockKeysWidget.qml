@@ -18,7 +18,7 @@ BarItem {
         delegate: Rectangle {
             required property var modelData
             width: tag.implicitWidth + 8
-            height: 16
+            height: Metrics.icon
             radius: 4
             color: modelData.on ? Theme.accentSoft : "transparent"
             border.width: 1

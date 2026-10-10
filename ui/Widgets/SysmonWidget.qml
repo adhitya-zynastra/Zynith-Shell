@@ -53,8 +53,8 @@ BarItem {
     // a ring for the level
     Shape {
         visible: root.viz === "gauge"
-        width: 14
-        height: 14
+        width: Metrics.icon - 2
+        height: Metrics.icon - 2
         preferredRendererType: Shape.CurveRenderer
         ShapePath {
             strokeWidth: 2
@@ -88,8 +88,8 @@ BarItem {
     Shape {
         id: spark
         visible: root.viz === "graph" && !root.vertical
-        width: 36
-        height: 14
+        width: Math.round(Metrics.icon * 2.25)
+        height: Metrics.icon - 2
         preferredRendererType: Shape.CurveRenderer
         readonly property var values: System.history[root.stat] ?? []
         ShapePath {

@@ -78,7 +78,7 @@ BarItem {
         Icon {
             visible: root.stateGlyph !== ""
             name: root.stateGlyph
-            size: 13
+            size: Math.round(Metrics.icon * 0.8)
             color: root.tint
         }
     }

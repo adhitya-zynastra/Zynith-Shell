@@ -30,7 +30,7 @@ BarItem {
     component TrayIcon: Item {
         id: entry
         required property var modelData
-        property real size: 18
+        property real size: Metrics.icon + 2
         width: size
         height: size
         // an icon name the theme lacks would draw Qt's checkerboard; those get a plain glyph instead
@@ -88,12 +88,12 @@ BarItem {
     Item {
         id: handle
         visible: root.drawer && root.inDrawer.length > 0
-        width: 18
-        height: 18
+        width: Metrics.icon + 2
+        height: Metrics.icon + 2
         Icon {
             anchors.centerIn: parent
             name: root.vertical ? (root.bar?.edge === "right" ? "chevron-left" : "chevron-right") : (root.bar?.edge === "bottom" ? "chevron-down" : "chevron-down")
-            size: 14
+            size: Metrics.icon - 2
             color: root.iconInk
             rotation: drawerWindow.visible ? 180 : 0
             Behavior on rotation {
