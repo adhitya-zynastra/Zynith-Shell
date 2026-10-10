@@ -18,8 +18,10 @@ Column {
     property var isSet: key => false
     signal changed(string key, var value)
     signal cleared(string key)
+    // a hairline between settings (a list, as the native Settings draws its sections)
+    property bool divided: false
 
-    spacing: Metrics.s4
+    spacing: divided ? Metrics.s3 : Metrics.s4
 
     Repeater {
         model: root.schema
@@ -29,8 +31,16 @@ Column {
             readonly property bool shown: root.shows(modelData)
             readonly property var value: root.valueOf(modelData.key)
             width: root.width
-            height: shown ? column.implicitHeight : 0
+            height: shown ? column.implicitHeight + (root.divided ? Metrics.s3 : 0) : 0
             visible: shown
+            Rectangle {
+                visible: root.divided && row.shown
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: -root.spacing / 2 - 0.5
+                width: parent.width
+                height: Metrics.hairline
+                color: Theme.hairline
+            }
             opacity: shown ? 1 : 0
             Behavior on opacity {
                 Anim {
@@ -97,7 +107,7 @@ Column {
                     }
                 }
                 Label {
-                    visible: (row.modelData.hint ?? "") !== "" && row.modelData.kind !== "text"
+                    visible: (row.modelData.hint ?? "") !== "" && row.modelData.kind !== "text" && row.modelData.kind !== "toggle"
                     width: parent.width
                     role: "micro"
                     tone: "faint"
@@ -116,13 +126,32 @@ Column {
             property var spec: ({})
             property var val
             property var apply: v => {}
-            implicitHeight: 28
-            Label {
+            // the label and what it does on the left, the switch on the right
+            implicitHeight: Math.max(28, toggleText.implicitHeight)
+            Column {
+                id: toggleText
+                anchors.left: parent.left
+                anchors.right: toggleSwitch.left
+                anchors.rightMargin: Metrics.s4
                 anchors.verticalCenter: parent.verticalCenter
-                role: "label"
-                text: ctl.spec.label ?? ""
+                spacing: 2
+                Label {
+                    width: parent.width
+                    role: "label"
+                    wrapMode: Text.WordWrap
+                    text: ctl.spec.label ?? ""
+                }
+                Label {
+                    visible: (ctl.spec.hint ?? "") !== ""
+                    width: parent.width
+                    role: "micro"
+                    tone: "faint"
+                    wrapMode: Text.WordWrap
+                    text: ctl.spec.hint ?? ""
+                }
             }
             Toggle {
+                id: toggleSwitch
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 checked: ctl.val === true

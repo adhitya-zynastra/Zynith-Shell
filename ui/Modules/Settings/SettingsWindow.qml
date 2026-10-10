@@ -15,6 +15,23 @@ FloatingWindow {
 
     property string route: Quickshell.env("ZYNITH_SETTINGS_ROUTE") || "home"
     property string query: ""
+    // a setting found by search: its page shows it alone until the filter is cleared
+    property string focusTitle: ""
+    onRouteChanged: {
+        if (!settingJump)
+            focusTitle = "";
+        fadeIn.restart();
+    }
+    property bool settingJump: false
+    function goToSetting(hit: var): void {
+        settingJump = true;
+        focusTitle = hit.title;
+        route = hit.route.id;
+        settingJump = false;
+    }
+    readonly property var routeMatches: Routes.search(query)
+    readonly property var settingMatches: query.trim().length >= 2 ? SettingsIndex.search(query) : []
+    Component.onCompleted: SettingsIndex.load()
 
     onClosed: Qt.quit()
 
@@ -26,6 +43,16 @@ FloatingWindow {
         // the whole current page, as an image of this window's own content only (for documentation)
         function capture(path: string): void {
             page.grabToImage(r => r.saveToFile(path));
+        }
+        // what the search box would find (for testing): routes and settings, as JSON
+        function search(text: string): string {
+            win.query = text;
+            return JSON.stringify({ routes: win.routeMatches.map(r => r.id), settings: win.settingMatches.map(h => h.title + " → " + h.route.id) });
+        }
+        function goTo(text: string, n: int): void {
+            const hits = SettingsIndex.search(text);
+            if (hits.length > n)
+                win.goToSetting(hits[n]);
         }
         function captureSidebar(path: string): void {
             sidebar.grabToImage(r => r.saveToFile(path));
@@ -45,9 +72,15 @@ FloatingWindow {
         anchors.bottom: parent.bottom
         color: Theme.surfaceLow
 
-        Column {
+        Flickable {
             anchors.fill: parent
             anchors.margins: Metrics.s5
+            contentHeight: sideColumn.implicitHeight
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+        Column {
+            id: sideColumn
+            width: parent.width
             spacing: Metrics.s2
 
             Label {
@@ -87,7 +120,7 @@ FloatingWindow {
                         visible: parent.text === ""
                         role: "body"
                         tone: "faint"
-                        text: "Search"
+                        text: "Search every setting"
                     }
                 }
             }
@@ -97,15 +130,67 @@ FloatingWindow {
                 height: Metrics.s2
             }
 
+            // with a query: the pages that match, then the settings themselves (each to its page)
+            Label {
+                visible: win.settingMatches.length > 0
+                role: "data"
+                tone: "faint"
+                topPadding: Metrics.s4
+                bottomPadding: Metrics.s2
+                leftPadding: Metrics.s3
+                text: "Settings · " + win.settingMatches.length
+            }
             Repeater {
-                model: Routes.search(win.query)
+                model: win.settingMatches
+                delegate: Item {
+                    id: hit
+                    required property var modelData
+                    width: parent.width
+                    height: hitText.implicitHeight + Metrics.s2 * 2
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Metrics.radiusMd
+                        color: hitArea.containsMouse ? Theme.hover : "transparent"
+                    }
+                    Column {
+                        id: hitText
+                        x: Metrics.s3
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - Metrics.s3 * 2
+                        spacing: 1
+                        Label {
+                            width: parent.width
+                            role: "label"
+                            elide: Text.ElideRight
+                            text: hit.modelData.title
+                        }
+                        Label {
+                            width: parent.width
+                            role: "micro"
+                            tone: "faint"
+                            elide: Text.ElideRight
+                            text: hit.modelData.route.title + "  ›  " + hit.modelData.group
+                        }
+                    }
+                    MouseArea {
+                        id: hitArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: win.goToSetting(hit.modelData)
+                    }
+                }
+            }
+
+            Repeater {
+                model: win.routeMatches
 
                 delegate: Column {
                     required property var modelData
                     required property int index
                     width: parent.width
 
-                    readonly property var all: Routes.search(win.query)
+                    readonly property var all: win.routeMatches
                     readonly property bool groupStart: modelData.group !== "" && (index === 0 || all[index - 1].group !== modelData.group)
 
                     Label {
@@ -119,7 +204,7 @@ FloatingWindow {
                     }
                     ListRow {
                         width: parent.width
-                        height: 38
+                        height: 36
                         icon: parent.modelData.icon
                         title: parent.modelData.title
                         active: win.route === parent.modelData.id
@@ -127,6 +212,7 @@ FloatingWindow {
                     }
                 }
             }
+        }
         }
     }
 
@@ -146,8 +232,30 @@ FloatingWindow {
             y: Metrics.s7
             width: parent.width - Metrics.s7 * 2
             opacity: 0
+            readonly property var routeSpec: Routes.find(win.route)
+            sourceComponent: routeSpec.section ? nativePage : routePage
+        }
+    }
 
-            sourceComponent: ({
+    // a native section's own page
+    Component {
+        id: nativePage
+        NativePage {
+            route: page.routeSpec
+            focusTitle: win.focusTitle
+        }
+    }
+    // a Zynith page, and under it the native settings on the same subject
+    Component {
+        id: routePage
+        Column {
+            spacing: Metrics.s7
+            Loader {
+                id: zynithPage
+                width: parent.width
+                active: win.focusTitle === ""
+                visible: active
+                sourceComponent: ({
                     home: homePage,
                     experience: experiencePage,
                     appearance: appearancePage,
@@ -168,25 +276,62 @@ FloatingWindow {
                     bluetooth: bluetoothPage,
                     plugins: pluginsPage,
                     about: aboutPage
-                })[win.route] ?? homePage
-
-            onLoaded: {
-                fadeIn.restart();
-                // a page may send you to another (the native settings page to Zynith's own)
-                if (item.navigate !== undefined)
-                    item.navigate.connect(r => win.route = Routes.find(r).id);
+                    })[win.route] ?? homePage
+                onLoaded: {
+                    // a page may send you to another (the native settings page to Zynith's own)
+                    if (item.navigate !== undefined)
+                        item.navigate.connect(r => win.route = Routes.find(r).id);
+                }
             }
-            NumberAnimation {
-                id: fadeIn
-                target: page
-                property: "opacity"
-                from: 0
-                to: 1
-                duration: Motion.contentIn
-                easing.type: Motion.standardEasing
+            // a setting reached by search: say which, and a way back to the whole page
+            Row {
+                visible: win.focusTitle !== ""
+                spacing: Metrics.s3
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "headline"
+                    text: page.routeSpec.title
+                }
+                Chip {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: "x"
+                    text: "Showing “" + win.focusTitle + "” · whole page"
+                    onClicked: win.focusTitle = ""
+                }
+            }
+            FilterRow {
+                id: nativeFilter
+                visible: (page.routeSpec.native ?? []).length > 0 && win.focusTitle === ""
+                width: parent.width
+            }
+            Repeater {
+                model: page.routeSpec.native ?? []
+                delegate: NativeBlock {
+                    required property var modelData
+                    width: parent.width
+                    entry: modelData
+                    query: win.focusTitle !== "" ? win.focusTitle : nativeFilter.text
+                    advanced: nativeFilter.advanced || win.focusTitle !== ""
+                }
             }
         }
     }
+    Connections {
+        target: page
+        function onLoaded(): void {
+            fadeIn.restart();
+        }
+    }
+    NumberAnimation {
+        id: fadeIn
+        target: page
+        property: "opacity"
+        from: 0
+        to: 1
+        duration: Motion.contentIn
+        easing.type: Motion.standardEasing
+    }
+
 
     Component {
         id: homePage
