@@ -14,9 +14,12 @@ import qs.Services
 BarItem {
     id: root
 
+    // asked again when the windows' shape or focus changes; titles only matter when they are shown
     readonly property var windows: {
-        NiriState.workspaces;
-        NiriState.focusedWindow;
+        NiriState.windowsRevision;
+        NiriState.focusedId;
+        if (opt("show_window_title") === true)
+            NiriState.focusedWindow;
         return NiriState.windowList();
     }
     readonly property var spaces: Workspaces.forScreen(screen, opt("show_all_outputs") === true)

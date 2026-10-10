@@ -1,5 +1,7 @@
 #include "audio_spectrum.h"
 
+#include <QDateTime>
+
 #include <QMutexLocker>
 #include <algorithm>
 #include <cmath>
@@ -21,6 +23,10 @@ constexpr float kMaxSensitivity = 30.0F;
 constexpr float kSilence = 0.01F;
 // a buffer whose peak is under this wakes nothing
 constexpr float kWakePeak = 0.0005F;
+// clearly audible: wakes the analyser at once, whatever the back-off
+constexpr float kLoudPeak = 0.05F;
+// the back-off after fruitless wakes: 250 ms, doubling, at most this
+constexpr qint64 kMaxWakeBackoffMs = 4000;
 
 void fft(std::complex<float>* data, int n) {
     for (int i = 1, j = 0; i < n; ++i) {
@@ -179,7 +185,12 @@ void AudioSpectrum::onProcess() {
         const auto* samples = reinterpret_cast<const float*>(static_cast<const uint8_t*>(d.data) + d.chunk->offset);
         const int frames = static_cast<int>(d.chunk->size / sizeof(float)) / channels;
         float peak = 0.0F;
-        {
+        if (m_sleeping.load()) {
+            // asleep: only listen for the wake (no lock, no ring — the ring refills within ~40 ms of waking)
+            const int samplesN = frames * channels;
+            for (int i = 0; i < samplesN; ++i)
+                peak = std::max(peak, std::abs(samples[i]));
+        } else {
             QMutexLocker lock(&m_lock);
             for (int f = 0; f < frames; ++f) {
                 float mono = 0.0F;
@@ -194,8 +205,11 @@ void AudioSpectrum::onProcess() {
             }
         }
         // the UI side sleeps through silence; sound wakes it once
-        if (peak > kWakePeak && m_sleeping.exchange(false))
-            QMetaObject::invokeMethod(this, "wake", Qt::QueuedConnection);
+        if (peak > kWakePeak && m_sleeping.load()) {
+            const qint64 now = QDateTime::currentMSecsSinceEpoch();
+            if ((peak > kLoudPeak || now >= m_wakeNotBefore.load()) && m_sleeping.exchange(false))
+                QMetaObject::invokeMethod(this, "wake", Qt::QueuedConnection);
+        }
     }
     pw_stream_queue_buffer(m_stream, b);
 }
@@ -204,6 +218,7 @@ void AudioSpectrum::wake() {
     if (m_consumers == 0)
         return;
     m_silentFrames = 0;
+    m_heardSinceWake = false;
     if (!m_timer.isActive())
         m_timer.start(1000 / m_fps);
 }
@@ -274,6 +289,19 @@ void AudioSpectrum::tick() {
     if (silent) {
         if (++m_silentFrames >= m_fps) {
             m_timer.stop();
+            if (m_heardSinceWake) {
+                m_fruitlessWakes = 0;
+                m_wakeNotBefore = 0;
+            } else {
+                m_fruitlessWakes = std::min(m_fruitlessWakes + 1, 8);
+                m_wakeNotBefore = QDateTime::currentMSecsSinceEpoch() + std::min<qint64>(kMaxWakeBackoffMs, 250LL << (m_fruitlessWakes - 1));
+            }
+            {
+                // the ring is not fed while asleep: it starts over on the next wake
+                QMutexLocker lock(&m_lock);
+                m_ringFull = false;
+                m_ringPos = 0;
+            }
             m_sleeping = true;
             resetState();
             setActive(false);
@@ -282,6 +310,9 @@ void AudioSpectrum::tick() {
         }
     } else {
         m_silentFrames = 0;
+        m_heardSinceWake = true;
+        m_fruitlessWakes = 0;
+        m_wakeNotBefore = 0;
         setActive(true);
     }
 

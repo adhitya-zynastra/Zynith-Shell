@@ -55,10 +55,10 @@ BarItem {
     }
     readonly property string motion: Motion.reduced ? "none" : (opt("indicator_motion") ?? "trail")
 
-    // windowList() is a call, so it is asked again whenever workspaces or focus change
+    // windowList() is a call, asked again only when the windows' shape changes (never for a title)
     readonly property var windows: {
-        NiriState.workspaces;
-        NiriState.focusedWindow;
+        NiriState.windowsRevision;
+        NiriState.focusedId;
         return wantIcons ? NiriState.windowList() : [];
     }
     function iconsFor(id: var): var {

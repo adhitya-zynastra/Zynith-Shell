@@ -153,6 +153,15 @@ Singleton {
         function bars(): string {
             return JSON.stringify(PanelRouter.bars);
         }
+        // diagnostics: each registered surface's window (to match render-loop logs)
+        function windows(): string {
+            const out = {};
+            for (const k in PanelRouter.barItems) {
+                const it = PanelRouter.barItems[k];
+                out[k] = it && it.Window ? String(it.Window.window) : "";
+            }
+            return JSON.stringify(out);
+        }
         function panelRect(): string {
             const r = PanelRouter.rects[root.focusedScreen()] ?? null;
             return JSON.stringify(r ? Object.assign({ window: PanelRouter.windowSizes[root.focusedScreen()] ?? null }, r) : null);

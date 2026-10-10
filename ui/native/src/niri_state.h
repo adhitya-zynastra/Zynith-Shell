@@ -20,6 +20,11 @@ class NiriState : public QObject {
     Q_PROPERTY(bool overviewOpen READ overviewOpen NOTIFY overviewOpenChanged)
     Q_PROPERTY(QVariantList workspaces READ workspaces NOTIFY workspacesChanged)
     Q_PROPERTY(QVariantMap focusedWindow READ focusedWindow NOTIFY focusedWindowChanged)
+    // what changes less often than focusedWindow (whose title moves with every terminal spinner): the focused
+    // window's id, and a counter bumped only when windows open, close, move workspace or change app — models
+    // built from windowList() bind these, not focusedWindow
+    Q_PROPERTY(qulonglong focusedId READ focusedId NOTIFY focusedIdChanged)
+    Q_PROPERTY(int windowsRevision READ windowsRevision NOTIFY windowsRevisionChanged)
     Q_PROPERTY(QString keyboardLayout READ keyboardLayout NOTIFY keyboardLayoutChanged)
     // every configured layout, so a single one can be told apart
     Q_PROPERTY(QStringList keyboardLayouts READ keyboardLayouts NOTIFY keyboardLayoutChanged)
@@ -32,6 +37,8 @@ public:
     bool overviewOpen() const { return m_overviewOpen; }
     QVariantList workspaces() const { return m_workspacesOut; }
     QVariantMap focusedWindow() const { return m_focusedOut; }
+    qulonglong focusedId() const { return m_focusedId; }
+    int windowsRevision() const { return m_windowsRevision; }
     QString keyboardLayout() const { return m_layoutOut; }
     QStringList keyboardLayouts() const { return m_layoutNames; }
 
@@ -50,9 +57,15 @@ signals:
     void overviewOpenChanged();
     void workspacesChanged();
     void focusedWindowChanged();
+    void focusedIdChanged();
+    void windowsRevisionChanged();
     void keyboardLayoutChanged();
 
 private:
+    qulonglong m_focusedId = qulonglong(-1);
+    int m_windowsRevision = 0;
+    QString m_windowsShape;
+
     void connectStream();
     void onReadyRead();
     void onDisconnected();

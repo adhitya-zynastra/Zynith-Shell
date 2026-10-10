@@ -13,7 +13,9 @@ BarItem {
     spacing: 0
     readonly property string format: opt("format") ?? "{:%H:%M}"
     readonly property string verticalFormat: opt("vertical_format") ?? ""
-    readonly property bool wantsSeconds: /%S|%T|%r/.test(format + verticalFormat + (opt("tooltip_format") ?? ""))
+    // seconds tick the whole UI's clock (every binding on the time, every window drawing one), so they are
+    // asked for only by a format that shows them — the tooltip's only while the tooltip is up
+    readonly property bool wantsSeconds: /%S|%T|%r/.test(format + verticalFormat) || (tipReady && hovered && /%S|%T|%r/.test(opt("tooltip_format") ?? ""))
     onWantsSecondsChanged: wantsSeconds ? Time.retainSeconds() : Time.releaseSeconds()
     Component.onCompleted: if (wantsSeconds)
         Time.retainSeconds()

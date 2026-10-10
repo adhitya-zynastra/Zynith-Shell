@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import Quickshell
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -397,30 +398,19 @@ Item {
                 width: parent.width
                 height: root.expanded ? Math.round((root.cfg.bars_height ?? 26) * 1.5) : (root.cfg.bars_height ?? 26)
                 readonly property int count: Math.max(8, root.cfg.bars ?? 32)
-                function level(i: int): real {
-                    const values = Spectrum.values;
-                    const n = values.length;
-                    if (n === 0)
-                        return 0;
-                    const t = Math.abs((i + 0.5) / count * 2 - 1);
-                    const x = t * (n - 1);
-                    const a = Math.floor(x), b = Math.min(n - 1, a + 1);
-                    return values[a] + (values[b] - values[a]) * (x - a);
-                }
-                Repeater {
-                    model: barStrip.count
-                    delegate: Rectangle {
-                        required property int index
-                        readonly property real v: Math.max(0.08, Math.min(1, barStrip.level(index)))
-                        readonly property real slot: barStrip.width / barStrip.count
-                        x: index * slot + slot * 0.18
-                        width: slot * 0.64
-                        height: barStrip.height * v
-                        y: (barStrip.height - height) / 2
-                        radius: width / 2
-                        color: Theme.mix(Theme.accent, Theme.colour(root.cfg.bars_color_2 ?? "tertiary"), Math.abs(index / Math.max(1, barStrip.count - 1) * 2 - 1))
-                        opacity: 0.45 + v * 0.55
-                    }
+                SpectrumBars {
+                    anchors.fill: parent
+                    values: Spectrum.values
+                    count: barStrip.count
+                    mirrored: true
+                    centred: true
+                    gap: 0.36
+                    floor: 0.08
+                    colorFrom: Theme.accent
+                    colorTo: Theme.colour(root.cfg.bars_color_2 ?? "tertiary")
+                    gradientFromCentre: true
+                    alpha: 0.45
+                    alphaByLevel: 0.55
                 }
             }
 

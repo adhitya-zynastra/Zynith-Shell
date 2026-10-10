@@ -1,5 +1,5 @@
 //@ pragma Env QS_NO_RELOAD_POPUP=1
-//@ pragma Env QSG_RENDER_LOOP=basic
+//@ pragma Env QSG_RENDER_LOOP=threaded
 
 // Zynith UI — Quickshell layer. Runs beside the native shell during migration and takes no exclusive
 // role (no notification server, tray watcher, polkit/secret agents or session lock).

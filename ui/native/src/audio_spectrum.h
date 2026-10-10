@@ -84,6 +84,11 @@ private:
     std::atomic<int> m_rate{48000};
     std::atomic<int> m_channels{2};
     std::atomic<bool> m_sleeping{true};
+    // a wake that finds only silence (a stream carrying a noise floor above kWakePeak) backs off before the
+    // next one, so a quiet stream does not keep the UI thread analysing nothing; audible sound always wakes
+    std::atomic<qint64> m_wakeNotBefore{0};
+    int m_fruitlessWakes = 0;
+    bool m_heardSinceWake = false;
 
     // analysis (UI thread)
     std::vector<float> m_window;

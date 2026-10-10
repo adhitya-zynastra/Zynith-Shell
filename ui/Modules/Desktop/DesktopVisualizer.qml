@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -77,29 +78,22 @@ Item {
         return Math.min(1, s / Math.max(1, c) * gain);
     }
 
-    // ── bars ──
-    Row {
+    // ── bars: one scene-graph node for all of them (Zynith.Native SpectrumBars), not a node and a binding per bar ──
+    SpectrumBars {
         visible: root.hasBars && !root.hasRings
         anchors.fill: parent
-        spacing: Math.max(1, root.width / root.bars * 0.3)
-        Repeater {
-            model: root.hasBars && !root.hasRings ? root.bars : 0
-            delegate: Item {
-                required property int index
-                width: (root.width - parent.spacing * (root.bars - 1)) / root.bars
-                height: root.height
-                Rectangle {
-                    readonly property real h: Math.max(2, parent.height * root.level(parent.index, root.bars) * (root.centred ? 1 : 1))
-                    anchors.bottom: root.centred ? undefined : parent.bottom
-                    anchors.verticalCenter: root.centred ? parent.verticalCenter : undefined
-                    width: parent.width
-                    height: h
-                    radius: width / 2
-                    color: Theme.mix(root.from, root.to, parent.index / root.bars)
-                    opacity: 0.85
-                }
-            }
-        }
+        values: Spectrum.values
+        count: root.bars
+        mirrored: root.mirrored
+        reversed: root.reversed
+        centred: root.centred
+        gain: root.gain
+        gap: 0.3
+        minLength: 2
+        colorFrom: root.from
+        colorTo: root.to
+        alpha: 0.85
+        still: root.still
     }
 
     // ── wave: a smooth line through the bands, mirrored above and below when centred ──

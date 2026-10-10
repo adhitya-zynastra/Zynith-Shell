@@ -174,6 +174,19 @@ void NiriState::publish() {
         emit workspacesChanged();
     }
 
+    // the windows' shape without their titles: ids, apps and workspaces
+    QStringList shape;
+    shape.reserve(m_windows.size());
+    for (auto it = m_windows.cbegin(); it != m_windows.cend(); ++it)
+        shape << QString::number(it.key()) + "|" + it.value().value("app_id").toString() + "|" + QString::number(idOf(it.value().value("workspace_id")));
+    shape.sort();
+    const QString joined = shape.join(";");
+    if (joined != m_windowsShape) {
+        m_windowsShape = joined;
+        ++m_windowsRevision;
+        emit windowsRevisionChanged();
+    }
+
     QVariantMap focused;
     for (const QJsonObject& w : std::as_const(m_windows)) {
         if (w.value("is_focused").toBool()) {
@@ -190,6 +203,11 @@ void NiriState::publish() {
     if (focused != m_focusedOut) {
         m_focusedOut = focused;
         emit focusedWindowChanged();
+    }
+    const qulonglong fid = focused.isEmpty() ? qulonglong(-1) : focused.value("id").toULongLong();
+    if (fid != m_focusedId) {
+        m_focusedId = fid;
+        emit focusedIdChanged();
     }
 
     const QString layout = m_layoutIdx >= 0 && m_layoutIdx < m_layoutNames.size() ? m_layoutNames.at(m_layoutIdx) : QString();

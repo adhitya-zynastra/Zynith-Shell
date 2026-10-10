@@ -1,4 +1,5 @@
 import QtQuick
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -37,40 +38,22 @@ BarItem {
     Component.onDestruction: if (holding)
         Spectrum.release()
 
-    // the analyser's bands, stretched to this widget's count
-    function level(i: int): real {
-        const values = Spectrum.values;
-        const n = values.length;
-        if (n === 0)
-            return 0;
-        let t = mirrored ? Math.abs((i + 0.5) / bands * 2 - 1) : (i + 0.5) / bands;
-        if (reversed)
-            t = 1 - t;
-        const x = t * (n - 1);
-        const a = Math.floor(x), b = Math.min(n - 1, a + 1);
-        return values[a] + (values[b] - values[a]) * (x - a);
-    }
 
-    Item {
+    // one scene-graph node for every bar (Zynith.Native SpectrumBars)
+    SpectrumBars {
         width: root.vertical ? root.cross - 8 : root.length
         height: root.vertical ? root.length : root.cross - 10
-
-        Repeater {
-            model: root.bands
-            delegate: Rectangle {
-                required property int index
-                readonly property real v: Math.max(0.06, root.level(index))
-                readonly property real slot: (root.vertical ? parent.height : parent.width) / root.bands
-                readonly property real across: root.vertical ? parent.width : parent.height
-
-                x: root.vertical ? (root.centred ? (parent.width - width) / 2 : 0) : index * slot + slot * 0.2
-                y: root.vertical ? index * slot + slot * 0.2 : (root.centred ? (parent.height - height) / 2 : parent.height - height)
-                width: root.vertical ? across * v : slot * 0.6
-                height: root.vertical ? slot * 0.6 : across * v
-                radius: Math.min(width, height) / 2
-                color: Theme.mix(root.from, root.to, index / Math.max(1, root.bands - 1))
-                opacity: 0.55 + v * 0.45
-            }
-        }
+        vertical: root.vertical
+        values: Spectrum.values
+        count: root.bands
+        mirrored: root.mirrored
+        reversed: root.reversed
+        centred: root.centred
+        gap: 0.4
+        floor: 0.06
+        colorFrom: root.from
+        colorTo: root.to
+        alpha: 0.55
+        alphaByLevel: 0.45
     }
 }

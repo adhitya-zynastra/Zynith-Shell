@@ -21,11 +21,12 @@ BarItem {
     pad: Metrics.s2
     spacing: Metrics.s1 * 1.5
 
-    // windowList() is a call, so it is asked again whenever workspaces or focus change
+    // windowList() is a call, asked again only when the windows' shape changes (opened, closed, moved, focus
+    // moved) — never for a title — and only when icons are shown
     readonly property var windows: {
-        NiriState.workspaces;
-        NiriState.focusedWindow;
-        return NiriState.windowList();
+        NiriState.windowsRevision;
+        NiriState.focusedId;
+        return opt("show_icons") === true ? NiriState.windowList() : [];
     }
     function iconsFor(id: var): var {
         return windows.filter(w => w.workspaceId === id).slice(0, 4).map(w => {
