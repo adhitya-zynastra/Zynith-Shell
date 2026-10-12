@@ -41,7 +41,8 @@ Singleton {
             if (at)
                 origin = Object.assign({}, at, {
                     context: origin?.context ?? "",
-                    history: origin?.history ?? []
+                    history: origin?.history ?? [],
+                    focused: origin?.focused ?? false
                 });
         }
         set(screenName, {
@@ -52,7 +53,9 @@ Singleton {
             extent: origin?.extent ?? 42,
             context: origin?.context ?? "",
             // where back goes: a Control Center tab opened from a bar goes back to the Control Panel
-            history: origin?.history ?? []
+            history: origin?.history ?? [],
+            // a Control Panel page opened by itself: no hero, no tabs, its own size
+            focused: origin?.focused ?? false
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,

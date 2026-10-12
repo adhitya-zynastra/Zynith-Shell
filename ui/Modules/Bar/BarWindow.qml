@@ -315,7 +315,8 @@ PanelWindow {
             edge: edge,
             extent: margin + thickness - panelOverlap,
             context: context ?? "",
-            history: options?.history ?? []
+            history: options?.history ?? [],
+            focused: options?.focused ?? false
         };
         if (options?.transient) {
             const t = options.transient;

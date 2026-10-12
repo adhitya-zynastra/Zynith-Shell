@@ -15,20 +15,6 @@ Singleton {
     id: root
 
     // the native Control Center's tabs, and the Zynith panel that answers each
-    readonly property var controlTabs: ({
-            home: "control",
-            audio: "audio",
-            power: "power",
-            monitor: "monitor",
-            calendar: "calendar",
-            weather: "weather",
-            "screen-time": "screen-time",
-            system: "system",
-            network: "network",
-            bluetooth: "bluetooth",
-            media: "media",
-            notifications: "notifications"
-        })
 
     // options: { open: open rather than toggle, history: where back goes }
     function openPanel(id: string, context: string, origin: var, options: var): void {
@@ -39,11 +25,12 @@ Singleton {
         }
         if (options?.transient) {
             const t = options.transient;
-            PanelRouter.peek(id, screen, { context: context, history: options?.history ?? [] }, t.owner, t.closeDelay, t.closeOnLeave);
+            PanelRouter.peek(id, screen, { context: context, history: options?.history ?? [], focused: options?.focused ?? false }, t.owner, t.closeDelay, t.closeOnLeave);
             return;
         }
         const where = ["launcher", "clipboard", "wallpaper", "session"].includes(id) ? { edge: "center", context: context } : { context: context };
         where.history = options?.history ?? [];
+        where.focused = options?.focused ?? false;
         if (options?.open)
             PanelRouter.open(id, screen, where);
         else
@@ -85,15 +72,18 @@ Singleton {
                 };
                 if (id === "control-center") {
                     const tab = words[1] ?? "home";
-                    const page = controlTabs[tab] ?? "control";
+                    const page = PanelCatalog.isPage(tab) ? tab : "control";
                     // a tab is a page within the Control Panel: back goes there
                     if (page !== "control")
                         options.history = ["control"];
                     openPanel(page, tab, origin, options);
                 } else if (id === "launcher") {
                     openPanel("launcher", words.slice(1).join(" "), origin, options);
-                } else if (["clipboard", "wallpaper", "session", "notifications", "media", "network", "bluetooth", "system", "audio", "power", "monitor", "calendar", "weather", "screen-time"].includes(id)) {
-                    openPanel(id, words.slice(1).join(" "), origin, options);
+                } else if (PanelCatalog.opensAlone(id)) {
+                    // a Control Panel page named on its own opens focused: by itself, sized to its content,
+                    // without the Control Panel's hero and tabs (Sound from the volume icon, like Wi-Fi's)
+                    options.focused = PanelCatalog.isPage(id);
+                    openPanel(PanelCatalog.aliases[id] ?? id, words.slice(1).join(" "), origin, options);
                 } else {
                     break; // a panel this UI does not draw: the native shell's
                 }

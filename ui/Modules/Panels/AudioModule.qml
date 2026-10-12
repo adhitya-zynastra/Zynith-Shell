@@ -161,11 +161,20 @@ Flow {
                     text: Math.round((parent.out ? Audio.volume : Audio.micVolume) * 100)
                 }
             }
-            Repeater {
-                model: devices.modelData.nodes
+            // the default first; past [panels] device_rows (6) the list scrolls rather than stretching the panel
+            // (a network full of AirPlay receivers lists them all)
+            ListView {
+                id: deviceList
+                width: devices.width
+                readonly property int rows: Math.max(1, Config.panels?.device_rows ?? 6)
+                model: [devices.modelData.current].filter(n => n !== null && devices.modelData.nodes.includes(n)).concat(devices.modelData.nodes.filter(n => n !== devices.modelData.current))
+                height: count === 0 ? 0 : Math.min(contentHeight, rows * contentHeight / count)
+                interactive: count > rows
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
                 delegate: ListRow {
                     required property var modelData
-                    width: devices.width
+                    width: deviceList.width
                     icon: devices.modelData.key === "output" ? (modelData.properties?.["device.form-factor"] === "headphones" || modelData.properties?.["device.form-factor"] === "headset" ? "headphones" : "device-speaker") : "microphone"
                     title: Audio.nodeName(modelData)
                     active: modelData === devices.modelData.current

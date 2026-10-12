@@ -322,7 +322,9 @@ Singleton {
                     content_scale: 0.94,
                     // the list panels (Wi‑Fi, Bluetooth): wide, their rows in columns
                     list_width: 760,
-                    list_columns: 2
+                    list_columns: 2,
+                    // audio devices shown before their list scrolls
+                    device_rows: 6
                 },
                 launcher: {
                     // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty

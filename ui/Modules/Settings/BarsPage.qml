@@ -637,7 +637,6 @@ Column {
         property var reserved: []
         signal changed(string gesture, var action)
         spacing: Metrics.s2
-        readonly property var suggestions: ["none", "panel-toggle control-center home", "panel-toggle control-center audio", "panel-toggle control-center notifications", "panel-toggle launcher", "panel-toggle clipboard", "panel-toggle wallpaper", "panel-toggle session", "volume-up", "volume-down", "volume-mute", "mic-mute", "brightness-up", "brightness-down", "media toggle", "media next", "media previous", "workspace-switch next", "workspace-switch prev", "nightlight-toggle", "caffeine-toggle", "notification-dnd-toggle", "power-cycle next", "keyboard-layout-cycle", "theme-mode-toggle", "screenshot-region", "settings-open", "desktop-edit", "exec "]
         Repeater {
             model: BarWidgetTypes.gestures
             delegate: Row {
@@ -653,57 +652,14 @@ Column {
                     tone: "muted"
                     text: BarWidgetTypes.gestureLabels[g.modelData]
                 }
-                Rectangle {
+                // picked from the panels and commands there are (PanelCatalog); hover offers panels only
+                ActionPicker {
                     width: g.width - 110 - Metrics.s3 - reset.width - Metrics.s3
-                    height: 32
-                    radius: 10
-                    color: Theme.well
-                    border.width: Metrics.hairline
-                    border.color: input.activeFocus ? Theme.accentLine : Theme.hairline
-                    opacity: gf.reserved.includes(g.modelData) ? 0.4 : 1
-                    TextInput {
-                        id: input
-                        anchors.fill: parent
-                        anchors.leftMargin: Metrics.s3
-                        anchors.rightMargin: Metrics.s3
-                        verticalAlignment: TextInput.AlignVCenter
-                        color: Theme.ink
-                        font.family: Type.mono
-                        font.pixelSize: Type.label
-                        clip: true
-                        enabled: !gf.reserved.includes(g.modelData)
-                        text: gf.actions[g.modelData] ?? ""
-                        onEditingFinished: if (text !== (gf.actions[g.modelData] ?? ""))
-                            gf.changed(g.modelData, text.trim() === "" ? undefined : text.trim())
-                        Label {
-                            visible: input.text === ""
-                            anchors.verticalCenter: parent.verticalCenter
-                            role: "label"
-                            tone: "faint"
-                            font.family: Type.mono
-                            text: gf.reserved.includes(g.modelData) ? "the widget's own" : (gf.defaults[g.modelData] || "nothing")
-                        }
-                    }
-                    // suggestions while typing
-                    Flow {
-                        visible: input.activeFocus
-                        anchors.top: parent.bottom
-                        anchors.topMargin: 4
-                        width: parent.width
-                        spacing: 4
-                        z: 5
-                        Repeater {
-                            model: input.activeFocus ? gf.suggestions.filter(s => s.includes(input.text.trim())).slice(0, 8) : []
-                            delegate: Chip {
-                                required property string modelData
-                                text: modelData
-                                onClicked: {
-                                    input.text = modelData;
-                                    gf.changed(g.modelData, modelData.trim() === "" ? undefined : modelData.trim());
-                                }
-                            }
-                        }
-                    }
+                    value: gf.actions[g.modelData]
+                    fallback: gf.reserved.includes(g.modelData) ? "" : (gf.defaults[g.modelData] ?? "")
+                    panelsOnly: g.modelData === "hover"
+                    enabled: !gf.reserved.includes(g.modelData)
+                    onPicked: action => gf.changed(g.modelData, action)
                 }
                 Label {
                     id: reset

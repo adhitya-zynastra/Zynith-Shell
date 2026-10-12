@@ -377,6 +377,7 @@ PanelWindow {
                 x: Math.round((scroller.width - width) / 2)
                 panelId: win.held?.id ?? ""
                 peek: win.held?.transient ?? false
+                focused: win.held?.focused ?? false
                 history: win.held?.history ?? []
                 context: win.held?.context ?? ""
                 showings: win.showings

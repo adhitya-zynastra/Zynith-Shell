@@ -166,7 +166,7 @@ Singleton {
                 { key: "tooltip_format", label: "Tooltip", kind: "text", default: "" },
                 { key: "timezone", label: "Time zone", kind: "text", default: "" }
             ],
-            actions: { left: "panel-toggle control-center calendar" }
+            actions: { left: "panel-toggle calendar" }
         },
         {
             type: "media", label: "Media", icon: "music",
@@ -182,7 +182,7 @@ Singleton {
                 { key: "show_progress", label: "Progress", kind: "toggle", default: false },
                 { key: "hide_when_no_media", label: "Hide when nothing plays", kind: "toggle", default: false }
             ],
-            actions: { left: "panel-toggle control-center media", right: "media toggle", back: "media previous", forward: "media next", scroll_up: "media next", scroll_down: "media previous" }
+            actions: { left: "panel-toggle media", right: "media toggle", back: "media previous", forward: "media next", scroll_up: "media next", scroll_down: "media previous" }
         },
         {
             type: "audio_visualizer", label: "Visualizer", icon: "activity",
@@ -220,7 +220,7 @@ Singleton {
                 { key: "vpn_status", label: "VPN", kind: "choice", default: "replace", options: [{ key: "replace", label: "Replaces Wi-Fi" }, { key: "both", label: "Both" }, { key: "hidden", label: "Hidden" }] },
                 { key: "show_vpn_label", label: "VPN name", kind: "toggle", default: false }
             ],
-            actions: { left: "panel-toggle control-center network", right: "network-toggle" }
+            actions: { left: "panel-toggle network", right: "network-toggle" }
         },
         {
             type: "bluetooth", label: "Bluetooth", icon: "bluetooth",
@@ -229,7 +229,7 @@ Singleton {
                 { key: "hide_when_adapter_off", label: "Hide when off", kind: "toggle", default: false },
                 { key: "hide_when_no_connected_device", label: "Hide with nothing connected", kind: "toggle", default: false }
             ],
-            actions: { left: "panel-toggle control-center bluetooth", right: "bluetooth-toggle" }
+            actions: { left: "panel-toggle bluetooth", right: "bluetooth-toggle" }
         },
         {
             type: "volume", label: "Volume", icon: "volume",
@@ -244,13 +244,13 @@ Singleton {
                 { key: "effects_profile_glyphs", label: "Icon per EasyEffects profile", kind: "pairs", default: {}, placeholder: "profile = glyph, then Enter" },
                 { key: "hide_when_inactive", label: "Hide when unused", kind: "toggle", default: false, when: { device: ["input"] } }
             ],
-            actions: { left: "panel-toggle control-center audio", right: "volume-mute", scroll_up: "volume-up", scroll_down: "volume-down" },
-            inputActions: { left: "panel-toggle control-center audio", right: "mic-mute", scroll_up: "mic-volume-up", scroll_down: "mic-volume-down" }
+            actions: { left: "panel-toggle audio", right: "volume-mute", scroll_up: "volume-up", scroll_down: "volume-down" },
+            inputActions: { left: "panel-toggle audio", right: "mic-mute", scroll_up: "mic-volume-up", scroll_down: "mic-volume-down" }
         },
         {
             type: "brightness", label: "Brightness", icon: "brightness-up",
             settings: [{ key: "show_label", label: "Level", kind: "toggle", default: true }],
-            actions: { left: "panel-toggle control-center monitor", scroll_up: "brightness-up", scroll_down: "brightness-down" }
+            actions: { left: "panel-toggle monitor", scroll_up: "brightness-up", scroll_down: "brightness-down" }
         },
         {
             type: "battery", label: "Battery", icon: "battery",
@@ -264,7 +264,7 @@ Singleton {
                 { key: "warning_threshold", label: "Warn below %", kind: "int", default: 0, from: 0, to: 100, step: 1 },
                 { key: "warning_color", label: "Warning colour", kind: "colour", default: "error" }
             ],
-            actions: { left: "panel-toggle control-center power" }
+            actions: { left: "panel-toggle power" }
         },
         {
             type: "power_profile", label: "Power profile", icon: "gauge", settings: [],
@@ -273,7 +273,7 @@ Singleton {
         {
             type: "notifications", label: "Notifications", icon: "bell",
             settings: [{ key: "hide_when_no_unread", label: "Hide when there is nothing", kind: "toggle", default: false }],
-            actions: { left: "panel-toggle control-center notifications", right: "notification-dnd-toggle" }
+            actions: { left: "panel-toggle notifications", right: "notification-dnd-toggle" }
         },
         {
             type: "keyboard_layout", label: "Keyboard layout", icon: "keyboard",
@@ -326,7 +326,7 @@ Singleton {
                 { key: "network_speed_unit", label: "Speed in", kind: "choice", default: "auto", options: [{ key: "auto", label: "Auto" }, { key: "kb", label: "KB/s" }, { key: "mb", label: "MB/s" }], when: { stat: ["net_rx", "net_tx"] } },
                 { key: "network_speed_compact", label: "Compact speed (1.2M)", kind: "toggle", default: false, when: { stat: ["net_rx", "net_tx"] } }
             ],
-            actions: { left: "panel-toggle control-center system" }
+            actions: { left: "panel-toggle system" }
         },
         {
             type: "weather", label: "Weather", icon: "cloud",
@@ -335,7 +335,7 @@ Singleton {
                 { key: "show_temperature", label: "Temperature", kind: "toggle", default: true },
                 { key: "max_length", label: "Most length", kind: "int", default: 160, from: 40, to: 800, step: 10 }
             ],
-            actions: { left: "panel-toggle control-center weather" }
+            actions: { left: "panel-toggle weather" }
         },
         { type: "nightlight", label: "Night light", icon: "moon", settings: [], actions: { left: "nightlight-toggle", right: "nightlight-force-toggle" } },
         { type: "caffeine", label: "Caffeine", icon: "coffee", settings: [], actions: { left: "caffeine-toggle" } },

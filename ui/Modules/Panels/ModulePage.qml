@@ -13,12 +13,14 @@ Column {
     property real visibleProgress: 1
     property bool canGoBack: false
     property bool active: true
+    // opened by itself (its own bar icon) rather than among the Control Panel's tabs: its own, compact width
+    property bool focused: false
     signal back
 
     // a page among the Control Panel's tabs is as wide as the dashboard (tab_page_width; 0 = the dashboard's),
     // so switching tabs only changes the height, and its module lays out in columns
     readonly property var cfg: Config.controlPanel ?? ({})
-    readonly property bool tabbed: (cfg.tab_bar ?? true) && Array.from(cfg.tabs ?? ["control", "media", "audio", "power", "weather", "calendar"]).includes(kind)
+    readonly property bool tabbed: !focused && (cfg.tab_bar ?? true) && Array.from(cfg.tabs ?? ["control", "media", "audio", "power", "weather", "calendar"]).includes(kind)
     readonly property int preferredWidth: tabbed ? ((cfg.tab_page_width ?? 0) > 0 ? cfg.tab_page_width : (cfg.dashboard_width ?? 1080)) : Math.max(cfg.width ?? 420, 460)
     readonly property var pages: ({
             media: { title: "Now playing", caption: Media.app, component: mediaPage },

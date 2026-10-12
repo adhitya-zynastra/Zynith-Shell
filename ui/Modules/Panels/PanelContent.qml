@@ -17,6 +17,8 @@ Item {
     property int showings: 0
     // opened by resting the pointer on a bar icon: a quick look, without the hero
     property bool peek: false
+    // a Control Panel page opened by itself (from its own bar icon): no hero, no tabs, its own size
+    property bool focused: false
 
     // the panel shown (the incoming one, from the moment it starts coming in)
     property string shownId: panelId
@@ -24,30 +26,17 @@ Item {
     // [control_panel] tab_bar / tabs: the Control Panel and its pages under one row of tabs (Caelestia's
     // dashboard); a tab switches the page in place
     readonly property var cfg: Config.controlPanel ?? ({})
-    readonly property var tabNames: ({
-            control: { label: "Dashboard", icon: "layout-dashboard" },
-            audio: { label: "Sound", icon: "volume" },
-            media: { label: "Media", icon: "music" },
-            power: { label: "Power", icon: "bolt" },
-            monitor: { label: "Display", icon: "device-desktop" },
-            calendar: { label: "Calendar", icon: "calendar" },
-            weather: { label: "Weather", icon: "cloud" },
-            "screen-time": { label: "Screen time", icon: "hourglass" },
-            system: { label: "System", icon: "cpu" },
-            network: { label: "Network", icon: "wifi" },
-            bluetooth: { label: "Bluetooth", icon: "bluetooth" },
-            notifications: { label: "Notifications", icon: "bell" }
-        })
+    readonly property var tabNames: ({})   // names and icons: PanelCatalog
     readonly property var tabs: (cfg.tab_bar ?? true) ? Array.from(cfg.tabs ?? ["control", "media", "audio", "power", "weather", "calendar"]).map(t => String(t) === "home" ? "control" : String(t)).filter(t => panels[t] !== undefined).map(t => ({
                     id: t,
-                    label: (cfg.tab_labels ?? {})[t] ?? tabNames[t]?.label ?? t,
-                    icon: (cfg.tab_icons ?? {})[t] ?? tabNames[t]?.icon ?? ""
+                    label: (cfg.tab_labels ?? {})[t] ?? (t === "control" ? "Dashboard" : PanelCatalog.label(t)),
+                    icon: (cfg.tab_icons ?? {})[t] ?? PanelCatalog.icon(t)
                 })) : []
     readonly property string tabId: shownId === "home" || shownId === "quick" ? "control" : shownId
-    readonly property bool tabbed: tabs.length > 1 && tabs.some(t => t.id === tabId)
+    readonly property bool tabbed: !focused && tabs.length > 1 && tabs.some(t => t.id === tabId)
 
     // the hero over the Control Panel (and its tabs, with hero_pages = all)
-    readonly property bool heroShown: (cfg.hero ?? true) && (!peek || (cfg.hero_on_peek ?? false)) && (tabId === "control" || (tabbed && (cfg.hero_pages ?? "all") === "all"))
+    readonly property bool heroShown: !focused && (cfg.hero ?? true) && (!peek || (cfg.hero_on_peek ?? false)) && (tabId === "control" || (tabbed && (cfg.hero_pages ?? "all") === "all"))
     readonly property real contentTop: (heroShown ? hero.height : 0) + (tabbed ? tabStrip.height : 0)
     implicitHeight: contentTop + (live.item?.implicitHeight ?? 0)
     // a panel may ask for its own width (0: the configured one)
@@ -92,8 +81,14 @@ Item {
     readonly property Loader leaving: front === 0 ? slotB : slotA
     property string idA: ""
     property string idB: ""
-    Component.onCompleted: if (idA === "" && idB === "")
-        idA = panelId
+    Component.onCompleted: {
+        if (idA === "" && idB === "")
+            idA = panelId;
+        // the catalog names only panels drawn here
+        for (const e of PanelCatalog.entries)
+            if (panels[e.id] === undefined)
+                console.warn("zynith: PanelCatalog lists", e.id, "but PanelContent has no component for it");
+    }
 
     onPanelIdChanged: {
         if ((front === 0 ? idA : idB) === panelId)
@@ -187,6 +182,8 @@ Item {
             item.showings = Qt.binding(() => root.showings);
         if (item.active !== undefined)
             item.active = Qt.binding(() => root.active);
+        if (item.focused !== undefined)
+            item.focused = Qt.binding(() => root.focused);
         if (item.canGoBack !== undefined) {
             item.canGoBack = Qt.binding(() => root.history.length > 0);
             item.back.connect(() => PanelRouter.back(root.screen.name));
