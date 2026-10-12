@@ -128,6 +128,18 @@ Singleton {
             }
             return "desktop";
         }
+        function editorTrace(on: bool): string {
+            Desktop.traceInput = on;
+            return on ? "editor input trace on (in the UI log)" : "off";
+        }
+        // like editorHit, through the editor's own decision (what a press at x, y would grab)
+        function editorGrab(x: real, y: real): string {
+            const ed = PanelRouter.barItems["editor-root@" + root.focusedScreen()];
+            if (!ed || !ed.slotAt)
+                return "editor not open";
+            const s = ed.slotAt(Qt.point(x, y));
+            return s ? "move " + s.entry.id + " (" + s.entry.type + ")" : "lasso";
+        }
         function desktopPick(): void {
             Desktop.setEditing(true);
             Desktop.picking = true;

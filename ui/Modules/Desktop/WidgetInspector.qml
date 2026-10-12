@@ -163,7 +163,10 @@ Item {
                             onLoaded: {
                                 item.spec = Qt.binding(() => row.modelData);
                                 item.val = Qt.binding(() => row.value);
-                                item.apply = v => row.set(v);
+                                // the widget's id and the key, not the row: a change rebuilds the rows, and a control
+                                // still holding the old one failed ("set is not a function") and lost the change
+                                const id = root.widget.id, key = row.modelData.key;
+                                item.apply = v => Desktop.setSetting(id, key, v);
                             }
                         }
                     }

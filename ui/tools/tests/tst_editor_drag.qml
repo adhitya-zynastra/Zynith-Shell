@@ -1,30 +1,52 @@
 import QtQuick
 import QtTest
 
-// Who owns a drag in the desktop editor: the same handler arrangement as DesktopEditor.qml (the desktop's
-// TapHandler + lasso DragHandler under the widgets; a widget slot with its containment mask, name tag, frame
-// buttons, a resize handle and the mover), driven by Qt's own mouse delivery. Run offscreen:
+// Who owns a tap or a drag in the desktop editor. The same arrangement as DesktopEditor.qml: one TapHandler and
+// one DragHandler own the canvas and decide at the press, through slotAt (a slot's containment mask: body, frame,
+// name tag, not its buttons), whether it moves a widget or draws the lasso; the frame's buttons and the resize
+// handle (TakeOverForbidden) sit above and keep their own presses. Driven by Qt's own mouse delivery:
 //   QT_QPA_PLATFORM=offscreen /usr/lib64/qt6/bin/qmltestrunner -input tools/tests/tst_editor_drag.qml
 Item {
     id: root
     width: 800
     height: 600
 
-    property int lassoActivations: 0
-    property int moverActivations: 0
-    property int resizeActivations: 0
+    property int lassoes: 0
+    property int moves: 0
+    property int resizes: 0
     property int buttonClicks: 0
+    property string selected: ""
     property real movedX: 0
     property real movedY: 0
+
+    function slotAt(scenePoint) {
+        const s = slot;
+        return s.contains(s.mapFromItem(null, scenePoint.x, scenePoint.y)) ? s : null;
+    }
 
     Item {
         id: backdrop
         anchors.fill: parent
-        TapHandler {}
+        TapHandler {
+            onTapped: point => root.selected = root.slotAt(point.scenePosition) ? "widget" : ""
+        }
         DragHandler {
-            id: lasso
+            id: gesture
             target: null
-            onActiveChanged: if (active) root.lassoActivations++
+            property string mode: ""
+            onActiveChanged: {
+                if (active) {
+                    mode = root.slotAt(centroid.scenePressPosition) ? "move" : "lasso";
+                    if (mode === "move")
+                        root.moves++;
+                    else
+                        root.lassoes++;
+                }
+            }
+            onCentroidChanged: if (active && mode === "move") {
+                root.movedX = centroid.scenePosition.x - centroid.scenePressPosition.x;
+                root.movedY = centroid.scenePosition.y - centroid.scenePressPosition.y;
+            }
         }
     }
 
@@ -47,6 +69,7 @@ Item {
                     return inBody || inTag;
                 }
             }
+            HoverHandler {}
             Rectangle {
                 id: tag
                 x: -4
@@ -68,19 +91,7 @@ Item {
                     }
                 }
             }
-            TapHandler {}
-            DragHandler {
-                id: mover
-                target: null
-                grabPermissions: PointerHandler.CanTakeOverFromAnything
-                onActiveChanged: if (active) root.moverActivations++
-                onCentroidChanged: if (active) {
-                    root.movedX = centroid.scenePosition.x - centroid.scenePressPosition.x;
-                    root.movedY = centroid.scenePosition.y - centroid.scenePressPosition.y;
-                }
-            }
             Rectangle {
-                id: handle
                 width: 14
                 height: 14
                 x: slot.width - 7 + 4
@@ -88,7 +99,7 @@ Item {
                 DragHandler {
                     target: null
                     grabPermissions: PointerHandler.TakeOverForbidden
-                    onActiveChanged: if (active) root.resizeActivations++
+                    onActiveChanged: if (active) root.resizes++
                 }
             }
         }
@@ -99,10 +110,11 @@ Item {
         when: windowShown
 
         function init() {
-            root.lassoActivations = 0;
-            root.moverActivations = 0;
-            root.resizeActivations = 0;
+            root.lassoes = 0;
+            root.moves = 0;
+            root.resizes = 0;
             root.buttonClicks = 0;
+            root.selected = "";
             root.movedX = 0;
             root.movedY = 0;
         }
@@ -116,43 +128,50 @@ Item {
 
         function test_body_moves_widget() {
             drag(350, 330, 40, -25);
-            compare(root.moverActivations, 1, "mover");
-            compare(root.lassoActivations, 0, "lasso must not start");
+            compare(root.moves, 1);
+            compare(root.lassoes, 0, "no lasso");
             fuzzyCompare(root.movedX, 40, 0.5);
             fuzzyCompare(root.movedY, -25, 0.5);
         }
         function test_tag_moves_widget() {
-            drag(300 - 4 + 20, 300 - 30 + 11, 60, 30);   // on the name tag, above the box
-            compare(root.moverActivations, 1, "mover");
-            compare(root.lassoActivations, 0, "lasso must not start");
+            drag(316, 281, 60, 30);
+            compare(root.moves, 1);
+            compare(root.lassoes, 0, "no lasso");
             fuzzyCompare(root.movedX, 60, 0.5);
         }
         function test_frame_line_moves_widget() {
-            drag(300 - 3, 330, -30, 0);   // on the frame drawn 4 px outside the box
-            compare(root.moverActivations, 1, "mover");
-            compare(root.lassoActivations, 0, "lasso must not start");
+            drag(297, 330, -30, 0);
+            compare(root.moves, 1);
+            compare(root.lassoes, 0, "no lasso");
         }
-        function test_empty_desktop_lassos() {
+        function test_empty_desktop_lassoes() {
             drag(100, 100, 120, 80);
-            compare(root.lassoActivations, 1, "lasso");
-            compare(root.moverActivations, 0, "mover must not start");
+            compare(root.lassoes, 1);
+            compare(root.moves, 0);
         }
         function test_button_clicks_without_moving() {
-            mouseClick(root, 400 + 4 - 11, 300 - 30 + 11);
-            compare(root.buttonClicks, 1, "button");
-            compare(root.moverActivations, 0);
-            compare(root.lassoActivations, 0);
+            mouseClick(root, 393, 281);
+            compare(root.buttonClicks, 1);
+            compare(root.moves, 0);
+            compare(root.lassoes, 0);
         }
-        function test_small_click_does_not_drag() {
+        function test_click_selects_and_does_not_drag() {
             mousePress(root, 350, 330);
             mouseMove(root, 352, 331);
             mouseRelease(root, 352, 331);
-            compare(root.moverActivations, 0, "a click is not a drag");
+            compare(root.moves, 0, "a click is not a drag");
+            compare(root.selected, "widget", "a click on a widget selects it (not cleared by the desktop)");
         }
-        function test_resize_handle_is_not_taken_by_mover() {
-            drag(300 + 100 + 4, 300 + 60 + 4, 30, 20);
-            compare(root.resizeActivations, 1, "resize");
-            compare(root.moverActivations, 0, "mover must not take the resize");
+        function test_click_on_desktop_clears() {
+            root.selected = "widget";
+            mouseClick(root, 100, 100);
+            compare(root.selected, "");
+        }
+        function test_resize_handle_keeps_its_drag() {
+            drag(404, 364, 30, 20);
+            compare(root.resizes, 1);
+            compare(root.moves, 0, "the canvas must not take the resize");
+            compare(root.lassoes, 0);
         }
     }
 }

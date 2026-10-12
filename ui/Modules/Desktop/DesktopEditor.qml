@@ -45,6 +45,7 @@ PanelWindow {
         PanelRouter.barItems["editor-backdrop@" + output] = backdrop;
         PanelRouter.barItems["editor-slots@" + output] = slots;
         PanelRouter.barItems["editor-toolbar@" + output] = toolbar;
+        PanelRouter.barItems["editor-root@" + output] = ed;
     }
     Component.onDestruction: Wallpapers.release()
     Connections {
@@ -63,6 +64,22 @@ PanelWindow {
     }
 
     // the screen geometry of a widget, and its stored geometry rewritten in this screen's pixels
+    // the widget a press at a window point lands on: the topmost whose hit area (body, frame, name tag; not its
+    // buttons) holds it
+    function slotAt(scenePoint: point): var {
+        // later children draw over earlier ones; a higher z over both
+        const kids = slots.children.map((c, i) => ({ c: c, i: i })).filter(k => k.c.entry !== undefined && k.c.visible);
+        kids.sort((a, b) => (b.c.z - a.c.z) || (b.i - a.i));
+        for (const k of kids)
+            if (k.c.contains(k.c.mapFromItem(null, scenePoint.x, scenePoint.y)))
+                return k.c;
+        return null;
+    }
+    // with Desktop.traceInput (ipc editorTrace true), each tap and drag is logged: what it landed on, what it did
+    function trace(what: string, detail: string): void {
+        if (Desktop.traceInput)
+            console.info("zynith editor:", what, detail);
+    }
     function placeOf(w: var): var {
         return Placement.place(w, Desktop.geometry(w), sw, sh);
     }
@@ -122,35 +139,102 @@ PanelWindow {
             }
         }
 
-        // a tap on the desktop clears the selection; a drag draws a lasso
+        // One owner for every tap and drag on the canvas, widgets included: what a press is for is decided where it
+        // lands (ed.slotAt: a widget's body, its frame or its name tag), not by which of several handlers wins a race.
+        // A tap selects the widget under it (Shift/Ctrl adds) or clears the selection; a drag that starts on a
+        // widget moves it (with the rest of the selection), one that starts on bare desktop draws the lasso. The
+        // frame's buttons and the resize/turn handles sit above and keep their own presses.
         TapHandler {
-            onTapped: {
-                Desktop.clearSelection();
-                Desktop.picking = false;
+            onTapped: (point, button) => {
+                const hit = ed.slotAt(point.scenePosition);
+                if (hit)
+                    Desktop.select(hit.entry.id, point.modifiers & (Qt.ShiftModifier | Qt.ControlModifier));
+                else {
+                    Desktop.clearSelection();
+                    Desktop.picking = false;
+                }
+                ed.trace("tap", hit ? hit.entry.id : "desktop");
                 keys.forceActiveFocus();
+            }
+            onDoubleTapped: point => {
+                if (ed.slotAt(point.scenePosition))
+                    Desktop.inspecting = true;
             }
         }
         DragHandler {
-            id: lasso
+            id: gesture
             target: null
+            property string mode: ""    // move | lasso
             property point from
+            property var starts: ({})
+            property string grabbed: ""
             onActiveChanged: {
                 if (active) {
-                    from = centroid.pressPosition;
+                    const hit = ed.slotAt(centroid.scenePressPosition);
+                    if (hit) {
+                        mode = "move";
+                        grabbed = hit.entry.id;
+                        if (!Desktop.selection.includes(grabbed))
+                            Desktop.select(grabbed, false);
+                        const s = {};
+                        for (const id of Desktop.selection) {
+                            const w = Desktop.byId(id);
+                            if (w && (!w.output || w.output === ed.output))
+                                s[id] = ed.screenGeometry(w);
+                        }
+                        starts = s;
+                    } else {
+                        mode = "lasso";
+                        from = centroid.pressPosition;
+                    }
+                    ed.trace("drag-start", mode + " " + (hit ? grabbed : "") + " at " + Math.round(centroid.scenePressPosition.x) + "," + Math.round(centroid.scenePressPosition.y));
                 } else {
-                    const r = lassoRect;
-                    const hit = slots.children.filter(s => s.entry && s.x + s.width > r.x && s.x < r.x + r.width && s.y + s.height > r.y && s.y < r.y + r.height).map(s => s.entry.id);
-                    Desktop.selection = (centroid.modifiers & Qt.ShiftModifier) ? Array.from(new Set(Desktop.selection.concat(hit))) : hit;
+                    if (mode === "move") {
+                        ed.guideX = false;
+                        ed.guideY = false;
+                        ed.trace("drag-end", "move " + grabbed + " by " + Math.round(centroid.scenePosition.x - centroid.scenePressPosition.x) + "," + Math.round(centroid.scenePosition.y - centroid.scenePressPosition.y));
+                        Desktop.commitDraft();
+                    } else if (mode === "lasso") {
+                        const r = lassoRect;
+                        const hit = slots.children.filter(s => s.entry && s.x + s.width > r.x && s.x < r.x + r.width && s.y + s.height > r.y && s.y < r.y + r.height).map(s => s.entry.id);
+                        Desktop.selection = (centroid.modifiers & Qt.ShiftModifier) ? Array.from(new Set(Desktop.selection.concat(hit))) : hit;
+                        ed.trace("drag-end", "lasso selected " + hit.length);
+                    }
+                    mode = "";
+                    grabbed = "";
                 }
+            }
+            onCentroidChanged: if (active && mode === "move") {
+                const mine = starts[grabbed];
+                if (!mine)
+                    return;
+                // the pointer's travel on screen (this window is the output), so the widget keeps the point where it
+                // was grabbed; the grid moves it in whole steps from where it was, so nothing jumps at the start
+                const tx = centroid.scenePosition.x - centroid.scenePressPosition.x;
+                const ty = centroid.scenePosition.y - centroid.scenePressPosition.y;
+                let cx = mine.cx + Desktop.snapped(tx), cy = mine.cy + Desktop.snapped(ty);
+                // the centre lines catch first
+                ed.guideX = Math.abs(mine.cx + tx - ed.sw / 2) < 10;
+                ed.guideY = Math.abs(mine.cy + ty - ed.sh / 2) < 10;
+                if (ed.guideX)
+                    cx = ed.sw / 2;
+                if (ed.guideY)
+                    cy = ed.sh / 2;
+                const dx = cx - mine.cx, dy = cy - mine.cy;
+                for (const [id, g] of Object.entries(starts))
+                    Desktop.setDraft(id, Object.assign({}, g, {
+                        cx: g.cx + dx,
+                        cy: g.cy + dy
+                    }));
             }
         }
         Rectangle {
             id: lassoRect
-            visible: lasso.active
-            x: Math.min(lasso.from.x, lasso.centroid.position.x)
-            y: Math.min(lasso.from.y, lasso.centroid.position.y)
-            width: Math.abs(lasso.centroid.position.x - lasso.from.x)
-            height: Math.abs(lasso.centroid.position.y - lasso.from.y)
+            visible: gesture.active && gesture.mode === "lasso"
+            x: Math.min(gesture.from.x, gesture.centroid.position.x)
+            y: Math.min(gesture.from.y, gesture.centroid.position.y)
+            width: Math.abs(gesture.centroid.position.x - gesture.from.x)
+            height: Math.abs(gesture.centroid.position.y - gesture.from.y)
             radius: Metrics.radiusSm
             color: Theme.alpha(Theme.accent, 0.12)
             border.width: 1
@@ -195,10 +279,12 @@ PanelWindow {
                 readonly property bool selected: Desktop.selection.includes(modelData.id)
                 readonly property bool leaving: Desktop.removing.includes(modelData.id)
 
-                x: place.x
-                y: place.y
-                width: Math.max(8, place.width)
-                height: Math.max(8, place.height)
+                // a widget that sizes itself (width/height 0: weather, media) is as large as it draws, centred on
+                // its point (as the desktop shows it), not an 8 px box nobody can grab
+                width: place.width > 0 ? Math.max(8, place.width) : Math.max(24, preview.implicitWidth)
+                height: place.height > 0 ? Math.max(8, place.height) : Math.max(24, preview.implicitHeight)
+                x: place.x + (place.width > 0 ? 0 : -width / 2)
+                y: place.y + (place.height > 0 ? 0 : -height / 2)
                 rotation: Desktop.geometry(modelData).rotation * 180 / Math.PI
                 z: selected ? 2 : 1
 
@@ -235,6 +321,7 @@ PanelWindow {
                 }
 
                 WidgetView {
+                    id: preview
                     anchors.fill: parent
                     spec: slot.modelData
                     preview: true
@@ -323,68 +410,11 @@ PanelWindow {
                     }
                 }
 
-                // the body: select, and drag to move (with the rest of the selection)
+                // the body, frame and tag show they can be moved (the canvas's handlers do the selecting and moving)
                 HoverHandler {
                     id: body
                     cursorShape: Qt.SizeAllCursor
                 }
-                TapHandler {
-                    onTapped: (point, button) => {
-                        Desktop.select(slot.modelData.id, point.modifiers & (Qt.ShiftModifier | Qt.ControlModifier));
-                        keys.forceActiveFocus();
-                    }
-                    onDoubleTapped: Desktop.inspecting = true
-                }
-                DragHandler {
-                    id: mover
-                    target: null
-                    // the desktop's lasso is a DragHandler too, and a handler may not take a drag from one of its own
-                    // kind by default: a widget's drag must always be the widget's
-                    grabPermissions: PointerHandler.CanTakeOverFromAnything
-                    property var starts: ({})
-                    onActiveChanged: {
-                        if (active) {
-                            if (!slot.selected)
-                                Desktop.select(slot.modelData.id, false);
-                            const s = {};
-                            for (const id of Desktop.selection) {
-                                const w = Desktop.byId(id);
-                                if (w && (!w.output || w.output === ed.output))
-                                    s[id] = ed.screenGeometry(w);
-                            }
-                            starts = s;
-                        } else {
-                            ed.guideX = false;
-                            ed.guideY = false;
-                            Desktop.commitDraft();
-                        }
-                    }
-                    onCentroidChanged: if (active) {
-                        const mine = starts[slot.modelData.id];
-                        if (!mine)
-                            return;
-                        // the pointer's travel on screen (the window is the output), so a turned or scaled widget
-                        // follows the pointer exactly and keeps where it was grabbed; the grid moves it in whole
-                        // steps from where it was, so nothing jumps when the drag starts
-                        const tx = centroid.scenePosition.x - centroid.scenePressPosition.x;
-                        const ty = centroid.scenePosition.y - centroid.scenePressPosition.y;
-                        let cx = mine.cx + Desktop.snapped(tx), cy = mine.cy + Desktop.snapped(ty);
-                        // the centre lines catch first
-                        ed.guideX = Math.abs(mine.cx + tx - ed.sw / 2) < 10;
-                        ed.guideY = Math.abs(mine.cy + ty - ed.sh / 2) < 10;
-                        if (ed.guideX)
-                            cx = ed.sw / 2;
-                        if (ed.guideY)
-                            cy = ed.sh / 2;
-                        const dx = cx - mine.cx, dy = cy - mine.cy;
-                        for (const [id, g] of Object.entries(starts))
-                            Desktop.setDraft(id, Object.assign({}, g, {
-                                cx: g.cx + dx,
-                                cy: g.cy + dy
-                            }));
-                    }
-                }
-
                 // corners: scale about the centre (Shift stretches instead)
                 Repeater {
                     model: slot.selected && Desktop.selection.length === 1 ? 4 : 0

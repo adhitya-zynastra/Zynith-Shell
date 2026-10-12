@@ -25,6 +25,8 @@ Singleton {
     readonly property var selected: selection.length === 1 ? byId(selection[0]) : null
 
     // ── edit mode ────────────────────────────────────────────────────────────
+    // log the editor's taps and drags (what they landed on, what they did): ipc editorTrace true
+    property bool traceInput: false
     // the layout as the editing session found it: Reset puts it back (one undoable step), so trying things
     // costs nothing
     property var sessionStart: null
