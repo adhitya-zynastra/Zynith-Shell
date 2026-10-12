@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QString>
 #include <QList>
+#include <QElapsedTimer>
 #include <QQuickItem>
 #include <QtQml/qqmlregistration.h>
 
@@ -41,6 +42,11 @@ class SpectrumBars : public QQuickItem {
     Q_PROPERTY(bool gradientFromCentre READ gradientFromCentre WRITE setGradientFromCentre NOTIFY changed)
     // a still pattern instead of the values (previews)
     Q_PROPERTY(bool still READ still WRITE setStill NOTIFY changed)
+    // square-ended, pixel-sharp bars (the native shell's) rather than rounded ones with a soft edge
+    Q_PROPERTY(bool square READ square WRITE setSquare NOTIFY changed)
+    // each bar eases toward the analyser's value with this time constant (ms) every frame, as the native shell's
+    // visualizer does (60 ms); 0 shows the values as they come
+    Q_PROPERTY(qreal smoothing READ smoothing WRITE setSmoothing NOTIFY changed)
 
 public:
     explicit SpectrumBars(QQuickItem* parent = nullptr);
@@ -62,6 +68,8 @@ public:
     qreal alphaByLevel() const { return m_alphaByLevel; }
     bool gradientFromCentre() const { return m_gradientFromCentre; }
     bool still() const { return m_still; }
+    bool square() const { return m_square; }
+    qreal smoothing() const { return m_smoothing; }
 
     void setValues(const QList<qreal>& v);
     void setCount(int v);
@@ -80,6 +88,8 @@ public:
     void setAlphaByLevel(qreal v);
     void setGradientFromCentre(bool v);
     void setStill(bool v);
+    void setSquare(bool v);
+    void setSmoothing(qreal v);
 
 signals:
     void changed();
@@ -108,4 +118,10 @@ private:
     qreal m_alphaByLevel = 0.0;
     bool m_gradientFromCentre = false;
     bool m_still = false;
+    bool m_square = false;
+    qreal m_smoothing = 0.0;
+    // what is drawn: the values, eased toward m_values frame by frame (render thread, during sync)
+    QList<qreal> m_shown;
+    QElapsedTimer m_frameClock;
+    bool easeShown();
 };

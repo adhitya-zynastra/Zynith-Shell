@@ -87,6 +87,8 @@ Singleton {
                 { key: "color_1", label: "Colour", kind: "colour", default: "primary" },
                 { key: "color_2", label: "Second colour", kind: "colour", default: "secondary" },
                 { key: "sensitivity", label: "Sensitivity", kind: "slider", default: 1, from: 0.5, to: 3, step: 0.1 },
+                { key: "bar_style", label: "Bars", hint: "Square: the sharp bars of the native visualizer", kind: "choice", default: "square", options: [{ key: "square", label: "Square" }, { key: "rounded", label: "Rounded" }] },
+                { key: "smoothing", label: "Smoothing (ms)", hint: "How long a bar takes to glide to a new level; 0 jumps", kind: "int", default: 60, from: 0, to: 300, step: 5 },
                 { key: "edge", label: "Stands on", hint: "The edge the bars rise from; they grow into the widget", kind: "choice", default: "bottom", options: [{ key: "bottom", label: "Bottom" }, { key: "top", label: "Top" }, { key: "left", label: "Left" }, { key: "right", label: "Right" }] },
                 { key: "skew", label: "Lean", hint: "Tilts the bars (degrees); their feet stay on the edge", kind: "slider", default: 0, from: -30, to: 30, step: 1 }
             ]

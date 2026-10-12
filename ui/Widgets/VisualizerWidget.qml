@@ -11,7 +11,7 @@ BarItem {
     id: root
 
     readonly property bool wanted: Spectrum.enabled && (bar?.shown ?? 1) > 0
-    property bool holding: false
+    property int holding: 0
     readonly property int length: opt("width") ?? 56
     readonly property int bands: Math.max(2, opt("bands") ?? 16)
     readonly property bool mirrored: opt("mirrored") !== false
@@ -24,19 +24,22 @@ BarItem {
     interactive: opt("interactive") === true
     pad: Metrics.s2
 
+    readonly property bool square: (opt("bar_style") ?? "square") !== "rounded"
     function sync(): void {
-        if (wanted && !holding) {
-            Spectrum.retain();
-            holding = true;
-        } else if (!wanted && holding) {
-            Spectrum.release();
-            holding = false;
-        }
+        const want = wanted ? bands : 0;
+        if (want === holding)
+            return;
+        if (holding > 0)
+            Spectrum.release(holding);
+        if (want > 0)
+            Spectrum.retain(want);
+        holding = want;
     }
     onWantedChanged: sync()
+    onBandsChanged: sync()
     Component.onCompleted: sync()
-    Component.onDestruction: if (holding)
-        Spectrum.release()
+    Component.onDestruction: if (holding > 0)
+        Spectrum.release(holding)
 
 
     // one scene-graph node for every bar (Zynith.Native SpectrumBars)
@@ -45,15 +48,19 @@ BarItem {
         height: root.vertical ? root.length : root.cross - 10
         vertical: root.vertical
         values: Spectrum.values
-        count: root.bands
+        // as the native bar visualizer: mirrored shows each band twice
+        count: root.mirrored ? root.bands * 2 : root.bands
         mirrored: root.mirrored
         reversed: root.reversed
         centred: root.centred
-        gap: 0.4
-        floor: 0.06
+        square: root.square
+        gap: root.square ? 1 / 3 : 0.4
+        floor: root.square ? 0 : 0.06
+        minLength: root.square ? 1 : 2
+        smoothing: root.opt("smoothing") ?? 60
         colorFrom: root.from
         colorTo: root.to
-        alpha: 0.55
-        alphaByLevel: 0.45
+        alpha: root.square ? 1 : 0.55
+        alphaByLevel: root.square ? 0 : 0.45
     }
 }

@@ -1,5 +1,6 @@
 #include "spectrum_bars.h"
 
+#include <QQuickWindow>
 #include <QSGGeometryNode>
 #include <QSGVertexColorMaterial>
 #include <algorithm>
@@ -57,6 +58,8 @@ SETTER(setAlpha, m_alpha, qreal)
 SETTER(setAlphaByLevel, m_alphaByLevel, qreal)
 SETTER(setGradientFromCentre, m_gradientFromCentre, bool)
 SETTER(setStill, m_still, bool)
+SETTER(setSquare, m_square, bool)
+SETTER(setSmoothing, m_smoothing, qreal)
 #undef SETTER
 
 void SpectrumBars::setValues(const QList<qreal>& v) {
@@ -88,17 +91,48 @@ qreal SpectrumBars::level(int i) const {
         const qreal s = std::sin(t * 2.6 + 0.4);
         return 0.2 + 0.6 * s * s;
     }
-    const int n = static_cast<int>(m_values.size());
+    const QList<qreal>& values = m_smoothing > 0 ? m_shown : m_values;
+    const int n = static_cast<int>(values.size());
     if (n == 0)
         return 0.0;
     const qreal x = t * (n - 1);
     const int a = static_cast<int>(std::floor(x));
     const int b = std::min(n - 1, a + 1);
-    const qreal v = m_values.at(a) + (m_values.at(b) - m_values.at(a)) * (x - a);
+    const qreal v = values.at(a) + (values.at(b) - values.at(a)) * (x - a);
     return std::clamp(v * m_gain, 0.0, 1.0);
 }
 
+// one frame of easing toward the values: true while anything is still on its way (another frame wanted)
+bool SpectrumBars::easeShown() {
+    if (m_smoothing <= 0) {
+        m_frameClock.invalidate();
+        return false;
+    }
+    if (m_shown.size() != m_values.size())
+        m_shown = QList<qreal>(m_values.size(), 0.0);
+    const qreal dt = m_frameClock.isValid() ? std::min<qreal>(100.0, static_cast<qreal>(m_frameClock.restart())) : 16.0;
+    if (!m_frameClock.isValid())
+        m_frameClock.start();
+    const qreal k = 1.0 - std::exp(-dt / m_smoothing);
+    constexpr qreal kEpsilon = 1.0 / 512.0;
+    bool moving = false;
+    for (qsizetype i = 0; i < m_shown.size(); ++i) {
+        const qreal d = m_values.at(i) - m_shown.at(i);
+        if (std::abs(d) < kEpsilon) {
+            m_shown[i] = m_values.at(i);
+            continue;
+        }
+        m_shown[i] += d * k;
+        moving = true;
+    }
+    if (!moving)
+        m_frameClock.invalidate(); // the next value starts a fresh step, not one as long as the idle gap
+    return moving;
+}
+
 QSGNode* SpectrumBars::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
+    if (easeShown())
+        update(); // the next frame continues the glide
     const int count = std::max(1, m_count);
     enum class Edge { Bottom, Top, Left, Right };
     const Edge edge = m_edge == QLatin1String("top")      ? Edge::Top
@@ -132,7 +166,7 @@ QSGNode* SpectrumBars::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
         node->setFlag(QSGNode::OwnsMaterial);
     }
     QSGGeometry* geometry = node->geometry();
-    geometry->allocate(count * perBar);
+    geometry->allocate(count * (m_square ? 6 : perBar));
     Vertex* v = geometry->vertexDataAsColoredPoint2D();
 
     const float slot = along / count;
@@ -160,6 +194,37 @@ QSGNode* SpectrumBars::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
             break;
         }
     };
+
+    if (m_square) {
+        // the native shell's bars: plain quads on whole device pixels, at least a pixel long (silence is a line)
+        const float dpr = window() != nullptr ? static_cast<float>(window()->effectiveDevicePixelRatio()) : 1.0F;
+        const float px = 1.0F / dpr;
+        auto snap = [dpr](float value) { return std::round(value * dpr) / dpr; };
+        for (int i = 0; i < count; ++i) {
+            const qreal lv = level(i);
+            const float len = std::clamp(static_cast<float>(std::max<qreal>(m_minLength, std::max(m_floor, lv) * across)), px, across);
+            const float u0 = snap(slot * i + (slot - thickness) / 2.0F);
+            const float u1 = std::max(u0 + px, snap(slot * i + (slot + thickness) / 2.0F));
+            const float w0 = m_centred ? snap((across - len) / 2.0F) : 0.0F;
+            const float w1 = std::max(w0 + px, snap(w0 + len));
+            const qreal pos = m_gradientFromCentre ? std::abs((i + 0.5) / count * 2.0 - 1.0) : (count > 1 ? static_cast<qreal>(i) / (count - 1) : 0.0);
+            const QColor c = mix(m_from, m_to, pos);
+            const float a = static_cast<float>(m_alpha + m_alphaByLevel * lv);
+            float x00, y00, x10, y10, x01, y01, x11, y11;
+            map(u0, w0, x00, y00);
+            map(u1, w0, x10, y10);
+            map(u0, w1, x01, y01);
+            map(u1, w1, x11, y11);
+            put(v, x00, y00, c, a);
+            put(v, x10, y10, c, a);
+            put(v, x01, y01, c, a);
+            put(v, x01, y01, c, a);
+            put(v, x10, y10, c, a);
+            put(v, x11, y11, c, a);
+        }
+        node->markDirty(QSGNode::DirtyGeometry);
+        return node;
+    }
 
     for (int i = 0; i < count; ++i) {
         const qreal lv = level(i);

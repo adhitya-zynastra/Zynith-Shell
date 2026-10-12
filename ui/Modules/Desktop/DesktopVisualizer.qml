@@ -20,7 +20,12 @@ Item {
     readonly property bool hasBars: mode === "bars" || mode === "bars_rings" || mode === "all"
     readonly property bool hasWave: mode === "wave" || mode === "wave_rings" || mode === "all"
     readonly property bool hasRings: mode.indexOf("rings") >= 0 || mode === "all"
-    readonly property int bars: Math.max(4, opt("bands") ?? 32)
+    // bands as the native shell counted them: the analyser's resolution for this widget; mirrored, each band
+    // shows twice (bass in the middle), so the bars are twice the bands
+    readonly property int bands: Math.max(2, opt("bands") ?? 32)
+    readonly property int bars: mirrored ? bands * 2 : bands
+    // square: the native shell's sharp bars; rounded: pills with a soft edge
+    readonly property bool square: (opt("bar_style") ?? "square") !== "rounded"
     readonly property bool mirrored: opt("mirrored") !== false
     readonly property bool reversed: opt("reversed") === true
     readonly property bool centred: opt("centered") === true
@@ -48,20 +53,22 @@ Item {
     }
 
     readonly property bool wanted: Spectrum.enabled
-    property bool holding: false
+    property int holding: 0
     function sync(): void {
-        if (wanted && !holding) {
-            Spectrum.retain();
-            holding = true;
-        } else if (!wanted && holding) {
-            Spectrum.release();
-            holding = false;
-        }
+        const want = wanted ? bands : 0;
+        if (want === holding)
+            return;
+        if (holding > 0)
+            Spectrum.release(holding);
+        if (want > 0)
+            Spectrum.retain(want);
+        holding = want;
     }
     onWantedChanged: sync()
+    onBandsChanged: sync()
     Component.onCompleted: sync()
-    Component.onDestruction: if (holding)
-        Spectrum.release()
+    Component.onDestruction: if (holding > 0)
+        Spectrum.release(holding)
 
     visible: preview || (wanted && (Spectrum.active || opt("show_when_idle") !== false))
     readonly property bool still: preview && !Spectrum.active
@@ -111,11 +118,14 @@ Item {
         reversed: root.reversed
         centred: root.centred
         gain: root.gain
-        gap: 0.3
-        minLength: 2
+        square: root.square
+        // the native bars: a gap half a bar wide (a third of each slot), opaque, a pixel long in silence
+        gap: root.square ? 1 / 3 : 0.3
+        minLength: root.square ? 1 : 2
+        smoothing: root.opt("smoothing") ?? 60
         colorFrom: root.from
         colorTo: root.to
-        alpha: 0.85
+        alpha: root.square ? 1 : 0.85
         still: root.still
     }
 

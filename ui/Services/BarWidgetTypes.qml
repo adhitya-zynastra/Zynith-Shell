@@ -193,6 +193,8 @@ Singleton {
                 { key: "reversed", label: "Reversed", kind: "toggle", default: false },
                 { key: "centered", label: "From the middle", kind: "toggle", default: true },
                 { key: "show_when_idle", label: "Show when silent", kind: "toggle", default: false },
+                { key: "bar_style", label: "Bars", hint: "Square: the sharp bars of the native visualizer", kind: "choice", default: "square", options: [{ key: "square", label: "Square" }, { key: "rounded", label: "Rounded" }] },
+                { key: "smoothing", label: "Smoothing (ms)", hint: "How long a bar takes to glide to a new level; 0 jumps", kind: "int", default: 60, from: 0, to: 300, step: 5 },
                 { key: "color_1", label: "Colour", kind: "colour", default: "primary" },
                 { key: "color_2", label: "Second colour", kind: "colour", default: "primary" }
             ]

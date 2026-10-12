@@ -41,7 +41,7 @@ Item {
             return;
         holding = true;
         if (visualizer)
-            Spectrum.retain();
+            Spectrum.retain(0);
         if (showLyrics)
             Lyrics.retain();
     }
@@ -50,7 +50,7 @@ Item {
             return;
         holding = false;
         if (visualizer)
-            Spectrum.release();
+            Spectrum.release(0);
         if (showLyrics)
             Lyrics.release();
     }
