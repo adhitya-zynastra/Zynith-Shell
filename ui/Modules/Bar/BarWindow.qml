@@ -16,12 +16,30 @@ PanelWindow {
 
     screen: modelData
 
-    readonly property string edge: spec.edge ?? "top"
-    readonly property string anchorAt: spec.anchor ?? "center"
+    // a value bars.toml got wrong (a typo, a word from another version, a string for a number) falls back to
+    // its default and is named in the log, instead of laying the bar out from nonsense
+    function oneOf(key: string, allowed: var, fallback: string): string {
+        const v = spec[key];
+        if (v === undefined || allowed.includes(v))
+            return v ?? fallback;
+        console.warn(`zynith: bar "${spec.id ?? "?"}": ${key} = ${JSON.stringify(v)} is not one of ${allowed.join(", ")}; using ${fallback}`);
+        return fallback;
+    }
+    function number(key: string, fallback: real, least: real): real {
+        const v = spec[key];
+        if (v === undefined)
+            return fallback;
+        if (typeof v === "number" && isFinite(v) && v >= least)
+            return v;
+        console.warn(`zynith: bar "${spec.id ?? "?"}": ${key} = ${JSON.stringify(v)} is not a number of at least ${least}; using ${fallback}`);
+        return fallback;
+    }
+    readonly property string edge: oneOf("edge", ["top", "bottom", "left", "right"], "top")
+    readonly property string anchorAt: oneOf("anchor", ["start", "center", "end", "fill"], "center")
     readonly property bool vertical: edge === "left" || edge === "right"
-    readonly property int thickness: spec.thickness ?? Metrics.barThickness
-    readonly property int margin: spec.margin ?? 0
-    readonly property int offset: anchorAt === "center" ? 0 : (spec.offset ?? 0)
+    readonly property int thickness: number("thickness", Metrics.barThickness, 8)
+    readonly property int margin: number("margin", 0, 0)
+    readonly property int offset: anchorAt === "center" ? 0 : number("offset", 0, 0)
     readonly property bool reserve: spec.reserve ?? false
     // style: keys left out follow appearance.toml
     readonly property real radius: (spec.radius ?? -1) >= 0 ? spec.radius * Metrics.radiusScale : thickness / 2
@@ -102,7 +120,7 @@ PanelWindow {
     }
 
     // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
-    readonly property string visibility: spec.visibility ?? "always"
+    readonly property string visibility: oneOf("visibility", ["always", "smart", "autohide"], "always")
     readonly property bool hides: visibility === "autohide" || visibility === "smart"
     readonly property bool panelHere: PanelRouter.openPanels[screen?.name ?? ""] !== undefined
     // the pointer on the bar, or on the edge strip that summons it; leaving lets it go after hide_delay_ms

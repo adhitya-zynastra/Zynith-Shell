@@ -120,7 +120,7 @@ Singleton {
                 effectsQuality: "max",
                 visualizerQuality: "max",
                 visualizerBands: 48,
-                visualizerFps: 0,              // 0 = the output's refresh rate
+                visualizerFps: 0,              // 0 = 60 fps (Spectrum.qml); the output's own rate is not read yet
                 wallpaperQuality: "max",
                 wallpaperTransitionMs: 1100,
                 thumbnailQuality: "max",

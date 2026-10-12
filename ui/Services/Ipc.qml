@@ -95,6 +95,25 @@ Singleton {
                 Desktop.inspecting = true;
             }
         }
+        // the editor's own operations, by widget id (persisted, undoable): show or hide one, set one setting
+        // (value as JSON: 96, true, "right")
+        function desktopWidgets(): string {
+            return JSON.stringify(Config.widgets.map(w => ({ id: w.id, type: w.type, hidden: w.hidden === true, settings: w.settings ?? {} })));
+        }
+        function desktopSetHidden(id: string, hidden: bool): string {
+            const w = Desktop.byId(id);
+            if (!w)
+                return "no such widget";
+            if ((w.hidden === true) !== hidden)
+                Desktop.toggleHidden([id]);
+            return "ok";
+        }
+        function desktopSetting(id: string, key: string, json: string): string {
+            if (!Desktop.byId(id))
+                return "no such widget";
+            Desktop.setSetting(id, key, JSON.parse(json));
+            return "ok";
+        }
         function desktopPick(): void {
             Desktop.setEditing(true);
             Desktop.picking = true;

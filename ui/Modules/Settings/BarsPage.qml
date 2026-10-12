@@ -189,7 +189,7 @@ Column {
                         { key: "thickness", label: "Thickness", kind: "int", default: 34, from: 20, to: 96, step: 1 },
                         { key: "length", label: "Length (0 fits the widgets)", kind: "int", default: 0, from: 0, to: 3840, step: 10 },
                         { key: "margin", label: "From the screen edge", kind: "int", default: 0, from: 0, to: 64, step: 1 },
-                        { key: "offset", label: "From the ends", kind: "int", default: 0, from: 0, to: 600, step: 2 },
+                        { key: "offset", label: "From the ends", kind: "int", default: 0, from: 0, to: 3840, step: 2 },
                         { key: "padding", label: "Inner padding", kind: "int", default: 12, from: 0, to: 40, step: 1 },
                         { key: "spacing", label: "Between widgets (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 24, step: 1 }
                     ]

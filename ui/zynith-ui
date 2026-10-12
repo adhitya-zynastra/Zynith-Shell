@@ -52,41 +52,227 @@ load_state() {
     echo unknown
 }
 
+# ── the native shell: supervised, so a crash or a stray kill does not leave the session without its services ──
+# (its bar services, notifications, OSD, idle and the lock screen live there). `native supervise` is the
+# session's start line: it runs the shell as its child and blocks in `wait` (no polling). An exit it was not
+# asked for relaunches the shell; one asked for (`native stop`) does not. Failing again and again within
+# seconds of starting, it stops trying and says so, rather than spin.
+NATIVE_BIN="$HOME/.local/opt/noctalia/bin/noctalia"
+[[ -x "$NATIVE_BIN" ]] || NATIVE_BIN="$(command -v noctalia || true)"
+NATIVE_SUP="$RUN/native.supervisor"
+NATIVE_PID="$RUN/native.pid"
+NATIVE_STOP="$RUN/native.stop"
+NATIVE_LOG="$RUN/native.log"
+note() { printf '%s %s\n' "$(date +%T)" "$*" >>"$NATIVE_LOG"; }
+supervisor_alive() { [[ -f "$NATIVE_SUP" ]] && kill -0 "$(cat "$NATIVE_SUP")" 2>/dev/null; }
+native_pid() { pgrep -x -f "$NATIVE_BIN" 2>/dev/null | head -1 || true; }
+# wait (bounded) for a pid to be gone: the shell holds a single-instance lock until it has exited, and a new
+# one started before then quits at once ("already running") — the race that left no shell at all
+wait_gone() { for _ in $(seq 1 100); do kill -0 "$1" 2>/dev/null || return 0; sleep 0.05; done; return 1; }
+
+supervise_native() {
+    mkdir -p "$RUN"
+    if supervisor_alive && [[ "$(cat "$NATIVE_SUP")" != "$$" ]]; then echo "already supervised ($(cat "$NATIVE_SUP"))"; return 0; fi
+    echo "$$" >"$NATIVE_SUP"
+    rm -f "$NATIVE_STOP"
+    local fast=0 delay=1 started rc child
+    trap '[[ -n "${child:-}" ]] && kill -TERM "$child" 2>/dev/null; rm -f "$NATIVE_SUP"; exit 0' TERM INT HUP
+    while :; do
+        if [[ -n "$(native_pid)" ]]; then
+            # one already runs, unsupervised (started by hand): wait for it to go, then take over
+            note "an unsupervised shell runs ($(native_pid)); waiting for it"
+            while [[ -n "$(native_pid)" ]]; do wait_gone "$(native_pid)" || sleep 5; done
+        fi
+        started=$SECONDS
+        # its own output, kept for the last two runs (a crash prints its backtrace here)
+        [[ -f "$RUN/native.out" ]] && mv -f "$RUN/native.out" "$RUN/native.out.1"
+        "$NATIVE_BIN" >"$RUN/native.out" 2>&1 </dev/null &
+        child=$!
+        echo "$child" >"$NATIVE_PID"
+        note "started $child"
+        rc=0
+        wait "$child" || rc=$?
+        child=""
+        rm -f "$NATIVE_PID"
+        if [[ -e "$NATIVE_STOP" ]]; then note "stopped on request (exit $rc)"; break; fi
+        if [[ -e "$RUN/native.restart" ]]; then rm -f "$RUN/native.restart"; note "restarting on request"; fast=0 delay=1; continue; fi
+        if ((SECONDS - started < 20)); then fast=$((fast + 1)); else fast=0 delay=1; fi
+        if ((fast >= 5)); then
+            note "exit $rc five times within seconds of starting; giving up"
+            notify-send -u critical -a Zynith "The shell keeps failing to start" \
+                "It exited $fast times in a row (last: $rc). Its log: $NATIVE_LOG. Start it again with: zynith-ui native start" 2>/dev/null || true
+            break
+        fi
+        note "exited ($rc) without being asked to; starting again in ${delay}s"
+        sleep "$delay"
+        ((fast > 0)) && delay=$((delay * 2 > 30 ? 30 : delay * 2))
+    done
+    rm -f "$NATIVE_SUP"
+}
+
+native_cmd() {
+    case "${1:-status}" in
+    supervise) supervise_native ;;
+    start)
+        if supervisor_alive; then echo "running (supervised by $(cat "$NATIVE_SUP"), shell $(native_pid))"; return 0; fi
+        rm -f "$NATIVE_STOP"
+        setsid -f "$0" native supervise >/dev/null 2>&1 </dev/null
+        for _ in $(seq 1 100); do [[ -n "$(native_pid)" ]] && noctalia msg status >/dev/null 2>&1 && { echo "started $(native_pid)"; return 0; }; sleep 0.1; done
+        echo "the shell did not come up; see $NATIVE_LOG" >&2
+        return 1
+        ;;
+    restart)
+        local old
+        old="$(native_pid)"
+        if supervisor_alive && [[ -n "$old" ]]; then
+            # the supervisor relaunches it once it has exited (at once: asked for, not a failure)
+            touch "$RUN/native.restart"
+            kill -TERM "$old"
+            wait_gone "$old" || { echo "the shell ($old) did not exit" >&2; return 1; }
+            for _ in $(seq 1 100); do local now; now="$(native_pid)"; [[ -n "$now" && "$now" != "$old" ]] && noctalia msg status >/dev/null 2>&1 && { echo "restarted $now"; return 0; }; sleep 0.1; done
+            echo "the shell did not come back; see $NATIVE_LOG" >&2
+            return 1
+        fi
+        if [[ -n "$old" ]]; then
+            kill -TERM "$old"
+            wait_gone "$old" || { echo "the shell ($old) did not exit" >&2; return 1; }
+        fi
+        native_cmd start
+        ;;
+    stop)
+        touch "$NATIVE_STOP"
+        local old
+        old="$(native_pid)"
+        [[ -n "$old" ]] && kill -TERM "$old" && wait_gone "$old"
+        echo stopped
+        ;;
+    status)
+        local p
+        p="$(native_pid)"
+        if [[ -n "$p" ]]; then
+            echo "running ($p)$(supervisor_alive && echo ", supervised by $(cat "$NATIVE_SUP")" || echo ", not supervised")"
+        else
+            echo "not running"
+        fi
+        ;;
+    *) echo "usage: zynith-ui native supervise|start|restart|stop|status" >&2; return 2 ;;
+    esac
+}
+
+# ── the UI, supervised the same way: Quickshell runs as the supervisor's child (no polling: `wait`) ──
+UI_SUP="$RUN/ui.supervisor"
+UI_STOP="$RUN/ui.stop"
+ui_supervisor_alive() { [[ -f "$UI_SUP" ]] && kill -0 "$(cat "$UI_SUP")" 2>/dev/null; }
+# launch_child(shell.qml): Quickshell as this shell's child, its pid recorded
+launch_child() {
+    local qml="$1"
+    # emptied here, not by the child: read before the child got to it, the last run's "Configuration Loaded"
+    # would pass for this one's
+    : >"$LOG"
+    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+        QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
+        "$QS" -p "$qml" >>"$LOG" 2>&1 </dev/null &
+    pid=$!
+    echo "$pid" >"$PIDFILE"
+    echo "$qml" >"$RUN/ui.shell"
+}
+supervise_ui() {
+    mkdir -p "$RUN"
+    if ui_supervisor_alive && [[ "$(cat "$UI_SUP")" != "$$" ]]; then return 0; fi
+    echo "$$" >"$UI_SUP"
+    rm -f "$UI_STOP"
+    local fast=0 delay=1 started rc state
+    trap '[[ -n "${pid:-}" ]] && kill -TERM "$pid" 2>/dev/null; rm -f "$UI_SUP"; exit 0' TERM INT HUP
+    while :; do
+        started=$SECONDS
+        build_native || true
+        launch_child "$SHELL_QML"
+        state="$(load_state)"
+        # a working copy that does not load must not leave the desktop without its UI: the last commit runs
+        # instead, from a snapshot, until the working copy is fixed
+        if [[ "$state" == failed ]]; then
+            kill "$pid" 2>/dev/null || true
+            wait "$pid" 2>/dev/null || true
+            cp "$LOG" "$RUN/ui-failed.log"
+            snap="$RUN/fallback"
+            rm -rf "$snap" && mkdir -p "$snap"
+            # from the top level: run from ui/, git archive keeps only ui/ within the tree it is given (nothing)
+            git -C "$(git -C "$HERE" rev-parse --show-toplevel)" archive "HEAD:$(git -C "$HERE" rev-parse --show-prefix)" | tar -x -C "$snap"
+            # the snapshot shares the repository's assets (fonts, emoji)
+            ln -sfn "$HERE/../assets" "$RUN/assets" 2>/dev/null || true
+            launch_child "$snap/shell.qml"
+            state=fallback
+        fi
+        echo "$state" >"$RUN/ui.outcome.new" && mv -f "$RUN/ui.outcome.new" "$RUN/ui.outcome"
+        rc=0
+        wait "$pid" || rc=$?
+        pid=""
+        if [[ -e "$UI_STOP" ]]; then break; fi
+        if [[ -e "$RUN/ui.restart" ]]; then rm -f "$RUN/ui.restart"; fast=0 delay=1; continue; fi
+        if ((SECONDS - started < 20)); then fast=$((fast + 1)); else fast=0 delay=1; fi
+        if ((fast >= 5)); then
+            notify-send -u critical -a Zynith "The Zynith UI keeps failing" \
+                "It exited $fast times in a row (last: $rc). Its log: $LOG. Start it again with: zynith-ui start" 2>/dev/null || true
+            break
+        fi
+        sleep "$delay"
+        ((fast > 0)) && delay=$((delay * 2 > 30 ? 30 : delay * 2))
+    done
+    rm -f "$UI_SUP"
+}
+
 case "${1:-status}" in
+native) shift; native_cmd "$@" ;;
 start)
+    # supervised (ui supervise): a crash relaunches the UI; a working copy that does not load runs the last
+    # commit instead. This waits for the first launch and says how it went.
     mkdir -p "$RUN"
     if running; then echo "already running ($(cat "$PIDFILE"))"; exit 0; fi
-    build_native
-    launch "$SHELL_QML"
-    # a working copy that does not load must not leave the desktop without its UI: the last commit runs
-    # instead, from a snapshot, until the working copy is fixed
-    if [[ "$(load_state)" == failed ]]; then
-        echo "the working copy failed to load:" >&2
-        sed 's/\x1b\[[0-9;]*m//g' "$LOG" | grep -A4 "Failed to load configuration" >&2 || true
-        kill "$pid" 2>/dev/null || true
-        snap="$RUN/fallback"
-        rm -rf "$snap" && mkdir -p "$snap"
-        # from the top level: run from ui/, git archive keeps only ui/ within the tree it is given (nothing)
-        git -C "$(git -C "$HERE" rev-parse --show-toplevel)" archive "HEAD:$(git -C "$HERE" rev-parse --show-prefix)" | tar -x -C "$snap"
-        # the snapshot shares the repository's assets (fonts, emoji)
-        ln -sfn "$HERE/../assets" "$RUN/assets" 2>/dev/null || true
-        cp "$LOG" "$RUN/ui-failed.log"
-        launch "$snap/shell.qml"
-        echo "started the last commit instead ($(git -C "$HERE" rev-parse --short HEAD)), pid ${pid:-?}" >&2
-        exit 1
+    if ui_supervisor_alive; then
+        echo "starting (supervised by $(cat "$UI_SUP"))"
+        exit 0
     fi
-    echo "started ${pid:-?}"
+    rm -f "$UI_STOP" "$RUN/ui.outcome"
+    setsid -f "$0" ui-supervise >/dev/null 2>&1 </dev/null
+    for _ in $(seq 1 150); do [[ -f "$RUN/ui.outcome" ]] && break; sleep 0.1; done
+    outcome="$(cat "$RUN/ui.outcome" 2>/dev/null || echo unknown)"
+    case "$outcome" in
+    loaded) echo "started $(cat "$PIDFILE" 2>/dev/null)" ;;
+    fallback)
+        echo "the working copy failed to load:" >&2
+        sed 's/\x1b\[[0-9;]*m//g' "$RUN/ui-failed.log" | grep -A4 "Failed to load configuration" >&2 || true
+        echo "started the last commit instead ($(git -C "$HERE" rev-parse --short HEAD)), pid $(cat "$PIDFILE" 2>/dev/null)" >&2
+        exit 1
+        ;;
+    *) echo "started $(cat "$PIDFILE" 2>/dev/null || echo ?) (load state: $outcome)" ;;
+    esac
     ;;
+ui-supervise) supervise_ui ;;
 stop)
+    # asked for: the supervisor lets it go
+    touch "$UI_STOP"
     if running; then
         pid=$(cat "$PIDFILE")
         kill "$pid"
-        for _ in $(seq 1 40); do kill -0 "$pid" 2>/dev/null || break; sleep 0.05; done
+        wait_gone "$pid" || true
     fi
     rm -f "$PIDFILE"
     echo stopped
     ;;
-restart) "$0" stop && "$0" start ;;
+restart)
+    if ui_supervisor_alive && running; then
+        # the supervisor relaunches it (from the working copy) once it has exited
+        old=$(cat "$PIDFILE")
+        rm -f "$RUN/ui.outcome"
+        touch "$RUN/ui.restart"
+        kill "$old"
+        wait_gone "$old" || { echo "the UI ($old) did not exit" >&2; exit 1; }
+        for _ in $(seq 1 150); do [[ -f "$RUN/ui.outcome" ]] && break; sleep 0.1; done
+        echo "restarted $(cat "$PIDFILE" 2>/dev/null) ($(cat "$RUN/ui.outcome" 2>/dev/null || echo unknown))"
+    else
+        "$0" stop && "$0" start
+    fi
+    ;;
 build) build_native && echo "built $NATIVE_BUILD" ;;
 status) running && echo "running ($(cat "$PIDFILE"))" || echo "not running" ;;
 log) sed 's/\x1b\[[0-9;]*m//g' "$LOG" ;;
