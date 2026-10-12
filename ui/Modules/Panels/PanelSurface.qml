@@ -208,7 +208,8 @@ PanelWindow {
     BlurRegion {
         window: win
         item: win.bare ? content.blurItem : card
-        radius: win.bare ? Metrics.radiusXl : Metrics.radiusXl
+        radius: Metrics.radiusXl
+        followOpacity: !win.bare
     }
 
     // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The

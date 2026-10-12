@@ -154,6 +154,7 @@ Scope {
                         window: win
                         item: card
                         radius: card.radius
+                        followOpacity: true
                     }
 
                     Glass {
