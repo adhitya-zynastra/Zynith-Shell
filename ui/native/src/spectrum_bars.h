@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <QString>
 #include <QList>
 #include <QQuickItem>
 #include <QtQml/qqmlregistration.h>
@@ -21,6 +22,10 @@ class SpectrumBars : public QQuickItem {
     Q_PROPERTY(bool reversed READ reversed WRITE setReversed NOTIFY changed)
     Q_PROPERTY(bool centred READ centred WRITE setCentred NOTIFY changed)
     Q_PROPERTY(bool vertical READ vertical WRITE setVertical NOTIFY changed)
+    // the edge the bars stand on: "bottom" | "top" (bars along the width) | "left" | "right" (along the height).
+    // Each bar's baseline is that edge and it grows away from it, into the item. Empty: left when `vertical`,
+    // else bottom (as before the edge existed).
+    Q_PROPERTY(QString edge READ edge WRITE setEdge NOTIFY changed)
     Q_PROPERTY(qreal gain READ gain WRITE setGain NOTIFY changed)
     // the share of each bar's slot left empty between bars (0..0.9)
     Q_PROPERTY(qreal gap READ gap WRITE setGap NOTIFY changed)
@@ -46,6 +51,7 @@ public:
     bool reversed() const { return m_reversed; }
     bool centred() const { return m_centred; }
     bool vertical() const { return m_vertical; }
+    QString edge() const { return m_edge; }
     qreal gain() const { return m_gain; }
     qreal gap() const { return m_gap; }
     qreal minLength() const { return m_minLength; }
@@ -63,6 +69,7 @@ public:
     void setReversed(bool v);
     void setCentred(bool v);
     void setVertical(bool v);
+    void setEdge(const QString& v);
     void setGain(qreal v);
     void setGap(qreal v);
     void setMinLength(qreal v);
@@ -90,6 +97,7 @@ private:
     bool m_reversed = false;
     bool m_centred = false;
     bool m_vertical = false;
+    QString m_edge;
     qreal m_gain = 1.0;
     qreal m_gap = 0.3;
     qreal m_minLength = 2.0;

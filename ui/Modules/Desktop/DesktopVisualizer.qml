@@ -27,6 +27,25 @@ Item {
     readonly property real gain: opt("sensitivity") ?? 1
     readonly property color from: Theme.colour(settings.color_1 ?? settings.color ?? "primary")
     readonly property color to: Theme.colour(opt("color_2"))
+    // the edge the spectrum stands on: its baseline, and the side its bars grow away from (into the widget)
+    readonly property string edge: ["bottom", "top", "left", "right"].includes(opt("edge")) ? opt("edge") : "bottom"
+    readonly property bool alongHeight: edge === "left" || edge === "right"
+    // lean the bars (degrees): each bar's tip shifts along the edge, its foot stays on the baseline
+    readonly property real lean: Math.tan(Math.max(-45, Math.min(45, opt("skew") ?? 0)) * Math.PI / 180)
+    // the shear for that lean, about the baseline
+    readonly property matrix4x4 shear: {
+        const k = lean, w = width, h = height;
+        switch (edge) {
+        case "top":
+            return Qt.matrix4x4(1, k, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+        case "left":
+            return Qt.matrix4x4(1, 0, 0, 0, k, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+        case "right":
+            return Qt.matrix4x4(1, 0, 0, 0, -k, 1, 0, k * w, 0, 0, 1, 0, 0, 0, 0, 1);
+        default:
+            return Qt.matrix4x4(1, -k, 0, k * h, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+        }
+    }
 
     readonly property bool wanted: Spectrum.enabled
     property bool holding: false
@@ -82,6 +101,10 @@ Item {
     SpectrumBars {
         visible: root.hasBars && !root.hasRings
         anchors.fill: parent
+        edge: root.edge
+        transform: Matrix4x4 {
+            matrix: root.shear
+        }
         values: Spectrum.values
         count: root.bars
         mirrored: root.mirrored
@@ -96,36 +119,52 @@ Item {
         still: root.still
     }
 
-    // ── wave: a smooth line through the bands, mirrored above and below when centred ──
-    Shape {
-        id: wave
-        visible: root.hasWave && !root.hasRings
+    // ── wave: a smooth line through the bands from the edge (or about the middle line, when centred); built
+    // only when shown, so its points are not worked out every frame for nothing ──
+    Loader {
         anchors.fill: parent
-        preferredRendererType: Shape.CurveRenderer
-        readonly property int count: Math.min(64, root.bars)
-        readonly property var points: {
-            const out = [];
-            for (let i = 0; i < count; i++) {
-                const y = root.centred ? height / 2 - root.level(i, count) * height / 2 : height - root.level(i, count) * height;
-                out.push(Qt.point(width * i / (count - 1), y));
+        active: root.hasWave && !root.hasRings
+        sourceComponent: Shape {
+            id: wave
+            preferredRendererType: Shape.CurveRenderer
+            transform: Matrix4x4 {
+                matrix: root.shear
             }
-            return out;
-        }
-        ShapePath {
-            strokeWidth: 2.5 * (root.opt("wave_thickness") ?? 1)
-            strokeColor: root.from
-            fillColor: "transparent"
-            capStyle: ShapePath.RoundCap
-            joinStyle: ShapePath.RoundJoin
-            PathPolyline {
-                path: wave.points
+            readonly property int count: Math.min(64, root.bars)
+            readonly property real along: root.alongHeight ? height : width
+            readonly property real across: root.alongHeight ? width : height
+            readonly property var points: {
+                const out = [];
+                for (let i = 0; i < count; i++) {
+                    const u = along * i / (count - 1), l = root.level(i, count);
+                    const w = root.centred ? across / 2 + l * across / 2 : l * across;
+                    out.push(root.edge === "top" ? Qt.point(u, w) : root.edge === "left" ? Qt.point(w, u) : root.edge === "right" ? Qt.point(width - w, u) : Qt.point(u, height - w));
+                }
+                return out;
+            }
+            ShapePath {
+                strokeWidth: 2.5 * (root.opt("wave_thickness") ?? 1)
+                strokeColor: root.from
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                joinStyle: ShapePath.RoundJoin
+                PathPolyline {
+                    path: wave.points
+                }
             }
         }
     }
 
-    // ── rings: bars or a wave around a circle that breathes with the bass ──
+    // ── rings: bars or a wave around a circle that breathes with the bass (built only when shown) ──
+    Loader {
+        anchors.fill: parent
+        active: root.hasRings
+        sourceComponent: rings
+    }
+    Component {
+        id: rings
     Item {
-        visible: root.hasRings
+    Item {
         anchors.centerIn: parent
         width: Math.min(parent.width, parent.height)
         height: width
@@ -167,5 +206,7 @@ Item {
                 }
             }
         }
+    }
+    }
     }
 }

@@ -48,6 +48,7 @@ SETTER(setMirrored, m_mirrored, bool)
 SETTER(setReversed, m_reversed, bool)
 SETTER(setCentred, m_centred, bool)
 SETTER(setVertical, m_vertical, bool)
+SETTER(setEdge, m_edge, const QString&)
 SETTER(setGain, m_gain, qreal)
 SETTER(setGap, m_gap, qreal)
 SETTER(setMinLength, m_minLength, qreal)
@@ -99,8 +100,16 @@ qreal SpectrumBars::level(int i) const {
 
 QSGNode* SpectrumBars::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     const int count = std::max(1, m_count);
-    const float along = static_cast<float>(m_vertical ? height() : width());
-    const float across = static_cast<float>(m_vertical ? width() : height());
+    enum class Edge { Bottom, Top, Left, Right };
+    const Edge edge = m_edge == QLatin1String("top")      ? Edge::Top
+                      : m_edge == QLatin1String("left")   ? Edge::Left
+                      : m_edge == QLatin1String("right")  ? Edge::Right
+                      : m_edge == QLatin1String("bottom") ? Edge::Bottom
+                      : m_vertical                        ? Edge::Left
+                                                          : Edge::Bottom;
+    const bool alongHeight = edge == Edge::Left || edge == Edge::Right;
+    const float along = static_cast<float>(alongHeight ? height() : width());
+    const float across = static_cast<float>(alongHeight ? width() : height());
     if (along <= 0 || across <= 0) {
         delete old;
         return nullptr;
@@ -130,14 +139,25 @@ QSGNode* SpectrumBars::updatePaintNode(QSGNode* old, UpdatePaintNodeData*) {
     const float thickness = std::max(1.0F, slot * static_cast<float>(1.0 - std::clamp(m_gap, 0.0, 0.9)));
     const float r = thickness / 2.0F;
 
-    // a bar in local (u along the bars, w across) space, mapped to x/y
+    // a bar in local space — u along the edge, w away from it (0 = the baseline) — mapped to x/y
     auto map = [&](float u, float w, float& x, float& y) {
-        if (m_vertical) {
+        switch (edge) {
+        case Edge::Bottom:
+            x = u;
+            y = across - w;
+            break;
+        case Edge::Top:
+            x = u;
+            y = w;
+            break;
+        case Edge::Left:
             x = w;
             y = u;
-        } else {
-            x = u;
-            y = across - w; // bars rise from the bottom edge
+            break;
+        case Edge::Right:
+            x = across - w;
+            y = u;
+            break;
         }
     };
 

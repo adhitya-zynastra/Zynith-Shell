@@ -86,7 +86,9 @@ Singleton {
                 { key: "show_when_idle", label: "Show when silent", kind: "toggle", default: true },
                 { key: "color_1", label: "Colour", kind: "colour", default: "primary" },
                 { key: "color_2", label: "Second colour", kind: "colour", default: "secondary" },
-                { key: "sensitivity", label: "Sensitivity", kind: "slider", default: 1, from: 0.5, to: 3, step: 0.1 }
+                { key: "sensitivity", label: "Sensitivity", kind: "slider", default: 1, from: 0.5, to: 3, step: 0.1 },
+                { key: "edge", label: "Stands on", hint: "The edge the bars rise from; they grow into the widget", kind: "choice", default: "bottom", options: [{ key: "bottom", label: "Bottom" }, { key: "top", label: "Top" }, { key: "left", label: "Left" }, { key: "right", label: "Right" }] },
+                { key: "skew", label: "Lean", hint: "Tilts the bars (degrees); their feet stay on the edge", kind: "slider", default: 0, from: -30, to: 30, step: 1 }
             ]
         },
         {

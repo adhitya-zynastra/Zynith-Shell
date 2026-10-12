@@ -92,17 +92,19 @@ Scope {
                             height: place.height > 0 ? place.height : view.implicitHeight
                             x: place.x + (place.width > 0 ? 0 : place.width / 2 - width / 2)
                             y: place.y + (place.height > 0 ? 0 : place.height / 2 - height / 2)
+                            // rotation turns the widget; a flip mirrors it in its own frame, before the turn (as the
+                            // native shell: the mirror is the content's, so a turned, flipped widget keeps its edge)
                             rotation: (modelData.rotation ?? 0) * 180 / Math.PI
-                            transform: Scale {
-                                origin.x: slot.width / 2
-                                xScale: slot.modelData.flip ? -1 : 1
-                            }
                             Component.onCompleted: win.revision++
                             onVisibleChanged: win.revision++
 
                             WidgetView {
                                 id: view
                                 anchors.fill: parent
+                                transform: Scale {
+                                    origin.x: view.width / 2
+                                    xScale: slot.modelData.flip ? -1 : 1
+                                }
                                 spec: slot.modelData
                                 onInteractiveChanged: win.revision++
                             }
