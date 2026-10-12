@@ -88,7 +88,8 @@ Singleton {
         { action: "keyboard-layout-cycle", label: "Next keyboard layout", group: "System" },
         { action: "screenshot-region", label: "Screenshot a region", group: "System" },
         { action: "desktop-edit", label: "Edit desktop widgets", group: "System" },
-        { action: "settings-open", label: "Settings", group: "System" }
+        { action: "settings-open", label: "Settings", group: "System" },
+        { action: "settings-open-widget", label: "This widget's settings", group: "System" }
     ]
     // the action string's name, for showing what a gesture does
     function describe(action: string): string {

@@ -16,6 +16,12 @@ Column {
     readonly property var bar: Config.bars[Math.min(selected, Config.bars.length - 1)] ?? null
     readonly property int barIndex: Math.min(selected, Config.bars.length - 1)
     property string openWidget: ""      // "section:index" of the entry whose settings show
+    property string openMember: ""      // "section:index:name" of a group's widget whose settings show
+    // a group's widgets (this bar's group of that id, else a shared one)
+    function groupMembers(id: string): var {
+        const g = (bar?.group ?? []).find(x => x.id === id) ?? (Config.barGroups ?? []).find(x => x.id === id);
+        return g?.members ?? [];
+    }
     property string adding: ""          // the section the catalogue adds to
 
     function setBar(key: string, value: var): void {
@@ -493,9 +499,8 @@ Column {
                 id: rowHover
                 anchors.fill: parent
                 hoverEnabled: true
-                cursorShape: entry.isGroup ? Qt.ArrowCursor : Qt.PointingHandCursor
-                onClicked: if (!entry.isGroup)
-                    page.openWidget = entry.open ? "" : entry.section + ":" + entry.entryIndex
+                cursorShape: Qt.PointingHandCursor
+                onClicked: page.openWidget = entry.open ? "" : entry.section + ":" + entry.entryIndex
             }
             Row {
                 anchors.left: parent.left
@@ -518,7 +523,7 @@ Column {
                         visible: text !== ""
                         role: "micro"
                         tone: "faint"
-                        text: entry.isGroup ? "" : !entry.info ? "No widget called " + entry.spec.type : page.usedBy(entry.name) > 1 ? "shared with " + (page.usedBy(entry.name) - 1) + " other bar" + (page.usedBy(entry.name) > 2 ? "s" : "") : ""
+                        text: entry.isGroup ? (page.groupMembers(entry.name.slice(6)).length + " widgets · open to set each one") : !entry.info ? "No widget called " + entry.spec.type : page.usedBy(entry.name) > 1 ? "shared with " + (page.usedBy(entry.name) - 1) + " other bar" + (page.usedBy(entry.name) > 2 ? "s" : "") : ""
                     }
                 }
             }
@@ -579,53 +584,154 @@ Column {
                 Loader {
                     width: parent.width
                     active: entry.open
-                    sourceComponent: Column {
-                        spacing: Metrics.s4
-                        Row {
-                            visible: page.usedBy(entry.name) > 1 || entry.name === entry.spec.type
-                            spacing: Metrics.s2
-                            Label {
-                                anchors.verticalCenter: parent.verticalCenter
-                                role: "caption"
-                                tone: "faint"
-                                text: entry.name === entry.spec.type ? "These settings are this kind's ([widget." + entry.name + "])." : "Shared with other bars."
+                    sourceComponent: entry.isGroup ? membersSheet : widgetSheet
+                }
+                Component {
+                    id: widgetSheet
+                    WidgetSheet {
+                        page: entry.page
+                        name: entry.name
+                        section: entry.section
+                        entryIndex: entry.entryIndex
+                    }
+                }
+                // a group: each of its widgets, opened in place to set it (its own settings and gestures)
+                Component {
+                    id: membersSheet
+                    Column {
+                        spacing: 2
+                        Repeater {
+                            model: entry.page.groupMembers(entry.name.slice(6))
+                            delegate: MemberRow {
+                                required property string modelData
+                                width: parent.width
+                                page: entry.page
+                                name: modelData
+                                key: entry.section + ":" + entry.entryIndex + ":" + modelData
                             }
-                            Chip {
-                                icon: "copy"
-                                text: "Give this bar its own"
-                                onClicked: page.separate(entry.section, entry.entryIndex, entry.name)
-                            }
-                        }
-                        SchemaForm {
-                            width: parent.width
-                            schema: BarWidgetTypes.schema(entry.spec.type)
-                            valueOf: key => BarWidgetTypes.value(entry.spec.type, entry.spec.settings, key)
-                            shows: spec => BarWidgetTypes.visible(entry.spec.type, spec, entry.spec.settings)
-                            isSet: key => entry.spec.settings[key] !== undefined
-                            onChanged: (key, value) => Config.setBarWidgetKey(entry.name, key, value)
-                            onCleared: key => Config.setBarWidgetKey(entry.name, key, undefined)
-                        }
-                        Label {
-                            role: "micro"
-                            caps: true
-                            tone: "faint"
-                            text: "What it does"
-                        }
-                        GestureForm {
-                            width: parent.width
-                            actions: entry.spec.actions
-                            defaults: {
-                                const out = {};
-                                for (const g of BarWidgetTypes.gestures)
-                                    out[g] = BarWidgetTypes.action(entry.spec.type, entry.spec.settings, {}, g);
-                                return out;
-                            }
-                            reserved: BarWidgetTypes.find(entry.spec.type)?.reserved ?? []
-                            onChanged: (gesture, action) => Config.setBarWidgetAction(entry.name, gesture, action)
                         }
                     }
                 }
             }
+        }
+    }
+
+    // a widget inside a group: opened, its settings and gestures
+    component MemberRow: Column {
+        id: member
+        property var page
+        property string name
+        property string key
+        readonly property var spec: Config.resolveBarWidget(name)
+        readonly property var info: BarWidgetTypes.find(spec.type)
+        readonly property bool open: page.openMember === key
+        Rectangle {
+            width: parent.width
+            height: 34
+            radius: Metrics.radiusMd
+            color: member.open ? Theme.selected : memberHover.containsMouse ? Theme.hover : "transparent"
+            MouseArea {
+                id: memberHover
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: member.page.openMember = member.open ? "" : member.key
+            }
+            Row {
+                anchors.left: parent.left
+                anchors.leftMargin: Metrics.s3
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Metrics.s3
+                Icon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    name: member.info?.icon ?? "apps"
+                    size: 14
+                    tone: member.info ? "accent" : "danger"
+                }
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "label"
+                    text: (member.info?.label ?? "Unknown kind") + (member.name !== member.spec.type ? "  ·  " + member.name : "")
+                }
+            }
+            Icon {
+                anchors.right: parent.right
+                anchors.rightMargin: Metrics.s3
+                anchors.verticalCenter: parent.verticalCenter
+                name: "chevron-down"
+                size: 13
+                tone: "faint"
+                rotation: member.open ? 180 : 0
+            }
+        }
+        Loader {
+            width: parent.width
+            active: member.open
+            sourceComponent: Item {
+                implicitHeight: memberSheet.implicitHeight + Metrics.s3 * 2
+                WidgetSheet {
+                    id: memberSheet
+                    x: Metrics.s3
+                    y: Metrics.s3
+                    width: parent.width - Metrics.s3 * 2
+                    page: member.page
+                    name: member.name
+                }
+            }
+        }
+    }
+
+    // one widget's settings and gestures (its [widget.<name>] table)
+    component WidgetSheet: Column {
+        id: ws
+        property var page
+        property string name
+        property string section: ""
+        property int entryIndex: -1
+        readonly property var spec: Config.resolveBarWidget(name)
+        spacing: Metrics.s4
+        Row {
+            visible: ws.page.usedBy(ws.name) > 1 || ws.name === ws.spec.type
+            spacing: Metrics.s2
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "caption"
+                tone: "faint"
+                text: ws.name === ws.spec.type ? "These settings are this kind's ([widget." + ws.name + "])." : "Shared with other bars."
+            }
+            Chip {
+                visible: ws.entryIndex >= 0
+                icon: "copy"
+                text: "Give this bar its own"
+                onClicked: ws.page.separate(ws.section, ws.entryIndex, ws.name)
+            }
+        }
+        SchemaForm {
+            width: parent.width
+            schema: BarWidgetTypes.schema(ws.spec.type)
+            valueOf: key => BarWidgetTypes.value(ws.spec.type, ws.spec.settings, key)
+            shows: spec => BarWidgetTypes.visible(ws.spec.type, spec, ws.spec.settings)
+            isSet: key => ws.spec.settings[key] !== undefined
+            onChanged: (key, value) => Config.setBarWidgetKey(ws.name, key, value)
+            onCleared: key => Config.setBarWidgetKey(ws.name, key, undefined)
+        }
+        Label {
+            role: "micro"
+            caps: true
+            tone: "faint"
+            text: "What it does"
+        }
+        GestureForm {
+            width: parent.width
+            actions: ws.spec.actions
+            defaults: {
+                const out = {};
+                for (const g of BarWidgetTypes.gestures)
+                    out[g] = BarWidgetTypes.action(ws.spec.type, ws.spec.settings, {}, g);
+                return out;
+            }
+            reserved: BarWidgetTypes.find(ws.spec.type)?.reserved ?? []
+            onChanged: (gesture, action) => Config.setBarWidgetAction(ws.name, gesture, action)
         }
     }
 
