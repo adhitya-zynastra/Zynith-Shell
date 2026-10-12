@@ -202,6 +202,21 @@ PanelWindow {
                 rotation: Desktop.geometry(modelData).rotation * 180 / Math.PI
                 z: selected ? 2 : 1
 
+                // Where the pointer reaches this widget: the body with the frame drawn round it, and the name tag
+                // above it (the grip), but not the frame's buttons. Without this the slot took presses only inside
+                // its own rectangle: the frame line (4 px outside) and the tag (above) are drawn outside it, so a
+                // press there fell through to the desktop and drew the selection lasso instead of moving the widget.
+                readonly property real reach: 6
+                containmentMask: QtObject {
+                    function contains(point: point): bool {
+                        if (frameActions.visible && point.x >= frameActions.x && point.x <= frameActions.x + frameActions.width && point.y >= frameActions.y && point.y <= frameActions.y + frameActions.height)
+                            return false;
+                        const inBody = point.x >= -slot.reach && point.y >= -slot.reach && point.x <= slot.width + slot.reach && point.y <= slot.height + slot.reach;
+                        const inTag = point.x >= tag.x && point.x <= tag.x + tag.width && point.y >= tag.y && point.y <= tag.y + tag.height;
+                        return inBody || inTag;
+                    }
+                }
+
                 // arriving: each widget settles in after the backdrop, one after another
                 readonly property real arrive: Motion.bezier(Motion.spatialCurve, ed.phase(0.1 + Math.min(0.3, index * 0.03), 0.6))
                 opacity: (modelData.hidden ? 0.35 : 1) * Math.min(1, arrive * 1.5) * (leaving ? 0 : 1)
@@ -243,8 +258,9 @@ PanelWindow {
                         ColorAnim {}
                     }
                 }
-                // what it is, above its top-left corner
+                // what it is, above its top-left corner; also the grip (drag it, or the body, to move the widget)
                 Rectangle {
+                    id: tag
                     opacity: slot.selected || body.hovered ? 1 : 0.7
                     x: -4
                     y: -30
@@ -257,6 +273,13 @@ PanelWindow {
                         id: tagRow
                         anchors.centerIn: parent
                         spacing: Metrics.s1
+                        Icon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "grip-vertical"
+                            size: 11
+                            color: slot.selected ? Theme.onAccent : Theme.ink
+                            opacity: 0.7
+                        }
                         Icon {
                             anchors.verticalCenter: parent.verticalCenter
                             name: WidgetTypes.find(slot.modelData.type)?.icon ?? "apps"
@@ -315,6 +338,9 @@ PanelWindow {
                 DragHandler {
                     id: mover
                     target: null
+                    // the desktop's lasso is a DragHandler too, and a handler may not take a drag from one of its own
+                    // kind by default: a widget's drag must always be the widget's
+                    grabPermissions: PointerHandler.CanTakeOverFromAnything
                     property var starts: ({})
                     onActiveChanged: {
                         if (active) {
@@ -333,16 +359,23 @@ PanelWindow {
                             Desktop.commitDraft();
                         }
                     }
-                    onTranslationChanged: if (active) {
+                    onCentroidChanged: if (active) {
                         const mine = starts[slot.modelData.id];
                         if (!mine)
                             return;
-                        let cx = mine.cx + translation.x, cy = mine.cy + translation.y;
-                        // the centre lines catch first, then the grid
-                        ed.guideX = Math.abs(cx - ed.sw / 2) < 10;
-                        ed.guideY = Math.abs(cy - ed.sh / 2) < 10;
-                        cx = ed.guideX ? ed.sw / 2 : Desktop.snapped(cx);
-                        cy = ed.guideY ? ed.sh / 2 : Desktop.snapped(cy);
+                        // the pointer's travel on screen (the window is the output), so a turned or scaled widget
+                        // follows the pointer exactly and keeps where it was grabbed; the grid moves it in whole
+                        // steps from where it was, so nothing jumps when the drag starts
+                        const tx = centroid.scenePosition.x - centroid.scenePressPosition.x;
+                        const ty = centroid.scenePosition.y - centroid.scenePressPosition.y;
+                        let cx = mine.cx + Desktop.snapped(tx), cy = mine.cy + Desktop.snapped(ty);
+                        // the centre lines catch first
+                        ed.guideX = Math.abs(mine.cx + tx - ed.sw / 2) < 10;
+                        ed.guideY = Math.abs(mine.cy + ty - ed.sh / 2) < 10;
+                        if (ed.guideX)
+                            cx = ed.sw / 2;
+                        if (ed.guideY)
+                            cy = ed.sh / 2;
                         const dx = cx - mine.cx, dy = cy - mine.cy;
                         for (const [id, g] of Object.entries(starts))
                             Desktop.setDraft(id, Object.assign({}, g, {
@@ -377,6 +410,8 @@ PanelWindow {
                             cursorShape: (handle.sx * handle.sy) > 0 ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor
                         }
                         DragHandler {
+                            // a resize or turn in progress stays one: the widget's mover may not take it over
+                            grabPermissions: PointerHandler.TakeOverForbidden
                             id: grab
                             target: null
                             property var start: null
@@ -442,6 +477,8 @@ PanelWindow {
                         cursorShape: Qt.CrossCursor
                     }
                     DragHandler {
+                        // a resize or turn in progress stays one: the widget's mover may not take it over
+                        grabPermissions: PointerHandler.TakeOverForbidden
                         id: turn
                         target: null
                         property var start: null

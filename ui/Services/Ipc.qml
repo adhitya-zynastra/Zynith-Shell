@@ -114,6 +114,20 @@ Singleton {
             Desktop.setSetting(id, key, JSON.parse(json));
             return "ok";
         }
+        // for diagnostics, no input made: which widget the open editor would hand a press at (x, y) of the output
+        // to (its own hit area, as the pointer delivery asks it), or "desktop" (the selection lasso's)
+        function editorHit(x: real, y: real): string {
+            const slots = PanelRouter.barItems["editor-slots@" + root.focusedScreen()];
+            if (!slots)
+                return "editor not open";
+            const kids = slots.children.filter(c => c.entry !== undefined).sort((a, b) => b.z - a.z);
+            for (const s of kids) {
+                const p = s.mapFromItem(null, x, y);
+                if (s.visible && s.contains(p))
+                    return JSON.stringify({ id: s.entry.id, type: s.entry.type, local: [Math.round(p.x), Math.round(p.y)] });
+            }
+            return "desktop";
+        }
         function desktopPick(): void {
             Desktop.setEditing(true);
             Desktop.picking = true;
