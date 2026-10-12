@@ -41,6 +41,10 @@ PanelWindow {
         vp = Desktop.closing ? 0 : 1;
         Wallpapers.retain();
         keys.forceActiveFocus();
+        // for `ipc captureBar` (diagnostics): the window's own content item cannot be grabbed
+        PanelRouter.barItems["editor-backdrop@" + output] = backdrop;
+        PanelRouter.barItems["editor-slots@" + output] = slots;
+        PanelRouter.barItems["editor-toolbar@" + output] = toolbar;
     }
     Component.onDestruction: Wallpapers.release()
     Connections {
@@ -232,15 +236,16 @@ PanelWindow {
                     anchors.margins: -4
                     radius: Metrics.radiusMd
                     color: slot.selected ? Theme.alpha(Theme.accent, 0.06) : "transparent"
-                    border.width: slot.selected ? 1.5 : body.hovered ? 1 : 0
-                    border.color: slot.selected ? Theme.accent : Theme.alpha("#ffffff", 0.45)
+                    // every widget wears its frame while editing (what is there, and that it can be moved)
+                    border.width: slot.selected ? 1.5 : 1
+                    border.color: slot.selected ? Theme.accent : Theme.alpha("#ffffff", body.hovered ? 0.55 : 0.22)
                     Behavior on color {
                         ColorAnim {}
                     }
                 }
                 // what it is, above its top-left corner
                 Rectangle {
-                    visible: slot.selected || body.hovered
+                    opacity: slot.selected || body.hovered ? 1 : 0.7
                     x: -4
                     y: -30
                     width: tagRow.implicitWidth + Metrics.s4
@@ -264,6 +269,34 @@ PanelWindow {
                             color: slot.selected ? Theme.onAccent : Theme.ink
                             text: (WidgetTypes.find(slot.modelData.type)?.label ?? slot.modelData.type) + (slot.modelData.hidden ? " · hidden" : "")
                         }
+                    }
+                }
+
+                // its own actions, on the frame (as Ryoku's): its settings, and hide / show
+                Row {
+                    id: frameActions
+                    visible: slot.selected || body.hovered || actionsHover.hovered
+                    anchors.right: parent.right
+                    anchors.rightMargin: -4
+                    y: -30
+                    spacing: 4
+                    z: 3
+                    rotation: -slot.rotation
+                    HoverHandler {
+                        id: actionsHover
+                    }
+                    FrameButton {
+                        icon: "adjustments"
+                        tip: "Settings"
+                        onClicked: {
+                            Desktop.selection = [slot.modelData.id];
+                            Desktop.inspecting = true;
+                        }
+                    }
+                    FrameButton {
+                        icon: slot.modelData.hidden ? "eye" : "eye-off"
+                        tip: slot.modelData.hidden ? "Show" : "Hide"
+                        onClicked: Desktop.toggleHidden([slot.modelData.id])
                     }
                 }
 
@@ -458,11 +491,25 @@ PanelWindow {
             id: tools
             anchors.centerIn: parent
             spacing: 2
-            Tool {
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                leftPadding: Metrics.s3
+                rightPadding: Metrics.s3
+                role: "label"
+                font.weight: Font.Medium
+                text: "Edit widgets"
+            }
+            TextTool {
                 icon: "plus"
-                label: "Add"
+                label: "Add widget"
                 active: Desktop.picking
                 onClicked: Desktop.picking = !Desktop.picking
+            }
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 1
+                height: 24
+                color: Theme.hairline
             }
             Tool {
                 icon: "copy"
@@ -525,6 +572,13 @@ PanelWindow {
                 label: "Undo"
                 enabled: Desktop.undoStack.length > 0
                 onClicked: Desktop.undo()
+            }
+            // back to the layout this session started from (only once something changed)
+            TextTool {
+                visible: Desktop.sessionChanged
+                icon: "restore"
+                label: "Reset"
+                onClicked: Desktop.resetSession()
             }
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
@@ -689,6 +743,78 @@ PanelWindow {
                 return;
             }
             event.accepted = true;
+        }
+    }
+
+    // a small round action on a widget's frame
+    component FrameButton: Rectangle {
+        id: fb
+        property string icon
+        property string tip
+        signal clicked
+        width: 22
+        height: 22
+        radius: 11
+        color: fbArea.containsMouse ? Theme.accent : Theme.alpha(Theme.base, 0.85)
+        border.width: Metrics.hairline
+        border.color: Theme.hairline
+        Icon {
+            anchors.centerIn: parent
+            name: fb.icon
+            size: 12
+            color: fbArea.containsMouse ? Theme.onAccent : Theme.ink
+        }
+        MouseArea {
+            id: fbArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: fb.clicked()
+        }
+    }
+
+    // a toolbar action with its name beside its icon
+    component TextTool: Item {
+        id: tt
+        property string icon
+        property string label
+        property bool active: false
+        signal clicked
+        width: ttRow.implicitWidth + Metrics.s4 * 2
+        height: 36
+        anchors.verticalCenter: parent?.verticalCenter
+        Rectangle {
+            anchors.fill: parent
+            radius: 18
+            color: tt.active ? Theme.accentSoft : ttArea.containsMouse ? Theme.hover : "transparent"
+            border.width: Metrics.hairline
+            border.color: tt.active ? Theme.accentLine : Theme.hairline
+            Behavior on color {
+                ColorAnim {}
+            }
+        }
+        Row {
+            id: ttRow
+            anchors.centerIn: parent
+            spacing: Metrics.s2
+            Icon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: tt.icon
+                size: 15
+                tone: tt.active ? "accent" : "ink"
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "label"
+                text: tt.label
+            }
+        }
+        MouseArea {
+            id: ttArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: tt.clicked()
         }
     }
 

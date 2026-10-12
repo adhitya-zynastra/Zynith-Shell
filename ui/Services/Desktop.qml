@@ -25,9 +25,19 @@ Singleton {
     readonly property var selected: selection.length === 1 ? byId(selection[0]) : null
 
     // ── edit mode ────────────────────────────────────────────────────────────
+    // the layout as the editing session found it: Reset puts it back (one undoable step), so trying things
+    // costs nothing
+    property var sessionStart: null
+    readonly property bool sessionChanged: editing && sessionStart !== null && JSON.stringify(widgets) !== JSON.stringify(sessionStart)
+    function resetSession(): void {
+        if (sessionStart !== null && sessionChanged)
+            commit(JSON.parse(JSON.stringify(sessionStart)));
+    }
     function setEditing(on: bool): void {
         if (editing === on)
             return;
+        if (on)
+            sessionStart = JSON.parse(JSON.stringify(widgets));
         editing = on;
         if (!on) {
             selection = [];
