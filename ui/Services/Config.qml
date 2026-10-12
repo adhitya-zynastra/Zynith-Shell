@@ -324,7 +324,10 @@ Singleton {
                     list_width: 760,
                     list_columns: 2,
                     // audio devices shown before their list scrolls
-                    device_rows: 6
+                    device_rows: 6,
+                    // the session menu: orbs (round glyphs over the dimmed desktop, as the native modal menu) | card
+                    session_style: "orbs",
+                    session_actions: ["lock", "suspend", "logout", "reboot", "shutdown"]
                 },
                 launcher: {
                     // command prefix for apps that run in a terminal; empty: $TERMINAL -e, else kitty
