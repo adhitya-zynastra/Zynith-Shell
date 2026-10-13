@@ -2,6 +2,7 @@
 
 #include "render/core/texture_handle.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -30,6 +31,12 @@ public:
   [[nodiscard]] TextureHandle peek(const std::string& path) const;
   [[nodiscard]] TextureHandle peekAlphaMask(const std::string& path) const;
   void release(TextureHandle& handle, const std::string& path);
+  // zynith: a wallpaper decoded off the main thread (Application's wallpaper preload). contains() asks whether a
+  // path is resident; adopt() uploads already-decoded RGBA for it (no reference held: the next acquire() is a
+  // hit and takes the first one); dropUnused() evicts an adopted entry nobody acquired.
+  [[nodiscard]] bool contains(const std::string& path) const { return m_entries.contains(path); }
+  bool adopt(const std::string& path, const std::uint8_t* rgba, int width, int height);
+  void dropUnused(const std::string& path);
   void releaseAlphaMask(TextureHandle& handle, const std::string& path);
   void abandonGpuResources() noexcept;
   void reloadResidentTextures();
@@ -42,6 +49,8 @@ private:
   struct Entry {
     TextureHandle handle;
     int refCount = 0;
+    // zynith: the decode bound it was uploaded at (0 = the file's own size), kept for re-uploads after a reset
+    int targetSize = 0;
   };
 
   GlSharedContext* m_sharedGl = nullptr;

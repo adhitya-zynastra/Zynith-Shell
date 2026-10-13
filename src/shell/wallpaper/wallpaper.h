@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 class ConfigService;
@@ -72,6 +73,13 @@ public:
   void setAutomationGate(std::function<bool()> gate);
   [[nodiscard]] bool ownsSurface(wl_surface* surface) const noexcept;
   bool onPointerEvent(const PointerEvent& event);
+
+  // zynith: the images a state change is about to show (configured or transient, not yet current or on its
+  // way), each once — what Application decodes off the main thread before running the change
+  [[nodiscard]] std::vector<std::string> upcomingImagePaths() const;
+  // zynith: the size a wallpaper needs to cover the largest output, in buffer pixels; {0, 0} when the fill mode
+  // shows the image at its own size (center, repeat, span), so it must be decoded whole
+  [[nodiscard]] std::pair<int, int> coverBounds() const;
 
   [[nodiscard]] TextureHandle currentTexture() const;
   [[nodiscard]] std::string currentPath() const;

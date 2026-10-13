@@ -913,6 +913,45 @@ void Wallpaper::setOutputExternallyManaged(const std::string& connector, bool ma
   }
 }
 
+std::vector<std::string> Wallpaper::upcomingImagePaths() const {
+  std::vector<std::string> out;
+  for (const auto& inst : m_instances) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
+      continue;
+    }
+    const std::string path = displayPathFor(inst->connectorName);
+    if (path.empty() || path == inst->currentPath || path == inst->pendingPath
+        || std::find(out.begin(), out.end(), path) != out.end()) {
+      continue;
+    }
+    // a colour ("#rrggbb…") or anything that is not a file has nothing to decode
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec)) {
+      continue;
+    }
+    out.push_back(path);
+  }
+  return out;
+}
+
+std::pair<int, int> Wallpaper::coverBounds() const {
+  const auto mode = m_config->config().wallpaper.fillMode;
+  if (mode != WallpaperFillMode::Crop && mode != WallpaperFillMode::Fit && mode != WallpaperFillMode::Stretch) {
+    return {0, 0};
+  }
+  int width = 0;
+  int height = 0;
+  for (const auto& inst : m_instances) {
+    if (inst->surface == nullptr) {
+      continue;
+    }
+    const int scale = std::max(1, static_cast<int>(inst->scale));
+    width = std::max(width, static_cast<int>(inst->surface->width()) * scale);
+    height = std::max(height, static_cast<int>(inst->surface->height()) * scale);
+  }
+  return {width, height};
+}
+
 std::string Wallpaper::displayPathFor(const std::string& connector) const {
   return m_transientPath.empty() ? m_config->getWallpaperPath(connector) : m_transientPath;
 }

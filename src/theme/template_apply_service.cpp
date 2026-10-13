@@ -69,7 +69,16 @@ namespace noctalia::theme {
       table.insert_or_assign(std::string(key), stringArray(values));
     }
 
-    toml::table buildUserTemplateRoot(const ThemeConfig::TemplatesConfig& templatesConfig) {
+    // zynith: which user templates — those without hooks render before the previous pass's hooks are waited
+    // out (a plain file write cannot race a hook), those with hooks after, as before
+    enum class UserTemplateSet { All, Hookless, Hooked };
+    bool hasHooks(const ThemeConfig::UserTemplateConfig& t) {
+      return !t.preHook.empty() || !t.postHook.empty() || !t.postAction.empty();
+    }
+
+    toml::table buildUserTemplateRoot(
+        const ThemeConfig::TemplatesConfig& templatesConfig, UserTemplateSet set = UserTemplateSet::All
+    ) {
       toml::table root;
 
       if (!templatesConfig.customColors.empty()) {
@@ -95,6 +104,10 @@ namespace noctalia::theme {
       toml::table userTemplates;
       for (const auto& userTemplate : templatesConfig.userTemplates) {
         if (!userTemplate.enabled) {
+          continue;
+        }
+        if ((set == UserTemplateSet::Hookless && hasHooks(userTemplate))
+            || (set == UserTemplateSet::Hooked && !hasHooks(userTemplate))) {
           continue;
         }
 
@@ -218,9 +231,16 @@ namespace noctalia::theme {
         request.undoBuiltinIds = syncAppliedBuiltinIds(request.templates);
         request.generation = ++m_nextGeneration;
         m_lastAppliedRequest = request;
-        m_pendingRequest = std::move(request);
+        m_pendingRequest = request;
         queued = true;
       }
+    }
+
+    if (queued) {
+      kLog.info("templates: generation {} for {}", request.generation, request.imagePath);
+      renderHooklessUserTemplates(request);
+    } else {
+      kLog.info("templates: inputs unchanged for {}, nothing rendered", request.imagePath);
     }
 
     if (undeliverable) {
@@ -228,6 +248,28 @@ namespace noctalia::theme {
     }
     if (queued) {
       m_cv.notify_one();
+    }
+  }
+
+  void TemplateApplyService::renderHooklessUserTemplates(const ApplyRequest& request) const {
+    // zynith: the palette the Zynith UI colours itself from (theme.templates.user.zynith_palette) is one of these.
+    // Rendered by the worker it waited for the previous pass's hooks and, before that, for ~70 community templates:
+    // about ten seconds after every wallpaper change. A hookless template is a file write and cannot race a hook.
+    if (request.templates.userTemplates.empty() && request.templates.customColors.empty()) {
+      return;
+    }
+    TemplateEngine::Options options;
+    options.defaultMode = request.defaultMode;
+    options.imagePath = request.imagePath;
+    options.schemeType = request.schemeType;
+    options.verbose = true;
+    options.rerunUnchangedHooks = request.force;
+    options.configTable = request.configTable;
+    options.generation = request.generation;
+    TemplateEngine engine(TemplateEngine::makeThemeData(request.palette), options);
+    const toml::table root = buildUserTemplateRoot(request.templates, UserTemplateSet::Hookless);
+    if (!engine.processConfigTable(root, userTemplateConfigPath())) {
+      kLog.warn("failed to apply user templates from main config");
     }
   }
 
@@ -285,13 +327,6 @@ namespace noctalia::theme {
   void TemplateApplyService::applyRequest(const ApplyRequest& request) const {
     HookRunner& hookRunner = *m_hookRunner;
 
-    // Hooks from superseded generations must not outlive them: drop the queued ones and
-    // wait out the ones already running. A started hook cannot be cancelled safely, so
-    // without this wait a slow hook from an older generation could finish last and win
-    // the final state (and undo hooks below could be reverted by it).
-    hookRunner.invalidateBefore(request.generation);
-    hookRunner.waitIdle();
-
     TemplateEngine::Options options;
     options.defaultMode = request.defaultMode;
     options.imagePath = request.imagePath;
@@ -305,10 +340,30 @@ namespace noctalia::theme {
 
     TemplateEngine engine(TemplateEngine::makeThemeData(request.palette), options);
 
+    // (the user's hookless templates were rendered when the request was accepted: renderHooklessUserTemplates)
+    const bool anyUser = !request.templates.userTemplates.empty() || !request.templates.customColors.empty();
+    const std::filesystem::path userConfigPath = userTemplateConfigPath();
+
+    // Hooks from superseded generations must not outlive them: drop the queued ones and
+    // wait out the ones already running. A started hook cannot be cancelled safely, so
+    // without this wait a slow hook from an older generation could finish last and win
+    // the final state (and undo hooks below could be reverted by it).
+    hookRunner.invalidateBefore(request.generation);
+    hookRunner.waitIdle();
+
     // The undo hooks ran synchronously; drop their ids from state.toml so the next
     // application does not repeat them. State belongs to the main thread.
     if (std::vector<std::string> undone = undoBuiltinTemplates(request); !undone.empty()) {
       DeferredCall::callLater([this, undone = std::move(undone)]() { forgetAppliedBuiltinIds(undone); });
+    }
+
+    // then the user's templates with hooks, still ahead of the built-in and community ones (separate files: the
+    // order changes only when each lands)
+    if (anyUser && !requestSuperseded(request.generation)) {
+      const toml::table root = buildUserTemplateRoot(request.templates, UserTemplateSet::Hooked);
+      if (!engine.processConfigTable(root, userConfigPath)) {
+        kLog.warn("failed to apply user templates from main config");
+      }
     }
 
     if (request.templates.enableBuiltinTemplates
@@ -344,17 +399,6 @@ namespace noctalia::theme {
           kLog.warn("failed to apply community template '{}' from {}", id, communityConfig.string());
         }
       }
-    }
-
-    if ((request.templates.userTemplates.empty() && request.templates.customColors.empty())
-        || requestSuperseded(request.generation)) {
-      return;
-    }
-
-    const toml::table userTemplateRoot = buildUserTemplateRoot(request.templates);
-    const std::filesystem::path configPath = userTemplateConfigPath();
-    if (!engine.processConfigTable(userTemplateRoot, configPath)) {
-      kLog.warn("failed to apply user templates from main config");
     }
   }
 

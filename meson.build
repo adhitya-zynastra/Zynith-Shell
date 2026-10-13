@@ -591,6 +591,7 @@ _noctalia_sources = files(
   'src/zynith/settings_bridge.cpp',
   'src/zynith/surfaces.cpp',
   'src/zynith/ui_events.cpp',
+  'src/zynith/wallpaper_preload.cpp',
   'src/scripting/plugin_catalog.cpp',
   'src/scripting/plugin_file_cache.cpp',
   'src/scripting/plugin_git.cpp',

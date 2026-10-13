@@ -6,6 +6,7 @@
 #include "render/core/texture_manager.h"
 #include "render/gl_shared_context.h"
 
+#include <algorithm>
 #include <cstddef>
 
 namespace {
@@ -142,6 +143,37 @@ void SharedTextureCache::release(TextureHandle& handle, const std::string& path)
   handle = {};
 }
 
+bool SharedTextureCache::adopt(const std::string& path, const std::uint8_t* rgba, int width, int height) {
+  if (path.empty() || rgba == nullptr || width <= 0 || height <= 0 || m_textureManager == nullptr) {
+    return false;
+  }
+  if (m_entries.contains(path)) {
+    return true;
+  }
+  if (!makeCurrent()) {
+    return false;
+  }
+  const auto handle = m_textureManager->loadFromRgba(rgba, width, height, true);
+  if (handle.id == 0) {
+    return false;
+  }
+  m_entries[path] = Entry{.handle = handle, .refCount = 0, .targetSize = std::max(width, height)};
+  kLog.info("adopted {} ({}x{}, decoded off the main thread)", path, width, height);
+  return true;
+}
+
+void SharedTextureCache::dropUnused(const std::string& path) {
+  const auto it = m_entries.find(path);
+  if (it == m_entries.end() || it->second.refCount > 0) {
+    return;
+  }
+  if (makeCurrent()) {
+    m_textureManager->unload(it->second.handle);
+  }
+  m_entries.erase(it);
+  kLog.info("evicted {} (adopted, never shown)", path);
+}
+
 void SharedTextureCache::releaseAlphaMask(TextureHandle& handle, const std::string& path) {
   if (handle.id == 0 || path.empty() || m_textureManager == nullptr) {
     handle = {};
@@ -179,7 +211,7 @@ void SharedTextureCache::reloadResidentTextures() {
     if (entry.handle.id != 0) {
       m_textureManager->unload(entry.handle);
     }
-    entry.handle = m_textureManager->loadFromFile(path, 0, true);
+    entry.handle = m_textureManager->loadFromFile(path, entry.targetSize, true);
     if (entry.handle.id != 0) {
       kLog.info("reuploaded {}", path);
     } else {

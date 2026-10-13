@@ -93,6 +93,7 @@
 #include "wayland/virtual_keyboard_service.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/workspace_poll_source.h"
+#include "zynith/wallpaper_preload.h"
 
 #include <atomic>
 #include <cstdint>
@@ -218,6 +219,10 @@ private:
   void syncScreenTimeService();
   void performGreeterSync(bool quiet = false);
   void scheduleGreeterAutoSync();
+  // zynith: a wallpaper change decodes off the main thread first (startWallpaperPreload, false when there is
+  // nothing to decode), then runs every consumer at once (runWallpaperChange)
+  bool startWallpaperPreload();
+  void runWallpaperChange();
   bool runShellCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
   void onIconThemeChanged();
@@ -415,6 +420,11 @@ private:
   std::uint64_t m_greeterSyncGeneration = 0;
   int m_graphicsRecoveryAttempts = 0;
   bool m_graphicsRecoveryScheduled = false;
+  // zynith: last, so it is destroyed first (its worker thread delivers into the members above)
+  zynith::WallpaperPreload m_wallpaperPreload{[this](zynith::WallpaperPreload::Result result) {
+    onWallpaperPreloaded(std::move(result));
+  }};
+  void onWallpaperPreloaded(zynith::WallpaperPreload::Result result);
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };
