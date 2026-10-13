@@ -348,10 +348,17 @@ Singleton {
                     auto_paste: true
                 },
                 control_panel: {
-                    // in order; any of: header shortcuts levels audio media monitor power calendar weather
-                    // screen_time system notifications clipboard
-                    // dashboard (modules in columns, wide and short) | column (one tall column of `modules`)
+                    // which sections show and where: `columns`, each a list of sections top to bottom (left out =
+                    // ControlSections.defaultColumns; the catalogue of sections is ControlSections.entries).
+                    // dashboard (the columns side by side, wide and short) | column (the same sections, one tall column)
                     layout: "dashboard",
+                    // where it opens: auto (beside the bar that opened it; by a key, beside anchor_bar, else the work
+                    // area's top right) | follow (always beside what opened it last on that output) | top-left |
+                    // top-center | top-right | middle-left | center | middle-right | bottom-left | bottom-center |
+                    // bottom-right (that spot of the output's work area: the screen less the bars' reserved room)
+                    position: "auto",
+                    // the gap to the work area's edges when placed at a spot
+                    position_margin: 12,
                     // the hero: the wallpaper across the top with you on it; hero_pages all (over every tab) |
                     // dashboard; its height, the picture's size, the shade under the type (0 – 1), and which
                     // pieces show
@@ -371,7 +378,6 @@ Singleton {
                     // the dashboard: its width and its columns, each a list of modules top to bottom, and a
                     // weight per column (1 each when left out)
                     dashboard_width: 1080,
-                    columns: [["media"], ["shortcuts", "levels"], ["weather"]],
                     column_widths: [1.6, 1, 1],
                     // a row of tabs over the Control Panel and its pages; which, in order (control media audio
                     // power monitor calendar weather screen-time system network bluetooth notifications), and
@@ -387,8 +393,8 @@ Singleton {
                     page_columns: 2,
                     tab_icons_shown: true,
                     tab_labels_shown: true,
-                    // the column layout: in order
-                    modules: ["header", "shortcuts", "levels", "media", "power", "system"],
+                    // (retired: `modules`, the column layout's own list; read as its columns until Settings first
+                    // arranges the sections, which backs panels.toml up and moves it into `columns`)
                     width: 420,
                     // the bar (its id) a Control Panel opened by a key sits by; "" is the top right corner
                     anchor_bar: "",

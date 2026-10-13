@@ -175,7 +175,7 @@ Column {
         case "widgets":
             return Config.widgets.length + " on the desktop";
         case "control":
-            return (Config.controlPanel?.modules ?? []).length + " modules";
+            return ControlSections.flat(ControlSections.arrangement(Config.controlPanel ?? {})).length + " sections";
         case "launcher":
             return (Config.launcher?.layout ?? "list") + "  ·  " + (Config.launcher?.density ?? "comfortable");
         case "notifications":
