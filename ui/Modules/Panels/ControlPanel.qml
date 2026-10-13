@@ -36,14 +36,18 @@ Column {
     readonly property string moduleStyle: cfg.module_style ?? "auto"
     // on the connected tab sheet, the sheet is the plate: sections sit on it bare (no box inside a box)
     property bool onSheet: false
+    // how far in the sheet stands from the card (the page pads from the sheet's edge, not the card's)
+    property real sheetInset: 0
     readonly property bool cards: !onSheet && (moduleStyle === "cards" || (moduleStyle === "auto" && dashboard))
     // [control_panel] section_heads: each module under an indexed head (on by default)
     readonly property bool heads: cfg.section_heads === true || ((cfg.section_heads ?? "auto") === "auto" && !dashboard)
     // the gap between modules is each shown module's own (below it), so a module that has nothing to show
     // takes neither room nor a gap
     readonly property real gap: cfg.spacing ?? Metrics.s5
-    padding: Metrics.s5
-    bottomPadding: Math.max(0, Metrics.s5 - gap)
+    padding: sheetInset + Metrics.s5
+    // the sheet has no inset at its top (the current tab joins it there)
+    topPadding: Metrics.s5
+    bottomPadding: sheetInset + Math.max(0, Metrics.s5 - gap)
     spacing: 0
     readonly property real inner: width - padding * 2
 

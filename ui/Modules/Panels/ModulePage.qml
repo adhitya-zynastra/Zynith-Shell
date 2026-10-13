@@ -15,6 +15,10 @@ Column {
     property bool active: true
     // opened by itself (its own bar icon) rather than among the Control Panel's tabs: its own, compact width
     property bool alone: false
+    // on the connected sheet: how far in the sheet stands, and whether the strip above carries this page's head
+    property real sheetInset: 0
+    property bool headInStrip: false
+    readonly property string stripCaption: page?.caption ?? ""
     signal back
 
     // a page among the Control Panel's tabs is as wide as the dashboard (tab_page_width; 0 = the dashboard's),
@@ -33,11 +37,14 @@ Column {
         })
     readonly property var page: pages[kind] ?? null
 
-    padding: Metrics.s6
+    // the sheet has no inset at its top (the current tab joins it there)
+    padding: sheetInset + (headInStrip ? Metrics.s5 : Metrics.s6 - sheetInset)
+    topPadding: headInStrip ? Metrics.s5 : Metrics.s6
     spacing: Metrics.s5
     readonly property real inner: width - padding * 2
 
     PanelHeader {
+        visible: !root.headInStrip
         width: root.inner
         title: root.page?.title ?? ""
         caption: root.page?.caption ?? ""

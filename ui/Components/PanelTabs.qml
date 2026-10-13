@@ -42,9 +42,24 @@ Item {
     // read from the source, not through indicator's bindings: a change handler can run before they update
     // connected layout: an icon's width for every tab, plus its name's for the current one; the row centred
     readonly property real iconSlot: Metrics.icon + Metrics.s4 * 2
+    // each tab's name as measured, reported by the tabs themselves (repeater.itemAt is not something a binding
+    // can follow, so a layout read through it stayed at its first, unmeasured answer)
+    property var labelWidths: []
+    function reportLabel(i: int, w: real): void {
+        if (labelWidths[i] === w)
+            return;
+        const next = labelWidths.slice();
+        next[i] = w;
+        labelWidths = next;
+        // a measurement is not a switch: the plate goes straight to where it belongs
+        if (!leftMove.running && !rightMove.running)
+            placePlate(false);
+    }
+    // the layout glides only once every name is measured: before that a change is the strip finding its
+    // shape, not a switch to animate
+    property bool settled: false
     function unfold(i: int): real {
-        const it = repeater.itemAt(i);
-        return showLabels && it ? it.labelWidth + Metrics.s2 : 0;
+        return showLabels ? (labelWidths[i] ?? 0) + Metrics.s2 : 0;
     }
     function tabWidthFor(j: int, cur: int): real {
         return iconSlot + (j === cur ? unfold(j) : 0);
@@ -56,6 +71,16 @@ Item {
         return Math.max(0, (width - total) / 2);
     }
     readonly property int currentIndex: tabs.findIndex(t => t.id === current)
+    // where the row of tabs settles (connected: centred, so the strip has room either side of it)
+    readonly property real rowLeft: connected ? rowStartFor(currentIndex) : 0
+    readonly property real rowRight: {
+        if (!connected)
+            return width;
+        let w = 0;
+        for (let j = 0; j < tabs.length; j++)
+            w += tabWidthFor(j, currentIndex);
+        return rowLeft + w;
+    }
     function slotWidth(): real {
         return width / Math.max(1, tabs.length);
     }
@@ -91,9 +116,17 @@ Item {
         }
         shownIndex = i;
     }
-    onCurrentChanged: placePlate(true)
+    onCurrentChanged: placePlate(settled)
     onWidthChanged: placePlate(false)
-    onTabsChanged: placePlate(false)
+    onTabsChanged: {
+        settled = false;
+        labelWidths = [];
+        placePlate(false);
+    }
+    onLabelWidthsChanged: {
+        if (!settled && tabs.length > 0 && labelWidths.length === tabs.length && !labelWidths.includes(undefined))
+            Qt.callLater(() => settled = true);
+    }
     Component.onCompleted: placePlate(false)
     NumberAnimation {
         id: leftMove
@@ -166,7 +199,7 @@ Item {
         x: root.connected ? root.rowStartFor(root.currentIndex) : 0
         width: root.connected ? implicitWidth : parent.width
         Behavior on x {
-            enabled: root.connected
+            enabled: root.connected && root.settled
             Anim {
                 role: "spatial"
             }
@@ -181,9 +214,11 @@ Item {
                 readonly property bool isCurrent: modelData.id === root.current
                 readonly property real contentWidth: content.implicitWidth
                 readonly property real labelWidth: nameMetrics.advanceWidth
+                onLabelWidthChanged: root.reportLabel(index, labelWidth)
+                Component.onCompleted: root.reportLabel(index, labelWidth)
                 width: root.connected ? root.iconSlot + (tab.isCurrent ? root.unfold(tab.index) : 0) : (root.width / Math.max(1, root.tabs.length))
                 Behavior on width {
-                    enabled: root.connected
+                    enabled: root.connected && root.settled
                     Anim {
                         role: "spatial"
                     }

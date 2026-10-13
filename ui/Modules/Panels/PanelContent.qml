@@ -188,6 +188,11 @@ Item {
         // on the connected sheet a page draws no plates of its own (no box inside a box)
         if (item.onSheet !== undefined)
             item.onSheet = Qt.binding(() => root.connectedTabs);
+        if (item.sheetInset !== undefined)
+            item.sheetInset = Qt.binding(() => root.connectedTabs ? root.sheetInset : 0);
+        // the strip carries the page's head when it has the room (see stripHead)
+        if (item.headInStrip !== undefined)
+            item.headInStrip = Qt.binding(() => root.headInStrip);
         if (item.canGoBack !== undefined) {
             item.canGoBack = Qt.binding(() => root.history.length > 0);
             item.back.connect(() => PanelRouter.back(root.screen.name));
@@ -298,7 +303,15 @@ Item {
     // the theme's well (a lift of whatever surface it sits on, contrast-aware), never a tone of its own: a fixed
     // tone read as a dark slab over a translucent panel on a light wallpaper.
     readonly property bool connectedTabs: tabbed && (cfg.tab_style ?? "connected") === "connected"
-    readonly property real sheetInset: Metrics.s3
+    // the sheet stands as far in from the card as the strip's content does, on every side it has: the panel's one
+    // margin, so the sheet never runs into the card's edge while the strip beside it has room to spare
+    readonly property real sheetInset: Metrics.s4
+    // The strip's sides: the tabs sit centred, so the room left and right of them is the page's head (where it
+    // is, what it shows, what can be done with it) and the sheet below holds only the page. With too little
+    // room (many tabs, a narrow panel) the page keeps its own head.
+    readonly property real sideRoom: Math.min(tabStrip.rowLeft, tabStrip.width - tabStrip.rowRight) - Metrics.s4
+    readonly property bool headInStrip: connectedTabs && sideRoom >= tabStrip.iconSlot * 3
+    readonly property int tabIndex: tabs.findIndex(t => t.id === tabId)
     // The sheet and the current tab's plate as one shape: drawn opaque inside one layer that takes the well's
     // opacity, so where they meet there is no doubled tone and no seam — one surface on any wallpaper.
     Item {
@@ -346,6 +359,60 @@ Item {
             solid: "bl"
             x: sheetShape.px + sheetShape.pw
             y: root.contentTop - r
+        }
+    }
+    // the page's head, in the strip's free sides: its place among the tabs and its live caption on the left,
+    // its actions on the right
+    Item {
+        id: stripHead
+        visible: root.headInStrip
+        x: root.sheetInset
+        y: tabStrip.y
+        width: parent.width - root.sheetInset * 2
+        height: tabStrip.height - tabStrip.sheetGap
+        opacity: Math.max(0, Math.min(1, root.visibleProgress * 1.4 - 0.4))
+        Column {
+            anchors.left: parent.left
+            anchors.leftMargin: Metrics.s2
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.max(0, tabStrip.x + tabStrip.rowLeft - stripHead.x - Metrics.s4 - Metrics.s2)
+            spacing: Metrics.s1
+            Label {
+                width: parent.width
+                role: "caption"
+                tone: "faint"
+                caps: true
+                elide: Text.ElideRight
+                text: String(root.tabIndex + 1).padStart(2, "0") + " / " + String(root.tabs.length).padStart(2, "0")
+            }
+            Label {
+                width: parent.width
+                visible: text !== ""
+                role: "caption"
+                tone: "muted"
+                elide: Text.ElideRight
+                text: root.live.item?.stripCaption ?? ""
+            }
+        }
+        Row {
+            anchors.right: parent.right
+            anchors.rightMargin: Metrics.s2
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Metrics.s2
+            IconButton {
+                visible: root.history.length > 0
+                icon: "chevron-left"
+                tone: "muted"
+                onClicked: PanelRouter.back(root.screen.name)
+            }
+            IconButton {
+                icon: "settings"
+                tone: "faint"
+                onClicked: {
+                    PanelRouter.close(root.screen.name);
+                    Actions.run("settings-open control");
+                }
+            }
         }
     }
     PanelTabs {
