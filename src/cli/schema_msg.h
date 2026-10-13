@@ -293,6 +293,11 @@ namespace noctalia::cli {
   inline constexpr std::array kMsgWallpaperRandomPositionals{
       Positional{"connector", {}, {}, false, false, false},
   };
+  inline constexpr std::array kMsgWallpaperRevealPositionals{
+      Positional{"connector", {}, {}, true, false, false},
+      Positional{"x", "0..1 across the output", {}, true, false, false},
+      Positional{"y", "0..1 down the output", {}, true, false, false},
+  };
   inline constexpr std::array kMsgWallpaperSetPositionals{
       Positional{"connector", {}, {}, false, false, false},
       Positional{"path", {}, {}, true, false, false},
@@ -964,6 +969,11 @@ namespace noctalia::cli {
                                              kMsgWallpaperRandomPositionals,
                                              {},
                                              false};
+    // zynith: the next wallpaper change on an output grows out of a point (where it was chosen)
+    inline constexpr Command wallpaperReveal{
+        "wallpaper-reveal", "Make the next wallpaper change on an output a disc growing from x, y (0..1)", {}, {}, {},
+        kMsgWallpaperRevealPositionals, {}, false
+    };
     inline constexpr Command wallpaperSet{
         "wallpaper-set",
         "Set wallpaper for all or a specific output (persisted)",
@@ -1166,6 +1176,7 @@ namespace noctalia::cli {
       msg::wallpaperNext,
       msg::wallpaperPrevious,
       msg::wallpaperRandom,
+      msg::wallpaperReveal,
       msg::wallpaperSet,
       msg::wifiDisable,
       msg::wifiEnable,

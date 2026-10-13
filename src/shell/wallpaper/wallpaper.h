@@ -4,6 +4,8 @@
 #include "shell/wallpaper/wallpaper_shuffle_state.h"
 #include "ui/signal.h"
 
+#include <chrono>
+#include <optional>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -135,6 +137,8 @@ private:
   void loadWallpaper(WallpaperInstance& instance, const std::string& path);
   TransitionRedirect redirectActiveTransition(WallpaperInstance& instance, const std::string& path);
   void startTransition(WallpaperInstance& instance);
+  // zynith: a newer wallpaper is waiting — finish the running transition quickly instead of playing it out
+  void hurryTransition(WallpaperInstance& instance);
   void startTransitionAnimation(WallpaperInstance& instance, float fromTime, WallpaperTransitionDirection direction);
   void finishTransition(WallpaperInstance& instance);
   void promotePendingWallpaper(WallpaperInstance& instance);
@@ -159,6 +163,14 @@ private:
   Signal<> m_changed;
   std::vector<std::unique_ptr<WallpaperInstance>> m_instances;
   std::unordered_set<std::string> m_externallyManagedOutputs;
+  // zynith: the next transition on this connector grows from this point (wallpaper-reveal), once, if it starts soon
+  struct RevealOrigin {
+    std::string connector;
+    float x = 0.5F;
+    float y = 0.5F;
+    std::chrono::steady_clock::time_point at;
+  };
+  std::optional<RevealOrigin> m_revealOrigin;
   std::string m_transientPath;
   bool m_transientInstant = false;
   bool m_startupTransitionSuppressed = false;

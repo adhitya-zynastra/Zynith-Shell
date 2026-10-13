@@ -34,6 +34,7 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <format>
 #include <optional>
 #include <string_view>
 #include <system_error>
@@ -547,6 +548,7 @@ std::vector<WallpaperChange> Wallpaper::onStateChange() {
         continue;
       case TransitionRedirect::Unrelated:
         inst->queuedPath = newPath;
+        hurryTransition(*inst);
         changes.push_back({.path = newPath, .connector = inst->connectorName});
         continue;
       }
@@ -790,6 +792,27 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
+  // zynith: where the next change on an output was chosen (the wallpaper browser's card), as 0..1 of the output
+  ipc.bind(noctalia::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
+    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+    if (tokens.size() != 3) {
+      return "error: wallpaper-reveal <connector> <x> <y>\n";
+    }
+    if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
+      return error;
+    }
+    float x = 0.5F;
+    float y = 0.5F;
+    try {
+      x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
+      y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
+    } catch (...) {
+      return "error: x and y are numbers from 0 to 1\n";
+    }
+    m_revealOrigin = RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
+    return "ok\n";
+  });
+
   ipc.bind(
       noctalia::cli::msg::wallpaperSet, [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
         if (m_config == nullptr) {
@@ -1443,6 +1466,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
   if (instance.transitioning) {
     if (redirectActiveTransition(instance, path) == TransitionRedirect::Unrelated) {
       instance.queuedPath = path;
+      hurryTransition(instance);
     }
     return;
   }
@@ -1533,10 +1557,27 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   }
 
   const auto& transitions = wpConfig.transitions;
-  const auto picked =
+  auto picked =
       transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0F, static_cast<float>(transitions.size()))))];
+  // zynith: chosen at a point (wallpaper-reveal, a few seconds old at most): a disc grows from there, once
+  std::optional<std::pair<float, float>> origin;
+  if (m_revealOrigin.has_value() && m_revealOrigin->connector == instance.connectorName
+      && std::chrono::steady_clock::now() - m_revealOrigin->at < std::chrono::seconds(5)) {
+    picked = WallpaperTransition::Disc;
+    origin = std::pair{m_revealOrigin->x, m_revealOrigin->y};
+    m_revealOrigin.reset();
+  }
   instance.activeTransition = picked;
   instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
+  if (origin.has_value()) {
+    instance.transitionParams.centerX = origin->first;
+    instance.transitionParams.centerY = origin->second;
+  }
+  kLog.info(
+      "transition on {}: {}{} over {:.0f} ms", instance.connectorName, origin.has_value() ? "disc from the chosen point" : "configured",
+      origin.has_value() ? std::format(" ({:.2f}, {:.2f})", origin->first, origin->second) : std::string{},
+      wpConfig.transitionDurationMs
+  );
   startTransitionAnimation(instance, 0.0F, WallpaperTransitionDirection::Forward);
 }
 
@@ -1572,6 +1613,27 @@ void Wallpaper::startTransitionAnimation(
   );
 
   updateRendererState(instance);
+  instance.surface->requestRedraw();
+}
+
+void Wallpaper::hurryTransition(WallpaperInstance& instance) {
+  // the rest of the running transition in at most this long, from where it is, so the latest choice follows at
+  // once instead of after the full duration (rapid choices never queue up behind each other: one slot)
+  constexpr float kHurryMs = 180.0F;
+  if (!instance.transitioning || instance.transitionAnimId == 0) {
+    return;
+  }
+  const float toTime = transitionTargetTime(instance.transitionDirection);
+  const float remaining = std::abs(toTime - instance.transitionTime) * m_config->config().wallpaper.transitionDurationMs;
+  if (remaining <= kHurryMs) {
+    return;
+  }
+  instance.animations.cancel(std::exchange(instance.transitionAnimId, 0));
+  auto* inst = &instance;
+  instance.transitionAnimId = instance.animations.animateTimer(
+      instance.transitionTime, toTime, kHurryMs, Easing::Linear, [inst](float time) { setTransitionTime(*inst, time); },
+      [this, inst]() { finishTransition(*inst); }
+  );
   instance.surface->requestRedraw();
 }
 
