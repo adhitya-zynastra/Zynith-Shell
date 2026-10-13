@@ -8,7 +8,7 @@ import Quickshell
 Singleton {
     id: root
 
-    // screen name -> { id, originX, originY, edge, extent, history: [ids] }
+    // screen name -> { id, originX, originY, edge, extent, history: [ids], place }
     property var openPanels: ({})
 
     function current(screenName: string): var {
@@ -25,26 +25,79 @@ Singleton {
             delete next[screenName];
         openPanels = next;
     }
-    // the Control Panel and its pages, opened from nowhere (a key, IPC), sit by [control_panel] anchor_bar
+    // the Control Panel and its pages: placed by [control_panel] position (placement() below)
     readonly property var controlPages: ["control", "home", "quick", "audio", "power", "monitor", "calendar", "weather", "screen-time", "network", "bluetooth", "notifications", "media", "system"]
     property var bars: ({})
     property var barItems: ({})
     function noteBar(id: string, screenName: string, origin: var): void {
-        if (id !== "")
-            bars[id + "@" + screenName] = origin;
+        if (id === "")
+            return;
+        bars[id + "@" + screenName] = origin;
+        const z = { screen: screenName, edge: origin.edge, size: origin.reserved ?? 0 };
+        const key = id + "@" + screenName;
+        const was = zones[key];
+        if (!was || was.edge !== z.edge || was.size !== z.size || was.screen !== z.screen)
+            zones = Object.assign({}, zones, { [key]: z });
+    }
+    function forgetBar(id: string, screenName: string): void {
+        const key = id + "@" + screenName;
+        delete bars[key];
+        if (zones[key] !== undefined) {
+            const next = Object.assign({}, zones);
+            delete next[key];
+            zones = next;
+        }
+    }
+    // the room each bar keeps windows out of, per output: bar@screen -> { screen, edge, size }
+    property var zones: ({})
+    // an output's work area (the screen less the bars' reserved room; zones on one edge stack), in its own
+    // coordinates: { x, y, w, h }
+    function workArea(screenName: string, width: real, height: real): var {
+        const inset = { top: 0, bottom: 0, left: 0, right: 0 };
+        for (const k in zones) {
+            const z = zones[k];
+            if (z.screen === screenName && z.size > 0 && inset[z.edge] !== undefined)
+                inset[z.edge] += z.size;
+        }
+        return {
+            x: inset.left,
+            y: inset.top,
+            w: Math.max(0, width - inset.left - inset.right),
+            h: Math.max(0, height - inset.top - inset.bottom)
+        };
+    }
+
+    // [control_panel] position: where the Control Panel (and its pages, not opened alone) appears
+    readonly property var spots: ["top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right"]
+    // what last opened it from a bar, per output (position = follow)
+    property var lastTrigger: ({})
+    function placement(id: string, screenName: string, origin: var): var {
+        if (!controlPages.includes(id) || (origin?.focused ?? false) || origin?.edge === "center")
+            return { origin: origin, place: "" };
+        const position = String(Config.controlPanel?.position ?? "auto");
+        if (spots.includes(position))
+            return { origin: origin, place: position };
+        const fromBar = (origin?.x ?? -1) >= 0;
+        if (fromBar) {
+            lastTrigger[screenName] = { x: origin.x, y: origin.y, edge: origin.edge, extent: origin.extent };
+            return { origin: origin, place: "" };
+        }
+        const keep = { context: origin?.context ?? "", history: origin?.history ?? [], focused: false };
+        // follow: where it was last opened from on this output
+        const last = position === "follow" ? lastTrigger[screenName] : null;
+        if (last)
+            return { origin: Object.assign({}, last, keep), place: "" };
+        // auto (and follow before any trigger): the bar [control_panel] anchor_bar names, else the top right
+        const anchor = Config.controlPanel?.anchor_bar ?? "";
+        const at = anchor !== "" ? bars[anchor + "@" + screenName] : null;
+        if (at)
+            return { origin: Object.assign({}, at, keep), place: "" };
+        return { origin: origin, place: "top-right" };
     }
 
     function open(id: string, screenName: string, origin: var): void {
-        if ((origin?.x ?? -1) < 0 && origin?.edge !== "center" && controlPages.includes(id)) {
-            const anchor = Config.controlPanel?.anchor_bar ?? "";
-            const at = anchor !== "" ? bars[anchor + "@" + screenName] : null;
-            if (at)
-                origin = Object.assign({}, at, {
-                    context: origin?.context ?? "",
-                    history: origin?.history ?? [],
-                    focused: origin?.focused ?? false
-                });
-        }
+        const placed = placement(id, screenName, origin);
+        origin = placed.origin;
         set(screenName, {
             id: id,
             originX: origin?.x ?? -1,
@@ -55,7 +108,9 @@ Singleton {
             // where back goes: a Control Center tab opened from a bar goes back to the Control Panel
             history: origin?.history ?? [],
             // a Control Panel page opened by itself: no hero, no tabs, its own size
-            focused: origin?.focused ?? false
+            focused: origin?.focused ?? false,
+            // a spot of the work area ([control_panel] position), or "" beside what opened it
+            place: placed.place
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,

@@ -19,12 +19,18 @@ PanelWindow {
     onEntryChanged: if (entry)
         held = entry
 
-    readonly property string edge: held?.edge ?? "top"
+    // placed at a spot of the work area ([control_panel] position), or "" beside what opened it
+    readonly property string place: bare ? "" : held?.place ?? ""
+    readonly property var work: PanelRouter.workArea(screen?.name ?? "", sw, sh)
+    readonly property int placeMargin: Math.max(0, Math.min(64, Config.controlPanel?.position_margin ?? 12))
+    // a placed panel still grows from its nearest side (a centred one from its middle)
+    readonly property string edge: place === "" ? held?.edge ?? "top" : place.startsWith("top") ? "top" : place.startsWith("bottom") ? "bottom" : place === "middle-left" ? "left" : place === "middle-right" ? "right" : "center"
     // a bare panel (the wallpaper carousel) covers the screen and draws its own surfaces over a dimmed desktop
     readonly property bool bare: content.bare
-    readonly property int panelWidth: bare ? sw : content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width
+    // never wider than the room it has (the work area when placed, else the screen)
+    readonly property int panelWidth: bare ? sw : Math.min(content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width, place !== "" ? work.w - 2 * placeMargin : sw - 2 * screenMargin)
     // never taller than the screen leaves room for: past that, the content scrolls inside the card
-    readonly property real maxCardHeight: edge === "top" || edge === "bottom" ? sh - 2 * (extent + gap) : sh - 2 * screenMargin
+    readonly property real maxCardHeight: place !== "" ? work.h - 2 * placeMargin : edge === "top" || edge === "bottom" ? sh - 2 * (extent + gap) : sh - 2 * screenMargin
     readonly property real cardHeight: bare ? sh : Math.min(content.implicitHeight, maxCardHeight)
     // ── the morph: a panel that changes (another icon's panel, a tab, content that grows) glides there ──
     // [panels] switch: morph (the card moves and resizes, contents cross-fade) | fade | none;
@@ -134,8 +140,10 @@ PanelWindow {
 
     // the card's rectangle on screen
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
-    readonly property real cardX: bare ? 0 : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: bare ? 0 : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    readonly property real placedX: place.endsWith("left") ? work.x + placeMargin : place.endsWith("right") ? work.x + work.w - placeMargin - panelWidth : Math.round(work.x + (work.w - panelWidth) / 2)
+    readonly property real placedY: place.startsWith("top") ? work.y + placeMargin : place.startsWith("bottom") ? work.y + work.h - placeMargin - cardHeight : Math.round(work.y + (work.h - cardHeight) / 2)
+    readonly property real cardX: bare ? 0 : place !== "" ? placedX : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
+    readonly property real cardY: bare ? 0 : place !== "" ? placedY : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
     readonly property var cardRect: ({
             x: Math.round((screen?.x ?? 0) + cardX),
             y: Math.round((screen?.y ?? 0) + cardY),
@@ -331,8 +339,8 @@ PanelWindow {
         readonly property real travel: win.bare ? 0 : (1 - win.revealed) * Motion.revealOffset
         transform: [
             Scale {
-                origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.ox - win.cardX
-                origin.y: win.edge === "center" ? 0 : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.oy - win.cardY
+                origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
+                origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
                 xScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                 yScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
             },

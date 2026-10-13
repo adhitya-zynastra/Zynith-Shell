@@ -297,12 +297,15 @@ PanelWindow {
             y: windowScreenY() + pill.y + pill.height / 2,
             edge: edge,
             extent: margin + thickness - panelOverlap,
+            // the room it keeps windows out of (its exclusive zone): the output's work area is what is left
+            reserved: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : 0,
             // for diagnostics: where the bar and its summoning strip are, in screen coordinates
             hidden: wantsHidden,
             bar: [Math.round(windowScreenX() + pill.x), Math.round(windowScreenY() + pill.y), Math.round(pill.width), Math.round(pill.height)],
             strip: hides ? [Math.round(windowScreenX() + strip.x), Math.round(windowScreenY() + strip.y), Math.round(strip.width), Math.round(strip.height)] : null
         })
     onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
+    Component.onDestruction: PanelRouter.forgetBar(spec.id ?? "", screen?.name ?? "")
     // for diagnostics: the bar's own pixels, nothing behind them
     Component.onCompleted: PanelRouter.barItems[(spec.id ?? "") + "@" + (screen?.name ?? "")] = scene
 
