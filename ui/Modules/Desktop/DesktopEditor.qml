@@ -64,6 +64,26 @@ PanelWindow {
     }
 
     // the screen geometry of a widget, and its stored geometry rewritten in this screen's pixels
+    // whether a window point is on one of the editor's own panels rather than the canvas: the picker (its dimmed
+    // backdrop covers the screen), the inspector's card, the toolbar, a widget's frame buttons
+    function overlayAt(scenePoint: point): bool {
+        if (pickerLoader.item)
+            return true;
+        const panels = [toolbar, inspectorLoader.item?.cardItem ?? null];
+        for (const k of slots.children)
+            if (k.actions)
+                panels.push(k.actions);
+        for (const it of panels) {
+            if (!it || !it.visible || it.opacity <= 0)
+                continue;
+            const q = it.mapFromItem(null, scenePoint.x, scenePoint.y);
+            if (q.x >= 0 && q.y >= 0 && q.x <= it.width && q.y <= it.height)
+                return true;
+        }
+        return false;
+    }
+    readonly property Item inspectorCard: inspectorLoader.item?.cardItem ?? null
+    readonly property bool pointerOnOverlay: pointerWatch.hovered && overlayAt(pointerWatch.point.scenePosition)
     // the widget a press at a window point lands on: the topmost whose hit area (body, frame, name tag; not its
     // buttons) holds it
     function slotAt(scenePoint: point): var {
@@ -144,8 +164,21 @@ PanelWindow {
         // A tap selects the widget under it (Shift/Ctrl adds) or clears the selection; a drag that starts on a
         // widget moves it (with the rest of the selection), one that starts on bare desktop draws the lasso. The
         // frame's buttons and the resize/turn handles sit above and keep their own presses.
+        //
+        // The editor's own panels (the inspector, the picker, the toolbar, a widget's frame buttons) lie above the
+        // canvas, and Qt 6 still hands a press that one of their controls accepted to the pointer handlers of the
+        // items underneath (as passive grabs): without this, a click in the inspector selected the widget under it,
+        // and a slider's drag could be taken over by the canvas. So the canvas takes part only in presses that land
+        // on the canvas (enabled from where the pointer is), never takes a drag over from an item, and checks the
+        // press point itself as well (for input with no hover before the press).
+        HoverHandler {
+            id: pointerWatch
+        }
         TapHandler {
+            enabled: pressed || !ed.pointerOnOverlay
             onTapped: (point, button) => {
+                if (ed.overlayAt(point.scenePosition))
+                    return;
                 const hit = ed.slotAt(point.scenePosition);
                 if (hit)
                     Desktop.select(hit.entry.id, point.modifiers & (Qt.ShiftModifier | Qt.ControlModifier));
@@ -157,21 +190,26 @@ PanelWindow {
                 keys.forceActiveFocus();
             }
             onDoubleTapped: point => {
-                if (ed.slotAt(point.scenePosition))
+                if (!ed.overlayAt(point.scenePosition) && ed.slotAt(point.scenePosition))
                     Desktop.inspecting = true;
             }
         }
         DragHandler {
             id: gesture
             target: null
-            property string mode: ""    // move | lasso
+            enabled: active || !ed.pointerOnOverlay
+            // never from an item: a control's drag (a slider, a list) stays the control's
+            grabPermissions: PointerHandler.CanTakeOverFromHandlersOfDifferentType | PointerHandler.ApprovesTakeOverByAnything
+            property string mode: ""    // move | lasso | none
             property point from
             property var starts: ({})
             property string grabbed: ""
             onActiveChanged: {
                 if (active) {
-                    const hit = ed.slotAt(centroid.scenePressPosition);
-                    if (hit) {
+                    const hit = ed.overlayAt(centroid.scenePressPosition) ? null : ed.slotAt(centroid.scenePressPosition);
+                    if (ed.overlayAt(centroid.scenePressPosition)) {
+                        mode = "none";
+                    } else if (hit) {
                         mode = "move";
                         grabbed = hit.entry.id;
                         if (!Desktop.selection.includes(grabbed))
@@ -278,6 +316,7 @@ PanelWindow {
                 readonly property var place: ed.placeOf(modelData)
                 readonly property bool selected: Desktop.selection.includes(modelData.id)
                 readonly property bool leaving: Desktop.removing.includes(modelData.id)
+                readonly property Item actions: frameActions
 
                 // a widget that sizes itself (width/height 0: weather, media) is as large as it draws, centred on
                 // its point (as the desktop shows it), not an 8 px box nobody can grab
@@ -696,10 +735,12 @@ PanelWindow {
 
     // ── the inspector: the selected widget's settings ─────────────────────────
     Loader {
+        id: inspectorLoader
         active: Desktop.inspecting && Desktop.selected !== null && (!Desktop.selected.output || Desktop.selected.output === ed.output)
         sourceComponent: WidgetInspector {
             widget: Desktop.selected
             side: ed.placeOf(Desktop.selected).x + ed.placeOf(Desktop.selected).width / 2 > ed.sw * 0.55 ? "left" : "right"
+            near: ed.placeOf(Desktop.selected)
             screenW: ed.sw
             screenH: ed.sh
         }
@@ -708,6 +749,7 @@ PanelWindow {
 
     // ── the picker: every kind, previewed ────────────────────────────────────
     Loader {
+        id: pickerLoader
         active: Desktop.picking
         anchors.fill: parent
         sourceComponent: WidgetPicker {

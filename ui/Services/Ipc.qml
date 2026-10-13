@@ -128,6 +128,21 @@ Singleton {
             }
             return "desktop";
         }
+        // read-only: at (x, y) of the output, is the press the editor's own panels' (inspector, toolbar, frame buttons)
+        // or the canvas's, and what would the canvas do; and where the inspector card is
+        function editorProbe(x: real, y: real): string {
+            const ed = PanelRouter.barItems["editor-root@" + root.focusedScreen()];
+            if (!ed || !ed.slotAt)
+                return "editor not open";
+            const p = Qt.point(x, y);
+            const card = ed.inspectorCard;
+            const s = ed.overlayAt(p) ? null : ed.slotAt(p);
+            return JSON.stringify({
+                overlay: ed.overlayAt(p),
+                canvas: ed.overlayAt(p) ? "none" : s ? "move/select " + s.entry.type : "lasso/clear",
+                card: card ? [Math.round(card.mapToItem(null, 0, 0).x), Math.round(card.mapToItem(null, 0, 0).y), Math.round(card.width), Math.round(card.height)] : null
+            });
+        }
         function editorTrace(on: bool): string {
             Desktop.traceInput = on;
             return on ? "editor input trace on (in the UI log)" : "off";

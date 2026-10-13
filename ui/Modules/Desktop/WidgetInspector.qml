@@ -14,6 +14,12 @@ Item {
     property string side: "right"
     property real screenW: 1920
     property real screenH: 1080
+    // the widget's box on screen: the card sits beside it (right if there is room, else left), level with it, kept
+    // on screen; without one, at the side's edge
+    property var near: null
+    readonly property real gap: 24
+    // the card, for the editor (a press on it is the inspector's, never the canvas's)
+    readonly property Item cardItem: card
     readonly property string type: WidgetTypes.canonical(widget?.type ?? "")
     readonly property var settings: widget?.settings ?? ({})
     readonly property var schema: WidgetTypes.schema(type)
@@ -22,8 +28,11 @@ Item {
         id: card
         width: 360
         height: Math.min(parent.height - 160, column.implicitHeight + Metrics.s5 * 2)
-        anchors.verticalCenter: parent.verticalCenter
-        x: root.side === "right" ? parent.width - width - 32 : 32
+        readonly property bool fitsRight: root.near !== null && root.near.x + root.near.width + root.gap + width <= parent.width - 32
+        readonly property bool fitsLeft: root.near !== null && root.near.x - root.gap - width >= 32
+        readonly property string placedSide: fitsRight ? "right" : fitsLeft ? "left" : root.side
+        x: fitsRight ? root.near.x + root.near.width + root.gap : fitsLeft ? root.near.x - root.gap - width : (root.side === "right" ? parent.width - width - 32 : 32)
+        y: root.near !== null ? Math.max(24, Math.min(parent.height - height - 24, root.near.y + root.near.height / 2 - height / 2)) : (parent.height - height) / 2
         radius: Metrics.radiusXl
         raised: true
 
@@ -37,7 +46,7 @@ Item {
         }
         opacity: p
         transform: Translate {
-            x: (1 - card.p) * (root.side === "right" ? 40 : -40)
+            x: (1 - card.p) * (card.placedSide === "right" ? 40 : -40)
         }
 
         TapHandler {}
