@@ -182,8 +182,9 @@ Item {
             item.showings = Qt.binding(() => root.showings);
         if (item.active !== undefined)
             item.active = Qt.binding(() => root.active);
-        if (item.focused !== undefined)
-            item.focused = Qt.binding(() => root.focused);
+        // `alone`, not `focused`: a panel may have a focused (card, row) of its own
+        if (item.alone !== undefined)
+            item.alone = Qt.binding(() => root.focused);
         if (item.canGoBack !== undefined) {
             item.canGoBack = Qt.binding(() => root.history.length > 0);
             item.back.connect(() => PanelRouter.back(root.screen.name));

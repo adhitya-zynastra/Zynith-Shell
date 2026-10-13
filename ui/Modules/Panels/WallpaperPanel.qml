@@ -28,6 +28,9 @@ Item {
 
     readonly property bool carousel: Config.wallpaper.layout !== "grid"
     readonly property bool bare: carousel
+    // the most a full-size wallpaper is decoded to here: the screen
+    readonly property int decodeW: Math.ceil(screen?.width ?? 1920)
+    readonly property int decodeH: Math.ceil(screen?.height ?? 1080)
     readonly property Item blurItem: carousel ? (layoutLoader.item?.controlCard ?? null) : null
     readonly property int preferredWidth: Math.min(1120, Math.round((screen?.width ?? 1600) * 0.74))
     readonly property real preferredTop: 0.07
@@ -871,9 +874,10 @@ Item {
                                     id: sharp
                                     anchors.fill: parent
                                     source: card.focused ? card.modelData.still : ""
-                                    // decoded at the size it is shown, not the wallpaper's own (a 4K original is
-                                    // ~33 MB in memory for a card a few hundred pixels wide)
-                                    sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
+                                    // decoded no larger than the screen, not at the wallpaper's own size (the largest
+                                    // here, 9437x6291, is ~237 MB decoded); a fixed cap, so the card's own size
+                                    // animating does not decode it again every frame
+                                    sourceSize: Qt.size(root.decodeW, root.decodeH)
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
                                     opacity: card.focused && status === Image.Ready ? 1 : 0
@@ -1153,7 +1157,7 @@ Item {
                     Image {
                         id: a
                         anchors.fill: parent
-                        sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
+                        sourceSize: Qt.size(root.decodeW, root.decodeH)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         opacity: !heroImages.flip && status === Image.Ready ? 1 : 0
@@ -1167,7 +1171,7 @@ Item {
                     Image {
                         id: b
                         anchors.fill: parent
-                        sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
+                        sourceSize: Qt.size(root.decodeW, root.decodeH)
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         opacity: heroImages.flip && status === Image.Ready ? 1 : 0
