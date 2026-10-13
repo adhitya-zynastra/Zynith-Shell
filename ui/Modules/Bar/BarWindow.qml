@@ -272,6 +272,8 @@ PanelWindow {
         window: win
         item: pill.presence > 0.02 ? pill : null
         radius: Math.min(win.radius, win.thickness / 2)
+        // squared where a joined panel meets it, as the pill is
+        corners: win.joinProgress > 0 ? pill.corners : null
     }
 
     // along the bar: at its anchor, the extra summoning room on the far side (both sides when centred)
@@ -308,6 +310,13 @@ PanelWindow {
             return h - height - edgeGap;
         return anchorAt === "end" ? h - height - alongGap : anchorAt === "center" ? (h - height) / 2 : alongGap;
     }
+    // how far into the screen the bar reaches, measured from the pill as drawn: where an attached panel meets it
+    // exactly (panel_overlap, a floating panel's gap or overlap, does not apply to a joint)
+    function reach(): real {
+        const x0 = windowScreenX() + pill.x, y0 = windowScreenY() + pill.y;
+        const r = edge === "left" ? x0 + pill.width : edge === "right" ? (screen?.width ?? 0) - x0 : edge === "top" ? y0 + pill.height : (screen?.height ?? 0) - y0;
+        return Math.max(0, r);
+    }
     // the pill's extent along its edge, in screen coordinates: where a panel can join it
     function barSpan(): var {
         return vertical ? [windowScreenY() + pill.y, windowScreenY() + pill.y + pill.height] : [windowScreenX() + pill.x, windowScreenX() + pill.x + pill.width];
@@ -322,7 +331,8 @@ PanelWindow {
             x: windowScreenX() + pill.x + pill.width / 2,
             y: windowScreenY() + pill.y + pill.height / 2,
             edge: edge,
-            extent: margin + thickness - panelOverlap,
+            extent: reach() - panelOverlap,
+            reach: reach(),
             // what an attached panel needs to be one surface with the bar: its fill, its span along the edge
             fillOpacity: sheetOpacity,
             barSpan: barSpan(),
@@ -351,7 +361,8 @@ PanelWindow {
             x: windowScreenX() + pill.x + p.x,
             y: windowScreenY() + pill.y + p.y,
             edge: edge,
-            extent: margin + thickness - panelOverlap,
+            extent: reach() - panelOverlap,
+            reach: reach(),
             fillOpacity: sheetOpacity,
             barSpan: barSpan(),
             barId: spec.id ?? "",
@@ -441,7 +452,8 @@ PanelWindow {
             height: win.vertical ? win.pillLength : win.thickness
             radius: win.radius
             corners: win.corners
-            raised: win.shadow
+            // no shadow while a panel is joined: it would fall beside the joint, outside the one surface
+            raised: win.shadow && win.joinProgress === 0
             fill: Theme.alpha(Theme.glass, win.sheetOpacity)
             // a joined panel and the bar are one surface: no highlight line along the seam
             sheen: ExperiencePolicy.effectsQuality !== "minimal" && win.joinProgress === 0

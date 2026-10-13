@@ -170,7 +170,8 @@ PanelWindow {
     readonly property real sh: screen?.height ?? 1080
     readonly property real ox: (held?.originX ?? -1) >= 0 ? held.originX : sw - panelWidth / 2 - screenMargin
     readonly property real oy: (held?.originY ?? -1) >= 0 ? held.originY : 0
-    readonly property real extent: held?.extent ?? 42
+    // attached, the panel meets the bar's drawn edge exactly; floating, it keeps the bar's overlap or gap
+    readonly property real extent: attached && (held?.reach ?? -1) >= 0 ? held.reach : held?.extent ?? 42
 
     function clamp(v: real, lo: real, hi: real): real {
         return Math.max(lo, Math.min(hi, v));
@@ -258,7 +259,9 @@ PanelWindow {
     BlurRegion {
         window: win
         item: win.bare ? content.blurItem : card
-        radius: win.attached ? 0 : Metrics.radiusXl
+        // the card's own corners (attached: square only where it meets the bar)
+        radius: card.radius
+        corners: card.corners
         followOpacity: !win.bare && !win.attached
         // an attached panel's fillets, each its square less the quarter circle that cuts it
         extra: win.attached ? fillets.blurShapes : []

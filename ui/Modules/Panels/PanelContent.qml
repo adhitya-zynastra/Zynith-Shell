@@ -361,8 +361,7 @@ Item {
             y: root.contentTop - r
         }
     }
-    // the page's head, in the strip's free sides: its place among the tabs and its live caption on the left,
-    // its actions on the right
+    // the page's head, in the strip's free side: its live caption (the date, the place, the player)
     Item {
         id: stripHead
         visible: root.headInStrip
@@ -371,48 +370,16 @@ Item {
         width: parent.width - root.sheetInset * 2
         height: tabStrip.height - tabStrip.sheetGap
         opacity: Math.max(0, Math.min(1, root.visibleProgress * 1.4 - 0.4))
-        Column {
+        Label {
             anchors.left: parent.left
             anchors.leftMargin: Metrics.s2
             anchors.verticalCenter: parent.verticalCenter
             width: Math.max(0, tabStrip.x + tabStrip.rowLeft - stripHead.x - Metrics.s4 - Metrics.s2)
-            spacing: Metrics.s1
-            Label {
-                width: parent.width
-                role: "caption"
-                tone: "faint"
-                caps: true
-                elide: Text.ElideRight
-                text: String(root.tabIndex + 1).padStart(2, "0") + " / " + String(root.tabs.length).padStart(2, "0")
-            }
-            Label {
-                width: parent.width
-                visible: text !== ""
-                role: "caption"
-                tone: "muted"
-                elide: Text.ElideRight
-                text: root.live.item?.stripCaption ?? ""
-            }
-        }
-        Row {
-            anchors.right: parent.right
-            anchors.rightMargin: Metrics.s2
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: Metrics.s2
-            IconButton {
-                visible: root.history.length > 0
-                icon: "chevron-left"
-                tone: "muted"
-                onClicked: PanelRouter.back(root.screen.name)
-            }
-            IconButton {
-                icon: "settings"
-                tone: "faint"
-                onClicked: {
-                    PanelRouter.close(root.screen.name);
-                    Actions.run("settings-open control");
-                }
-            }
+            visible: text !== ""
+            role: "caption"
+            tone: "muted"
+            elide: Text.ElideRight
+            text: root.live.item?.stripCaption ?? ""
         }
     }
     PanelTabs {

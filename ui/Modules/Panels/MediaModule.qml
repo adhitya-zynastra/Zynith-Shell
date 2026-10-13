@@ -20,7 +20,9 @@ Item {
     property bool expanded: false
 
     readonly property var cfg: Config.media ?? ({})
-    readonly property int artSize: expanded ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
+    // the record never takes more than its share of the room it is given (a page opened alone is narrow)
+    readonly property int artWanted: expanded ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
+    readonly property int artSize: width > 0 ? Math.min(artWanted, Math.round(width * 0.4)) : artWanted
     readonly property bool visualizer: (cfg.visualizer ?? true) && Spectrum.enabled
     readonly property real reach: visualizer && ring ? (cfg.visualizer_reach ?? 18) : 6
     readonly property bool showLyrics: Lyrics.enabled
@@ -69,7 +71,12 @@ Item {
     readonly property bool ring: vizStyle === "ring" || vizStyle === "both"
     readonly property bool barsShown: visualizer && (vizStyle === "bars" || vizStyle === "both")
     // on the page the words get a column of their own at the right
-    readonly property real lyricsWidth: expanded && showLyrics ? Math.round(width * (cfg.lyrics_column ?? 0.36)) : 0
+    // …when there is room for it: what is playing keeps at least the record's width beside it, else the words
+    // go under it as on the dashboard
+    readonly property real lyricsColumn: Math.round(width * (cfg.lyrics_column ?? 0.36))
+    readonly property real recordWidth: artSize + reach * 2
+    readonly property bool lyricsBeside: expanded && showLyrics && width - recordWidth - lyricsColumn - Metrics.s5 * 2 >= recordWidth
+    readonly property real lyricsWidth: lyricsBeside ? lyricsColumn : 0
 
     // side by side: the record | what is playing, the timeline, the controls, the spectrum | (page) the words
     Row {
@@ -77,7 +84,7 @@ Item {
         width: root.width
         spacing: Metrics.s5
         readonly property real middleHeight: middle.implicitHeight
-        height: Math.max(record.height, middle.implicitHeight, words.visible && root.expanded ? words.height : 0)
+        height: Math.max(record.height, middle.implicitHeight, words.visible ? words.height : 0)
 
         Item {
             id: record
@@ -418,10 +425,10 @@ Item {
             // ── the words ──
             Item {
                 id: wordsCompact
-                visible: root.showLyrics && root.present && !root.expanded
-                width: root.expanded ? lyricsWidth : parent.width
-                readonly property real lineH: root.expanded ? 30 : 22
-                height: root.expanded ? Math.max(row.middleHeight, record.height) : root.lyricLines * lineH
+                visible: root.showLyrics && root.present && !root.lyricsBeside
+                width: root.lyricsBeside ? lyricsWidth : parent.width
+                readonly property real lineH: root.lyricsBeside ? 30 : 22
+                height: root.lyricsBeside ? Math.max(row.middleHeight, record.height) : root.lyricLines * lineH
                 clip: true
 
                 Label {
@@ -441,7 +448,7 @@ Item {
                     model: Lyrics.lines
                     currentIndex: Math.max(0, root.lyricIndex)
                     // the sung line on the middle rule (top on the dashboard), the rest fading by distance
-                    preferredHighlightBegin: root.expanded ? height / 2 - wordsCompact.lineH / 2 : 0
+                    preferredHighlightBegin: root.lyricsBeside ? height / 2 - wordsCompact.lineH / 2 : 0
                     preferredHighlightEnd: preferredHighlightBegin + wordsCompact.lineH
                     highlightRangeMode: Lyrics.synced ? ListView.StrictlyEnforceRange : ListView.NoHighlightRange
                     highlightMoveDuration: Motion.spatial
@@ -457,9 +464,9 @@ Item {
                         Label {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width
-                            horizontalAlignment: root.expanded ? Text.AlignHCenter : Text.AlignLeft
+                            horizontalAlignment: root.lyricsBeside ? Text.AlignHCenter : Text.AlignLeft
                             elide: Text.ElideRight
-                            role: line.sung ? (root.expanded ? "title" : "body") : root.expanded ? "body" : "label"
+                            role: line.sung ? (root.lyricsBeside ? "title" : "body") : root.lyricsBeside ? "body" : "label"
                             font.weight: line.sung ? Font.DemiBold : Font.Normal
                             color: line.sung ? Theme.accent : Theme.ink
                             opacity: Lyrics.synced ? Math.max(0.18, 1 - line.distance * 0.3) : 0.8
@@ -485,10 +492,10 @@ Item {
         // ── the words ──
         Item {
             id: words
-            visible: root.showLyrics && root.present && root.expanded
-            width: root.expanded ? lyricsWidth : parent.width
-            readonly property real lineH: root.expanded ? 30 : 22
-            height: root.expanded ? Math.max(row.middleHeight, record.height) : root.lyricLines * lineH
+            visible: root.showLyrics && root.present && root.lyricsBeside
+            width: root.lyricsBeside ? lyricsWidth : parent.width
+            readonly property real lineH: root.lyricsBeside ? 30 : 22
+            height: root.lyricsBeside ? Math.max(row.middleHeight, record.height) : root.lyricLines * lineH
             clip: true
 
             Label {
@@ -508,7 +515,7 @@ Item {
                 model: Lyrics.lines
                 currentIndex: Math.max(0, root.lyricIndex)
                 // the sung line on the middle rule (top on the dashboard), the rest fading by distance
-                preferredHighlightBegin: root.expanded ? height / 2 - words.lineH / 2 : 0
+                preferredHighlightBegin: root.lyricsBeside ? height / 2 - words.lineH / 2 : 0
                 preferredHighlightEnd: preferredHighlightBegin + words.lineH
                 highlightRangeMode: Lyrics.synced ? ListView.StrictlyEnforceRange : ListView.NoHighlightRange
                 highlightMoveDuration: Motion.spatial
@@ -524,9 +531,9 @@ Item {
                     Label {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width
-                        horizontalAlignment: root.expanded ? Text.AlignHCenter : Text.AlignLeft
+                        horizontalAlignment: root.lyricsBeside ? Text.AlignHCenter : Text.AlignLeft
                         elide: Text.ElideRight
-                        role: line.sung ? (root.expanded ? "title" : "body") : root.expanded ? "body" : "label"
+                        role: line.sung ? (root.lyricsBeside ? "title" : "body") : root.lyricsBeside ? "body" : "label"
                         font.weight: line.sung ? Font.DemiBold : Font.Normal
                         color: line.sung ? Theme.accent : Theme.ink
                         opacity: Lyrics.synced ? Math.max(0.18, 1 - line.distance * 0.3) : 0.8

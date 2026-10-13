@@ -49,6 +49,17 @@ Singleton {
             case "close":
                 PanelRouter.closeAll();
                 break;
+            case "open-from": {
+                // diagnostics: open a panel as a bar would, from that bar's middle: <bar id> <panel id> [focused]
+                const [barId, id, how] = args.split(" ");
+                const at = PanelRouter.bars[barId + "@" + screen];
+                if (!at) {
+                    console.warn("zynith: open-from: no bar", barId, "on", screen);
+                    break;
+                }
+                PanelRouter.open(id, screen, Object.assign({}, at, { focused: how === "focused", history: [], context: "" }));
+                break;
+            }
             case "action":
                 // any action a bar gesture can name: panel-toggle control-center audio, media next, exec …
                 Actions.run(args, {

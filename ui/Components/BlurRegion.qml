@@ -11,6 +11,9 @@ QtObject {
     required property var window
     property Item item
     property real radius: 0
+    // per corner, [top-left, top-right, bottom-right, bottom-left] as Glass takes them (null: radius for all):
+    // the blur has the shape the surface has, or it shows as frosted corners past a rounded card
+    property var corners: null
     // the compositor's blur cannot fade: kept while its item fades or scales, it outlives it as a frosted box
     // the item's size. With followOpacity, the blur is there only while the item is shown and (all but) opaque,
     // so it goes at the start of a fade-out and comes as a fade-in lands.
@@ -24,6 +27,10 @@ QtObject {
     readonly property Region region: Region {
         item: root.item
         radius: root.radius
+        topLeftRadius: root.corners ? root.corners[0] : root.radius
+        topRightRadius: root.corners ? root.corners[1] : root.radius
+        bottomRightRadius: root.corners ? root.corners[2] : root.radius
+        bottomLeftRadius: root.corners ? root.corners[3] : root.radius
         Region {
             readonly property var e: root.extra[0] ?? null
             x: e ? e.x : 0

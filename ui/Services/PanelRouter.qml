@@ -94,7 +94,13 @@ Singleton {
             return { origin: origin, place: position };
         const fromBar = (origin?.x ?? -1) >= 0;
         if (fromBar) {
-            lastTrigger[screenName] = { x: origin.x, y: origin.y, edge: origin.edge, extent: origin.extent };
+            // the whole origin, the bar's fill, span and id with it: without them a panel reopened from here (a
+            // key) could not join the bar and floated beside it
+            const t = Object.assign({}, origin);
+            delete t.context;
+            delete t.history;
+            delete t.focused;
+            lastTrigger[screenName] = t;
             return { origin: origin, place: "" };
         }
         const keep = { context: origin?.context ?? "", history: origin?.history ?? [], focused: false };
@@ -129,7 +135,8 @@ Singleton {
             // the bar it came from, for an attached panel: its fill opacity, its span along the edge and id
             fillOpacity: origin?.fillOpacity ?? -1,
             barSpan: origin?.barSpan ?? null,
-            barId: origin?.barId ?? ""
+            barId: origin?.barId ?? "",
+            reach: origin?.reach ?? -1
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,
