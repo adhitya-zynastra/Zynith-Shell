@@ -871,6 +871,9 @@ Item {
                                     id: sharp
                                     anchors.fill: parent
                                     source: card.focused ? card.modelData.still : ""
+                                    // decoded at the size it is shown, not the wallpaper's own (a 4K original is
+                                    // ~33 MB in memory for a card a few hundred pixels wide)
+                                    sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
                                     opacity: card.focused && status === Image.Ready ? 1 : 0
@@ -1150,6 +1153,7 @@ Item {
                     Image {
                         id: a
                         anchors.fill: parent
+                        sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         opacity: !heroImages.flip && status === Image.Ready ? 1 : 0
@@ -1163,6 +1167,7 @@ Item {
                     Image {
                         id: b
                         anchors.fill: parent
+                        sourceSize: Qt.size(Math.ceil(width), Math.ceil(height))
                         fillMode: Image.PreserveAspectCrop
                         asynchronous: true
                         opacity: heroImages.flip && status === Image.Ready ? 1 : 0
