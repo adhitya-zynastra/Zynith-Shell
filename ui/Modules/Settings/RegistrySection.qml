@@ -79,6 +79,9 @@ Column {
         case "toggle":
             return [Object.assign(base, { key: keyOf(e.path), kind: "toggle", value: e.value })];
         case "select":
+            // a font family: the font picker (every installed family, each in its own face), not a list of names
+            if (String(e.path[e.path.length - 1]).endsWith("font_family"))
+                return [Object.assign(base, { key: keyOf(e.path), kind: "font", placeholder: "The system font", value: String(e.value ?? "") })];
             return [Object.assign(base, {
                     key: keyOf(e.path),
                     kind: opts.length <= 4 && !e.search ? "choice" : opts.length <= 14 && !e.search ? "select" : "pick",

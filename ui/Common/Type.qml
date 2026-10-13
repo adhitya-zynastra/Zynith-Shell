@@ -18,10 +18,13 @@ Singleton {
         source: Paths.repoAsset("fonts/noctalia-tabler.ttf")
     }
 
-    readonly property string ui: interFont.status === FontLoader.Ready ? interFont.name : "Adwaita Sans"
+    // appearance.toml font_ui / font_display / font_mono choose others; empty keeps Zynith's own
+    readonly property string bundledUi: interFont.status === FontLoader.Ready ? interFont.name : "Adwaita Sans"
     // the variable font registers its default instance as "Space Grotesk Light"; the family name keeps weights working
-    readonly property string display: groteskFont.status === FontLoader.Ready ? "Space Grotesk" : ui
-    readonly property string mono: "JetBrains Mono"
+    readonly property string bundledDisplay: groteskFont.status === FontLoader.Ready ? "Space Grotesk" : bundledUi
+    readonly property string ui: (Config.appearance.font_ui ?? "") !== "" ? Config.appearance.font_ui : bundledUi
+    readonly property string display: (Config.appearance.font_display ?? "") !== "" ? Config.appearance.font_display : bundledDisplay
+    readonly property string mono: (Config.appearance.font_mono ?? "") !== "" ? Config.appearance.font_mono : "JetBrains Mono"
     readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "noctalia-tabler-icons"
 
     // pixel sizes, scaled by appearance.toml font_scale

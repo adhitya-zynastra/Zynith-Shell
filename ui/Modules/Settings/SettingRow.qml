@@ -27,7 +27,8 @@ Item {
         Config.write(domain, key, v);
     }
 
-    implicitHeight: Math.max(48, text.implicitHeight + Metrics.s3 * 2)
+    // as tall as its text or its control, whichever is taller (a font list unfolds in place)
+    implicitHeight: Math.max(48, text.implicitHeight + Metrics.s3 * 2, slot.height + Metrics.s3 * 2)
     width: parent ? parent.width : 400
 
     Column {
@@ -55,7 +56,8 @@ Item {
     Item {
         id: slot
         anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.top: parent.top
+        anchors.topMargin: Math.max(Metrics.s3, (Math.max(48, text.implicitHeight + Metrics.s3 * 2) - Math.min(height, 48)) / 2)
         width: root.controlWidth
         height: childrenRect.height
     }

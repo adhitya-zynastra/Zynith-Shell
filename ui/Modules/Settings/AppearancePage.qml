@@ -107,6 +107,27 @@ Column {
         width: parent.width
         caption: "Type"
 
+        SettingFont {
+            title: "Interface font"
+            detail: "Labels, menus and reading text"
+            domain: "appearance"
+            key: "font_ui"
+            fallback: "Inter (Zynith's)"
+        }
+        SettingFont {
+            title: "Display font"
+            detail: "Clocks, numbers and headings"
+            domain: "appearance"
+            key: "font_display"
+            fallback: "Space Grotesk (Zynith's)"
+        }
+        SettingFont {
+            title: "Monospace font"
+            detail: "Values, units and the data voice"
+            domain: "appearance"
+            key: "font_mono"
+            fallback: "JetBrains Mono"
+        }
         SettingSlider {
             title: "Text size"
             domain: "appearance"

@@ -338,37 +338,15 @@ Item {
     }
     Component {
         id: fontControl
-        Column {
+        // a family picked from the installed ones (Components/FontPicker)
+        FontPicker {
             id: ctl
             property var spec: ({})
             property var val
             property var apply: v => {}
-            spacing: 4
-            property string typed: ""
-            Field {
-                width: parent.width
-                placeholder: "The interface font"
-                text: ctl.val ?? ""
-                onEdited: t => ctl.typed = t
-                onCommitted: t => ctl.apply(t)
-            }
-            // installed families that match what is typed
-            Flow {
-                width: parent.width
-                spacing: 4
-                visible: ctl.typed.length >= 2
-                Repeater {
-                    model: ctl.typed.length >= 2 ? Qt.fontFamilies().filter(f => f.toLowerCase().includes(ctl.typed.toLowerCase())).slice(0, 8) : []
-                    delegate: Chip {
-                        required property var modelData
-                        text: modelData
-                        onClicked: {
-                            ctl.apply(modelData);
-                            ctl.typed = "";
-                        }
-                    }
-                }
-            }
+            value: val ?? ""
+            fallback: spec.placeholder ?? spec.default ?? "The interface font"
+            onPicked: family => ctl.apply(family)
         }
     }
     Component {
