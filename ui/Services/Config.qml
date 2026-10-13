@@ -22,6 +22,11 @@ Singleton {
             overrides: experienceFile.values.overrides ?? {},
             reducedMotion: animationFile.values.reduced_motion
         })
+    // Settings shows its technical pages and native settings for surfaces Zynith draws only with this on
+    readonly property bool settingsAdvanced: zynithFile.values.settings?.advanced === true
+    function setSettingsAdvanced(on: bool): void {
+        zynithFile.set("settings.advanced", on);
+    }
     readonly property var appearance: appearanceFile.values
     readonly property var animation: animationFile.values
     readonly property var bars: barsFile.values.bar ?? []

@@ -3,9 +3,9 @@ import qs.Common
 import qs.Components
 import qs.Services
 
-// Under a Zynith page: the native shell's settings on the same subject. Those that shape a native surface
-// Zynith now draws instead (`owner` in [surfaces]) are folded and say so — they apply only when that surface
-// is handed back to the native shell.
+// Under a Zynith page: the native shell's settings on the same subject, under a name a person would use
+// (`title`). Those shaping a native surface Zynith draws instead (`owner` in [surfaces]) change nothing while
+// Zynith draws it, so they appear only with Advanced settings on, and say so; so does a block marked `advanced`.
 Column {
     id: root
     spacing: Metrics.s4
@@ -14,40 +14,30 @@ Column {
     property string query: ""
     property bool advanced: false
     readonly property bool inactive: (entry.owner ?? "") !== "" && (Config.surfaces?.[entry.owner] ?? "native") === "zynith"
-    property bool open: !inactive || query !== ""
+    readonly property bool shown: (advanced || (!inactive && !(entry.advanced ?? false)) || query !== "") && (section.count > 0 || query === "")
+    readonly property string name: entry.title ?? ("Native " + (entry.groups?.length > 0 ? entry.groups.join(", ") : entry.section).toLowerCase())
+    visible: shown
+    height: shown ? implicitHeight : 0
 
-    Item {
+    SectionHead {
         width: parent.width
-        height: head.implicitHeight
-        visible: section.count > 0 || root.query === ""
-        SectionHead {
-            id: head
-            width: parent.width - toggle.width - Metrics.s3
-            index: "∗"
-            title: (root.inactive ? "Native " : "From the native shell · ") + (root.entry.groups?.length > 0 ? root.entry.groups.join(", ") : root.entry.section) + "  (" + section.count + ")"
-        }
-        Chip {
-            id: toggle
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.open ? "Hide" : "Show"
-            onClicked: root.open = !root.open
-        }
+        index: "∗"
+        title: root.inactive ? root.name + " · native, off while Zynith draws it" : root.name
     }
     Label {
-        visible: root.inactive && root.open
+        visible: root.inactive
         width: parent.width
         role: "caption"
         tone: "faint"
         wrapMode: Text.WordWrap
-        text: "Zynith draws this surface, so these shape the native one, which is off. They apply again if Zynith UI → surfaces hands it back."
+        text: "These shape the native shell's version, which is switched off. They apply again only if Zynith or native surfaces hands it back."
     }
     RegistrySection {
         id: section
-        visible: root.open
         width: parent.width
         section: root.entry.section
         groupFilter: root.entry.groups ?? []
+        exclude: root.entry.exclude ?? []
         query: root.query
         advanced: root.advanced
     }

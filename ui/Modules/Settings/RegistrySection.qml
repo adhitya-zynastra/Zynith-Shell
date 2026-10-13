@@ -17,6 +17,8 @@ Column {
     property var groupFilter: []
     property string query: ""
     property bool advanced: false
+    // settings shown elsewhere (by dotted path): a Zynith control already owns them
+    property var exclude: []
     property string message: ""
     property var entries: []
     property bool loading: false
@@ -108,7 +110,7 @@ Column {
             return [Object.assign(base, { key: keyOf(e.path), kind: "button", action: "Edit in the native Settings", value: null, native: true })];
         }
     }
-    readonly property var visibleEntries: entries.filter(e => e.visible !== false && (advanced || !e.advanced) && (groupFilter.length === 0 || groupFilter.includes(e.groupLabel)) && (query === "" || (e.title + " " + e.subtitle + " " + e.groupLabel).toLowerCase().includes(query.toLowerCase())))
+    readonly property var visibleEntries: entries.filter(e => e.visible !== false && !exclude.includes(e.path.join(".")) && (advanced || !e.advanced) && (groupFilter.length === 0 || groupFilter.includes(e.groupLabel)) && (query === "" || (e.title + " " + e.subtitle + " " + e.groupLabel).toLowerCase().includes(query.toLowerCase())))
     readonly property var groups: {
         const out = [];
         for (const e of visibleEntries) {

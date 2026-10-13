@@ -29,7 +29,10 @@ FloatingWindow {
         route = hit.route.id;
         settingJump = false;
     }
-    readonly property var routeMatches: Routes.search(query)
+    // Ryoku's rail: plain categories; the technical pages wait behind "Advanced settings" (search still finds
+    // them, and the open page always stays listed, so switching Advanced off never strands you)
+    readonly property bool advanced: Config.settingsAdvanced
+    readonly property var routeMatches: query.trim() !== "" ? Routes.search(query) : Routes.routes.filter(r => advanced || !r.advanced || r.id === route)
     readonly property var settingMatches: query.trim().length >= 2 ? SettingsIndex.search(query) : []
     Component.onCompleted: SettingsIndex.load()
 
@@ -83,10 +86,34 @@ FloatingWindow {
             width: parent.width
             spacing: Metrics.s2
 
-            Label {
-                role: "headline"
-                text: "Settings"
-                bottomPadding: Metrics.s3
+            // the masthead: the name over its section mark, in a hairline box
+            Rectangle {
+                width: parent.width
+                height: 52
+                color: "transparent"
+                border.width: Metrics.hairline
+                border.color: Theme.hairline
+                radius: Metrics.radiusControl
+                Column {
+                    anchors.left: parent.left
+                    anchors.leftMargin: Metrics.s4
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 1
+                    Label {
+                        role: "title"
+                        font.letterSpacing: 2
+                        text: "ZYNITH"
+                    }
+                    Label {
+                        role: "data"
+                        tone: "faint"
+                        text: "//SETTINGS_"
+                    }
+                }
+            }
+            Item {
+                width: 1
+                height: Metrics.s2
             }
 
             Rectangle {
@@ -100,7 +127,7 @@ FloatingWindow {
                     anchors.left: parent.left
                     anchors.leftMargin: Metrics.s3
                     anchors.verticalCenter: parent.verticalCenter
-                    name: "adjustments-horizontal"
+                    name: "search"
                     tone: "faint"
                     size: 14
                 }
@@ -120,7 +147,7 @@ FloatingWindow {
                         visible: parent.text === ""
                         role: "body"
                         tone: "faint"
-                        text: "Search every setting"
+                        text: "Search settings…"
                     }
                 }
             }
@@ -186,30 +213,92 @@ FloatingWindow {
                 model: win.routeMatches
 
                 delegate: Column {
+                    id: navItem
                     required property var modelData
                     required property int index
                     width: parent.width
 
                     readonly property var all: win.routeMatches
                     readonly property bool groupStart: modelData.group !== "" && (index === 0 || all[index - 1].group !== modelData.group)
+                    readonly property bool current: win.route === modelData.id
 
-                    Label {
-                        visible: parent.groupStart
-                        role: "data"
-                        tone: "faint"
-                        topPadding: Metrics.s4
-                        bottomPadding: Metrics.s2
-                        leftPadding: Metrics.s3
-                        text: parent.modelData.group
-                    }
-                    ListRow {
+                    // "03  DESKTOP ───": the group's number and name in tracked mono over a hairline
+                    Item {
+                        visible: navItem.groupStart
                         width: parent.width
-                        height: 36
-                        icon: parent.modelData.icon
-                        title: parent.modelData.title
-                        active: win.route === parent.modelData.id
-                        onClicked: win.route = parent.modelData.id
+                        height: visible ? 34 : 0
+                        Label {
+                            id: groupLabel
+                            anchors.left: parent.left
+                            anchors.leftMargin: Metrics.s2
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: Metrics.s2
+                            role: "data"
+                            tone: navItem.all.some(r => r.group === navItem.modelData.group && r.id === win.route) ? "muted" : "faint"
+                            text: Routes.groupIndex(navItem.modelData.group) + "  " + navItem.modelData.group.toUpperCase()
+                        }
+                        Rectangle {
+                            anchors.left: groupLabel.right
+                            anchors.leftMargin: Metrics.s3
+                            anchors.right: parent.right
+                            anchors.verticalCenter: groupLabel.verticalCenter
+                            height: Metrics.hairline
+                            color: Theme.hairline
+                        }
                     }
+                    // selection is inversion: the live page is an ink plate with a "//" lead
+                    Rectangle {
+                        width: parent.width
+                        height: 34
+                        radius: Metrics.radiusControl
+                        color: navItem.current ? Theme.ink : navArea.containsMouse ? Theme.hover : "transparent"
+                        Label {
+                            anchors.left: parent.left
+                            anchors.leftMargin: Metrics.s3
+                            anchors.right: parent.right
+                            anchors.rightMargin: Metrics.s3
+                            anchors.verticalCenter: parent.verticalCenter
+                            role: "body"
+                            elide: Text.ElideRight
+                            color: navItem.current ? Theme.surface : Theme.ink
+                            text: (navItem.current ? "//  " : "") + navItem.modelData.title
+                        }
+                        MouseArea {
+                            id: navArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: win.route = navItem.modelData.id
+                        }
+                    }
+                }
+            }
+
+            // the rail foot: the Advanced gate
+            Item {
+                width: parent.width
+                height: Metrics.s5
+            }
+            Rectangle {
+                width: parent.width
+                height: Metrics.hairline
+                color: Theme.hairline
+            }
+            Item {
+                width: parent.width
+                height: 44
+                Label {
+                    anchors.left: parent.left
+                    anchors.leftMargin: Metrics.s2
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "body"
+                    text: "Advanced settings"
+                }
+                Toggle {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: win.advanced
+                    onToggled: Config.setSettingsAdvanced(!win.advanced)
                 }
             }
         }
@@ -299,19 +388,14 @@ FloatingWindow {
                     onClicked: win.focusTitle = ""
                 }
             }
-            FilterRow {
-                id: nativeFilter
-                visible: (page.routeSpec.native ?? []).length > 0 && win.focusTitle === ""
-                width: parent.width
-            }
             Repeater {
                 model: page.routeSpec.native ?? []
                 delegate: NativeBlock {
                     required property var modelData
                     width: parent.width
                     entry: modelData
-                    query: win.focusTitle !== "" ? win.focusTitle : nativeFilter.text
-                    advanced: nativeFilter.advanced || win.focusTitle !== ""
+                    query: win.focusTitle
+                    advanced: win.advanced || win.focusTitle !== ""
                 }
             }
         }
