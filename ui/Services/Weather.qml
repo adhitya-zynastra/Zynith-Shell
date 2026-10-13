@@ -32,6 +32,13 @@ Singleton {
         interval: 600000
         onTriggered: root.refresh()
     }
+    // nothing yet (the native shell just started and has not fetched): ask again soon, not in ten minutes
+    Timer {
+        running: root.consumers > 0 && !root.valid
+        repeat: true
+        interval: 15000
+        onTriggered: root.refresh()
+    }
 
     // WMO weather codes → words
     function describe(code: int): string {
