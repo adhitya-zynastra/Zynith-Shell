@@ -76,4 +76,21 @@ Column {
             }
         }
     }
+
+    Card {
+        width: parent.width
+        caption: "Panels"
+        SettingToggle {
+            title: "Join the bar"
+            detail: "A panel opened from a bar grows out of it as one surface"
+            domain: "panels"
+            key: "panels.attach"
+        }
+        SettingChoice {
+            title: "When one panel becomes another"
+            domain: "panels"
+            key: "panels.switch"
+            options: [{ key: "morph", label: "It reshapes" }, { key: "fade", label: "It fades" }, { key: "none", label: "At once" }]
+        }
+    }
 }

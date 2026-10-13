@@ -48,6 +48,21 @@ Singleton {
             zones = next;
         }
     }
+    // a panel joined to a bar, per bar@screen: { start, end, progress } (PanelSurface writes, BarWindow reads)
+    property var joins: ({})
+    function setJoin(key: string, value: var): void {
+        const cur = joins[key];
+        if (!value && cur === undefined)
+            return;
+        if (value && cur && cur.start === value.start && cur.end === value.end && Math.abs(cur.progress - value.progress) < 0.01)
+            return;
+        const next = Object.assign({}, joins);
+        if (value)
+            next[key] = value;
+        else
+            delete next[key];
+        joins = next;
+    }
     // the room each bar keeps windows out of, per output: bar@screen -> { screen, edge, size }
     property var zones: ({})
     // an output's work area (the screen less the bars' reserved room; zones on one edge stack), in its own
@@ -110,7 +125,11 @@ Singleton {
             // a Control Panel page opened by itself: no hero, no tabs, its own size
             focused: origin?.focused ?? false,
             // a spot of the work area ([control_panel] position), or "" beside what opened it
-            place: placed.place
+            place: placed.place,
+            // the bar it came from, for an attached panel: its fill opacity, its span along the edge and id
+            fillOpacity: origin?.fillOpacity ?? -1,
+            barSpan: origin?.barSpan ?? null,
+            barId: origin?.barId ?? ""
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,

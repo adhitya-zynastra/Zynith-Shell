@@ -125,8 +125,46 @@ PanelWindow {
         interval: win.morphMs + 60
         onTriggered: win.span = win.target
     }
-    readonly property int pad: bare ? 0 : ExperiencePolicy.shadows ? Metrics.shadowPad + 6 : 0
-    readonly property int gap: Metrics.s3
+    readonly property int pad: bare ? 0 : Math.max(ExperiencePolicy.shadows && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
+    readonly property int gap: attached ? 0 : Metrics.s3
+
+    // ── attached: the panel and the bar it came from are one surface (the native shell's attached panels,
+    // Caelestia's drawers). It sits on the bar's inner edge in the bar's own fill, grows out of that edge, and
+    // concave fillets join the two where their outlines meet: beside the panel where the bar runs past it (a
+    // drawer), beside the bar where the panel runs past it (the bar's corners there go square). Only where they
+    // share at least two radii of edge; otherwise it floats beside the bar as before. [panels] attach = false
+    // keeps every panel floating.
+    readonly property real joinRadius: Metrics.radiusSurface
+    readonly property var barSpan: held?.barSpan ?? null
+    readonly property bool sideEdge: edge === "top" || edge === "bottom" || edge === "left" || edge === "right"
+    readonly property bool horizontalEdge: edge === "top" || edge === "bottom"
+    // along the edge, in screen coordinates: where the card runs (its target, not the animated one)
+    readonly property real cardStart: horizontalEdge ? cardX : cardY
+    readonly property real cardEnd: horizontalEdge ? cardX + panelWidth : cardY + cardHeight
+    readonly property bool attached: !bare && place === "" && sideEdge && (pcfg.attach ?? true) && (held?.fillOpacity ?? -1) >= 0 && barSpan !== null && Math.min(barSpan[1], cardEnd) - Math.max(barSpan[0], cardStart) >= 2 * joinRadius
+    // each end of the joint: drawer (the bar runs past the panel) · t (the panel runs past the bar) · flush
+    readonly property string startJoin: !attached ? "" : barSpan[0] <= cardStart - joinRadius / 2 ? "drawer" : cardStart <= barSpan[0] - joinRadius / 2 ? "t" : "flush"
+    readonly property string endJoin: !attached ? "" : barSpan[1] >= cardEnd + joinRadius / 2 ? "drawer" : cardEnd >= barSpan[1] + joinRadius / 2 ? "t" : "flush"
+    // how far the panel has grown out of the bar, and the fillets' radius: they arrive as the growth lands
+    readonly property real grow: attached ? revealed : 1
+    // the fillets arrive over the second half of the growth, once the bar-side edge has cleared the bar
+    readonly property real bulgeFrom: 0.5
+    readonly property real bulge: attached ? joinRadius * Math.max(0, Math.min(1, (revealed - bulgeFrom) / (1 - bulgeFrom))) : 0
+    readonly property string joinKey: (held?.barId ?? "") + "@" + (screen?.name ?? "")
+    onBulgeChanged: publishJoin()
+    onAttachedChanged: publishJoin()
+    onJoinKeyChanged: PanelRouter.setJoin(lastJoinKey, null)
+    property string lastJoinKey: ""
+    function publishJoin(): void {
+        if (lastJoinKey !== "" && lastJoinKey !== joinKey)
+            PanelRouter.setJoin(lastJoinKey, null);
+        lastJoinKey = joinKey;
+        if (!attached || bulge <= 0 || (startJoin !== "t" && endJoin !== "t"))
+            PanelRouter.setJoin(joinKey, null);
+        else
+            PanelRouter.setJoin(joinKey, { start: startJoin === "t", end: endJoin === "t", progress: bulge / joinRadius });
+    }
+    Component.onDestruction: PanelRouter.setJoin(lastJoinKey, null)
     readonly property int screenMargin: Metrics.s3
     readonly property real sw: screen?.width ?? 1920
     readonly property real sh: screen?.height ?? 1080
@@ -148,7 +186,11 @@ PanelWindow {
             x: Math.round((screen?.x ?? 0) + cardX),
             y: Math.round((screen?.y ?? 0) + cardY),
             w: Math.round(panelWidth),
-            h: Math.round(cardHeight)
+            h: Math.round(cardHeight),
+            // for diagnostics: the window's own position on the output (to composite captures)
+            winX: Math.round(winX),
+            winY: Math.round(winY),
+            attached: attached
         })
     onCardRectChanged: PanelRouter.noteRect(screen?.name ?? "", cardRect)
     readonly property real winX: Math.max(0, span.x - pad)
@@ -216,8 +258,10 @@ PanelWindow {
     BlurRegion {
         window: win
         item: win.bare ? content.blurItem : card
-        radius: Metrics.radiusXl
-        followOpacity: !win.bare
+        radius: win.attached ? 0 : Metrics.radiusXl
+        followOpacity: !win.bare && !win.attached
+        // an attached panel's fillets, each its square less the quarter circle that cuts it
+        extra: win.attached ? fillets.blurShapes : []
     }
 
     // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The
@@ -318,94 +362,179 @@ PanelWindow {
         }
     }
 
-    Glass {
-        id: card
-        // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
-        Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
+    // the card and its fillets in one item: what the window draws (and, for diagnostics, what a capture of
+    // the whole panel takes: zynith-ui ipc captureBar panelwin@<screen> <png>)
+    Item {
+        id: surfaceScene
+        anchors.fill: parent
+        Component.onCompleted: PanelRouter.barItems["panelwin@" + (win.screen?.name ?? "")] = surfaceScene
 
-        x: win.ax - win.winX
-        y: win.ay - win.winY
-        width: win.aw
-        height: win.ah
-        radius: Metrics.radiusSurface
-        raised: !win.bare
-        fill: win.bare ? "transparent" : Theme.glass
-        edge: !win.bare
-        sheen: !win.bare && ExperiencePolicy.effectsQuality !== "minimal"
+        Glass {
+            id: card
+            // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
+            Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
 
-        opacity: win.bare ? 1 : win.revealed
+            // attached, the card grows out of the bar's edge (its far side moves; the joint stays put)
+            x: win.ax - win.winX + (win.attached && win.edge === "right" ? win.aw * (1 - win.grow) : 0)
+            y: win.ay - win.winY + (win.attached && win.edge === "bottom" ? win.ah * (1 - win.grow) : 0)
+            width: win.aw * (win.attached && !win.horizontalEdge ? win.grow : 1)
+            height: win.ah * (win.attached && win.horizontalEdge ? win.grow : 1)
+            radius: Metrics.radiusSurface
+            // the bar-side corners: square where the bar continues past them, rounded where the panel runs past
+            // the bar (a fillet then joins the bar's side instead)
+            corners: !win.attached ? null : ({
+                    top: [win.startJoin === "t" ? radius : 0, win.endJoin === "t" ? radius : 0, radius, radius],
+                    bottom: [radius, radius, win.endJoin === "t" ? radius : 0, win.startJoin === "t" ? radius : 0],
+                    left: [win.startJoin === "t" ? radius : 0, radius, radius, win.endJoin === "t" ? radius : 0],
+                    right: [radius, win.startJoin === "t" ? radius : 0, win.endJoin === "t" ? radius : 0, radius]
+                })[win.edge]
+            raised: !win.bare && !win.attached
+            // attached, the bar's own fill, so the seam disappears
+            fill: win.bare ? "transparent" : win.attached ? Theme.alpha(Theme.glass, win.held.fillOpacity) : Theme.glass
+            edge: !win.bare && !win.attached
+            sheen: !win.bare && !win.attached && ExperiencePolicy.effectsQuality !== "minimal"
 
-        // grow from the bar side, a few pixels of travel
-        readonly property real travel: win.bare ? 0 : (1 - win.revealed) * Motion.revealOffset
-        transform: [
-            Scale {
-                origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
-                origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
-                xScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
-                yScale: win.bare ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
-            },
-            Translate {
-                x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0
-                y: win.edge === "top" ? -card.travel : win.edge === "bottom" ? card.travel : 0
+            opacity: win.bare ? 1 : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
+
+            // floating: grow from the bar side, a few pixels of travel; attached: the geometry does it
+            readonly property real travel: win.bare || win.attached ? 0 : (1 - win.revealed) * Motion.revealOffset
+            transform: [
+                Scale {
+                    origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
+                    origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
+                    xScale: win.bare || win.attached ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                    yScale: win.bare || win.attached ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                },
+                Translate {
+                    x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0
+                    y: win.edge === "top" ? -card.travel : win.edge === "bottom" ? card.travel : 0
+                }
+            ]
+
+            Item {
+                anchors.fill: parent
+                focus: true
+                Keys.onEscapePressed: PanelRouter.close(win.screen.name)
+                Keys.onBackPressed: PanelRouter.back(win.screen.name)
             }
-        ]
 
-        Item {
-            anchors.fill: parent
-            focus: true
-            Keys.onEscapePressed: PanelRouter.close(win.screen.name)
-            Keys.onBackPressed: PanelRouter.back(win.screen.name)
-        }
+            // clips content while the card height animates; the shadow stays outside. Content taller than the
+            // card scrolls (only then: a panel that fits keeps its own wheel and drag).
+            Flickable {
+                id: scroller
+                anchors.fill: parent
+                clip: true
+                contentWidth: width
+                contentHeight: content.implicitHeight
+                interactive: !win.bare && content.implicitHeight > height + 1
+                boundsBehavior: Flickable.StopAtBounds
+                flickableDirection: Flickable.VerticalFlick
+                // a new panel starts at its top
+                Connections {
+                    target: content
+                    function onShownIdChanged(): void {
+                        scroller.contentY = 0;
+                    }
+                }
 
-        // clips content while the card height animates; the shadow stays outside. Content taller than the
-        // card scrolls (only then: a panel that fits keeps its own wheel and drag).
-        Flickable {
-            id: scroller
-            anchors.fill: parent
-            clip: true
-            contentWidth: width
-            contentHeight: content.implicitHeight
-            interactive: !win.bare && content.implicitHeight > height + 1
-            boundsBehavior: Flickable.StopAtBounds
-            flickableDirection: Flickable.VerticalFlick
-            // a new panel starts at its top
-            Connections {
-                target: content
-                function onShownIdChanged(): void {
-                    scroller.contentY = 0;
+                PanelContent {
+                    id: content
+                    // attached: the page slides out from behind the bar with the growing edge
+                    transform: Translate {
+                        x: win.attached && win.edge === "left" ? -win.aw * (1 - win.grow) : 0
+                        y: win.attached && win.edge === "top" ? -win.ah * (1 - win.grow) : 0
+                    }
+
+                    // laid out at the size it is going to, centred in the card while the card glides there (the
+                    // card clips it), so nothing reflows every frame
+                    width: win.panelWidth
+                    x: Math.round((scroller.width - width) / 2)
+                    panelId: win.held?.id ?? ""
+                    peek: win.held?.transient ?? false
+                    focused: win.held?.focused ?? false
+                    history: win.held?.history ?? []
+                    context: win.held?.context ?? ""
+                    showings: win.showings
+                    screen: win.screen
+                    visibleProgress: win.revealed
+                    active: win.visible
                 }
             }
-
-            PanelContent {
-                id: content
-
-                // laid out at the size it is going to, centred in the card while the card glides there (the
-                // card clips it), so nothing reflows every frame
-                width: win.panelWidth
-                x: Math.round((scroller.width - width) / 2)
-                panelId: win.held?.id ?? ""
-                peek: win.held?.transient ?? false
-                focused: win.held?.focused ?? false
-                history: win.held?.history ?? []
-                context: win.held?.context ?? ""
-                showings: win.showings
-                screen: win.screen
-                visibleProgress: win.revealed
-                active: win.visible
+            // where in a scrolled panel you are
+            Rectangle {
+                visible: scroller.interactive
+                anchors.right: parent.right
+                anchors.rightMargin: 3
+                y: scroller.visibleArea.yPosition * scroller.height + 6
+                width: 3
+                height: Math.max(24, scroller.visibleArea.heightRatio * scroller.height - 12)
+                radius: 2
+                color: Theme.alpha(Theme.ink, scroller.moving ? 0.35 : 0.14)
+                Behavior on color {
+                    ColorAnim {}
+                }
             }
         }
-        // where in a scrolled panel you are
-        Rectangle {
-            visible: scroller.interactive
-            anchors.right: parent.right
-            anchors.rightMargin: 3
-            y: scroller.visibleArea.yPosition * scroller.height + 6
-            width: 3
-            height: Math.max(24, scroller.visibleArea.heightRatio * scroller.height - 12)
-            radius: 2
-            color: Theme.alpha(Theme.ink, scroller.moving ? 0.35 : 0.14)
-            Behavior on color {
-                ColorAnim {}
+
+        // ── the fillets joining an attached panel to its bar ──
+        Item {
+            id: fillets
+            anchors.fill: parent
+            visible: win.attached && win.bulge > 0.5
+            // in window coordinates: the joint line and the card's ends along it, the bar's ends along it
+            readonly property real r: win.bulge
+            readonly property real cx: card.x
+            readonly property real cy: card.y
+            readonly property real cw: card.width
+            readonly property real ch: card.height
+            readonly property real b0: win.attached ? win.barSpan[0] - (win.horizontalEdge ? win.winX : win.winY) : 0
+            readonly property real b1: win.attached ? win.barSpan[1] - (win.horizontalEdge ? win.winX : win.winY) : 0
+            // each: { x, y, solid } — the r×r square and the corner of it that is filled
+            readonly property var shapes: {
+                if (!win.attached)
+                    return [];
+                const r = fillets.r, out = [];
+                const add = (mode, a, b) => {
+                    if (mode === "drawer")
+                        out.push(a);
+                    else if (mode === "t")
+                        out.push(b);
+                };
+                const e = win.edge;
+                if (e === "top") {
+                    add(win.startJoin, { x: cx - r, y: cy, solid: "tr" }, { x: b0 - r, y: cy - r, solid: "br" });
+                    add(win.endJoin, { x: cx + cw, y: cy, solid: "tl" }, { x: b1, y: cy - r, solid: "bl" });
+                } else if (e === "bottom") {
+                    const j = cy + ch;
+                    add(win.startJoin, { x: cx - r, y: j - r, solid: "br" }, { x: b0 - r, y: j, solid: "tr" });
+                    add(win.endJoin, { x: cx + cw, y: j - r, solid: "bl" }, { x: b1, y: j, solid: "tl" });
+                } else if (e === "left") {
+                    add(win.startJoin, { x: cx, y: cy - r, solid: "bl" }, { x: cx - r, y: b0 - r, solid: "br" });
+                    add(win.endJoin, { x: cx, y: cy + ch, solid: "tl" }, { x: cx - r, y: b1, solid: "tr" });
+                } else {
+                    const j = cx + cw;
+                    add(win.startJoin, { x: j - r, y: cy - r, solid: "br" }, { x: j, y: b0 - r, solid: "bl" });
+                    add(win.endJoin, { x: j - r, y: cy + ch, solid: "tr" }, { x: j, y: b1, solid: "tl" });
+                }
+                return out;
+            }
+            // for the compositor's blur: each square, less the circle centred on its open corner
+            readonly property var blurShapes: shapes.map(f => {
+                const ox = f.solid === "tr" || f.solid === "br" ? f.x : f.x + r;
+                const oy = f.solid === "bl" || f.solid === "br" ? f.y : f.y + r;
+                return { x: f.x, y: f.y, w: r, h: r, cutX: ox - r, cutY: oy - r, cut: 2 * r };
+            })
+            Repeater {
+                model: fillets.shapes
+                delegate: ConcaveCorner {
+                    required property var modelData
+                    x: modelData.x
+                    y: modelData.y
+                    r: fillets.r
+                    solid: modelData.solid
+                    fill: card.fill
+                    opacity: card.opacity
+                }
             }
         }
     }

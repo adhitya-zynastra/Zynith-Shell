@@ -18,9 +18,44 @@ QtObject {
     property real shownAt: 0.98
     readonly property bool shown: item !== null && item.visible && (!followOpacity || item.opacity >= shownAt)
 
+    // more shapes in the window's coordinates: [{ x, y, w, h, cutX, cutY, cut }] — a rectangle, less the circle
+    // whose bounding square is cut (an attached panel's fillets)
+    property var extra: []
     readonly property Region region: Region {
         item: root.item
         radius: root.radius
+        Region {
+            readonly property var e: root.extra[0] ?? null
+            x: e ? e.x : 0
+            y: e ? e.y : 0
+            width: e ? e.w : 0
+            height: e ? e.h : 0
+            Region {
+                readonly property var e: root.extra[0] ?? null
+                shape: RegionShape.Ellipse
+                intersection: Intersection.Subtract
+                x: e ? e.cutX : 0
+                y: e ? e.cutY : 0
+                width: e ? e.cut : 0
+                height: e ? e.cut : 0
+            }
+        }
+        Region {
+            readonly property var e: root.extra[1] ?? null
+            x: e ? e.x : 0
+            y: e ? e.y : 0
+            width: e ? e.w : 0
+            height: e ? e.h : 0
+            Region {
+                readonly property var e: root.extra[1] ?? null
+                shape: RegionShape.Ellipse
+                intersection: Intersection.Subtract
+                x: e ? e.cutX : 0
+                y: e ? e.cutY : 0
+                width: e ? e.cut : 0
+                height: e ? e.cut : 0
+            }
+        }
     }
 
     function apply(): void {

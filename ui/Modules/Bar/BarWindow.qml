@@ -70,12 +70,23 @@ PanelWindow {
     readonly property var corners: {
         // a corner left out, or set below 0 (Settings' "follows the radius"), takes the radius
         const own = [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left].map(v => v === undefined || v < 0 ? undefined : v);
-        if (!concave && !own.some(v => v !== undefined))
+        const joined = joinProgress > 0 && (join?.start || join?.end);
+        if (!concave && !joined && !own.some(v => v !== undefined))
             return null;
         const c = own.map(v => v ?? radius);
         if (concave)
             for (const i of (concaveMode === "edge" ? edgeCorners : innerCorners))
                 c[i] = 0;
+        // the inner corners at the ends a joined panel runs past go square with its growth
+        if (joined) {
+            const inner = innerCorners;   // [start side, end side] facing the panel
+            const startCorner = edge === "top" || edge === "bottom" ? (inner.includes(0) ? 0 : 3) : (inner.includes(0) ? 0 : 1);
+            const endCorner = inner.find(i => i !== startCorner);
+            if (join.start)
+                c[startCorner] = c[startCorner] * (1 - joinProgress);
+            if (join.end)
+                c[endCorner] = c[endCorner] * (1 - joinProgress);
+        }
         return c;
     }
     // bar-wide defaults the widgets read
@@ -239,6 +250,12 @@ PanelWindow {
     HoverHandler {
         id: hover
     }
+    // The pointer anywhere on the bar that opened the hover panel holds it, so moving from one icon to the next
+    // hands the panel over (it reshapes into the next one) instead of closing in the gap between them and
+    // opening again from nothing, whatever the close delay.
+    readonly property var openEntry: PanelRouter.openPanels[screen?.name ?? ""] ?? null
+    readonly property bool holdsHover: hover.hovered && (openEntry?.transient ?? false) && (openEntry?.barId ?? "") === (spec.id ?? "")
+    onHoldsHoverChanged: PanelRouter.hold(screen?.name ?? "", "bar:" + (spec.id ?? ""), holdsHover)
 
     // where the pointer summons a hidden bar
     Item {
@@ -291,12 +308,27 @@ PanelWindow {
             return h - height - edgeGap;
         return anchorAt === "end" ? h - height - alongGap : anchorAt === "center" ? (h - height) / 2 : alongGap;
     }
+    // the pill's extent along its edge, in screen coordinates: where a panel can join it
+    function barSpan(): var {
+        return vertical ? [windowScreenY() + pill.y, windowScreenY() + pill.y + pill.height] : [windowScreenX() + pill.x, windowScreenX() + pill.x + pill.width];
+    }
+    // a panel joined to this bar (PanelSurface publishes it): the pill squares the corners it shares with it,
+    // as the panel grows, so the two read as one surface
+    readonly property var join: PanelRouter.joins[(spec.id ?? "") + "@" + (screen?.name ?? "")] ?? null
+    readonly property real joinProgress: join?.progress ?? 0
+
     // where a Control Panel opened from nowhere (a key) attaches, when [control_panel] anchor_bar names this bar
     readonly property var anchorOrigin: ({
             x: windowScreenX() + pill.x + pill.width / 2,
             y: windowScreenY() + pill.y + pill.height / 2,
             edge: edge,
             extent: margin + thickness - panelOverlap,
+            // what an attached panel needs to be one surface with the bar: its fill, its span along the edge
+            fillOpacity: sheetOpacity,
+            barSpan: barSpan(),
+            barId: spec.id ?? "",
+            // for diagnostics: the bar window's own position on the output (to composite captures)
+            win: [Math.round(windowScreenX()), Math.round(windowScreenY())],
             // the room it keeps windows out of (its exclusive zone): the output's work area is what is left
             reserved: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : 0,
             // for diagnostics: where the bar and its summoning strip are, in screen coordinates
@@ -305,7 +337,10 @@ PanelWindow {
             strip: hides ? [Math.round(windowScreenX() + strip.x), Math.round(windowScreenY() + strip.y), Math.round(strip.width), Math.round(strip.height)] : null
         })
     onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
-    Component.onDestruction: PanelRouter.forgetBar(spec.id ?? "", screen?.name ?? "")
+    Component.onDestruction: {
+        PanelRouter.forgetBar(spec.id ?? "", screen?.name ?? "");
+        PanelRouter.hold(screen?.name ?? "", "bar:" + (spec.id ?? ""), false);
+    }
     // for diagnostics: the bar's own pixels, nothing behind them
     Component.onCompleted: PanelRouter.barItems[(spec.id ?? "") + "@" + (screen?.name ?? "")] = scene
 
@@ -317,6 +352,9 @@ PanelWindow {
             y: windowScreenY() + pill.y + p.y,
             edge: edge,
             extent: margin + thickness - panelOverlap,
+            fillOpacity: sheetOpacity,
+            barSpan: barSpan(),
+            barId: spec.id ?? "",
             context: context ?? "",
             history: options?.history ?? [],
             focused: options?.focused ?? false
@@ -405,6 +443,8 @@ PanelWindow {
             corners: win.corners
             raised: win.shadow
             fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+            // a joined panel and the bar are one surface: no highlight line along the seam
+            sheen: ExperiencePolicy.effectsQuality !== "minimal" && win.joinProgress === 0
             edge: win.border
             edgeColor: win.borderColor
             edgeWidth: win.borderWidth

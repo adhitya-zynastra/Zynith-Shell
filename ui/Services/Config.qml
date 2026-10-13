@@ -316,6 +316,9 @@ Singleton {
                 },
                 panels: {
                     width: 400,
+                    // a panel opened from a bar joins it: one surface in the bar's fill, growing out of its edge, with
+                    // concave fillets where their outlines meet (false: panels float beside the bar)
+                    attach: true,
                     // how a panel changes into another (another icon's, a tab, a page): morph (the card glides
                     // and resizes, contents cross-fade) | fade (contents cross-fade in place) | none
                     switch: "morph",
@@ -388,8 +391,9 @@ Singleton {
                     // power monitor calendar weather screen-time system network bluetooth notifications), and
                     // tab_labels / tab_icons to rename or re-icon one: { audio = "Sound" }
                     tab_bar: true,
-                    // inline (icon beside label, a sliding pill) | stacked (icon over label, an underline)
-                    tab_style: "inline",
+                    // connected (the current tab is the page's sheet reaching up into the strip, stretching across on a
+                    // switch) | inline (icon beside label, a sliding pill) | stacked (icon over label, an underline)
+                    tab_style: "connected",
                     tabs: ["control", "media", "audio", "power", "weather", "calendar"],
                     tab_labels: {},
                     tab_icons: {},
