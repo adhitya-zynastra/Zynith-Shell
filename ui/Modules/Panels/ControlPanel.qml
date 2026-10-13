@@ -34,7 +34,9 @@ Column {
     readonly property var order: ControlSections.flat(columns)
     // cards: each module on its own soft plate (the dashboard's default, as Caelestia's blocks)
     readonly property string moduleStyle: cfg.module_style ?? "auto"
-    readonly property bool cards: moduleStyle === "cards" || (moduleStyle === "auto" && dashboard)
+    // on the connected tab sheet, the sheet is the plate: sections sit on it bare (no box inside a box)
+    property bool onSheet: false
+    readonly property bool cards: !onSheet && (moduleStyle === "cards" || (moduleStyle === "auto" && dashboard))
     // [control_panel] section_heads: each module under an indexed head (on by default)
     readonly property bool heads: cfg.section_heads === true || ((cfg.section_heads ?? "auto") === "auto" && !dashboard)
     // the gap between modules is each shown module's own (below it), so a module that has nothing to show

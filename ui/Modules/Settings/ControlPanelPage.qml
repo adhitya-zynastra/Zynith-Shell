@@ -444,7 +444,7 @@ Column {
                 { key: "hero_details", label: "User, machine, system, uptime", kind: "toggle", default: true, when: "hero" },
                 { key: "hero_drift", label: "Picture drifts slowly", kind: "toggle", default: true, when: "hero" },
                 { key: "tab_bar", label: "Tabs over the Control Panel and its pages", kind: "toggle", default: true },
-                { key: "tab_style", label: "Tabs", kind: "choice", default: "inline", options: [{ key: "inline", label: "Icon beside name" }, { key: "stacked", label: "Icon over name" }], when: "tab_bar" },
+                { key: "tab_style", label: "Tabs", kind: "choice", default: "connected", options: [{ key: "connected", label: "Joined to the page" }, { key: "inline", label: "A pill" }, { key: "stacked", label: "An underline" }], when: "tab_bar" },
                 { key: "tabs", label: "Which tabs, in order", kind: "list", default: ["control", "media", "audio", "power", "weather", "calendar"], hint: "control media audio power monitor calendar weather screen-time system network bluetooth notifications", when: "tab_bar" },
                 { key: "page_columns", label: "Columns on a tab's page", kind: "int", default: 2, from: 1, to: 3, step: 1, when: "tab_bar" }
             ]

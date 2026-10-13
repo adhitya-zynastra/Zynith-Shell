@@ -185,6 +185,9 @@ Item {
         // `alone`, not `focused`: a panel may have a focused (card, row) of its own
         if (item.alone !== undefined)
             item.alone = Qt.binding(() => root.focused);
+        // on the connected sheet a page draws no plates of its own (no box inside a box)
+        if (item.onSheet !== undefined)
+            item.onSheet = Qt.binding(() => root.connectedTabs);
         if (item.canGoBack !== undefined) {
             item.canGoBack = Qt.binding(() => root.history.length > 0);
             item.back.connect(() => PanelRouter.back(root.screen.name));
@@ -290,18 +293,78 @@ Item {
         height: root.heroShown ? implicitHeight : 0
         active: root.active && root.heroShown
     }
+    // connected tabs: the page sits on one sheet, and the current tab is that same sheet reaching up into the
+    // strip, so choosing a section moves the page's own surface rather than a separate highlight. The sheet is
+    // the theme's well (a lift of whatever surface it sits on, contrast-aware), never a tone of its own: a fixed
+    // tone read as a dark slab over a translucent panel on a light wallpaper.
+    readonly property bool connectedTabs: tabbed && (cfg.tab_style ?? "connected") === "connected"
+    readonly property real sheetInset: Metrics.s3
+    // The sheet and the current tab's plate as one shape: drawn opaque inside one layer that takes the well's
+    // opacity, so where they meet there is no doubled tone and no seam — one surface on any wallpaper.
+    Item {
+        id: sheetShape
+        visible: root.connectedTabs
+        anchors.fill: parent
+        layer.enabled: visible
+        opacity: Theme.well.a
+        readonly property color ink: Qt.rgba(Theme.well.r, Theme.well.g, Theme.well.b, 1)
+        readonly property real r: tabStrip.plateRadius
+        readonly property real px: tabStrip.x + tabStrip.plateLeft
+        readonly property real pw: Math.max(0, tabStrip.plateRight - tabStrip.plateLeft)
+        Rectangle {
+            id: sheet
+            x: root.sheetInset
+            y: root.contentTop
+            width: parent.width - root.sheetInset * 2
+            height: Math.max(0, root.implicitHeight - root.contentTop - root.sheetInset)
+            color: sheetShape.ink
+            radius: Metrics.radiusPlate
+        }
+        // the plate reaches from the tab down into the sheet (overlapping it: one opaque shape, no seam)
+        Rectangle {
+            visible: sheetShape.pw > 0
+            x: sheetShape.px
+            y: tabStrip.y
+            width: sheetShape.pw
+            height: root.contentTop - tabStrip.y + sheetShape.r
+            color: sheetShape.ink
+            topLeftRadius: sheetShape.r
+            topRightRadius: sheetShape.r
+        }
+        ConcaveCorner {
+            visible: sheetShape.pw > 0 && sheetShape.px - r >= sheet.x - 0.5
+            r: sheetShape.r
+            fill: sheetShape.ink
+            solid: "br"
+            x: sheetShape.px - r
+            y: root.contentTop - r
+        }
+        ConcaveCorner {
+            visible: sheetShape.pw > 0 && sheetShape.px + sheetShape.pw + r <= sheet.x + sheet.width + 0.5
+            r: sheetShape.r
+            fill: sheetShape.ink
+            solid: "bl"
+            x: sheetShape.px + sheetShape.pw
+            y: root.contentTop - r
+        }
+    }
     PanelTabs {
         id: tabStrip
         visible: root.tabbed
         x: Metrics.s5
         y: (root.heroShown ? hero.height : 0) + Metrics.s3
         width: parent.width - Metrics.s5 * 2
-        height: root.tabbed ? implicitHeight + Metrics.s3 : 0
+        height: root.tabbed ? implicitHeight + (root.connectedTabs ? 0 : Metrics.s3) : 0
         tabs: root.tabs
         current: root.tabId
         showIcons: root.cfg.tab_icons_shown ?? true
         showLabels: root.cfg.tab_labels_shown ?? true
-        style: root.cfg.tab_style ?? "inline"
+        style: root.cfg.tab_style ?? "connected"
+        sheetColor: Theme.well
+        drawPlate: false
+        sheetLeft: root.sheetInset - x
+        sheetRight: root.width - root.sheetInset - x
+        sheetGap: Metrics.s2
         onPicked: id => PanelRouter.switchTo(id, root.screen.name)
     }
 
