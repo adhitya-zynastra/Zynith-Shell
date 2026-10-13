@@ -48,7 +48,8 @@ BarItem {
     BarText {
         item: root
         size: Type.title
-        font.weight: Font.Medium
+        // medium unless the widget or its bar sets a weight (Bars → Text weight)
+        font.weight: (root.opt("font_weight") ?? root.bar?.spec?.font_weight) !== undefined ? root.weight : Font.Medium
         horizontalAlignment: Text.AlignHCenter
         lineHeight: 0.92
         text: root.shownText

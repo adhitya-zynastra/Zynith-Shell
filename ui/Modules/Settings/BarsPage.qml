@@ -222,7 +222,7 @@ Column {
                         { key: "border", label: "Border", kind: "toggle", default: true },
                         { key: "border_color", label: "Border colour", kind: "colour", default: "", when: { border: [true] } },
                         { key: "border_width", label: "Border width (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 4, step: 1, when: { border: [true] } },
-                        { key: "shadow", label: "Shadow", kind: "toggle", default: true },
+                        { key: "shadow", label: ExperiencePolicy.shadows ? "Shadow" : "Shadow (the Performance profile turns shadows off)", kind: "toggle", default: true },
                         { key: "font_family", label: "Font", kind: "font", default: "" },
                         { key: "font_scale", label: "Text size", kind: "slider", default: 1, from: 0.6, to: 1.6, step: 0.01 },
                         { key: "font_weight", label: "Text weight", kind: "select", default: "400", options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map(w => ({ key: String(w), label: String(w) })) },

@@ -76,7 +76,7 @@ Column {
 
         SettingSlider {
             title: "Surface opacity"
-            detail: "0 lets the Experience profile decide"
+            detail: "All the way left: as the Performance profile sets it. A bar with its own opacity keeps it"
             domain: "appearance"
             key: "surface_opacity"
             format: v => v === 0 ? "Profile" : Math.round(v * 100) + "%"

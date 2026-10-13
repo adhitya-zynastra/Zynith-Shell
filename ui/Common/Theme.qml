@@ -59,7 +59,10 @@ Singleton {
 
     // ── glass: the sheet every floating surface is cut from ─────────────────
     // near-opaque without a blur behind it (even 6 % of bright text shows through); thinner with one
-    readonly property real glassAlpha: ExperiencePolicy.blur ? ExperiencePolicy.glassOpacity : Math.max(0.97, ExperiencePolicy.glassOpacity)
+    // a surface opacity set in Appearance is used as set; left to the profile, a sheet with nothing blurred
+    // behind it stays near-opaque (even 6 % of bright text shows through)
+    readonly property bool opacitySet: (Config.appearance.surface_opacity ?? 0) > 0
+    readonly property real glassAlpha: ExperiencePolicy.blur || opacitySet ? ExperiencePolicy.glassOpacity : Math.max(0.97, ExperiencePolicy.glassOpacity)
     readonly property color glass: alpha(mix(base, surfaceLow, 0.5), glassAlpha)
     readonly property color glassRaised: alpha(surfaceHigh, ExperiencePolicy.blur ? 0.58 : 0.94)
     // a well inside a surface: rows, fields, tiles at rest
