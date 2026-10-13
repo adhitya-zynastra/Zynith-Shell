@@ -1617,14 +1617,17 @@ void Wallpaper::startTransitionAnimation(
 }
 
 void Wallpaper::hurryTransition(WallpaperInstance& instance) {
-  // the rest of the running transition in at most this long, from where it is, so the latest choice follows at
-  // once instead of after the full duration (rapid choices never queue up behind each other: one slot)
-  constexpr float kHurryMs = 180.0F;
+  // the rest of the running transition in a fifth of the configured duration at most, from where it is, so the
+  // latest choice follows at once instead of after the full duration (rapid choices never queue up behind each
+  // other: one slot). A share of the duration, not a fixed time: a slow reveal hurries in proportion.
+  constexpr float kHurryShare = 0.2F;
   if (!instance.transitioning || instance.transitionAnimId == 0) {
     return;
   }
+  const float durationMs = m_config->config().wallpaper.transitionDurationMs;
+  const float kHurryMs = durationMs * kHurryShare;
   const float toTime = transitionTargetTime(instance.transitionDirection);
-  const float remaining = std::abs(toTime - instance.transitionTime) * m_config->config().wallpaper.transitionDurationMs;
+  const float remaining = std::abs(toTime - instance.transitionTime) * durationMs;
   if (remaining <= kHurryMs) {
     return;
   }
