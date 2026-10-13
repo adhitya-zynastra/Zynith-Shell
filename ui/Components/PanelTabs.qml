@@ -2,8 +2,10 @@ import QtQuick
 import qs.Common
 import qs.Services
 
-// A row of tabs across the top of a surface, with one indicator that slides to the current tab (Caelestia's
-// dashboard tabs). Which tabs and in what order is the caller's (from config); each is { id, label, icon }.
+// A row of tabs across the top of a surface. Which tabs and in what order is the caller's (from config); each is
+// { id, label, icon }. connected is Zynith's own command bar, as the native shell had it: every section an icon,
+// the current one unfolding its name; on a switch the old name folds away while the new one unfolds and the
+// row makes room — and here the selection is the page's sheet itself reaching up into the strip.
 Item {
     id: root
 
@@ -38,16 +40,38 @@ Item {
     property real plateRight: 0
     property int shownIndex: -1
     // read from the source, not through indicator's bindings: a change handler can run before they update
+    // connected layout: an icon's width for every tab, plus its name's for the current one; the row centred
+    readonly property real iconSlot: Metrics.icon + Metrics.s4 * 2
+    function unfold(i: int): real {
+        const it = repeater.itemAt(i);
+        return showLabels && it ? it.labelWidth + Metrics.s2 : 0;
+    }
+    function tabWidthFor(j: int, cur: int): real {
+        return iconSlot + (j === cur ? unfold(j) : 0);
+    }
+    function rowStartFor(cur: int): real {
+        let total = 0;
+        for (let j = 0; j < tabs.length; j++)
+            total += tabWidthFor(j, cur);
+        return Math.max(0, (width - total) / 2);
+    }
+    readonly property int currentIndex: tabs.findIndex(t => t.id === current)
     function slotWidth(): real {
         return width / Math.max(1, tabs.length);
     }
+    // where tab i ends up when cur is current (read from the source, not through bindings: a change handler can
+    // run before they update)
     function edgesFor(i: int): var {
-        const inset = Metrics.s1;
-        return [i * slotWidth() + inset, (i + 1) * slotWidth() - inset];
+        if (!connected)
+            return [i * slotWidth() + Metrics.s1, (i + 1) * slotWidth() - Metrics.s1];
+        let x = rowStartFor(i);
+        for (let j = 0; j < i; j++)
+            x += tabWidthFor(j, i);
+        return [x, x + tabWidthFor(i, i)];
     }
     function placePlate(animate: bool): void {
         const i = tabs.findIndex(t => t.id === current);
-        if (i < 0 || slotWidth() <= 0)
+        if (i < 0 || width <= 0)
             return;
         const e = edgesFor(i);
         const forward = i > shownIndex;
@@ -138,7 +162,15 @@ Item {
 
     Row {
         id: row
-        width: parent.width
+        // connected: the tabs keep their own widths and the row is centred (and glides as it re-centres)
+        x: root.connected ? root.rowStartFor(root.currentIndex) : 0
+        width: root.connected ? implicitWidth : parent.width
+        Behavior on x {
+            enabled: root.connected
+            Anim {
+                role: "spatial"
+            }
+        }
         Repeater {
             id: repeater
             model: root.tabs
@@ -148,8 +180,22 @@ Item {
                 required property int index
                 readonly property bool isCurrent: modelData.id === root.current
                 readonly property real contentWidth: content.implicitWidth
-                width: row.width / Math.max(1, root.tabs.length)
+                readonly property real labelWidth: nameMetrics.advanceWidth
+                width: root.connected ? root.iconSlot + (tab.isCurrent ? root.unfold(tab.index) : 0) : (root.width / Math.max(1, root.tabs.length))
+                Behavior on width {
+                    enabled: root.connected
+                    Anim {
+                        role: "spatial"
+                    }
+                }
                 height: root.inline ? 34 : content.implicitHeight + Metrics.s3 * 2
+                TextMetrics {
+                    id: nameMetrics
+                    font.family: Type.ui
+                    font.pixelSize: Type.label
+                    font.weight: Font.Medium
+                    text: tab.modelData.label ?? tab.modelData.id
+                }
 
                 Rectangle {
                     anchors.fill: parent
@@ -161,8 +207,45 @@ Item {
                         ColorAnim {}
                     }
                 }
+                // connected: the icon, and the name unfolding beside it (only the current tab's)
+                Row {
+                    visible: root.connected
+                    anchors.left: parent.left
+                    anchors.leftMargin: Metrics.s4
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Metrics.s2
+                    Icon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        name: tab.modelData.icon ?? ""
+                        size: Metrics.icon
+                        color: tab.isCurrent ? Theme.ink : Theme.inkMuted
+                        Behavior on color {
+                            ColorAnim {}
+                        }
+                    }
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.max(0, tab.width - root.iconSlot - Metrics.s2 + Metrics.s4)
+                        height: name.implicitHeight
+                        clip: true
+                        Label {
+                            id: name
+                            role: "label"
+                            tone: "ink"
+                            font.weight: Font.Medium
+                            opacity: tab.isCurrent ? 1 : 0
+                            Behavior on opacity {
+                                Anim {
+                                    role: "effects"
+                                }
+                            }
+                            text: tab.modelData.label ?? tab.modelData.id
+                        }
+                    }
+                }
                 Grid {
                     id: content
+                    visible: !root.connected
                     anchors.centerIn: parent
                     columns: root.inline ? 2 : 1
                     spacing: root.inline ? Metrics.s2 : 3
@@ -172,7 +255,7 @@ Item {
                         visible: root.showIcons
                         name: tab.modelData.icon ?? ""
                         size: root.inline ? 15 : 18
-                        color: tab.isCurrent ? (root.connected ? Theme.ink : Theme.accent) : Theme.inkMuted
+                        color: tab.isCurrent ? Theme.accent : Theme.inkMuted
                         Behavior on color {
                             ColorAnim {}
                         }
@@ -180,8 +263,7 @@ Item {
                     Label {
                         visible: root.showLabels
                         role: "label"
-                        tone: tab.isCurrent ? (root.connected ? "ink" : "accent") : "muted"
-                        font.weight: tab.isCurrent && root.connected ? Font.Medium : Font.Normal
+                        tone: tab.isCurrent ? "accent" : "muted"
                         text: tab.modelData.label ?? tab.modelData.id
                     }
                 }
