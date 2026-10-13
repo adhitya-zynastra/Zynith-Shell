@@ -138,11 +138,10 @@ Column {
                 ["Blur", ExperiencePolicy.blurQuality],
                 ["Shadows", ExperiencePolicy.shadowQuality],
                 ["Effects", ExperiencePolicy.effectsQuality],
-                ["Visualizer", ExperiencePolicy.visualizerQuality + (ExperiencePolicy.visualizerBands > 0 ? " · " + ExperiencePolicy.visualizerBands + " bands" : "")],
-                ["Wallpaper", ExperiencePolicy.wallpaperQuality + " · " + ExperiencePolicy.wallpaperTransitionMs + " ms transitions"],
-                ["Thumbnails", ExperiencePolicy.thumbnailQuality + " · " + ExperiencePolicy.thumbnailSize + " px"],
-                ["Background work", ExperiencePolicy.backgroundActivity + " · samplers every " + (ExperiencePolicy.updateIntervalMs / 1000) + " s"],
-                ["Prefetch", ExperiencePolicy.prefetchRadius + " items ahead"]
+                // only what something reads: the wallpaper's own transition is the native shell's (Wallpaper page)
+                ["Visualizer", ExperiencePolicy.visualizerBands > 0 ? ExperiencePolicy.visualizerBands + " bands" : "off"],
+                ["Thumbnails", ExperiencePolicy.thumbnailSize + " px"],
+                ["Background work", "samplers every " + (ExperiencePolicy.updateIntervalMs / 1000) + " s"]
             ]
             delegate: Item {
                 required property var modelData

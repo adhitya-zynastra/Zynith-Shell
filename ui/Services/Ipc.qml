@@ -201,7 +201,8 @@ Singleton {
         }
         function captureBar(key: string, path: string): string {
             const item = PanelRouter.barItems[key];
-            if (!item)
+            // an entry outlives its item when the surface is gone (a destroyed item has no grabToImage)
+            if (!item || typeof item.grabToImage !== "function")
                 return "no such bar";
             item.grabToImage(r => r.saveToFile(path));
             return "ok";

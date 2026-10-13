@@ -217,13 +217,26 @@ Singleton {
     }
 
     // ── actions (state changes here first, so the browser answers at once; the shell's event confirms) ──
-    // a change in progress, for the reveal: { path, output ("" = every screen), x, y } in screen coordinates
-    property var reveal: null
+    // Where a change was chosen (the browser's card, in screen coordinates): the native wallpaper grows the new
+    // image out of that point (wallpaper-reveal, a disc over its configured duration). One renderer draws the
+    // change; [wallpaper] reveal = none leaves it to the configured transitions.
+    function revealFrom(output: string, origin: var): void {
+        if ((Config.wallpaper?.reveal ?? "circle") === "none" || (origin?.x ?? -1) < 0)
+            return;
+        const screens = Quickshell.screens;
+        const s = output !== "" ? screens.find(sc => sc.name === output) : screens.find(sc => origin.x >= sc.x && origin.x < sc.x + sc.width && origin.y >= sc.y && origin.y < sc.y + sc.height);
+        if (!s || s.width <= 0 || s.height <= 0)
+            return;
+        const nx = Math.max(0, Math.min(1, (origin.x - s.x) / s.width));
+        const ny = Math.max(0, Math.min(1, (origin.y - s.y) / s.height));
+        CoreClient.call("wallpaper-reveal " + s.name + " " + nx.toFixed(4) + " " + ny.toFixed(4));
+    }
     function applyImage(path: string, origin: var): void {
-        reveal = { path: path, output: "", x: origin?.x ?? -1, y: origin?.y ?? -1 };
         current = path;
         mode = "static";
         rememberRecent(path);
+        // a change for every output starts from the output it was chosen on
+        revealFrom("", origin);
         CoreClient.call("wallpaper-set " + path, reply => {
             if (reply.startsWith("ok"))
                 CoreClient.call("wallpaper-live-stop");
@@ -232,8 +245,8 @@ Singleton {
         });
     }
     function applyImageOn(output: string, path: string, origin: var): void {
-        reveal = { path: path, output: output, x: origin?.x ?? -1, y: origin?.y ?? -1 };
         rememberRecent(path);
+        revealFrom(output, origin);
         CoreClient.call("wallpaper-set " + output + " " + path);
     }
     function applyLive(id: string): void {

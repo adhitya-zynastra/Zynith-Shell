@@ -27,6 +27,5 @@ ShellRoot {
     Osd {}
     NotificationPopups {}
     DesktopLayer {}
-    WallpaperReveal {}
     OverviewCompanion {}
 }
