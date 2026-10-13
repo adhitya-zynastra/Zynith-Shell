@@ -28,7 +28,8 @@ Column {
         delegate: Item {
             id: row
             required property var modelData
-            readonly property bool shown: root.shows(modelData)
+            // a fine-tuning row (adv) waits for Settings' "Advanced settings", as Ryoku's Hub gates its own
+            readonly property bool shown: root.shows(modelData) && (!(modelData.adv ?? false) || Config.settingsAdvanced)
             readonly property var value: root.valueOf(modelData.key)
             width: root.width
             height: shown ? column.implicitHeight + (root.divided ? Metrics.s3 : 0) : 0

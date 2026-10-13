@@ -339,6 +339,14 @@ FloatingWindow {
         id: routePage
         Column {
             spacing: Metrics.s7
+            // the page's eyebrow, as Ryoku's page head: its group, numbered
+            Label {
+                visible: win.focusTitle === "" && page.routeSpec.group !== ""
+                role: "data"
+                tone: "faint"
+                bottomPadding: -Metrics.s5
+                text: "—  " + Routes.groupIndex(page.routeSpec.group) + "  " + page.routeSpec.group.toUpperCase()
+            }
             Loader {
                 id: zynithPage
                 width: parent.width
