@@ -101,6 +101,13 @@ TestCase {
         verify(list[0] !== list[1]);
         compare(M.addComponent(s, r.id, "middle", "volume"), s, "an unknown section is refused");
     }
+    function test_a_new_instance_starts_from_the_kinds_own_settings() {
+        let r = made({ bars: [], widgets: { network: { show_label: false } } }, {}, "X", 1);
+        const s = M.addComponent(r.state, r.id, "end", "network");
+        const inst = M.find(s, r.id).widgets.end[0];
+        compare(s.widgets[inst], { show_label: false, type: "network" });
+        compare(s.widgets.network, { show_label: false }, "the kind's table itself is left as it was");
+    }
     function test_remove_component_drops_its_instance() {
         let r = made(empty(), { widgets: { end: ["volume", "battery"] } }, "X", 1);
         const [vol, bat] = r.state.bars[0].widgets.end;
@@ -263,6 +270,13 @@ TestCase {
         compare(v.state.bars[0], good.bars[0]);
     }
 
+    function test_places_said_in_plain_words() {
+        const r = made(empty(), { edge: "top", anchor: "left" }, "A", 1);
+        compare(r.state.bars[0].anchor, "start");
+        compare(M.find(M.place(r.state, r.id, "right", "bottom"), r.id).anchor, "end");
+        compare(M.find(M.place(r.state, r.id, "top", "Centre"), r.id).anchor, "center");
+        compare(M.place(r.state, r.id, "top", "diagonal"), r.state, "nonsense is refused");
+    }
     function test_position_labels() {
         compare(M.positionLabel({ edge: "top", anchor: "start" }), "Top · Left");
         compare(M.positionLabel({ edge: "right", anchor: "end" }), "Right · Bottom");

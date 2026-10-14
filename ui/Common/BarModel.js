@@ -37,6 +37,14 @@ function clone(v) {
     return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
 }
 
+// a place along an edge as a person says it: left/top → start, right/bottom → end, centre/middle → center,
+// full/full width → fill; anything else is returned as given (and validation reports it)
+function anchorWord(word) {
+    var w = String(word || "").toLowerCase().replace(/[^a-z]/g, "");
+    var map = { left: "start", top: "start", start: "start", right: "end", bottom: "end", end: "end", center: "center", centre: "center", middle: "center", fill: "fill", full: "fill", fullwidth: "fill", fullheight: "fill", fulllength: "fill" };
+    return map[w] !== undefined ? map[w] : word;
+}
+
 function vertical(bar) {
     return bar.edge === "left" || bar.edge === "right";
 }
@@ -162,11 +170,12 @@ function newInstanceName(state, type) {
     return type + "-" + n;
 }
 
-// a component of its own, configured as `from` (another instance's name) or fresh; returns { state, name }
+// a component of its own, configured as `from` (another instance's name), else as the kind's own settings (the
+// [widget.<kind>] table the user tuned: a new clock starts as their clock, not a blank one); returns { state, name }
 function instantiate(state, type, from) {
     var name = newInstanceName(state, type);
     var widgets = Object.assign({}, state.widgets || {});
-    var source = from !== undefined ? (state.widgets || {})[from] : undefined;
+    var source = (state.widgets || {})[from !== undefined ? from : type];
     widgets[name] = Object.assign({}, clone(source) || {}, { type: type });
     return { state: { bars: state.bars, widgets: widgets }, name: name };
 }
@@ -272,7 +281,9 @@ function separate(state, id, section, index) {
 
 // what a new bar starts as: a small floating bar where asked, holding nothing (its components are the user's)
 function blank(position) {
-    var p = position || {};
+    var p = Object.assign({}, position || {});
+    if (p.anchor !== undefined)
+        p.anchor = anchorWord(p.anchor);
     return {
         enabled: true,
         edge: edges.indexOf(p.edge) >= 0 ? p.edge : "top",
@@ -293,6 +304,8 @@ function blank(position) {
 // components of its own — kind names in the spec become instances; settings given as { type, settings } too
 function create(state, spec, name, seed) {
     var bar = Object.assign(blank(spec), clone(spec) || {});
+    if (bar.anchor !== undefined)
+        bar.anchor = anchorWord(bar.anchor);
     bar.id = newId(ids(state), seed);
     bar.name = name ? uniqueName(String(name), names(state)) : suggestName(bar, names(state));
     var next = state;
@@ -424,6 +437,7 @@ function setKey(state, id, key, value) {
 
 // where it sits, in one step: an edge and a place along it (the offset goes back to 0, so the new spot is exact)
 function place(state, id, edge, anchor) {
+    anchor = anchorWord(anchor);
     if (edges.indexOf(edge) < 0 || anchors.indexOf(anchor) < 0)
         return state;
     return withBar(state, id, function (b) {
