@@ -101,6 +101,13 @@ Item {
         color: root.fill
         border.width: !root.edge ? 0 : root.edgeWidth >= 0 ? root.edgeWidth : Theme.hairlineWidth
         border.color: root.edgeColor !== "" ? Theme.colour(root.edgeColor) : Theme.hairline
+        // a change of material (or palette) glides instead of snapping; an interrupted one restarts from where it is
+        Behavior on color {
+            ColorAnim {}
+        }
+        Behavior on border.color {
+            ColorAnim {}
+        }
 
         Rectangle {
             visible: root.sheen

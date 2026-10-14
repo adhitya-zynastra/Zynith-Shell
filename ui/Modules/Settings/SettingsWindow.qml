@@ -11,7 +11,10 @@ FloatingWindow {
     title: "Zynith Settings"
     implicitWidth: 980
     implicitHeight: 660
-    color: Theme.surface
+    // Settings is read, so it takes the material with restraint: Solid opaque; Glass and Blur only lightly
+    // translucent (never under 0.9), with niri's blur behind it in Blur
+    readonly property real sheetAlpha: Material.solid ? 1 : Math.max(Material.blur ? 0.88 : 0.92, Material.fillAlpha + 0.22)
+    color: "transparent"
 
     property string route: Quickshell.env("ZYNITH_SETTINGS_ROUTE") || "home"
     property string query: ""
@@ -63,8 +66,13 @@ FloatingWindow {
     }
 
     Rectangle {
+        id: backdrop
         anchors.fill: parent
-        color: Theme.surface
+        color: Theme.alpha(Theme.surface, win.sheetAlpha)
+    }
+    BlurRegion {
+        window: win
+        item: backdrop
     }
 
     // ── sidebar ─────────────────────────────────────────────────────────────
@@ -73,7 +81,7 @@ FloatingWindow {
         width: 236
         anchors.top: parent.top
         anchors.bottom: parent.bottom
-        color: Theme.surfaceLow
+        color: Theme.alpha(Theme.surfaceLow, win.sheetAlpha)
 
         Flickable {
             anchors.fill: parent
