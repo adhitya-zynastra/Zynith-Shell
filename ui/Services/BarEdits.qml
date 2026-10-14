@@ -2,6 +2,8 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import qs.Common
 import "../Common/BarModel.js" as BarModel
 
 // Every change to the bars goes through here: one BarModel edit, written in one atomic step (the bars and the
@@ -47,6 +49,30 @@ Singleton {
         lastLabel = "Undid: " + last.label;
         revision++;
         return last.label;
+    }
+
+    // ── a value being dragged: shown on the bar at once, written only when let go ──
+    // The preview travels through a small file in XDG_RUNTIME_DIR (memory, not disk), which the shell watches
+    // (Config.barPreview): Settings is a process of its own. Nothing goes to bars.toml and nothing enters the
+    // undo history until the release (setKey), which then ends the preview.
+    function preview(id: string, key: string, value: var): void {
+        previewFile.setText(JSON.stringify({ id: id, key: key, value: value, seq: ++previewSeq }));
+    }
+    function endPreview(id: string, key: string, value: var, cancel: bool): void {
+        previewFile.setText(JSON.stringify({ ended: { id: id, key: key, value: value, cancel: cancel === true }, seq: ++previewSeq }));
+    }
+    // the same for one setting of a component instance ([widget.<name>])
+    function previewComponent(name: string, key: string, value: var): void {
+        previewFile.setText(JSON.stringify({ widget: name, key: key, value: value, seq: ++previewSeq }));
+    }
+    function endComponentPreview(name: string, key: string, value: var, cancel: bool): void {
+        previewFile.setText(JSON.stringify({ ended: { widget: name, key: key, value: value, cancel: cancel === true }, seq: ++previewSeq }));
+    }
+    property int previewSeq: 0
+    property FileView previewFile: FileView {
+        path: Paths.runtime + "/bar-preview.json"
+        printErrors: false
+        blockLoading: true
     }
 
     // ── the operations, by bar id ──

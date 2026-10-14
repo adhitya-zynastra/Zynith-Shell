@@ -34,17 +34,76 @@ Singleton {
     // a wrong kind of value falls back and is reported once, unknown keys are kept)
     readonly property var barCheck: BarModel.validate({
         bars: barsFile.values.bar ?? [],
-        widgets: barsFile.values.widget ?? {}
+        widgets: savedBarWidgets
     })
-    readonly property var bars: barCheck.state.bars
+    // A setting being dragged in Settings, shown before it is written: { id, key, value } from the preview file
+    // (BarEdits.preview), laid over that one bar. Only its release writes bars.toml; the overlay goes once the
+    // written value has come back (or after a moment), so the bar never springs back to the old value between.
+    readonly property var bars: barPreview && barPreview.id !== undefined ? barCheck.state.bars.map(b => b.id === barPreview.id ? Object.assign({}, b, {
+                [barPreview.key]: barPreview.value
+            }) : b) : barCheck.state.bars
+    property var barPreview: null
+    property var barPreviewEnded: null
+    FileView {
+        id: barPreviewFile
+        path: Paths.runtime + "/bar-preview.json"
+        watchChanges: true
+        printErrors: false
+        // what was there before this process started is someone else's finished drag: only changes count
+        property bool primed: false
+        onLoaded: {
+            if (!primed) {
+                primed = true;
+                return;
+            }
+            let p = null;
+            try {
+                p = JSON.parse(text());
+            } catch (e) {
+                return;
+            }
+            if (p && p.ended) {
+                root.barPreviewEnded = p.ended;
+                root.settlePreview();
+                previewSettle.restart();
+            } else if (p && (p.id !== undefined || p.widget !== undefined) && p.key !== undefined) {
+                previewSettle.stop();
+                root.barPreviewEnded = null;
+                root.barPreview = p.widget !== undefined ? { widget: p.widget, key: p.key, value: p.value } : { id: p.id, key: p.key, value: p.value };
+            }
+        }
+        onLoadFailed: primed = true
+        onFileChanged: reload()
+    }
+    // the drag ended: the overlay goes as soon as bars.toml carries the value (or was given up on)
+    function settlePreview(): void {
+        const e = barPreviewEnded;
+        if (!e || !barPreview)
+            return;
+        const b = e.widget !== undefined ? savedBarWidgets[e.widget] : barCheck.state.bars.find(x => x.id === e.id);
+        if (!b || JSON.stringify(b[e.key]) === JSON.stringify(e.value) || e.cancel) {
+            barPreview = null;
+            barPreviewEnded = null;
+        }
+    }
+    Timer {
+        id: previewSettle
+        interval: 1500
+        onTriggered: {
+            root.barPreview = null;
+            root.barPreviewEnded = null;
+        }
+    }
     onBarCheckChanged: {
         for (const p of barCheck.problems)
             console.warn("zynith: bars.toml:", p);
+        settlePreview();
     }
-    // the bars and their component instances, as BarModel edits them
+    // the bars and their component instances, as BarModel edits them: the saved ones, never a preview (an edit, and
+    // the undo step it records, must start from what is in the file)
     readonly property var barState: ({
-            bars: bars,
-            widgets: barWidgets
+            bars: barCheck.state.bars,
+            widgets: savedBarWidgets
         })
     // a whole edit (bars and the component tables they name) in one atomic write
     function applyBars(state: var): bool {
@@ -71,7 +130,13 @@ Singleton {
     }
     // named bar widgets ([widget.<name>] in bars.toml: type, settings, [widget.<name>.actions]) and capsule
     // groups ([[group]]: id, members, fill, opacity, padding, spacing, accordion, direction)
-    readonly property var barWidgets: barsFile.values.widget ?? ({})
+    readonly property var savedBarWidgets: barsFile.values.widget ?? ({})
+    // a component setting being dragged, laid over its instance (as barPreview for a bar)
+    readonly property var barWidgets: barPreview && barPreview.widget !== undefined ? Object.assign({}, savedBarWidgets, {
+            [barPreview.widget]: Object.assign({}, savedBarWidgets[barPreview.widget] ?? {}, {
+                [barPreview.key]: barPreview.value
+            })
+        }) : savedBarWidgets
     readonly property var barGroups: barsFile.values.group ?? []
     // a bar list entry → what to draw: { name, type, settings, actions }
     function resolveBarWidget(name: string): var {
@@ -87,7 +152,7 @@ Singleton {
         };
     }
     function setBarWidget(name: string, table: var): void {
-        const all = Object.assign({}, barWidgets);
+        const all = Object.assign({}, savedBarWidgets);
         all[name] = table;
         barsFile.set("widget", all);
     }
@@ -179,7 +244,7 @@ Singleton {
         barsFile.set("bar", list);
     }
     function setBarWidgetKey(name: string, key: string, value: var): void {
-        const table = Object.assign({}, barWidgets[name] ?? {});
+        const table = Object.assign({}, savedBarWidgets[name] ?? {});
         if (value === undefined)
             delete table[key];
         else
@@ -187,7 +252,7 @@ Singleton {
         setBarWidget(name, table);
     }
     function setBarWidgetAction(name: string, gesture: string, action: var): void {
-        const table = Object.assign({}, barWidgets[name] ?? {});
+        const table = Object.assign({}, savedBarWidgets[name] ?? {});
         const actions = Object.assign({}, table.actions ?? {});
         if (action === undefined)
             delete actions[gesture];

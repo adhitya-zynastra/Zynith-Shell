@@ -18,6 +18,12 @@ Column {
     property var isSet: key => false
     signal changed(string key, var value)
     signal cleared(string key)
+    // commitOnRelease: a slider being dragged reports previewed(key, value) and only its release is a change (one
+    // write, one undo step); off, every movement is a change, as before
+    property bool commitOnRelease: false
+    signal previewed(string key, var value)
+    // the drag is over: committed with `value`, or canceled (the setting is unchanged)
+    signal previewEnded(string key, var value, bool canceled)
     // a hairline between settings (a list, as the native Settings draws its sections)
     property bool divided: false
     // fine-tuning rows (adv): "gate" waits for Settings' Advanced switch; "hide" leaves them out (a page that
@@ -109,6 +115,11 @@ Column {
                         item.spec = Qt.binding(() => row.modelData);
                         item.val = Qt.binding(() => row.value);
                         item.apply = v => root.changed(row.modelData.key, v);
+                        if (item.preview !== undefined) {
+                            item.preview = v => root.previewed(row.modelData.key, v);
+                            item.endPreview = (v, canceled) => root.previewEnded(row.modelData.key, v, canceled);
+                            item.live = Qt.binding(() => !root.commitOnRelease);
+                        }
                     }
                 }
                 Label {
@@ -203,15 +214,49 @@ Column {
             property var spec: ({})
             property var val
             property var apply: v => {}
+            property var preview: v => {}
+            property var endPreview: (v, canceled) => {}
+            // live: every movement is applied (the old way); else movements preview and the release applies
+            property bool live: true
+            property var shown: undefined
+            property var lastApplied: undefined
             spacing: Metrics.s3
+            function toValue(v: real): var {
+                const raw = ctl.spec.from + v * (ctl.spec.to - ctl.spec.from);
+                const stepped = Math.round(raw / ctl.spec.step) * ctl.spec.step;
+                return ctl.spec.kind === "int" ? Math.round(stepped) : Number(stepped.toFixed(3));
+            }
             Slider {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - 56 - Metrics.s3
                 value: ((Number(ctl.val ?? ctl.spec.from) || 0) - ctl.spec.from) / ((ctl.spec.to - ctl.spec.from) || 1)
+                step: (ctl.spec.step || 1) / ((ctl.spec.to - ctl.spec.from) || 1)
                 onMoved: v => {
-                    const raw = ctl.spec.from + v * (ctl.spec.to - ctl.spec.from);
-                    const stepped = Math.round(raw / ctl.spec.step) * ctl.spec.step;
-                    ctl.apply(ctl.spec.kind === "int" ? Math.round(stepped) : Number(stepped.toFixed(3)));
+                    const x = ctl.toValue(v);
+                    ctl.shown = x;
+                    if (ctl.live) {
+                        if (x !== ctl.lastApplied) {
+                            ctl.lastApplied = x;
+                            ctl.apply(x);
+                        }
+                    } else {
+                        ctl.preview(x);
+                    }
+                }
+                onCommitted: v => {
+                    const x = ctl.toValue(v);
+                    ctl.shown = undefined;
+                    if (!ctl.live || x !== ctl.lastApplied) {
+                        ctl.lastApplied = x;
+                        ctl.apply(x);
+                    }
+                    if (!ctl.live)
+                        ctl.endPreview(x, false);
+                }
+                onCanceled: {
+                    ctl.shown = undefined;
+                    if (!ctl.live)
+                        ctl.endPreview(undefined, true);
                 }
             }
             Label {
@@ -221,7 +266,8 @@ Column {
                 role: "label"
                 numeric: true
                 tone: "muted"
-                text: ctl.val === "auto" ? "auto" : ctl.spec.kind === "int" ? Math.round(Number(ctl.val ?? 0)) : Number(ctl.val ?? 0).toFixed(ctl.spec.step < 0.1 ? 2 : 1)
+                readonly property var v: ctl.shown !== undefined ? ctl.shown : ctl.val
+                text: v === "auto" ? "auto" : ctl.spec.kind === "int" ? Math.round(Number(v ?? 0)) : Number(v ?? 0).toFixed(ctl.spec.step < 0.1 ? 2 : 1)
             }
         }
     }

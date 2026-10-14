@@ -12,6 +12,8 @@ Singleton {
     readonly property string config: Quickshell.env("ZYNITH_CONFIG_DIR") || configHome + "/zynith"
     readonly property string state: stateHome + "/zynith"
     readonly property string cache: cacheHome + "/zynith"
+    // per session, in memory (XDG_RUNTIME_DIR): transient state shared between the UI's processes
+    readonly property string runtime: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/zynith"
 
     // the native shell, which holds the core services (clipboard history, wallpaper, lock) during migration
     readonly property string core: home + "/.local/opt/noctalia/bin/noctalia"

@@ -340,6 +340,9 @@ Column {
                         shows: spec => !spec.when || Object.entries(spec.when).every(([k, v]) => v.includes(root.bar?.[k] ?? "center"))
                         onChanged: (key, value) => root.setBar(key, value)
                         onCleared: key => root.setBar(key, undefined)
+                        commitOnRelease: true
+                        onPreviewed: (key, value) => BarEdits.preview(root.barId, key, value)
+                        onPreviewEnded: (key, value, canceled) => BarEdits.endPreview(root.barId, key, value, canceled)
                     }
                 }
             }
@@ -372,6 +375,15 @@ Column {
 
             Card {
                 width: parent.width
+                caption: "Corners"
+                CornersEditor {
+                    width: parent.width
+                    page: root
+                }
+            }
+
+            Card {
+                width: parent.width
                 caption: "Size and look"
                 SchemaForm {
                     width: parent.width
@@ -382,6 +394,9 @@ Column {
                     isSet: key => root.bar?.[key] !== undefined
                     onChanged: (key, value) => root.setBar(key, value)
                     onCleared: key => root.setBar(key, undefined)
+                    commitOnRelease: true
+                    onPreviewed: (key, value) => BarEdits.preview(root.barId, key, value)
+                    onPreviewEnded: (key, value, canceled) => BarEdits.endPreview(root.barId, key, value, canceled)
                 }
             }
 
@@ -397,6 +412,9 @@ Column {
                     isSet: key => root.bar?.[key] !== undefined
                     onChanged: (key, value) => root.setBar(key, value)
                     onCleared: key => root.setBar(key, undefined)
+                    commitOnRelease: true
+                    onPreviewed: (key, value) => BarEdits.preview(root.barId, key, value)
+                    onPreviewEnded: (key, value, canceled) => BarEdits.endPreview(root.barId, key, value, canceled)
                 }
             }
 
@@ -445,6 +463,9 @@ Column {
                         isSet: key => root.bar?.[key] !== undefined
                         onChanged: (key, value) => root.setBar(key, value)
                         onCleared: key => root.setBar(key, undefined)
+                        commitOnRelease: true
+                        onPreviewed: (key, value) => BarEdits.preview(root.barId, key, value)
+                        onPreviewEnded: (key, value, canceled) => BarEdits.endPreview(root.barId, key, value, canceled)
                     }
                 }
             }
@@ -509,7 +530,6 @@ Column {
         { key: "spacing", label: "Between components (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 24, step: 1 },
         { key: "opacity", label: "Opacity (0 follows the profile)", kind: "slider", default: 0, from: 0, to: 1, step: 0.01 },
         { key: "blur", label: ExperiencePolicy.blur ? "Blur behind it" : "Blur behind it (the current profile turns blur off)", kind: "toggle", default: true },
-        { key: "radius", label: "Corner radius (-1 is a pill)", kind: "int", default: -1, from: -1, to: 48, step: 1 },
         { key: "border", label: "Border", kind: "toggle", default: true },
         { key: "shadow", label: ExperiencePolicy.shadows ? "Shadow" : "Shadow (the current profile turns shadows off)", kind: "toggle", default: true },
         { key: "concave_edge_corners", label: "Flows into the screen edge (with no gap)", kind: "toggle", default: false },
@@ -519,10 +539,6 @@ Column {
         { key: "color", label: "Component colour", kind: "colour", default: "" },
         { key: "group_style", label: "Groups look like", kind: "choice", default: "capsule", options: [{ key: "capsule", label: "Capsules" }, { key: "rule", label: "Rules" }, { key: "plate", label: "A tone step" }] },
         { key: "capsule", label: "Every component in a capsule", kind: "toggle", default: false },
-        { adv: true, key: "radius_top_left", label: "Top left corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
-        { adv: true, key: "radius_top_right", label: "Top right corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
-        { adv: true, key: "radius_bottom_right", label: "Bottom right corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
-        { adv: true, key: "radius_bottom_left", label: "Bottom left corner", kind: "int", default: -1, from: -1, to: 48, step: 1, hint: "-1 follows the radius" },
         { adv: true, key: "border_color", label: "Border colour", kind: "colour", default: "", when: { border: [true] } },
         { adv: true, key: "border_width", label: "Border width (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 4, step: 1, when: { border: [true] } },
         { adv: true, key: "scale", label: "Content size", kind: "slider", default: 1, from: 0.5, to: 2, step: 0.01 },
@@ -558,6 +574,136 @@ Column {
     ]
 
     // ── pieces ─────────────────────────────────────────────────────────────────
+
+    // The four corners: linked (one radius for all) or each on its own. Every slider runs to what the bar can
+    // show (half its thickness: a rounder corner is drawn at that), previews on the bar while dragged and is
+    // written when let go. Corners squared because the bar flows into the screen edge say so instead of
+    // pretending to move. The shape beside them is the bar's own corner rule (BarModel.cornerRadii).
+    component CornersEditor: Column {
+        id: corners
+        property var page
+        readonly property var bar: page.bar ?? ({})
+        readonly property bool linked: BarModel.cornersLinked(bar)
+        readonly property int most: Math.floor((bar.thickness ?? 34) / 2)
+        readonly property var squared: BarModel.squaredCorners(bar)
+        readonly property var drawn: BarModel.cornerRadii(Config.bars.find(b => b.id === page.barId) ?? bar, { w: 1e6, h: bar.thickness ?? 34 }, Metrics.radiusScale, null)
+        readonly property var labels: ["Top left", "Top right", "Bottom right", "Bottom left"]
+        spacing: Metrics.s4
+        Row {
+            width: parent.width
+            spacing: Metrics.s4
+            Segmented {
+                width: Math.min(280, parent.width - shape.width - Metrics.s4)
+                anchors.verticalCenter: parent.verticalCenter
+                options: [{ key: "linked", label: "All the same" }, { key: "each", label: "Each corner" }]
+                current: corners.linked ? "linked" : "each"
+                onPicked: key => BarEdits.commit(BarModel.setCornersLinked(BarEdits.state, corners.page.barId, key === "linked"), key === "linked" ? "Link the corners" : "Set each corner")
+            }
+            // the bar's ends as they will be drawn (live while a corner is dragged)
+            Rectangle {
+                id: shape
+                width: 150
+                height: Math.max(16, Math.min(48, corners.bar.thickness ?? 34))
+                readonly property real k: height / (corners.bar.thickness ?? 34)
+                color: Theme.alpha(Theme.ink, 0.2)
+                border.width: 1
+                border.color: Theme.accentLine
+                topLeftRadius: corners.drawn[0] * k
+                topRightRadius: corners.drawn[1] * k
+                bottomRightRadius: corners.drawn[2] * k
+                bottomLeftRadius: corners.drawn[3] * k
+            }
+        }
+        CornerSlider {
+            visible: corners.linked
+            width: parent.width
+            label: "Radius"
+            key: "radius"
+            page: corners.page
+            most: corners.most
+            // a radius left out (or -1) is a pill: half the thickness
+            current: (corners.bar.radius ?? -1) < 0 ? corners.most : corners.bar.radius
+        }
+        Repeater {
+            model: corners.linked ? [] : [0, 1, 2, 3]
+            delegate: CornerSlider {
+                required property int modelData
+                width: corners.width
+                label: corners.labels[modelData]
+                key: BarModel.cornerKeys[modelData]
+                page: corners.page
+                most: corners.most
+                locked: corners.squared.includes(modelData)
+                current: {
+                    const own = corners.bar[BarModel.cornerKeys[modelData]];
+                    const base = (corners.bar.radius ?? -1) < 0 ? corners.most : corners.bar.radius;
+                    return own === undefined || own < 0 ? base : own;
+                }
+            }
+        }
+        Label {
+            visible: corners.squared.length > 0
+            width: parent.width
+            role: "caption"
+            tone: "faint"
+            wrapMode: Text.WordWrap
+            text: "The " + corners.squared.map(i => corners.labels[i].toLowerCase()).join(" and ") + " corners are square because the bar flows into the screen edge there. Turn off \"Flows into the screen edge\" under Size and look to round them."
+        }
+    }
+
+    component CornerSlider: Item {
+        id: cs
+        property var page
+        property string label
+        property string key
+        property int most: 17
+        property real current: 0
+        property bool locked: false
+        property var shown: undefined
+        implicitHeight: 30
+        opacity: locked ? 0.45 : 1
+        Label {
+            anchors.verticalCenter: parent.verticalCenter
+            width: 110
+            role: "label"
+            tone: "muted"
+            text: cs.label
+        }
+        Slider {
+            x: 110
+            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width - 110 - 56 - Metrics.s3
+            enabled: !cs.locked
+            value: cs.most > 0 ? Math.min(1, cs.current / cs.most) : 0
+            step: cs.most > 0 ? 1 / cs.most : 1
+            function px(v: real): int {
+                return Math.round(v * cs.most);
+            }
+            onMoved: v => {
+                cs.shown = px(v);
+                BarEdits.preview(cs.page.barId, cs.key, px(v));
+            }
+            onCommitted: v => {
+                cs.shown = undefined;
+                BarEdits.setKey(cs.page.barId, cs.key, px(v));
+                BarEdits.endPreview(cs.page.barId, cs.key, px(v), false);
+            }
+            onCanceled: {
+                cs.shown = undefined;
+                BarEdits.endPreview(cs.page.barId, cs.key, undefined, true);
+            }
+        }
+        Label {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            width: 56
+            horizontalAlignment: Text.AlignRight
+            role: "label"
+            numeric: true
+            tone: "muted"
+            text: cs.locked ? "square" : (cs.shown !== undefined ? cs.shown : Math.min(cs.current, cs.most)) + " px"
+        }
+    }
 
     // The screen with every bar drawn where it sits (a sketch from the settings: real lengths depend on what the
     // components show). The selected bar is the accent; a hidden one is an outline. Clicking one selects it.
@@ -1320,6 +1466,9 @@ Column {
             isSet: key => ws.spec.settings[key] !== undefined
             onChanged: (key, value) => BarEdits.setComponentKey(ws.name, key, value)
             onCleared: key => BarEdits.setComponentKey(ws.name, key, undefined)
+            commitOnRelease: true
+            onPreviewed: (key, value) => BarEdits.previewComponent(ws.name, key, value)
+            onPreviewEnded: (key, value, canceled) => BarEdits.endComponentPreview(ws.name, key, value, canceled)
         }
         Label {
             role: "micro"
