@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Zynith.Native
 import qs.Common
+import "../Common/BarModel.js" as BarModel
 
 // Zynith's configuration: one TOML file per domain in ~/.config/zynith. Each file holds only what differs from
 // the defaults below; edits on disk apply live, and every write from the UI goes through here.
@@ -29,7 +30,45 @@ Singleton {
     }
     readonly property var appearance: appearanceFile.values
     readonly property var animation: animationFile.values
-    readonly property var bars: barsFile.values.bar ?? []
+    // the bars as drawn: bars.toml's list made safe (BarModel.validate: each a table with a unique id and a name;
+    // a wrong kind of value falls back and is reported once, unknown keys are kept)
+    readonly property var barCheck: BarModel.validate({
+        bars: barsFile.values.bar ?? [],
+        widgets: barsFile.values.widget ?? {}
+    })
+    readonly property var bars: barCheck.state.bars
+    onBarCheckChanged: {
+        for (const p of barCheck.problems)
+            console.warn("zynith: bars.toml:", p);
+    }
+    // the bars and their component instances, as BarModel edits them
+    readonly property var barState: ({
+            bars: bars,
+            widgets: barWidgets
+        })
+    // a whole edit (bars and the component tables they name) in one atomic write
+    function applyBars(state: var): bool {
+        return barsFile.assign({
+            bar: state.bars,
+            widget: state.widgets
+        });
+    }
+    // bars.toml could not be read: nothing is written over it until it is fixed or recovered
+    readonly property string barsError: barsFile.error
+    // moves the broken file aside (bars.toml.broken-<time>) and starts again from the default bar; returns where
+    // the broken file went
+    function recoverBars(): string {
+        return barsFile.recover({
+            schema: BarModel.schemaVersion
+        });
+    }
+    // the user's own presets ([[preset]] in bars.toml)
+    readonly property var barPresets: barsFile.values.preset ?? []
+    function setBarPresets(list: var): bool {
+        return barsFile.assign({
+            preset: list
+        });
+    }
     // named bar widgets ([widget.<name>] in bars.toml: type, settings, [widget.<name>.actions]) and capsule
     // groups ([[group]]: id, members, fill, opacity, padding, spacing, accordion, direction)
     readonly property var barWidgets: barsFile.values.widget ?? ({})
@@ -557,6 +596,46 @@ Singleton {
         defaults: ({
                 behaviour: "config"
             })
+    }
+
+    // bars.toml's schema, brought up to date once: a copy of the file as it was first (bars.toml.pre-schema-<n>),
+    // then the migrated bars in one write. Only a file that exists and parses, and never while the session is
+    // locked (a write to watched config while locked once took the shell down).
+    Connections {
+        target: barsFile
+        function onValuesChanged(): void {
+            root.migrateBars();
+        }
+        function onLoadedChanged(): void {
+            root.migrateBars();
+        }
+    }
+    function migrateBars(): void {
+        if (!barsFile.loaded || !barsFile.exists || barsFile.error !== "" || Events.locked)
+            return;
+        const m = BarModel.migrate({
+            schema: barsFile.values.schema,
+            bar: barsFile.values.bar ?? [],
+            widget: barsFile.values.widget ?? {}
+        });
+        if (!m.changed)
+            return;
+        // a migration never drops a bar: anything else means the bars were misread, and nothing is written
+        const raw = BarModel.list(barsFile.values.bar);
+        if (m.file.bar.length !== raw.length) {
+            console.warn("zynith: bars.toml: migration would turn " + raw.length + " bars into " + m.file.bar.length + "; not migrating");
+            return;
+        }
+        const copy = barsFile.backup("pre-schema-" + BarModel.schemaVersion);
+        if (copy === "") {
+            console.warn("zynith: bars.toml: no backup could be made; not migrating");
+            return;
+        }
+        if (barsFile.assign({
+                schema: m.file.schema,
+                bar: m.file.bar
+            }))
+            console.info("zynith: bars.toml migrated (" + m.notes.join("; ") + "); the old file is " + copy);
     }
 
     // one-time move from the Stage 1 shell.json: each file is created only if it does not exist yet

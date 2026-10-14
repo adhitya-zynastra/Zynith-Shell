@@ -19,6 +19,20 @@ var sections = ["start", "center", "end"];
 var visibilities = ["always", "smart", "autohide"];
 var layers = ["bottom", "top", "overlay"];
 
+// a list as the config store hands it over (a QVariantList arrives list-like, not as an Array) or as JS made it.
+// Not "anything with a numeric length": a bar table has a `length` key of its own (its length along the edge).
+function isList(v) {
+    if (Array.isArray(v))
+        return true;
+    if (v === null || typeof v !== "object" || typeof v.length !== "number")
+        return false;
+    const keys = Object.keys(v);
+    return keys.indexOf("length") < 0 && keys.every(function (k) { return /^[0-9]+$/.test(k); });
+}
+function list(v) {
+    return isList(v) ? Array.prototype.slice.call(v) : [];
+}
+
 function clone(v) {
     return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
 }
@@ -461,22 +475,26 @@ function sanitizeBar(raw, problems) {
         problems.push(label + ": enabled is not true or false");
         b.enabled = b.enabled !== "false" && b.enabled !== 0;
     }
-    var tableOk = b.widgets && typeof b.widgets === "object" && !Array.isArray(b.widgets);
+    var tableOk = b.widgets && typeof b.widgets === "object" && !isList(b.widgets);
     if (b.widgets !== undefined && !tableOk)
         problems.push(label + ": widgets is not a table of start / center / end lists");
     var w = tableOk ? Object.assign({}, b.widgets) : {};
     sections.forEach(function (s) {
         if (w[s] === undefined)
             return;
-        if (!Array.isArray(w[s])) {
+        if (!isList(w[s])) {
             problems.push(label + ": widgets." + s + " is not a list");
             w[s] = typeof w[s] === "string" ? [w[s]] : [];
         }
-        w[s] = w[s].filter(function (n) { return typeof n === "string" && n !== ""; });
+        w[s] = list(w[s]).filter(function (n) { return typeof n === "string" && n !== ""; });
     });
     b.widgets = w;
-    if (b.screens !== undefined && !Array.isArray(b.screens))
-        b.screens = typeof b.screens === "string" ? [b.screens] : ["*"];
+    if (b.group !== undefined)
+        b.group = list(b.group).map(function (g) {
+            return g && typeof g === "object" ? Object.assign({}, g, { members: list(g.members) }) : g;
+        });
+    if (b.screens !== undefined)
+        b.screens = isList(b.screens) ? list(b.screens) : typeof b.screens === "string" ? [b.screens] : ["*"];
     return b;
 }
 
@@ -485,8 +503,8 @@ function validate(state) {
     var problems = [];
     var seen = [];
     var bars = [];
-    (Array.isArray(state.bars) ? state.bars : []).forEach(function (raw, i) {
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    (list(state.bars)).forEach(function (raw, i) {
+        if (!raw || typeof raw !== "object" || isList(raw)) {
             problems.push("bar " + (i + 1) + " is not a table; left out");
             return;
         }
@@ -503,7 +521,7 @@ function validate(state) {
             b.name = nameFromId(id);
         bars.push(b);
     });
-    var widgets = state.widgets && typeof state.widgets === "object" && !Array.isArray(state.widgets) ? state.widgets : {};
+    var widgets = state.widgets && typeof state.widgets === "object" && !isList(state.widgets) ? state.widgets : {};
     return { state: { bars: bars, widgets: widgets }, problems: problems };
 }
 

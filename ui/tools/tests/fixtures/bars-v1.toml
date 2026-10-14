@@ -1,0 +1,31 @@
+# Bars. (a v1 file as written before schema 2: indented sub-tables, a bar with its own length key)
+
+[widget.clock]
+format = '%H:%M'
+
+[[bar]]
+anchor = 'fill'
+edge = 'left'
+id = 'rail'
+length = 0
+thickness = 39
+
+    [bar.widgets]
+    end = [ 'tray', 'group:status' ]
+
+    [[bar.group]]
+    id = 'status'
+    members = [ 'network', 'volume' ]
+
+[[bar]]
+edge = 'bottom'
+id = 'time'
+length = 0
+
+    [bar.widgets]
+    center = [ 'clock' ]
+
+[[bar]]
+anchor = 'fill'
+edge = 'top'
+id = 'top-2'
