@@ -6,6 +6,7 @@ QtObject {
     readonly property int spatial: 0
     readonly property int effects: 0
     readonly property int standardEasing: Easing.Linear
+    readonly property int enterEasing: Easing.Linear
     readonly property var spatialCurve: [0.2, 0, 0, 1, 1, 1]
     readonly property var spatialFastCurve: spatialCurve
     readonly property var spatialSlowCurve: spatialCurve

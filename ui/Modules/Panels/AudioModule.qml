@@ -145,6 +145,7 @@ Flow {
                     onClicked: parent.out ? Audio.toggleMute() : Audio.toggleMicMute()
                 }
                 Slider {
+                    wheelAdjusts: true
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - Metrics.control - 40 - Metrics.s3 * 2
                     value: parent.out ? Audio.volume : Audio.micVolume
@@ -353,6 +354,7 @@ Flow {
                 }
             }
             Slider {
+                wheelAdjusts: true
                 width: parent.width
                 value: app.level
                 opacity: app.muted ? 0.5 : 1

@@ -95,6 +95,7 @@ Column {
                     onClicked: level.key === "volume" ? Audio.toggleMute() : level.key === "mic" ? Audio.toggleMicMute() : undefined
                 }
                 Slider {
+                    wheelAdjusts: true
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - Metrics.control - 40 - Metrics.s3 * 2
                     value: level.value

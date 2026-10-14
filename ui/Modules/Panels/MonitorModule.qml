@@ -125,6 +125,7 @@ Flow {
                     tone: "muted"
                 }
                 Slider {
+                    wheelAdjusts: true
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - Metrics.control - 40 - Metrics.s3 * 2
                     value: display.value

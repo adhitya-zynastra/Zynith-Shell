@@ -187,6 +187,7 @@ Column {
             onClicked: Audio.toggleMute()
         }
         Slider {
+            wheelAdjusts: true
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - 30 - 40 - Metrics.s3 * 2
             value: Audio.volume

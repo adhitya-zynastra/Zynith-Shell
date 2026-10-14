@@ -13,6 +13,7 @@ QtObject {
     readonly property color hairline: "#444"
     readonly property color well: "#222"
     readonly property color base: "#111"
+    readonly property color rule: "#555"
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);
     }

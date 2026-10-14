@@ -34,6 +34,7 @@ Item {
             onClicked: root.mic ? Audio.toggleMicMute() : Audio.toggleMute()
         }
         Slider {
+            wheelAdjusts: true
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - parent.spacing * 2 - Math.min(40, root.height * 0.8) - (root.compact ? 0 : 44)
             value: Math.min(1, root.level)
