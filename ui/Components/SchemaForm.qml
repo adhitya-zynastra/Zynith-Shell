@@ -20,6 +20,9 @@ Column {
     signal cleared(string key)
     // a hairline between settings (a list, as the native Settings draws its sections)
     property bool divided: false
+    // fine-tuning rows (adv): "gate" waits for Settings' Advanced switch; "hide" leaves them out (a page that
+    // shows them in an Advanced section of its own); "only" shows nothing else (that section)
+    property string advanced: "gate"
 
     spacing: divided ? Metrics.s3 : Metrics.s4
 
@@ -29,7 +32,8 @@ Column {
             id: row
             required property var modelData
             // a fine-tuning row (adv) waits for Settings' "Advanced settings", as Ryoku's Hub gates its own
-            readonly property bool shown: root.shows(modelData) && (!(modelData.adv ?? false) || Config.settingsAdvanced)
+            readonly property bool adv: modelData.adv ?? false
+            readonly property bool shown: root.shows(modelData) && (root.advanced === "only" ? adv : root.advanced === "hide" ? !adv : (!adv || Config.settingsAdvanced))
             readonly property var value: root.valueOf(modelData.key)
             width: root.width
             height: shown ? column.implicitHeight + (root.divided ? Metrics.s3 : 0) : 0

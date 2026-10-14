@@ -35,6 +35,7 @@ mouse device-mobile sunrise sunset uv-index chart-bar headset device-gamepad-2 t
 speakerphone battery-eco battery-off plug-connected cloud-sun umbrella temperature-sun arrows-exchange device-watch
 wand windmill haze gauge-filled bolt-off moon-2 dashboard calendar-week calendar-month hourglass-high ripple
 adjustments-alt shield-half arrow-narrow-up scale battery-charging-2 bolt-filled plug-filled brightness-up-filled brightness-down-filled repeat repeat-once shield-check
+restore replace bookmark device-floppy arrow-left arrow-right chevron-up
 """.split()
 
 

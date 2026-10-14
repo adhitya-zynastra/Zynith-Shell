@@ -287,7 +287,8 @@ PanelWindow {
     // the compositor blurs behind the bar only while it is there: a hidden bar must leave no frosted patch
     BlurRegion {
         window: win
-        item: pill.presence > 0.02 ? pill : null
+        // blur = false: this bar never asks for it (the profile can still turn every blur off)
+        item: pill.presence > 0.02 && win.spec.blur !== false ? pill : null
         radius: Math.min(win.radius, win.thickness / 2)
         // squared where a joined panel meets it, as the pill is
         corners: win.joinProgress > 0 ? pill.corners : null
