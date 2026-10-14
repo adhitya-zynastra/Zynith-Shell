@@ -28,7 +28,7 @@ Singleton {
         { id: "audio", title: "Sound", label: "Sound", detail: "Output device and each app's level", icon: "volume" },
         { id: "power", title: "Power", label: "Battery and power", detail: "Battery, profiles, charge limit", icon: "battery" },
         { id: "session", title: "Session", label: "Power actions", detail: "Lock, sleep, log out, restart, shut down", icon: "power" },
-        { id: "profile", title: "Experience", label: "Experience profile", detail: "How rich the shell's effects are", icon: "sparkles" },
+        { id: "profile", title: "Surfaces", label: "Surface style", detail: "Glass, Solid or Blur, and how strong", icon: "sparkles" },
         { id: "weather", title: "Weather", label: "Weather", detail: "Now and the days ahead", icon: "cloud" },
         { id: "calendar", title: "Calendar", label: "Calendar", detail: "The month and what is coming up", icon: "calendar" },
         { id: "notifications", title: "Notifications", label: "Notifications", detail: "The latest ones, and Do not disturb", icon: "bell" },

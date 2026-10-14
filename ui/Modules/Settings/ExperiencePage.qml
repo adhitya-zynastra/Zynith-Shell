@@ -3,79 +3,52 @@ import qs.Common
 import qs.Components
 import qs.Services
 
+// What the shell spends, and never how it looks: the look is Appearance → Surface style. One choice (follow power,
+// or always save), what that means right now, and whether blur and shadows may pause while power is short.
 Column {
     id: root
 
     spacing: Metrics.s5
 
-    readonly property var blurbs: ({
-            performance: "Light and immediate. Short fades, no blur, no shadows, no visualizer. For older or busy machines.",
-            balanced: "The everyday setting. Compositor blur, soft shadows, measured motion, a modest visualizer.",
-            enhanced: "Richer glass and depth, smoother visualizer, larger previews and more caching ahead of need.",
-            max: "Everything Zynith can do, spent where it shows: deepest glass, layered shadows, the fullest motion."
-        })
-
     PanelHeader {
         width: parent.width
-        title: "Experience"
-        caption: "How Zynith spends this machine"
+        title: "Performance"
+        caption: "What the shell spends on this machine — never how it looks"
     }
 
-    Grid {
+    Card {
         width: parent.width
-        columns: 2
-        spacing: Metrics.s3
-
-        Repeater {
-            model: ExperiencePolicy.profiles
-
-            delegate: Item {
-                required property string modelData
-                readonly property bool current: ExperiencePolicy.profile === modelData
-                width: (parent.width - parent.spacing) / 2
-                height: 104
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Metrics.radiusLg
-                    color: parent.current ? Theme.accentSoft : Theme.surfaceLow
-                    border.width: Metrics.hairline
-                    border.color: parent.current ? Theme.accentLine : Theme.hairline
+        caption: "The shell's own work"
+        Column {
+            width: parent.width
+            spacing: Metrics.s4
+            Segmented {
+                width: Math.min(parent.width, 420)
+                options: [{ key: "auto", label: "Follow power" }, { key: "save", label: "Always save" }]
+                current: ExperiencePolicy.efficiency
+                onPicked: key => ExperiencePolicy.setEfficiency(key)
+            }
+            Label {
+                width: parent.width
+                role: "body"
+                tone: "muted"
+                wrapMode: Text.WordWrap
+                text: ExperiencePolicy.efficiency === "save" ? "Previews stay small, the visualizer modest and background work slow, plugged in or not." : "Everything at its best while plugged in; previews, the visualizer and background work ease off on battery, and further with power saver."
+            }
+            Row {
+                spacing: Metrics.s3
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "caption"
+                    caps: true
+                    tone: "faint"
+                    text: "Right now"
                 }
-                Interactive {
-                    anchors.fill: parent
-                    radius: Metrics.radiusLg
-                    onClicked: ExperiencePolicy.select(parent.modelData)
-                }
-                Column {
-                    anchors.fill: parent
-                    anchors.margins: Metrics.s4
-                    spacing: Metrics.s2
-
-                    Row {
-                        spacing: Metrics.s3
-                        Label {
-                            role: "title"
-                            text: ExperiencePolicy.labels[parent.parent.parent.modelData]
-                        }
-                        Label {
-                            visible: ExperiencePolicy.hardwareProfile === parent.parent.parent.modelData
-                            anchors.verticalCenter: parent.verticalCenter
-                            role: "caption"
-                            tone: "accent"
-                            caps: true
-                            text: "Recommended"
-                        }
-                    }
-                    Label {
-                        width: parent.width
-                        role: "label"
-                        tone: "muted"
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideNone
-                        maximumLineCount: 3
-                        text: root.blurbs[parent.parent.modelData]
-                    }
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "label"
+                    tone: ExperiencePolicy.level === "full" ? "ink" : "accent"
+                    text: ExperiencePolicy.levelLabels[ExperiencePolicy.level] + (ExperiencePolicy.limitedBy !== "" ? "  ·  " + ExperiencePolicy.limitedBy : "")
                 }
             }
         }
@@ -83,36 +56,36 @@ Column {
 
     Card {
         width: parent.width
-        caption: "Selection"
+        caption: "When power is short"
+        Row {
+            width: parent.width
+            spacing: Metrics.s3
+            Toggle {
+                anchors.verticalCenter: parent.verticalCenter
+                checked: Config.experience.easeEffects !== false
+                onToggled: Config.setEaseEffects(Config.experience.easeEffects === false)
+            }
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 60
+                role: "body"
+                wrapMode: Text.WordWrap
+                text: "Pause blur and shadows while power saver is on or the battery is low. Your surface style stays chosen, and they come back as soon as power does."
+            }
+        }
+        Label {
+            visible: Material.pausedText !== ""
+            width: parent.width
+            role: "caption"
+            tone: "accent"
+            wrapMode: Text.WordWrap
+            text: Material.pausedText
+        }
+    }
 
-        Row {
-            spacing: Metrics.s3
-            Toggle {
-                anchors.verticalCenter: parent.verticalCenter
-                checked: ExperiencePolicy.automatic
-                onToggled: ExperiencePolicy.select(ExperiencePolicy.automatic ? ExperiencePolicy.profile : "auto")
-            }
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                role: "body"
-                text: "Follow the recommendation for this hardware (" + (ExperiencePolicy.labels[ExperiencePolicy.hardwareProfile] ?? "") + ", " + Hardware.tier + " tier)"
-            }
-        }
-        Row {
-            spacing: Metrics.s3
-            opacity: ExperiencePolicy.automatic ? 1 : 0.5
-            Toggle {
-                anchors.verticalCenter: parent.verticalCenter
-                checked: ExperiencePolicy.adaptive
-                onToggled: Config.setAdaptive(!ExperiencePolicy.adaptive)
-            }
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                role: "body"
-                text: "Ease off on battery: at most Balanced, Performance when low or power saving"
-                    + (ExperiencePolicy.limitedBy ? "  ·  now: " + ExperiencePolicy.labels[ExperiencePolicy.recommended] + " (" + ExperiencePolicy.limitedBy.toLowerCase() + ")" : "")
-            }
-        }
+    Card {
+        width: parent.width
+        caption: "Motion"
         Row {
             spacing: Metrics.s3
             Toggle {
@@ -123,25 +96,20 @@ Column {
             Label {
                 anchors.verticalCenter: parent.verticalCenter
                 role: "body"
-                text: "Reduce motion (any profile)"
+                text: "Reduce motion"
             }
         }
     }
 
     Card {
         width: parent.width
-        caption: "What this profile does"
-
+        caption: "What that means now"
         Repeater {
             model: [
-                ["Animation", ExperiencePolicy.animationQuality + " · ×" + ExperiencePolicy.animationScale.toFixed(1)],
-                ["Blur", ExperiencePolicy.blurQuality],
-                ["Shadows", ExperiencePolicy.shadowQuality],
-                ["Effects", ExperiencePolicy.effectsQuality],
-                // only what something reads: the wallpaper's own transition is the native shell's (Wallpaper page)
                 ["Visualizer", ExperiencePolicy.visualizerBands > 0 ? ExperiencePolicy.visualizerBands + " bands" : "off"],
-                ["Thumbnails", ExperiencePolicy.thumbnailSize + " px"],
-                ["Background work", "samplers every " + (ExperiencePolicy.updateIntervalMs / 1000) + " s"]
+                ["Previews", ExperiencePolicy.thumbnailSize + " px" + (ExperiencePolicy.richEffects ? ", animated" : ", still")],
+                ["Panels kept warm", ExperiencePolicy.panelKeepAliveMs > 0 ? Math.round(ExperiencePolicy.panelKeepAliveMs / 1000) + " s" : "no"],
+                ["Background work", "every " + (ExperiencePolicy.updateIntervalMs / 1000) + " s"]
             ]
             delegate: Item {
                 required property var modelData
@@ -166,8 +134,7 @@ Column {
             role: "caption"
             tone: "faint"
             wrapMode: Text.WordWrap
-            elide: Text.ElideNone
-            text: "Individual values can be overridden in ~/.config/zynith/shell.json under experience.overrides."
+            text: "Single values can be set in ~/.config/zynith/experience.toml under [overrides]."
         }
     }
 }

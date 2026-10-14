@@ -278,45 +278,15 @@ Column {
                 role: "caption"
                 tone: "faint"
                 caps: true
-                text: "Experience"
-            }
-            Label {
-                anchors.right: parent.right
-                role: "caption"
-                tone: ExperiencePolicy.automatic ? "accent" : "faint"
-                caps: true
-                text: !ExperiencePolicy.automatic ? "Manual  ·  set auto" : ExperiencePolicy.limitedBy ? "Auto  ·  " + ExperiencePolicy.limitedBy : "Auto"
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: ExperiencePolicy.select("auto")
-                }
+                text: "Surfaces"
             }
         }
 
         Segmented {
             width: parent.width
-            current: ExperiencePolicy.profile
-            options: [
-                {
-                    key: "performance",
-                    label: "Performance"
-                },
-                {
-                    key: "balanced",
-                    label: "Balanced"
-                },
-                {
-                    key: "enhanced",
-                    label: "Enhanced"
-                },
-                {
-                    key: "max",
-                    label: "Max"
-                }
-            ]
-            onPicked: key => ExperiencePolicy.select(key)
+            current: Material.style
+            options: [{ key: "glass", label: "Glass" }, { key: "solid", label: "Solid" }, { key: "blur", label: "Blur" }]
+            onPicked: key => Material.setStyle(key)
         }
 
         Label {
@@ -326,7 +296,7 @@ Column {
             wrapMode: Text.WordWrap
             elide: Text.ElideNone
             text: (Hardware.cpuModel || "CPU") + "  ·  " + Hardware.memGiB.toFixed(0) + " GB  ·  " + Hardware.gpuSummary
-                + "\nRecommended: " + (ExperiencePolicy.labels[ExperiencePolicy.hardwareProfile] ?? "")
+                + (Material.pausedText !== "" ? "\n" + Material.pausedText : "")
         }
     }
 }

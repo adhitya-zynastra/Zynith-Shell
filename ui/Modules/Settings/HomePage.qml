@@ -151,9 +151,9 @@ Column {
             size: "title"
         }
         Readout {
-            caption: "Experience"
-            value: ExperiencePolicy.labels[ExperiencePolicy.profile] ?? ""
-            unit: ExperiencePolicy.automatic ? "auto" : ""
+            caption: "Surfaces"
+            value: Material.style.charAt(0).toUpperCase() + Material.style.slice(1)
+            unit: Material.style === "solid" ? "" : Material.levelOf(Material.style === "blur" ? Material.blurStrength : Material.glassStrength)
             size: "title"
         }
     }
@@ -169,7 +169,7 @@ Column {
         case "wallpaper":
             return (Wallpapers.mode === "live" ? "Live" : "Still") + "  ·  " + (Config.wallpaper.layout ?? "carousel");
         case "experience":
-            return (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? "  ·  automatic" : "");
+            return (ExperiencePolicy.efficiency === "save" ? "Always saving" : "Following power") + "  ·  now " + ExperiencePolicy.levelLabels[ExperiencePolicy.level].toLowerCase();
         case "bars":
             return Config.bars.length + (Config.bars.length === 1 ? " bar" : " bars");
         case "widgets":

@@ -107,7 +107,7 @@ Column {
                 ["Graphics", Hardware.gpuSummary],
                 ["Kernel", root.kernel],
                 ["Uptime", root.duration(root.uptime)],
-                ["Experience", (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? "  ·  auto" : "")]
+                ["Surfaces", Material.style.charAt(0).toUpperCase() + Material.style.slice(1) + "  ·  shell " + ExperiencePolicy.levelLabels[ExperiencePolicy.level].toLowerCase()]
             ]
 
             delegate: Item {

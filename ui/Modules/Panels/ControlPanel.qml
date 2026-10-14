@@ -550,31 +550,31 @@ Column {
         }
     }
 
-    // ── the Experience profile: automatic, or one picked ──
+    // ── the surface style: what every surface is made of, and how strong (the same as Settings → Appearance) ──
     Component {
         id: profile
         Column {
             spacing: Metrics.s2
-            // chips that wrap: the names stay whole in a narrow column
-            Flow {
+            Segmented {
                 width: parent.width
-                spacing: Metrics.s1
-                Repeater {
-                    model: ["auto"].concat(ExperiencePolicy.profiles)
-                    delegate: Chip {
-                        required property string modelData
-                        text: modelData === "auto" ? "Auto" : ExperiencePolicy.labels[modelData]
-                        active: modelData === "auto" ? ExperiencePolicy.automatic : !ExperiencePolicy.automatic && ExperiencePolicy.profile === modelData
-                        onClicked: ExperiencePolicy.select(modelData)
-                    }
-                }
+                options: [{ key: "glass", label: "Glass" }, { key: "solid", label: "Solid" }, { key: "blur", label: "Blur" }]
+                current: Material.style
+                onPicked: key => Material.setStyle(key)
+            }
+            Segmented {
+                visible: Material.style !== "solid"
+                width: parent.width
+                options: [{ key: "subtle", label: "Subtle" }, { key: "balanced", label: "Balanced" }, { key: "strong", label: "Strong" }]
+                current: Material.levelOf(Material.style === "blur" ? Material.blurStrength : Material.glassStrength)
+                onPicked: key => Material.style === "blur" ? Material.setBlurStrength(Material.levels[key]) : Material.setGlassStrength(Material.levels[key])
             }
             Label {
+                visible: text !== ""
                 width: parent.width
                 role: "label"
                 tone: "faint"
                 elide: Text.ElideRight
-                text: (ExperiencePolicy.automatic ? "Now " + ExperiencePolicy.labels[ExperiencePolicy.profile] : "Picked by you") + (ExperiencePolicy.limitedBy !== "" ? "  ·  held back: " + ExperiencePolicy.limitedBy : "")
+                text: Material.pausedText
             }
         }
     }

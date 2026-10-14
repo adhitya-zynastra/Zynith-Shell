@@ -110,8 +110,8 @@ Flow {
         Label {
             anchors.right: parent.right
             role: "data"
-            tone: ExperiencePolicy.automatic ? "accent" : "faint"
-            text: "Experience · " + (ExperiencePolicy.labels[ExperiencePolicy.profile] ?? "") + (ExperiencePolicy.automatic ? " · auto" : "")
+            tone: ExperiencePolicy.level === "full" ? "faint" : "accent"
+            text: "Shell · " + ExperiencePolicy.levelLabels[ExperiencePolicy.level]
         }
     }
     Segmented {
@@ -317,7 +317,7 @@ Flow {
         }
     }
 
-    // ── the Experience profile (the page) ──
+    // ── what the shell spends (the page): following power, or saving always. How it looks is Appearance's. ──
     Column {
         visible: root.expanded
         width: root.colW
@@ -326,13 +326,20 @@ Flow {
             role: "caption"
             tone: "faint"
             caps: true
-            text: "Experience" + (ExperiencePolicy.limitedBy !== "" ? " · held by " + ExperiencePolicy.limitedBy.toLowerCase() : "")
+            text: "The shell's own work" + (ExperiencePolicy.limitedBy !== "" ? " · " + ExperiencePolicy.limitedBy.toLowerCase() : "")
         }
         Segmented {
             width: parent.width
-            current: ExperiencePolicy.automatic ? "auto" : ExperiencePolicy.selected
-            options: [{ key: "auto", label: "Auto" }, { key: "performance", label: "Light" }, { key: "balanced", label: "Balanced" }, { key: "enhanced", label: "Enhanced" }, { key: "max", label: "Max" }]
-            onPicked: key => ExperiencePolicy.select(key)
+            current: ExperiencePolicy.efficiency
+            options: [{ key: "auto", label: "Follow power" }, { key: "save", label: "Always save" }]
+            onPicked: key => ExperiencePolicy.setEfficiency(key)
+        }
+        Label {
+            width: parent.width
+            role: "label"
+            tone: "faint"
+            wrapMode: Text.WordWrap
+            text: "Previews, visualizer and background work ease off on battery. Your surface style stays as you set it" + (Material.pausedText !== "" ? "; " + Material.pausedText.charAt(0).toLowerCase() + Material.pausedText.slice(1) : ".")
         }
     }
 }
