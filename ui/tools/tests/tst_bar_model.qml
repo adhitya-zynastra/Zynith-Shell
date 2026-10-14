@@ -282,4 +282,54 @@ TestCase {
         compare(M.positionLabel({ edge: "right", anchor: "end" }), "Right · Bottom");
         compare(M.positionLabel({ edge: "bottom", anchor: "fill" }), "Bottom · Full length");
     }
+
+    // ── corners ──
+    readonly property var sheet: ({ w: 400, h: 40 })
+    function test_corners_each_on_its_own() {
+        const b = { edge: "top", thickness: 40, radius: 4, radius_top_left: 1, radius_top_right: 2, radius_bottom_right: 3, radius_bottom_left: 20 };
+        compare(M.cornerRadii(b, sheet, 1, null), [1, 2, 3, 20]);
+        compare(M.cornerRadii(Object.assign({}, b, { radius_top_right: -1 }), sheet, 1, null), [1, 4, 3, 20], "-1 follows the radius");
+    }
+    function test_corners_linked_and_pill() {
+        compare(M.cornerRadii({ edge: "top", thickness: 40, radius: 6 }, sheet, 1, null), [6, 6, 6, 6]);
+        compare(M.cornerRadii({ edge: "top", thickness: 40 }, sheet, 1, null), [20, 20, 20, 20], "no radius: a pill");
+        compare(M.cornerRadii({ edge: "top", thickness: 40, radius: 6 }, sheet, 1.5, null), [9, 9, 9, 9], "the theme's corner scale applies");
+    }
+    function test_corners_are_held_to_what_the_sheet_can_show() {
+        compare(M.cornerRadii({ edge: "top", thickness: 39, radius: 0, radius_bottom_left: 48 }, { w: 300, h: 39 }, 1, null), [0, 0, 0, 19.5]);
+    }
+    function test_flowing_into_the_edge_squares_only_the_edge_corners() {
+        // one tested rail: top edge, right end, flows into the edge; top right 48 can only ever be square
+        const rail = { edge: "top", anchor: "end", thickness: 39, margin: 0, concave_edge_corners: true, radius: 0, radius_top_right: 48, radius_bottom_left: 48 };
+        compare(M.cornerRadii(rail, { w: 300, h: 39 }, 1, null), [0, 0, 0, 19.5]);
+        compare(M.squaredCorners(rail), [0, 1], "Settings is told which corners are square, and why");
+        compare(M.squaredCorners(Object.assign({}, rail, { margin: 6 })), [], "with a gap to the edge nothing is squared");
+        compare(M.squaredCorners({ edge: "left", anchor: "fill", concave_edge_corners: true }), [1, 2], "a full-length bar flows into the screen's ends: its inner corners");
+    }
+    function test_a_joined_panel_squares_only_its_own_corners_and_lets_go() {
+        const b = { edge: "top", thickness: 40, radius: 10 };
+        compare(M.cornerRadii(b, sheet, 1, { start: true, end: false, progress: 1 }), [10, 10, 10, 0], "start side of the inner (bottom) edge: bottom left");
+        compare(M.cornerRadii(b, sheet, 1, { start: false, end: true, progress: 1 }), [10, 10, 0, 10], "end side: bottom right");
+        compare(M.cornerRadii(b, sheet, 1, { start: true, end: true, progress: 0.5 }), [10, 10, 5, 5], "halfway there");
+        compare(M.cornerRadii(b, sheet, 1, { start: true, end: true, progress: 0 }), [10, 10, 10, 10], "detached: the configured radii again");
+        compare(M.cornerRadii({ edge: "left", thickness: 40, radius: 10 }, { w: 40, h: 400 }, 1, { start: true, end: false, progress: 1 }), [10, 0, 10, 10], "a left bar: top right");
+    }
+    function test_linking_and_unlinking_keeps_the_shape() {
+        let r = made(empty(), { edge: "top", thickness: 40, radius: 8 }, "A", 1);
+        verify(M.cornersLinked(M.find(r.state, r.id)));
+        let s = M.setCornersLinked(r.state, r.id, false);
+        const b = M.find(s, r.id);
+        compare([b.radius_top_left, b.radius_top_right, b.radius_bottom_right, b.radius_bottom_left], [8, 8, 8, 8], "each corner starts as drawn");
+        verify(!M.cornersLinked(b));
+        s = M.setKey(s, r.id, "radius_top_left", 14);
+        s = M.setCornersLinked(s, r.id, true);
+        const c = M.find(s, r.id);
+        compare(c.radius, 14, "linked again: the top left corner's value");
+        compare(c.radius_top_left, undefined);
+        compare(M.cornerRadii(c, sheet, 1, null), [14, 14, 14, 14]);
+        // an unset radius (a pill) unlinks to the pill's radius
+        let p = made(empty(), { edge: "top", thickness: 30 }, "P", 2);
+        const q = M.find(M.setCornersLinked(p.state, p.id, false), p.id);
+        compare(q.radius_bottom_left, 15);
+    }
 }

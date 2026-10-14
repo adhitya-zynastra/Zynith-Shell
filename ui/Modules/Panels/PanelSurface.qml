@@ -259,9 +259,9 @@ PanelWindow {
     BlurRegion {
         window: win
         item: win.bare ? content.blurItem : card
-        // the card's own corners (attached: square only where it meets the bar)
+        // the card's corners exactly as drawn (attached: square only where it meets the bar)
         radius: card.radius
-        corners: card.corners
+        corners: card.drawnCorners
         followOpacity: !win.bare && !win.attached
         // an attached panel's fillets, each its square less the quarter circle that cuts it
         extra: win.attached ? fillets.blurShapes : []

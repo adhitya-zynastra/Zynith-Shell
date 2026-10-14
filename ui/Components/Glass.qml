@@ -26,12 +26,21 @@ Item {
     function clampR(r: real): real {
         return Math.min(Math.max(0, r), maxRadius);
     }
+    // the corners as drawn, [top left, top right, bottom right, bottom left]: what a window's blur region must
+    // follow, or the blur shows past a rounded corner as a square frosted patch
+    readonly property var drawnCorners: (corners ?? [radius, radius, radius, radius]).map(r => clampR(r))
 
     // The shadow falls only outside the sheet: a translucent sheet over its own shadow reads darker than
     // the native bar at the same opacity (measured: 47 vs 64 on the same wallpaper), so the sheet's shape
     // is cut out of it.
     readonly property bool shadowed: ExperiencePolicy.shadows && root.raised
-    readonly property int shadowPad: 24
+    readonly property real shadowBlur: ExperiencePolicy.shadowQuality === "layered" ? 18 : 10
+    readonly property real shadowOffset: ExperiencePolicy.shadowQuality === "layered" ? 6 : 3
+    // how far the shadow reaches past the sheet: a window must leave this much room around it, or the soft edge is
+    // cut off by the window's square bounds (a rectangle with sharp corners around the rounded sheet)
+    readonly property int shadowExtent: Math.ceil(shadowBlur + shadowOffset) + 2
+    readonly property int shadowReach: shadowed ? shadowExtent : 0
+    readonly property int shadowPad: Math.max(24, shadowReach)
     Item {
         id: shadowLayer
         anchors.fill: parent
@@ -41,10 +50,12 @@ Item {
         RectangularShadow {
             anchors.fill: parent
             anchors.margins: root.shadowPad
-            radius: Math.min(root.radius, Math.min(width, height) / 2)
+            // RectangularShadow takes one radius: the roundest drawn corner (the sheet's own shape is cut out of the
+            // shadow below, so a squarer corner never shows a gap)
+            radius: Math.max(...root.drawnCorners)
             color: Theme.shadow
-            blur: ExperiencePolicy.shadowQuality === "layered" ? 18 : 10
-            offset: Qt.vector2d(0, ExperiencePolicy.shadowQuality === "layered" ? 6 : 3)
+            blur: root.shadowBlur
+            offset: Qt.vector2d(0, root.shadowOffset)
         }
     }
     Item {

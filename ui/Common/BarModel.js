@@ -662,3 +662,81 @@ function alongRange(bar, length, reserved) {
     var b = v ? reserved.bottom : reserved.right;
     return [a, Math.max(a, length - b)];
 }
+
+// ── corners ─────────────────────────────────────────────────────────────────
+
+var cornerKeys = ["radius_top_left", "radius_top_right", "radius_bottom_right", "radius_bottom_left"];
+
+// the corners of a bar's sheet that touch the screen edge (flowing into it squares them), or its inner ones
+// (a full-length bar flush with the edge flows into the screen's ends instead): indices into [tl, tr, br, bl]
+function edgeCornerIndices(edge) {
+    return ({ top: [0, 1], bottom: [3, 2], left: [0, 3], right: [1, 2] })[edge] || [0, 1];
+}
+function innerCornerIndices(edge) {
+    return ({ top: [3, 2], bottom: [0, 1], left: [1, 2], right: [0, 3] })[edge] || [3, 2];
+}
+
+// What each corner of a bar is drawn with, in px, [top left, top right, bottom right, bottom left]: the one place
+// the sheet, its border, its blur region and its shadow take their shape from, so they always agree.
+//   bar: the spec; size: { w, h } of the sheet; radiusScale: the theme's corner scale;
+//   join: null or { start, end, progress } (a panel joined at the start / end side of the inner edge)
+// A corner's own value wins over `radius` (left out or below 0, it follows `radius`; `radius` below 0 is half
+// the thickness, a pill). Flowing into the screen edge squares the corners there. A joined panel squares the
+// inner corners on its side as it grows (progress 0..1). Every radius is held to half the sheet's short side.
+function cornerRadii(bar, size, radiusScale, join) {
+    var scale = radiusScale === undefined ? 1 : radiusScale;
+    var thickness = typeof bar.thickness === "number" ? bar.thickness : 34;
+    var base = typeof bar.radius === "number" && bar.radius >= 0 ? bar.radius * scale : thickness / 2;
+    var c = cornerKeys.map(function (k) {
+        var v = bar[k];
+        return typeof v === "number" && v >= 0 ? v * scale : base;
+    });
+    var flows = bar.concave_edge_corners === true && (bar.margin || 0) === 0;
+    if (flows) {
+        var fill = bar.anchor === "fill" && (bar.offset || 0) === 0;
+        (fill ? innerCornerIndices(bar.edge) : edgeCornerIndices(bar.edge)).forEach(function (i) { c[i] = 0; });
+    }
+    if (join && join.progress > 0 && (join.start || join.end)) {
+        var inner = innerCornerIndices(bar.edge);
+        var horizontal = bar.edge === "top" || bar.edge === "bottom";
+        var startCorner = horizontal ? (inner.indexOf(0) >= 0 ? 0 : 3) : (inner.indexOf(0) >= 0 ? 0 : 1);
+        var endCorner = inner[0] === startCorner ? inner[1] : inner[0];
+        if (join.start)
+            c[startCorner] = c[startCorner] * (1 - join.progress);
+        if (join.end)
+            c[endCorner] = c[endCorner] * (1 - join.progress);
+    }
+    var most = Math.max(0, Math.min(size.w, size.h) / 2);
+    return c.map(function (r) { return Math.max(0, Math.min(r, most)); });
+}
+
+// which corners the user cannot round on this bar (it flows into the screen edge there), for Settings to say so
+function squaredCorners(bar) {
+    if (!(bar.concave_edge_corners === true && (bar.margin || 0) === 0))
+        return [];
+    return bar.anchor === "fill" && (bar.offset || 0) === 0 ? innerCornerIndices(bar.edge) : edgeCornerIndices(bar.edge);
+}
+
+// linked: one radius for every corner (no per-corner keys); independent: all four set
+function cornersLinked(bar) {
+    return cornerKeys.every(function (k) { return bar[k] === undefined || bar[k] < 0; });
+}
+// to independent: each corner starts as it is drawn now (its own value, else the radius); to linked: the radius
+// becomes the top left corner's value (what the user sees first) and the per-corner keys go
+function setCornersLinked(state, id, linked) {
+    var bar = find(state, id);
+    if (!bar)
+        return state;
+    return withBar(state, id, function (b) {
+        var thickness = typeof b.thickness === "number" ? b.thickness : 34;
+        var base = typeof b.radius === "number" && b.radius >= 0 ? b.radius : thickness / 2;
+        var own = cornerKeys.map(function (k) { return typeof b[k] === "number" && b[k] >= 0 ? b[k] : base; });
+        if (linked) {
+            b.radius = own[0];
+            cornerKeys.forEach(function (k) { delete b[k]; });
+        } else {
+            cornerKeys.forEach(function (k, i) { b[k] = own[i]; });
+        }
+        return b;
+    });
+}

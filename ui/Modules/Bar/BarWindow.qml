@@ -68,28 +68,13 @@ PanelWindow {
             left: [1, 2],
             right: [0, 3]
         })[edge]
-    readonly property var corners: {
-        // a corner left out, or set below 0 (Settings' "follows the radius"), takes the radius
-        const own = [spec.radius_top_left, spec.radius_top_right, spec.radius_bottom_right, spec.radius_bottom_left].map(v => v === undefined || v < 0 ? undefined : v);
-        const joined = joinProgress > 0 && (join?.start || join?.end);
-        if (!concave && !joined && !own.some(v => v !== undefined))
-            return null;
-        const c = own.map(v => v ?? radius);
-        if (concave)
-            for (const i of (concaveMode === "edge" ? edgeCorners : innerCorners))
-                c[i] = 0;
-        // the inner corners at the ends a joined panel runs past go square with its growth
-        if (joined) {
-            const inner = innerCorners;   // [start side, end side] facing the panel
-            const startCorner = edge === "top" || edge === "bottom" ? (inner.includes(0) ? 0 : 3) : (inner.includes(0) ? 0 : 1);
-            const endCorner = inner.find(i => i !== startCorner);
-            if (join.start)
-                c[startCorner] = c[startCorner] * (1 - joinProgress);
-            if (join.end)
-                c[endCorner] = c[endCorner] * (1 - joinProgress);
-        }
-        return c;
-    }
+    // every corner as drawn (BarModel.cornerRadii: the one rule the sheet, its blur and its shadow share)
+    readonly property var corners: BarModel.cornerRadii(spec, {
+        w: pill.width,
+        h: pill.height
+    }, Metrics.radiusScale, joinProgress > 0 ? Object.assign({}, join, {
+        progress: joinProgress
+    }) : null)
     // bar-wide defaults the widgets read
     readonly property real contentScale: spec.scale ?? 1
     readonly property int fontWeight: Number(spec.font_weight ?? 400)
@@ -186,7 +171,10 @@ PanelWindow {
     readonly property int revealSize: Math.max(1, spec.reveal_size ?? 3)
 
     // Room for the shadow. Whatever part of it would fall off-screen is taken from the margins instead.
-    readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
+    // Room for the shadow: as far as it actually reaches (Glass.shadowExtent). A fixed 18 px left the last few
+    // pixels of a 24 px shadow cut off by the window's square edge — a sharp-cornered rectangle around the bar.
+    // Whatever part of it would fall off-screen is taken from the margins instead.
+    readonly property int pad: ExperiencePolicy.shadows && shadow ? pill.shadowExtent : 0
     // a bar that hides keeps its surface on the screen edge (the margin is inside it), so its summoning strip
     // is where the pointer stops
     readonly property int edgeGap: hides ? 0 : Math.max(0, margin - pad)
@@ -289,9 +277,19 @@ PanelWindow {
         window: win
         // blur = false: this bar never asks for it (the profile can still turn every blur off)
         item: pill.presence > 0.02 && win.spec.blur !== false ? pill : null
-        radius: Math.min(win.radius, win.thickness / 2)
-        // squared where a joined panel meets it, as the pill is
-        corners: win.joinProgress > 0 ? pill.corners : null
+        // the sheet's corners exactly as drawn: a blur region with one radius stood out past the corners that were
+        // rounder than it, a square frosted patch most visible while a workspace slid behind the bar
+        corners: pill.drawnCorners
+        // and the fillets where it flows into the screen edge, which are part of the same surface
+        extra: win.concave && pill.presence > 0.98 ? scene.fillets().map(f => ({
+                    x: f.x,
+                    y: f.y,
+                    w: f.r,
+                    h: f.r,
+                    cutX: (f.solid === "tr" || f.solid === "br" ? f.x : f.x + f.r) - f.r,
+                    cutY: (f.solid === "bl" || f.solid === "br" ? f.y : f.y + f.r) - f.r,
+                    cut: 2 * f.r
+                })) : []
     }
 
     // along the bar: at its anchor, the extra summoning room on the far side (both sides when centred)
@@ -366,6 +364,7 @@ PanelWindow {
         })
     onAnchorOriginChanged: PanelRouter.noteBar(spec.id ?? "", screen?.name ?? "", anchorOrigin)
     Component.onDestruction: {
+        delete PanelRouter.barItems[(spec.id ?? "") + "@" + (screen?.name ?? "")];
         PanelRouter.forgetBar(spec.id ?? "", screen?.name ?? "");
         PanelRouter.hold(screen?.name ?? "", "bar:" + (spec.id ?? ""), false);
     }
