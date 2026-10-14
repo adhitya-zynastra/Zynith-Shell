@@ -65,14 +65,14 @@ Singleton {
     }
     // the room each bar keeps windows out of, per output: bar@screen -> { screen, edge, size }
     property var zones: ({})
-    // an output's work area (the screen less the bars' reserved room; zones on one edge stack), in its own
-    // coordinates: { x, y, w, h }
+    // an output's work area (the screen less the bars' reserved room; the bars on one edge share one reservation,
+    // as deep as the deepest: EdgeReserve), in its own coordinates: { x, y, w, h }
     function workArea(screenName: string, width: real, height: real): var {
         const inset = { top: 0, bottom: 0, left: 0, right: 0 };
         for (const k in zones) {
             const z = zones[k];
             if (z.screen === screenName && z.size > 0 && inset[z.edge] !== undefined)
-                inset[z.edge] += z.size;
+                inset[z.edge] = Math.max(inset[z.edge], z.size);
         }
         return {
             x: inset.left,

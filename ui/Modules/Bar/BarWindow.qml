@@ -5,6 +5,7 @@ import qs.Common
 import qs.Components
 import qs.Services
 import qs.Widgets
+import "../../Common/BarModel.js" as BarModel
 
 // One bar on one output. Geometry comes from the bar spec: an edge (top/bottom/left/right), an anchor
 // along it (start/center/end/fill), an offset from the anchored corner, a margin from the screen edge.
@@ -195,29 +196,45 @@ PanelWindow {
 
     readonly property real contentLength: (vertical ? sections.implicitHeight : sections.implicitWidth) + padding * 2
     readonly property real screenLength: vertical ? (screen?.height ?? 0) : (screen?.width ?? 0)
-    readonly property real pillLength: anchorAt === "fill" ? screenLength - offset * 2 : fixedLength > 0 ? fixedLength : Math.max(thickness, contentLength)
+    // the stretch of the edge it is laid out along: the whole edge, or (reference = workspace) what the bars on
+    // the neighbouring edges keep for themselves leaves of it. rangeStart / rangeEnd: the room left at either end.
+    readonly property var reserved: BarModel.reservations(Config.bars, screen?.name ?? "")
+    readonly property var range: BarModel.alongRange(spec, screenLength, reserved)
+    readonly property real rangeStart: range[0]
+    readonly property real rangeEnd: Math.max(0, screenLength - range[1])
+    // centred in a stretch that is not the whole edge: the compositor can only centre on the whole output, so the
+    // window is placed from the start side instead
+    readonly property bool centredInRange: anchorAt === "center" && rangeStart !== rangeEnd
+    readonly property real pillLength: anchorAt === "fill" ? (range[1] - range[0]) - offset * 2 : fixedLength > 0 ? fixedLength : Math.max(thickness, contentLength)
 
     WlrLayershell.namespace: "zynith-bar-" + (spec.id ?? "bar")
     WlrLayershell.layer: spec.layer === "overlay" ? WlrLayer.Overlay : spec.layer === "bottom" ? WlrLayer.Bottom : WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    exclusionMode: reserve && visibility === "always" ? ExclusionMode.Normal : reference === "workspace" ? ExclusionMode.Auto : ExclusionMode.Ignore
-    // margin_opposite: more reserved room on the inner side, for windows that ignore the zone's edge
-    // (setting exclusiveZone turns the mode to Normal, so a bar placed on the whole output says -1 itself:
-    // with 0, niri laid the centred bars out beside the rail's zone, 58 px narrower and off-centre)
-    exclusiveZone: reserve && visibility === "always" ? thickness + margin + (spec.margin_opposite ?? 0) : reference === "workspace" ? 0 : -1
+    // Bars never reserve room themselves: the compositor stacks the zones of surfaces on one edge, so three bars
+    // side by side on the top edge would each have been pushed below the one before. The room is kept by one
+    // EdgeReserve surface per output and edge, as deep as the deepest bar there that keeps windows clear
+    // (BarModel.reservations); every bar is placed against the whole output and keeps clear of its neighbours'
+    // edges itself (reference = workspace).
+    exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
+    // along the edge: anchored at the start side (start, fill, or centred in a stretch), the end side (end, fill)
+    readonly property bool startAnchored: anchorAt === "start" || anchorAt === "fill" || centredInRange
+    readonly property bool endAnchored: anchorAt === "end" || anchorAt === "fill"
+    // the window's distance from the start / end of the edge
+    readonly property real startMargin: centredInRange ? Math.round(rangeStart + (range[1] - range[0] - alongSize) / 2) : alongGap + rangeStart
+    readonly property real endMargin: alongGap + rangeEnd
     anchors {
-        top: edge === "top" || (vertical && (anchorAt === "start" || anchorAt === "fill"))
-        bottom: edge === "bottom" || (vertical && (anchorAt === "end" || anchorAt === "fill"))
-        left: edge === "left" || (!vertical && (anchorAt === "start" || anchorAt === "fill"))
-        right: edge === "right" || (!vertical && (anchorAt === "end" || anchorAt === "fill"))
+        top: edge === "top" || (vertical && startAnchored)
+        bottom: edge === "bottom" || (vertical && endAnchored)
+        left: edge === "left" || (!vertical && startAnchored)
+        right: edge === "right" || (!vertical && endAnchored)
     }
     margins {
-        top: edge === "top" ? edgeGap : vertical && anchorAt !== "end" && anchorAt !== "center" ? alongGap : 0
-        bottom: edge === "bottom" ? edgeGap : vertical && (anchorAt === "end" || anchorAt === "fill") ? alongGap : 0
-        left: edge === "left" ? edgeGap : !vertical && anchorAt !== "end" && anchorAt !== "center" ? alongGap : 0
-        right: edge === "right" ? edgeGap : !vertical && (anchorAt === "end" || anchorAt === "fill") ? alongGap : 0
+        top: edge === "top" ? edgeGap : vertical && startAnchored ? startMargin : 0
+        bottom: edge === "bottom" ? edgeGap : vertical && endAnchored ? endMargin : 0
+        left: edge === "left" ? edgeGap : !vertical && startAnchored ? startMargin : 0
+        right: edge === "right" ? edgeGap : !vertical && endAnchored ? endMargin : 0
     }
 
     // near = the screen edge / anchored corner side, far = the opposite side
@@ -300,7 +317,7 @@ PanelWindow {
             return edgeGap;
         if (edge === "right")
             return w - width - edgeGap;
-        return anchorAt === "end" ? w - width - alongGap : anchorAt === "center" ? (w - width) / 2 : alongGap;
+        return anchorAt === "end" ? w - width - endMargin : anchorAt === "center" && !centredInRange ? (w - width) / 2 : startMargin;
     }
     function windowScreenY(): real {
         const h = screen?.height ?? 0;
@@ -308,7 +325,7 @@ PanelWindow {
             return edgeGap;
         if (edge === "bottom")
             return h - height - edgeGap;
-        return anchorAt === "end" ? h - height - alongGap : anchorAt === "center" ? (h - height) / 2 : alongGap;
+        return anchorAt === "end" ? h - height - endMargin : anchorAt === "center" && !centredInRange ? (h - height) / 2 : startMargin;
     }
     // how far into the screen the bar reaches, measured from the pill as drawn: where an attached panel meets it
     // exactly (panel_overlap, a floating panel's gap or overlap, does not apply to a joint)
