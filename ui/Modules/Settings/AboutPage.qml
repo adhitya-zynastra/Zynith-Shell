@@ -3,18 +3,93 @@ import qs.Common
 import qs.Components
 import qs.Services
 
+// Zynith itself: the mark (assembled as the page opens), the name and its line, the version, the project's own
+// places, and what it is built on and licensed under.
 Column {
     spacing: Metrics.s5
 
-    PanelHeader {
+    // ── the mark and the name ──
+    Item {
         width: parent.width
-        title: "About"
-        caption: "Zynith " + About.zynithVersion
+        height: 168
+        LogoReveal {
+            id: mark
+            width: 140
+            height: 140
+            anchors.verticalCenter: parent.verticalCenter
+        }
+        Column {
+            anchors.left: mark.right
+            anchors.leftMargin: Metrics.s6
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Metrics.s2
+            Label {
+                role: "micro"
+                caps: true
+                tone: "accent"
+                text: "// " + About.zynithVersion
+            }
+            Text {
+                text: "ZYNITH SHELL"
+                color: Theme.ink
+                font.family: Type.display
+                font.pixelSize: Math.round(34 * Type.scale)
+                font.weight: Font.Medium
+                font.letterSpacing: 4
+            }
+            Label {
+                width: parent.width
+                role: "body"
+                tone: "muted"
+                wrapMode: Text.WordWrap
+                text: "For the pursuit of elegance and freedom."
+            }
+        }
     }
 
     Card {
         width: parent.width
-        caption: "Software"
+        caption: "The project"
+        Repeater {
+            model: [
+                ["Source", "github.com/adhitya-zynastra/Zynith-Shell", "https://github.com/adhitya-zynastra/Zynith-Shell"],
+                ["Documentation", "github.com/adhitya-zynastra/zynith-shell-docs", "https://github.com/adhitya-zynastra/zynith-shell-docs"],
+                ["License", "GNU GPL v3.0", "https://www.gnu.org/licenses/gpl-3.0.html"]
+            ]
+            delegate: Item {
+                required property var modelData
+                width: parent.width
+                height: 24
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "caption"
+                    tone: "faint"
+                    caps: true
+                    text: parent.modelData[0]
+                }
+                Label {
+                    id: link
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    role: "label"
+                    tone: linkArea.containsMouse ? "accent" : "muted"
+                    text: parent.modelData[1] + "  ↗"
+                    MouseArea {
+                        id: linkArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Qt.openUrlExternally(link.parent.modelData[2])
+                    }
+                }
+            }
+        }
+    }
+
+    Card {
+        width: parent.width
+        caption: "This system"
 
         Repeater {
             model: [["Zynith", About.zynithVersion], ["niri", About.niriVersion], ["Quickshell", About.quickshellVersion], ["Operating system", About.os], ["Kernel", About.kernel]]
