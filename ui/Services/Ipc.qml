@@ -234,6 +234,57 @@ Singleton {
             }
             return JSON.stringify(out);
         }
+        // the bars, from a terminal (zynith-ui ipc barsDo "<command>"; and for tests): the Bar Manager's operations
+        // through BarEdits
+        //   list | create <edge> <anchor> [name] | preset <key> add|replace | rename <id> <name> | duplicate <id>
+        //   remove <id> | show <id> | hide <id> | place <id> <edge> <anchor> | move <id> <-1|1>
+        //   add <id> <start|center|end> <kind> | set <id> <key> <json> | component <instance> <key> <json> | undo
+        function barsDo(args: string): string {
+            const a = args.trim().split(/\s+/);
+            const rest = n => a.slice(n).join(" ");
+            const out = v => JSON.stringify(v);
+            switch (a[0] ?? "list") {
+            case "list":
+                return out(Config.bars.map(b => ({ id: b.id, name: b.name, edge: b.edge, anchor: b.anchor, enabled: b.enabled !== false, widgets: b.widgets })));
+            case "create":
+                return out(BarEdits.create({ edge: a[1], anchor: a[2] }, rest(3)));
+            case "preset":
+                return out(BarEdits.applyPreset(a[1], a[2] ?? "add"));
+            case "rename":
+                BarEdits.rename(a[1], rest(2));
+                break;
+            case "duplicate":
+                return out(BarEdits.duplicate(a[1]));
+            case "remove":
+                BarEdits.remove(a[1]);
+                break;
+            case "show":
+            case "hide":
+                BarEdits.setEnabled(a[1], a[0] === "show");
+                break;
+            case "place":
+                BarEdits.place(a[1], a[2], a[3]);
+                break;
+            case "move":
+                BarEdits.move(a[1], parseInt(a[2]));
+                break;
+            case "add":
+                BarEdits.addComponent(a[1], a[2], a[3]);
+                break;
+            case "set":
+                BarEdits.setKey(a[1], a[2], JSON.parse(rest(3)));
+                break;
+            case "component":
+                // component <instance> <key> <json>: one setting of one component instance
+                BarEdits.setComponentKey(a[1], a[2], JSON.parse(rest(3)));
+                break;
+            case "undo":
+                return out(BarEdits.undo());
+            default:
+                return "unknown: " + a[0];
+            }
+            return out(BarEdits.lastLabel);
+        }
         function panelRect(): string {
             const r = PanelRouter.rects[root.focusedScreen()] ?? null;
             return JSON.stringify(r ? Object.assign({ window: PanelRouter.windowSizes[root.focusedScreen()] ?? null }, r) : null);
