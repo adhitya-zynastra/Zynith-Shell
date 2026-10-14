@@ -45,6 +45,15 @@ public:
     Q_INVOKABLE QVariant get(const QString& keyPath, const QVariant& fallback = QVariant()) const;
     // writes the file with `contents` (a map) when it does not exist yet; used for one-time migrations
     Q_INVOKABLE bool create(const QVariantMap& contents);
+    // several top-level keys in one atomic write (a null value removes its key): a change that spans keys (a bar
+    // and the component tables it names) never lands half-written
+    Q_INVOKABLE bool assign(const QVariantMap& changes);
+    // a copy of the file as it is now, beside it: <path>.<tag>; returns the copy's path ("" when it failed)
+    Q_INVOKABLE QString backup(const QString& tag);
+    // when the file on disk cannot be parsed, nothing is written over it (the values in memory are the defaults
+    // or the last good ones, not the user's file). recover() moves the broken file aside (<path>.broken-<time>)
+    // and writes `contents`; returns the path the broken file went to
+    Q_INVOKABLE QString recover(const QVariantMap& contents);
 
     void classBegin() override {}
     void componentComplete() override;

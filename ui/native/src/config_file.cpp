@@ -1,6 +1,7 @@
 #include "config_file.h"
 
 #include <QCryptographicHash>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -279,11 +280,55 @@ bool ConfigFile::write(const QVariantMap& contents) {
 }
 
 void ConfigFile::set(const QString& keyPath, const QVariant& value) {
+    if (!m_error.isEmpty()) {
+        qWarning("zynith: not writing %s while it has an error (%s)", qPrintable(m_path), qPrintable(m_error));
+        return;
+    }
     write(withKey(m_file, keyPath.split(QLatin1Char('.')), value, false));
 }
 
 void ConfigFile::reset(const QString& keyPath) {
+    if (!m_error.isEmpty()) {
+        qWarning("zynith: not writing %s while it has an error (%s)", qPrintable(m_path), qPrintable(m_error));
+        return;
+    }
     write(withKey(m_file, keyPath.split(QLatin1Char('.')), QVariant(), true));
+}
+
+bool ConfigFile::assign(const QVariantMap& changes) {
+    if (!m_error.isEmpty()) {
+        qWarning("zynith: not writing %s while it has an error (%s)", qPrintable(m_path), qPrintable(m_error));
+        return false;
+    }
+    QVariantMap next = m_file;
+    for (auto it = changes.cbegin(); it != changes.cend(); ++it) {
+        if (it.value().isNull() || !it.value().isValid())
+            next.remove(it.key());
+        else
+            next.insert(it.key(), it.value());
+    }
+    return write(next);
+}
+
+QString ConfigFile::backup(const QString& tag) {
+    if (m_path.isEmpty() || !QFile::exists(m_path) || tag.isEmpty() || tag.contains(QLatin1Char('/')))
+        return {};
+    const QString to = m_path + QLatin1Char('.') + tag;
+    if (QFile::exists(to))
+        return to; // the first copy under a tag is the one kept
+    return QFile::copy(m_path, to) ? to : QString();
+}
+
+QString ConfigFile::recover(const QVariantMap& contents) {
+    if (m_error.isEmpty() || m_path.isEmpty())
+        return {};
+    const QString aside = m_path + QStringLiteral(".broken-") + QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd-HHmmss"));
+    if (!QFile::rename(m_path, aside))
+        return {};
+    m_error.clear();
+    emit errorChanged();
+    m_file.clear();
+    return write(contents) ? aside : QString();
 }
 
 QVariant ConfigFile::get(const QString& keyPath, const QVariant& fallback) const {
