@@ -44,7 +44,8 @@ PanelWindow {
     readonly property bool reserve: spec.reserve ?? false
     // style: keys left out follow appearance.toml
     readonly property real radius: (spec.radius ?? -1) >= 0 ? spec.radius * Metrics.radiusScale : thickness / 2
-    readonly property real sheetOpacity: (spec.opacity ?? 0) > 0 ? Math.min(1, spec.opacity) : Theme.glassAlpha
+    // a bar's own opacity applies to Glass and Blur; Solid is opaque by definition (the global style wins)
+    readonly property real sheetOpacity: !Material.solid && (spec.opacity ?? 0) > 0 ? Math.min(1, spec.opacity) : Theme.glassAlpha
     readonly property bool border: spec.border ?? true
     readonly property int spacingOverride: spec.spacing ?? -1
     readonly property int padding: spec.padding ?? Metrics.s3
@@ -174,7 +175,7 @@ PanelWindow {
     // Room for the shadow: as far as it actually reaches (Glass.shadowExtent). A fixed 18 px left the last few
     // pixels of a 24 px shadow cut off by the window's square edge — a sharp-cornered rectangle around the bar.
     // Whatever part of it would fall off-screen is taken from the margins instead.
-    readonly property int pad: ExperiencePolicy.shadows && shadow ? pill.shadowExtent : 0
+    readonly property int pad: Material.shadows && shadow ? pill.shadowExtent : 0
     // a bar that hides keeps its surface on the screen edge (the margin is inside it), so its summoning strip
     // is where the pointer stops
     readonly property int edgeGap: hides ? 0 : Math.max(0, margin - pad)
@@ -351,6 +352,8 @@ PanelWindow {
             reach: reach(),
             // what an attached panel needs to be one surface with the bar: its fill, its span along the edge
             fillOpacity: sheetOpacity,
+            // the bar's own opacity setting (0: none), so a joined panel resolves its fill live with the bar's rule
+            barOpacity: spec.opacity ?? 0,
             barSpan: barSpan(),
             barId: spec.id ?? "",
             // for diagnostics: the bar window's own position on the output (to composite captures)
@@ -381,6 +384,8 @@ PanelWindow {
             extent: reach() - panelOverlap,
             reach: reach(),
             fillOpacity: sheetOpacity,
+            // the bar's own opacity setting (0: none), so a joined panel resolves its fill live with the bar's rule
+            barOpacity: spec.opacity ?? 0,
             barSpan: barSpan(),
             barId: spec.id ?? "",
             context: context ?? "",
@@ -473,7 +478,7 @@ PanelWindow {
             raised: win.shadow && win.joinProgress === 0
             fill: Theme.alpha(Theme.glass, win.sheetOpacity)
             // a joined panel and the bar are one surface: no highlight line along the seam
-            sheen: ExperiencePolicy.effectsQuality !== "minimal" && win.joinProgress === 0
+            sheen: Material.sheenAlpha > 0 && win.joinProgress === 0
             edge: win.border
             edgeColor: win.borderColor
             edgeWidth: win.borderWidth

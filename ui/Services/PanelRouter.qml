@@ -134,6 +134,7 @@ Singleton {
             place: placed.place,
             // the bar it came from, for an attached panel: its fill opacity, its span along the edge and id
             fillOpacity: origin?.fillOpacity ?? -1,
+            barOpacity: origin?.barOpacity ?? 0,
             barSpan: origin?.barSpan ?? null,
             barId: origin?.barId ?? "",
             reach: origin?.reach ?? -1

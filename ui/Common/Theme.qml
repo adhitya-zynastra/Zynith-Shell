@@ -57,22 +57,22 @@ Singleton {
     readonly property color inkMuted: alpha(pal("on_surface_variant"), highContrast ? 0.95 : 0.78)
     readonly property color inkFaint: alpha(pal("on_surface_variant"), highContrast ? 0.72 : 0.50)
 
-    // ── glass: the sheet every floating surface is cut from ─────────────────
-    // near-opaque without a blur behind it (even 6 % of bright text shows through); thinner with one
-    // a surface opacity set in Appearance is used as set; left to the profile, a sheet with nothing blurred
-    // behind it stays near-opaque (even 6 % of bright text shows through)
-    readonly property bool opacitySet: (Config.appearance.surface_opacity ?? 0) > 0
-    readonly property real glassAlpha: ExperiencePolicy.blur || opacitySet ? ExperiencePolicy.glassOpacity : Math.max(0.97, ExperiencePolicy.glassOpacity)
-    readonly property color glass: alpha(mix(base, surfaceLow, 0.5), glassAlpha)
-    readonly property color glassRaised: alpha(surfaceHigh, ExperiencePolicy.blur ? 0.58 : 0.94)
+    // ── the sheet every floating surface is cut from: its material is Material's (Glass / Solid / Blur) ────
+    // Solid takes the palette's own surface tone, opaque; Glass and Blur a deeper tone, as translucent as the
+    // style and its strength say
+    readonly property real glassAlpha: Material.fillAlpha
+    readonly property color sheetTone: Material.solid ? mix(surfaceLow, surfaceMid, 0.55) : mix(base, surfaceLow, 0.5)
+    readonly property color glass: alpha(sheetTone, glassAlpha)
+    readonly property color glassRaised: alpha(Material.solid ? surfaceHigh : surfaceHigh, Material.raisedAlpha)
     // a well inside a surface: rows, fields, tiles at rest
-    readonly property color well: alpha(pal("on_surface"), highContrast ? 0.07 : 0.045)
+    readonly property color well: alpha(pal("on_surface"), highContrast ? Material.wellAlpha + 0.025 : Material.wellAlpha)
 
     // ── edges ───────────────────────────────────────────────────────────────
-    readonly property color hairline: look.border === "none" ? "transparent" : look.border === "defined" || highContrast ? alpha(pal("outline"), 0.62) : alpha(pal("outline_variant"), 0.5)
+    // the edge of a sheet: its definition is the material's (glass catches more light the stronger it is)
+    readonly property color hairline: look.border === "none" ? "transparent" : look.border === "defined" || highContrast ? alpha(pal("outline"), Math.max(0.62, Material.edgeAlpha * 2)) : alpha(mix(pal("outline_variant"), "#ffffff", Material.solid ? 0 : 0.25), Math.min(0.85, Material.edgeAlpha * 2.6))
     readonly property real hairlineWidth: look.border === "none" ? 0 : 1
     // the lit top edge of a sheet
-    readonly property color sheen: alpha("#ffffff", ExperiencePolicy.richEffects ? 0.08 : 0.045)
+    readonly property color sheen: alpha("#ffffff", Material.sheenAlpha)
 
     // ── interaction ─────────────────────────────────────────────────────────
     // Optics materials: a plate is a tone step inside a lens; the signal is the accent as light on an edge

@@ -18,7 +18,10 @@ Item {
     // the edge's colour (a palette role or #hex; empty: the theme's hairline) and width (-1: the theme's)
     property string edgeColor: ""
     property real edgeWidth: -1
-    property bool sheen: ExperiencePolicy.effectsQuality !== "minimal"
+    property bool sheen: Material.sheenAlpha > 0
+    // a preview of another material (Appearance) sets these; left undefined, the current material's apply
+    property var depthOverride: undefined
+    property var sheenOverride: undefined
     readonly property alias sheet: sheet
     // Per-corner radii only when given: an explicit -1 squares the corner on Qt 6.11 (every sheet drew square
     // corners); undefined resets the property, so `radius` applies. Radii are held to what the shape can take.
@@ -33,9 +36,10 @@ Item {
     // The shadow falls only outside the sheet: a translucent sheet over its own shadow reads darker than
     // the native bar at the same opacity (measured: 47 vs 64 on the same wallpaper), so the sheet's shape
     // is cut out of it.
-    readonly property bool shadowed: ExperiencePolicy.shadows && root.raised
-    readonly property real shadowBlur: ExperiencePolicy.shadowQuality === "layered" ? 18 : 10
-    readonly property real shadowOffset: ExperiencePolicy.shadowQuality === "layered" ? 6 : 3
+    readonly property bool shadowed: (depthOverride !== undefined ? depthOverride > 0 : Material.shadows) && root.raised
+    // depth is the material's (Solid sits highest, Glass a little lower; Blur floats on its blur instead)
+    readonly property real shadowBlur: 10 + 8 * (depthOverride ?? Material.shadowDepth)
+    readonly property real shadowOffset: 3 + 3 * (depthOverride ?? Material.shadowDepth)
     // how far the shadow reaches past the sheet: a window must leave this much room around it, or the soft edge is
     // cut off by the window's square bounds (a rectangle with sharp corners around the rounded sheet)
     readonly property int shadowExtent: Math.ceil(shadowBlur + shadowOffset) + 2
@@ -117,7 +121,7 @@ Item {
                 }
                 GradientStop {
                     position: 0.5
-                    color: Theme.sheen
+                    color: root.sheenOverride !== undefined ? Theme.alpha("#ffffff", root.sheenOverride) : Theme.sheen
                 }
                 GradientStop {
                     position: 1

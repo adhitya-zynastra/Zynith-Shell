@@ -206,9 +206,20 @@ Singleton {
         function close(): void {
             PanelRouter.closeAll();
         }
-        function profile(name: string): string {
-            ExperiencePolicy.select(name);
-            return ExperiencePolicy.profile;
+        // the surface style (glass | solid | blur) and its strength (subtle | balanced | strong)
+        function surface(style: string): string {
+            Material.setStyle(style);
+            return Material.style;
+        }
+        function surfaceStrength(level: string): string {
+            const v = Material.levels[level];
+            if (v === undefined)
+                return "subtle | balanced | strong";
+            if (Material.style === "blur")
+                Material.setBlurStrength(v);
+            else
+                Material.setGlassStrength(v);
+            return level;
         }
         function captureBar(key: string, path: string): string {
             const item = PanelRouter.barItems[key];
@@ -297,10 +308,9 @@ Singleton {
         }
         function status(): string {
             return JSON.stringify({
-                profile: ExperiencePolicy.profile,
-                selected: ExperiencePolicy.selected,
-                recommended: ExperiencePolicy.recommended,
-                hardwareProfile: ExperiencePolicy.hardwareProfile,
+                material: { style: Material.style, glassStrength: Material.glassStrength, blurStrength: Material.blurStrength, blur: Material.blur, blurAvailable: Material.blurAvailable, fillAlpha: Number(Material.fillAlpha.toFixed(3)), shadows: Material.shadows, paused: Material.paused },
+                efficiency: ExperiencePolicy.efficiency,
+                level: ExperiencePolicy.level,
                 limitedBy: ExperiencePolicy.limitedBy,
                 power: { onBattery: Power.onBattery, level: Number(Power.level.toFixed(2)), low: Power.low, powerSaver: Power.powerSaver },
                 tier: Hardware.tier,

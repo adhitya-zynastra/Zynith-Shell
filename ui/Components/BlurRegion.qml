@@ -68,7 +68,7 @@ QtObject {
     function apply(): void {
         if (!window)
             return;
-        window.BackgroundEffect.blurRegion = ExperiencePolicy.blur && shown ? region : null;
+        window.BackgroundEffect.blurRegion = Material.blur && shown ? region : null;
     }
 
     Component.onCompleted: apply()
@@ -76,7 +76,7 @@ QtObject {
     onShownChanged: apply()
     onWindowChanged: apply()
     readonly property Connections policy: Connections {
-        target: ExperiencePolicy
+        target: Material
         function onBlurChanged(): void {
             root.apply();
         }

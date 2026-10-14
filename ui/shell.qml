@@ -20,6 +20,8 @@ ShellRoot {
     Component.onCompleted: {
         WindowBehaviour.writer = true;
         WallpaperOverview.writer = true;
+        // and keeps niri's blur at the Blur style's strength (Settings only edits appearance.toml)
+        Material.sendsNative = true;
     }
 
     Bars {}

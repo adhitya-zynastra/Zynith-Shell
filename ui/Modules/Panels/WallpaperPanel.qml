@@ -804,7 +804,7 @@ Item {
                         // the glow under the focused card takes the wallpaper's own colour, and breathes
                         RectangularShadow {
                             anchors.fill: art
-                            visible: ExperiencePolicy.shadows && Math.abs(card.offset) < 2.5
+                            visible: Material.shadows && Math.abs(card.offset) < 2.5
                             radius: Metrics.radiusLg
                             blur: card.focused ? 56 : 28
                             spread: card.focused ? 2 : 0

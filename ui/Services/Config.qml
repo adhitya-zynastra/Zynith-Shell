@@ -6,6 +6,7 @@ import Quickshell.Io
 import Zynith.Native
 import qs.Common
 import "../Common/BarModel.js" as BarModel
+import "../Common/MaterialModel.js" as MaterialModel
 
 // Zynith's configuration: one TOML file per domain in ~/.config/zynith. Each file holds only what differs from
 // the defaults below; edits on disk apply live, and every write from the UI goes through here.
@@ -17,12 +18,24 @@ Singleton {
         && zynithFile.loaded
 
     // ── the shapes the rest of the UI reads ─────────────────────────────────
+    // what the UI may spend (ExperiencePolicy): efficiency "auto" | "save", whether blur and shadows pause under
+    // real power pressure, single-knob overrides; how surfaces look is appearance.toml's (Material)
     readonly property var experience: ({
-            profile: experienceFile.values.profile,
-            adaptive: experienceFile.values.adaptive,
+            efficiency: experienceFile.values.efficiency ?? "auto",
+            easeEffects: experienceFile.values.ease_effects ?? true,
             overrides: experienceFile.values.overrides ?? {},
             reducedMotion: animationFile.values.reduced_motion
         })
+    function setEfficiency(name: string): void {
+        experienceFile.set("efficiency", name);
+    }
+    function setEaseEffects(on: bool): void {
+        experienceFile.set("ease_effects", on);
+    }
+    function setAppearance(key: string, value: var): void {
+        if (appearanceFile.values[key] !== value)
+            appearanceFile.set(key, value);
+    }
     // Settings shows its technical pages and native settings for surfaces Zynith draws only with this on
     readonly property bool settingsAdvanced: zynithFile.values.settings?.advanced === true
     function setSettingsAdvanced(on: bool): void {
@@ -204,13 +217,6 @@ Singleton {
     readonly property var surfaces: zynithFile.values.surfaces
 
     // ── writers ─────────────────────────────────────────────────────────────
-    function setExperienceProfile(name: string): void {
-        if (experienceFile.values.profile !== name)
-            experienceFile.set("profile", name);
-    }
-    function setAdaptive(on: bool): void {
-        experienceFile.set("adaptive", on);
-    }
     function setReducedMotion(on: bool): void {
         animationFile.set("reduced_motion", on);
     }
@@ -311,10 +317,10 @@ Singleton {
     ConfigFile {
         id: experienceFile
         path: Paths.config + "/experience.toml"
-        header: "Experience profile: auto (hardware recommendation, easing off on battery) or performance | balanced |\nenhanced | max. [overrides] changes single knobs, e.g. blurQuality = \"off\"."
+        header: "What the UI may spend. efficiency: auto (follow power: less on battery, least with power saver) | save\n(spend little even when plugged in). ease_effects: pause blur and shadows while power saver is on or the\nbattery is low. [overrides] sets single knobs, e.g. visualizerBands = 64. How surfaces look is appearance.toml."
         defaults: ({
-                profile: "auto",
-                adaptive: true,
+                efficiency: "auto",
+                ease_effects: true,
                 overrides: {}
             })
     }
@@ -324,10 +330,11 @@ Singleton {
         path: Paths.config + "/appearance.toml"
         header: "Appearance. Surfaces follow the wallpaper palette; these adjust how."
         defaults: ({
-                // 0 = the Experience profile decides; otherwise 0.4 – 1.0
-                surface_opacity: 0,
-                // profile | on | off
-                blur: "profile",
+                // what every surface is made of: glass (clear, tinted) | solid (opaque) | blur (frosted, niri blurs)
+                surface_style: "glass",
+                // 0 – 1: subtle 0.15, balanced 0.5, strong 0.85 (each style keeps its own)
+                glass_strength: 0.5,
+                blur_strength: 0.5,
                 // none | subtle | defined
                 border: "subtle",
                 // multiplies every corner radius
@@ -675,6 +682,63 @@ Singleton {
             root.migrateBars();
         }
     }
+    // The four Experience Profiles decided appearance and spending together; now appearance.toml holds the surface
+    // style and experience.toml only what to spend. Once: copies of both files first (*.pre-materials), then the
+    // new keys and the old ones gone, so nothing old can override the style later. Never while locked.
+    Connections {
+        target: appearanceFile
+        function onLoadedChanged(): void {
+            root.migrateMaterials();
+        }
+    }
+    Connections {
+        target: experienceFile
+        function onLoadedChanged(): void {
+            root.migrateMaterials();
+        }
+    }
+    function migrateMaterials(): void {
+        if (!appearanceFile.loaded || !experienceFile.loaded || appearanceFile.error !== "" || experienceFile.error !== "" || Events.locked)
+            return;
+        // the old keys have no defaults any more: present means the file holds them, and a migration is due
+        const oldBlur = appearanceFile.get("blur");
+        const oldOpacity = appearanceFile.get("surface_opacity");
+        const oldProfile = experienceFile.get("profile");
+        if (oldBlur === undefined && oldOpacity === undefined && oldProfile === undefined)
+            return;
+        const m = MaterialModel.migrate({
+            blur: oldBlur ?? "profile",
+            surface_opacity: oldOpacity ?? 0
+        }, {
+            profile: oldProfile
+        }, nativeBlurStrength >= 0 ? nativeBlurStrength : undefined);
+        if (!m)
+            return;
+        if (appearanceFile.exists && appearanceFile.backup("pre-materials") === "")
+            return;
+        if (experienceFile.exists && experienceFile.backup("pre-materials") === "")
+            return;
+        const aChanges = Object.assign({}, m.appearance.set);
+        for (const k of m.appearance.remove)
+            aChanges[k] = null;
+        const xChanges = Object.assign({}, m.experience.set);
+        for (const k of m.experience.remove)
+            xChanges[k] = null;
+        if (appearanceFile.assign(aChanges) && experienceFile.assign(xChanges))
+            console.info("zynith: surfaces are now " + m.appearance.set.surface_style + ", efficiency " + m.experience.set.efficiency + " (from the Experience Profiles; copies in *.pre-materials)");
+    }
+
+    // the native shell's niri blur strength as it stands (read only: the native shell owns settings.toml)
+    property int nativeBlurStrength: -1
+    FileView {
+        path: Paths.stateHome + "/noctalia/settings.toml"
+        printErrors: false
+        onLoaded: {
+            const m = text().match(/\[shell\.glass\][^\[]*?blur_strength\s*=\s*(\d+)/);
+            root.nativeBlurStrength = m ? parseInt(m[1]) : -1;
+        }
+    }
+
     function migrateBars(): void {
         if (!barsFile.loaded || !barsFile.exists || barsFile.error !== "" || Events.locked)
             return;

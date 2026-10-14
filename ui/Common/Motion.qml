@@ -96,6 +96,6 @@ Singleton {
     readonly property real springEpsilon: 0.25
 
     // how far a surface travels from its origin as it appears, and how small it starts
-    readonly property real revealOffset: ExperiencePolicy.animationQuality === "reduced" ? 0 : 10
-    readonly property real revealScale: ExperiencePolicy.animationQuality === "reduced" ? 1 : 0.97
+    readonly property real revealOffset: ExperiencePolicy.reducedMotion ? 0 : 10
+    readonly property real revealScale: ExperiencePolicy.reducedMotion ? 1 : 0.97
 }

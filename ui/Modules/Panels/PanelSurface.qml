@@ -125,7 +125,7 @@ PanelWindow {
         interval: win.morphMs + 60
         onTriggered: win.span = win.target
     }
-    readonly property int pad: bare ? 0 : Math.max(ExperiencePolicy.shadows && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
+    readonly property int pad: bare ? 0 : Math.max(Material.shadows && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
     readonly property int gap: attached ? 0 : Metrics.s3
 
     // ── attached: the panel and the bar it came from are one surface (the native shell's attached panels,
@@ -393,9 +393,11 @@ PanelWindow {
                 })[win.edge]
             raised: !win.bare && !win.attached
             // attached, the bar's own fill, so the seam disappears
-            fill: win.bare ? "transparent" : win.attached ? Theme.alpha(Theme.glass, win.held.fillOpacity) : Theme.glass
+            // attached: the bar's own fill, so the seam disappears — resolved live by the bar's rule (Solid is opaque;
+            // else the bar's own opacity, else the material's), not the number taken when the panel opened
+            fill: win.bare ? "transparent" : win.attached ? Theme.alpha(Theme.glass, !Material.solid && (win.held.barOpacity ?? 0) > 0 ? Math.min(1, win.held.barOpacity) : Theme.glassAlpha) : Theme.glass
             edge: !win.bare && !win.attached
-            sheen: !win.bare && !win.attached && ExperiencePolicy.effectsQuality !== "minimal"
+            sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 
             opacity: win.bare ? 1 : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
 

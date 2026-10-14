@@ -145,7 +145,7 @@ Scope {
                     margins.left: Math.max(0, Config.osd.sideMargin - pad)
                     margins.right: Math.max(0, Config.osd.sideMargin - pad)
                     color: "transparent"
-                    readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
+                    readonly property int pad: Material.shadows ? Metrics.shadowPad + 8 : 0
                     implicitWidth: 360 + pad * 2
                     implicitHeight: card.height + pad * 2
                     mask: Region {}

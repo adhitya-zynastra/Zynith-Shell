@@ -80,7 +80,7 @@ Scope {
                 left: Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
                 right: Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
             }
-            readonly property int pad: ExperiencePolicy.shadows ? Metrics.shadowPad : 0
+            readonly property int pad: Material.shadows ? Metrics.shadowPad + 8 : 0
             implicitWidth: root.cardWidth + pad * 2 + 40
             implicitHeight: Math.max(1, list.contentHeight + waiting.height + pad * 2 + 8)
 
