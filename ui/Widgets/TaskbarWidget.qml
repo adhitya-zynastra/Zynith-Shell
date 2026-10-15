@@ -248,7 +248,7 @@ BarItem {
         Rectangle {
             anchors.fill: row
             anchors.margins: -3
-            radius: 8
+            radius: Metrics.radiusControl
             color: task.focused ? Theme.alpha(Theme.accent, 0.14) : hover.containsMouse ? Theme.hover : "transparent"
             Behavior on color {
                 ColorAnim {}

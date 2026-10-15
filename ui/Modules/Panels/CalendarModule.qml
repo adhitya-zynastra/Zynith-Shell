@@ -219,7 +219,7 @@ Flow {
                     from: root.slideFrom
                     to: 0
                     duration: Motion.spatialFast
-                    easing.type: Easing.OutCubic
+                    easing.type: Motion.enterEasing
                 }
                 NumberAnimation {
                     target: grid
@@ -227,7 +227,7 @@ Flow {
                     from: 0.2
                     to: 1
                     duration: Motion.spatialFast
-                    easing.type: Easing.OutCubic
+                    easing.type: Motion.enterEasing
                 }
             }
 

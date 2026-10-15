@@ -39,7 +39,7 @@ Column {
     Rectangle {
         width: root.width
         height: 32
-        radius: 10
+        radius: Metrics.radiusControl
         color: Theme.well
         opacity: root.enabled ? 1 : 0.4
         border.width: Metrics.hairline
@@ -150,7 +150,7 @@ Column {
             Rectangle {
                 width: root.width
                 height: 32
-                radius: 10
+                radius: Metrics.radiusControl
                 color: Theme.well
                 border.width: Metrics.hairline
                 border.color: custom.activeFocus ? Theme.accentLine : Theme.hairline

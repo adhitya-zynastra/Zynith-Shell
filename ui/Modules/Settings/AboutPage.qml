@@ -150,7 +150,7 @@ Column {
         caption: "Licenses"
 
         Repeater {
-            model: ["Zynith is free software under the GNU GPL v3.0.", "Built on Noctalia (MIT, © 2026 noctalia-dev); its notice is kept in LICENSES/Noctalia-MIT.txt.", "UI fonts Inter and Space Grotesk: SIL Open Font License 1.1.", "Icons: Tabler Icons (MIT).", "Runs on Quickshell (LGPL-3.0 / GPL-3.0) and niri (GPL-3.0)."]
+            model: ["Zynith is free software under the GNU GPL v3.0.", "Built on Noctalia (MIT, © 2026 noctalia-dev); its notice is kept in LICENSES/Noctalia-MIT.txt.", "UI fonts Inter, Space Grotesk and Sora: SIL Open Font License 1.1.", "Icons: Tabler Icons (MIT).", "Runs on Quickshell (LGPL-3.0 / GPL-3.0) and niri (GPL-3.0)."]
             delegate: Label {
                 required property string modelData
                 width: parent.width

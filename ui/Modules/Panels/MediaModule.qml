@@ -278,7 +278,7 @@ Item {
                             readonly property bool current: modelData === Media.active
                             width: chip.implicitWidth + Metrics.s3 * 2
                             height: 22
-                            radius: 11
+                            radius: height / 2
                             color: current ? Theme.alpha(Theme.accent, 0.18) : chipArea.containsMouse ? Theme.hover : Theme.plate
                             border.width: current ? 1 : 0
                             border.color: Theme.alpha(Theme.accent, 0.6)

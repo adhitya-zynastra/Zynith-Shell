@@ -1,5 +1,6 @@
 Inter.ttf: Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
 SpaceGrotesk.ttf: Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)
+Sora.ttf: Copyright 2019 The Sora Project Authors (https://github.com/sora-xor/sora-font)
 
 These Font Software files are licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

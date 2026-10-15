@@ -245,7 +245,7 @@ Item {
         y: root.vertical ? (root.height - height) / 2 : (root.bar?.edge === "bottom" ? -height - 8 : root.height + 8)
         width: tipText.implicitWidth + Metrics.s4
         height: tipText.implicitHeight + Metrics.s2
-        radius: 8
+        radius: Metrics.radiusControl
         color: Theme.alpha(Theme.base, 0.92)
         Label {
             id: tipText

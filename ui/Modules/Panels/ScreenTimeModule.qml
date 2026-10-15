@@ -172,7 +172,7 @@ Flow {
             from: 0
             to: 1
             duration: Motion.spatial
-            easing.type: Easing.OutCubic
+            easing.type: Motion.enterEasing
         }
         onValuesChanged: growAnim.restart()
     }

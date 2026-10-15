@@ -968,7 +968,7 @@ Item {
                             anchors.margins: Metrics.s3
                             width: nowText.implicitWidth + Metrics.s4
                             height: 20
-                            radius: 10
+                            radius: height / 2
                             color: Theme.alpha(Theme.base, 0.72)
                             Label {
                                 id: nowText
@@ -1411,7 +1411,7 @@ Item {
                             anchors.margins: Metrics.s2
                             width: 20
                             height: 20
-                            radius: 10
+                            radius: height / 2
                             color: Theme.accent
                             border.width: 2
                             border.color: Theme.alpha(Theme.base, 0.7)
@@ -1564,7 +1564,7 @@ Item {
         property bool accent: false
         width: 22
         height: 22
-        radius: 11
+        radius: height / 2
         color: Theme.alpha(Theme.base, 0.72)
         Icon {
             anchors.centerIn: parent

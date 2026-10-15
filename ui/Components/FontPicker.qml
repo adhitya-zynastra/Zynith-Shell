@@ -54,7 +54,7 @@ Column {
     Rectangle {
         width: root.width
         height: 34
-        radius: 10
+        radius: Metrics.radiusControl
         color: Theme.well
         opacity: root.enabled ? 1 : 0.4
         border.width: Metrics.hairline
@@ -114,7 +114,7 @@ Column {
             Rectangle {
                 width: parent.width
                 height: 30
-                radius: 8
+                radius: Metrics.radiusControl
                 color: Theme.well
                 border.width: Metrics.hairline
                 border.color: search.activeFocus ? Theme.accentLine : Theme.hairline
@@ -195,7 +195,7 @@ Column {
                     readonly property bool current: ListView.isCurrentItem
                     width: list.width
                     height: 34
-                    radius: 8
+                    radius: Metrics.radiusControl
                     color: entry.current ? Theme.accentSoft : entryArea.containsMouse ? Theme.hover : "transparent"
                     Label {
                         anchors.left: parent.left

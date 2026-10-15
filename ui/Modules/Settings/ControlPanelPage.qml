@@ -302,7 +302,7 @@ Column {
                                 readonly property bool available: ControlSections.available(modelData)
                                 width: colBody.width
                                 height: 40
-                                radius: 8
+                                radius: Metrics.radiusControl
                                 color: Theme.plate
                                 Icon {
                                     id: secIcon
@@ -644,7 +644,7 @@ Column {
             Rectangle {
                 width: 220
                 height: 32
-                radius: 10
+                radius: Metrics.radiusControl
                 color: Theme.well
                 border.width: Metrics.hairline
                 border.color: newName.activeFocus ? Theme.accentLine : Theme.hairline

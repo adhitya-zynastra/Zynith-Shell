@@ -216,7 +216,7 @@ Flow {
                 from: 0
                 to: 1
                 duration: Motion.spatialFast
-                easing.type: Easing.OutCubic
+                easing.type: Motion.enterEasing
             }
             NumberAnimation {
                 target: stripShift
@@ -224,7 +224,7 @@ Flow {
                 from: 10
                 to: 0
                 duration: Motion.spatialFast
-                easing.type: Easing.OutCubic
+                easing.type: Motion.enterEasing
             }
         }
 

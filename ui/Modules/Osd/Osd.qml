@@ -224,16 +224,16 @@ Scope {
                                     NumberAnimation {
                                         target: disc
                                         property: "scale"
-                                        to: 1.08
+                                        to: 1.06
                                         duration: Motion.focus / 2
-                                        easing.type: Easing.OutQuad
+                                        easing.type: Motion.enterEasing
                                     }
                                     NumberAnimation {
                                         target: disc
                                         property: "scale"
                                         to: 1
                                         duration: Motion.focus
-                                        easing.type: Easing.OutBack
+                                        easing.type: Motion.standardEasing
                                     }
                                 }
                                 Connections {

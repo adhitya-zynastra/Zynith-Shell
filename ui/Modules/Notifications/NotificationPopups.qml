@@ -275,7 +275,7 @@ Scope {
                 y: root.atTop ? list.y + list.contentHeight + Metrics.s2 : win.pad
                 width: waitingLabel.implicitWidth + Metrics.s5 * 2
                 height: visible ? 26 : 0
-                radius: 13
+                radius: height / 2
                 color: Theme.alpha(Theme.surfaceMid, 0.95)
                 border.width: Metrics.hairline
                 border.color: Theme.hairline

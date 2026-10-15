@@ -4,7 +4,12 @@ import QtQuick
 import Quickshell
 import qs.Services
 
-// Type roles. Inter for reading, Space Grotesk for numerals and display, the Tabler font for glyphs.
+// Type roles. Four voices, each with one job:
+//   Space Grotesk — the brand and display numerals (clocks, the one big readout of a surface);
+//   Sora — headings: a page's or a surface's title, set once per surface (never body text);
+//   Inter — everything read: labels, body, controls;
+//   JetBrains Mono (the Nerd Font build when installed) — data: values, units, keys, paths, section indices.
+// The Tabler font draws glyphs.
 Singleton {
     id: root
 
@@ -13,6 +18,9 @@ Singleton {
     }
     readonly property FontLoader groteskFont: FontLoader {
         source: Paths.asset("fonts/SpaceGrotesk.ttf")
+    }
+    readonly property FontLoader soraFont: FontLoader {
+        source: Paths.asset("fonts/Sora.ttf")
     }
     readonly property FontLoader iconFont: FontLoader {
         source: Paths.repoAsset("fonts/noctalia-tabler.ttf")
@@ -24,7 +32,11 @@ Singleton {
     readonly property string bundledDisplay: groteskFont.status === FontLoader.Ready ? "Space Grotesk" : bundledUi
     readonly property string ui: (Config.appearance.font_ui ?? "") !== "" ? Config.appearance.font_ui : bundledUi
     readonly property string display: (Config.appearance.font_display ?? "") !== "" ? Config.appearance.font_display : bundledDisplay
-    readonly property string mono: (Config.appearance.font_mono ?? "") !== "" ? Config.appearance.font_mono : "JetBrains Mono"
+    readonly property string bundledHeading: soraFont.status === FontLoader.Ready ? "Sora" : bundledDisplay
+    readonly property string heading: bundledHeading
+    // the Nerd Font build carries the same letters plus glyphs a technical readout may use
+    readonly property string bundledMono: Qt.fontFamilies().includes("JetBrainsMono Nerd Font") ? "JetBrainsMono Nerd Font" : "JetBrains Mono"
+    readonly property string mono: (Config.appearance.font_mono ?? "") !== "" ? Config.appearance.font_mono : bundledMono
     readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "noctalia-tabler-icons"
 
     // pixel sizes, scaled by appearance.toml font_scale
@@ -35,6 +47,8 @@ Singleton {
     readonly property int body: Math.round(13 * scale)
     readonly property int title: Math.round(15 * scale)
     readonly property int headline: Math.round(20 * scale)
+    // a surface's heading (Sora): one per surface
+    readonly property int headingSize: Math.round(24 * scale)
     readonly property int display2: Math.round(32 * scale)
     readonly property int display1: Math.round(44 * scale)
     readonly property int displayXL: Math.round(96 * scale)

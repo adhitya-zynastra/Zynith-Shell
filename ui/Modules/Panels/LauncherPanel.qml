@@ -451,7 +451,7 @@ Item {
                         anchors.margins: -3
                         width: 14
                         height: 14
-                        radius: 7
+                        radius: height / 2
                         color: Theme.surfaceHigh
                         border.width: 1
                         border.color: Theme.hairline

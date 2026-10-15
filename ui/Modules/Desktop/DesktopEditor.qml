@@ -392,7 +392,7 @@ PanelWindow {
                     y: -30
                     width: tagRow.implicitWidth + Metrics.s4
                     height: 22
-                    radius: 11
+                    radius: height / 2
                     color: slot.selected ? Theme.accent : Theme.alpha(Theme.base, 0.8)
                     rotation: -slot.rotation
                     Row {
@@ -464,7 +464,7 @@ PanelWindow {
                         readonly property real sy: index < 2 ? -1 : 1
                         width: 14
                         height: 14
-                        radius: 7
+                        radius: height / 2
                         x: (sx < 0 ? 0 : slot.width) - width / 2 + sx * 4
                         y: (sy < 0 ? 0 : slot.height) - height / 2 + sy * 4
                         color: Theme.ink
@@ -533,7 +533,7 @@ PanelWindow {
                     y: -44
                     width: 16
                     height: 16
-                    radius: 8
+                    radius: height / 2
                     color: Theme.accent
                     border.width: 2
                     border.color: Theme.ink
@@ -696,7 +696,7 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 width: doneRow.implicitWidth + Metrics.s5 * 2
                 height: 36
-                radius: 18
+                radius: height / 2
                 color: Theme.accent
                 Row {
                     id: doneRow
@@ -863,7 +863,7 @@ PanelWindow {
         signal clicked
         width: 22
         height: 22
-        radius: 11
+        radius: height / 2
         color: fbArea.containsMouse ? Theme.accent : Theme.alpha(Theme.base, 0.85)
         border.width: Metrics.hairline
         border.color: Theme.hairline
@@ -894,7 +894,7 @@ PanelWindow {
         anchors.verticalCenter: parent?.verticalCenter
         Rectangle {
             anchors.fill: parent
-            radius: 18
+            radius: height / 2
             color: tt.active ? Theme.accentSoft : ttArea.containsMouse ? Theme.hover : "transparent"
             border.width: Metrics.hairline
             border.color: tt.active ? Theme.accentLine : Theme.hairline
@@ -958,7 +958,7 @@ PanelWindow {
             y: parent.height + 10
             width: tip.implicitWidth + Metrics.s4
             height: 22
-            radius: 11
+            radius: height / 2
             color: Theme.alpha(Theme.base, 0.9)
             Label {
                 id: tip

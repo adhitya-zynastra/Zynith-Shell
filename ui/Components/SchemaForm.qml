@@ -307,7 +307,7 @@ Column {
                     required property var modelData
                     width: 26
                     height: 26
-                    radius: 13
+                    radius: height / 2
                     color: Theme.pal(modelData)
                     border.width: ctl.val === modelData ? 2.5 : 1
                     border.color: ctl.val === modelData ? Theme.accent : Theme.hairline
@@ -395,7 +395,7 @@ Column {
                         required property var modelData
                         width: 30
                         height: 30
-                        radius: 8
+                        radius: Metrics.radiusControl
                         color: ctl.val === modelData ? Theme.accentSoft : glyphArea.containsMouse ? Theme.hover : "transparent"
                         border.width: ctl.val === modelData ? 1 : 0
                         border.color: Theme.accentLine
@@ -626,7 +626,7 @@ Column {
         signal edited(string text)
         implicitHeight: 32
         height: 32
-        radius: 10
+        radius: Metrics.radiusControl
         color: Theme.well
         border.width: Metrics.hairline
         border.color: input.activeFocus ? Theme.accentLine : Theme.hairline
