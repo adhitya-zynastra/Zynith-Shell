@@ -137,14 +137,16 @@ Item {
             idA = panelId;
         front = 1 - front;
         slideOut = -dir * slideDistance;
-        live.opacity = 0;
+        // between tabs the pages are frames on one strip: both stay drawn, butted together, and move as one
+        live.opacity = dir !== 0 ? 1 : 0;
         live.scale = dir !== 0 ? 1 : contentScale;
         live.x = dir * slideDistance;
         swap.start();
     }
     // how far a page travels on a tab change: enough to read as movement, never a full page (the card clips it)
     property int travel: 0
-    readonly property real slideDistance: Math.round(Math.min(Metrics.s7 * 5, width * 0.14))
+    // a whole page and the gap between frames: the old page leaves exactly as the new one arrives
+    readonly property real slideDistance: Math.round(width + Metrics.s5)
     property real slideOut: 0
     function tabIndexOf(id: string): int {
         const t = id === "home" || id === "quick" ? "control" : id;
@@ -156,8 +158,8 @@ Item {
         NumberAnimation {
             target: root.leaving
             property: "opacity"
-            to: 0
-            duration: root.slideOut !== 0 ? Motion.contentOut : Motion.contentOut + 40
+            to: root.slideOut !== 0 ? 1 : 0
+            duration: Motion.contentOut + 40
             easing.type: Motion.exitEasing
         }
         NumberAnimation {
@@ -171,9 +173,10 @@ Item {
             target: root.leaving
             property: "x"
             to: root.slideOut
-            duration: Motion.spatialFast
+            // on the strip both frames share one clock and one curve, so the seam between them never opens
+            duration: root.slideOut !== 0 ? Motion.spatial : Motion.spatialFast
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.spatialFastCurve
+            easing.bezierCurve: root.slideOut !== 0 ? Motion.spatialCurve : Motion.spatialFastCurve
         }
         NumberAnimation {
             target: root.live
@@ -183,7 +186,8 @@ Item {
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Motion.spatialCurve
         }
-        // a sliding page comes in as the old one has mostly gone (two pages never read over each other)
+        // a page changing in place comes in as the old one has mostly gone (two never read over each other);
+        // on the strip it is already drawn and this is a no-op
         SequentialAnimation {
             PauseAnimation {
                 duration: root.slideOut !== 0 ? Motion.contentOut * 0.8 : Motion.contentOut / 2

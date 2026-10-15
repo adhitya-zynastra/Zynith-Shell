@@ -47,6 +47,29 @@ Item {
             go(entry.press);
         }
     }
+    // what each control's ring reads: { value 0..1, segments (0: a continuous arc) }, or null for none
+    function readingFor(id: string): var {
+        switch (id) {
+        case "wifi":
+            return Network.wifiEnabled ? { value: Network.connected ? Network.strength : 0, segments: 4 } : null;
+        case "bluetooth":
+            return Bluetooth.enabled ? { value: Math.min(1, Bluetooth.connected.length / 3), segments: 3 } : null;
+        case "audio":
+            return Audio.ready ? { value: Audio.muted ? 0 : Math.min(1, Audio.volume), segments: 0 } : null;
+        case "mic_mute":
+            return Audio.micReady ? { value: Audio.micMuted ? 0 : Math.min(1, Audio.micVolume), segments: 0 } : null;
+        case "power_profile":
+            return { value: ControlShortcuts.profile === "saver" ? 1 / 3 : ControlShortcuts.profile === "performance" ? 1 : 2 / 3, segments: 3 };
+        case "system":
+            return { value: System.cpu, segments: 0 };
+        case "media":
+            return Media.present && Media.length > 0 ? { value: Media.position / Media.length, segments: 0 } : null;
+        case "screen_time":
+            return ScreenTime.enabled ? { value: Math.min(1, ScreenTime.total / (8 * 3600)), segments: 0 } : null;
+        }
+        return null;
+    }
+
     function more(entry: var): void {
         go(entry.more ?? "");
     }
@@ -110,30 +133,16 @@ Item {
         signal opened
         implicitHeight: button.height + (showLabel ? Metrics.s2 + name.implicitHeight : 0)
 
-        Item {
+        // the control as an aperture: blades open over a lit core when on; the ring around reads its live value
+        ApertureDial {
             id: button
             anchors.horizontalCenter: parent.horizontalCenter
-            width: Math.min(ct.width, 54)
-            height: width
-            scale: area.pressed ? 0.94 : area.containsMouse ? 1.03 : 1
-            Glide on scale {
-                epsilon: 0.001
-            }
-            Plate {
-                anchors.fill: parent
-                radius: width / 2
-            }
-            Signal {
-                anchors.fill: parent
-                radius: width / 2
-                on: ct.lit
-            }
-            Icon {
-                anchors.centerIn: parent
-                name: ct.entry?.icon() ?? ""
-                size: 20
-                color: ct.lit ? Theme.accent : Theme.ink
-            }
+            size: Math.min(ct.width, 54)
+            lit: ct.lit
+            glyph: ct.entry?.icon() ?? ""
+            reading: root.readingFor(ct.entry?.id ?? "")
+            hovered: area.containsMouse
+            pressed: area.pressed
             Interactive {
                 id: area
                 anchors.fill: parent
