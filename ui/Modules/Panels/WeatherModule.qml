@@ -112,11 +112,20 @@ Flow {
                 text: Weather.describe(root.now.code ?? 0)
             }
             Label {
+                id: placeLine
                 width: parent.width
                 role: "caption"
                 tone: "faint"
                 elide: Text.ElideRight
-                text: (root.d.location ?? "") + (root.now.feelsLike !== undefined ? "  ·  feels " + Math.round(root.now.feelsLike) + "°" : "")
+                // the city alone when the full name ("Lisbon, Portugal") would cut off the feels-like reading
+                readonly property string feels: root.now.feelsLike !== undefined ? "  ·  feels " + Math.round(root.now.feelsLike) + "°" : ""
+                readonly property string place: root.d.location ?? ""
+                text: (fullFits.width <= width ? place : place.split(",")[0]) + feels
+                TextMetrics {
+                    id: fullFits
+                    font: placeLine.font
+                    text: placeLine.place + placeLine.feels
+                }
             }
         }
     }

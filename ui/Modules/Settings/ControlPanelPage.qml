@@ -13,6 +13,8 @@ Column {
     spacing: Metrics.s5
 
     readonly property var cp: Config.controlPanel ?? ({})
+    // the bar a key opens the panel beside is switched off: it opens in the top right corner instead
+    readonly property bool anchorOff: (cp.anchor_bar ?? "") !== "" && Config.bars.some(b => b.id === cp.anchor_bar && b.enabled === false)
     function set(key: string, value: var): void {
         Config.write("panels", "control_panel." + key, value);
     }
@@ -179,7 +181,7 @@ Column {
             width: parent.width
             schema: [
                 { key: "position_margin", label: "Gap to the screen edge (at a spot)", kind: "int", default: 12, from: 0, to: 64, step: 1 },
-                { key: "anchor_bar", label: "Opened by a key, it sits by", kind: "select", default: "", options: [{ key: "", label: "The top right corner" }].concat(Config.bars.filter(b => (b.id ?? "") !== "").map(b => ({ key: b.id, label: "Bar " + b.id }))) }
+                { key: "anchor_bar", label: "Opened by a key, it sits by", kind: "select", default: "", options: [{ key: "", label: "The top right corner" }].concat(Config.bars.filter(b => (b.id ?? "") !== "" && (b.enabled !== false || b.id === root.cp.anchor_bar)).map(b => ({ key: b.id, label: (b.name || b.id) + (b.enabled === false ? " (switched off)" : "") }))), hint: root.anchorOff ? "That bar is switched off, so a key opens the panel in the top right corner." : "" }
             ]
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default)

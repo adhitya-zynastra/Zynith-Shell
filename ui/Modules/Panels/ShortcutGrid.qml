@@ -150,6 +150,10 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             role: "caption"
             tone: ct.lit ? "ink" : "muted"
+            // a name too long for the cell ("Do not disturb") takes a second line rather than losing its end
+            wrapMode: Text.WordWrap
+            maximumLineCount: 2
+            lineHeight: 0.92
             elide: Text.ElideRight
             text: ct.entry?.label() ?? ""
         }
