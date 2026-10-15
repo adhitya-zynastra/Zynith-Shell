@@ -183,8 +183,13 @@ PanelWindow {
     // "center": not tied to a bar (the launcher); the top stays put while the content grows downwards
     readonly property real placedX: place.endsWith("left") ? work.x + placeMargin : place.endsWith("right") ? work.x + work.w - placeMargin - panelWidth : Math.round(work.x + (work.w - panelWidth) / 2)
     readonly property real placedY: place.startsWith("top") ? work.y + placeMargin : place.startsWith("bottom") ? work.y + work.h - placeMargin - cardHeight : Math.round(work.y + (work.h - cardHeight) / 2)
-    readonly property real cardX: bare ? 0 : place !== "" ? placedX : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, screenMargin, sw - panelWidth - screenMargin)
-    readonly property real cardY: bare ? 0 : place !== "" ? placedY : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, screenMargin, sh - cardHeight - screenMargin)
+    // Along its bar the card keeps a margin from the screen's ends — except as far as the bar it opened from
+    // reaches: a bar flush with the screen edge takes its panel flush with it too (8 px in, it left a step at
+    // the join). Read from the bar's span, not `attached` (which is itself worked out from this position).
+    readonly property real alongLo: barSpan ? Math.min(screenMargin, Math.max(0, barSpan[0])) : screenMargin
+    readonly property real alongHiGap: barSpan ? Math.min(screenMargin, Math.max(0, (horizontalEdge ? sw : sh) - barSpan[1])) : screenMargin
+    readonly property real cardX: bare ? 0 : place !== "" ? placedX : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, alongLo, sw - panelWidth - alongHiGap)
+    readonly property real cardY: bare ? 0 : place !== "" ? placedY : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, alongLo, sh - cardHeight - alongHiGap)
     readonly property var cardRect: ({
             x: Math.round((screen?.x ?? 0) + cardX),
             y: Math.round((screen?.y ?? 0) + cardY),
