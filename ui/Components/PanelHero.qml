@@ -41,7 +41,8 @@ Item {
     readonly property bool showClock: cfg.hero_clock ?? true
     readonly property bool showWeather: cfg.hero_weather ?? true
     readonly property bool showDetails: cfg.hero_details ?? true
-    readonly property int avatarSize: cfg.hero_avatar_size ?? 64
+    // narrow: the picture no larger than the type beside it can carry
+    readonly property int avatarSize: Math.min(cfg.hero_avatar_size ?? 64, narrow ? 52 : 1000)
     // narrow (a page, a small screen): the details step aside so nothing overlaps
     readonly property bool narrow: width < 820
     // how dark the band is under the type, 0 – 1
@@ -350,7 +351,9 @@ Item {
                         }
                     }
                     Label {
-                        role: "display2"
+                        // narrow: the name gives way to the clock on its right
+                        width: root.narrow ? Math.min(implicitWidth, root.width - root.avatarSize - clockColumn.width - Metrics.s6 * 3 - Metrics.s5 - root.inset * 2) : implicitWidth
+                        role: root.narrow ? "headline" : "display2"
                         font.weight: Font.Medium
                         text: About.displayName
                         style: Text.Raised
@@ -362,11 +365,19 @@ Item {
                         tone: "muted"
                         text: [About.user + "@" + (About.host || "localhost"), About.os, root.uptime > 0 ? root.since(root.uptime) : ""].filter(s => s !== "").join("  ·  ")
                     }
+                    // narrow: the day, under the name, where the details would be
+                    Label {
+                        visible: root.narrow && root.showClock
+                        role: "data"
+                        tone: "muted"
+                        text: Qt.formatDate(Time.now, "ddd  ·  dd MMM")
+                    }
                 }
             }
 
-            // ── when, and what it is like out ──
+            // ── when, and what it is like out (narrow: the hour alone) ──
             Column {
+                id: clockColumn
                 anchors.right: parent.right
                 anchors.rightMargin: Metrics.s6 + root.inset
                 anchors.bottom: parent.bottom
@@ -382,6 +393,7 @@ Item {
                     styleColor: Theme.alpha(Theme.base, 0.3)
                 }
                 Row {
+                    visible: !root.narrow
                     anchors.right: parent.right
                     spacing: Metrics.s3
                     Row {

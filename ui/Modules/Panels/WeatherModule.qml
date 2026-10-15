@@ -119,14 +119,21 @@ Flow {
                 role: "caption"
                 tone: "faint"
                 elide: Text.ElideRight
-                // the city alone when the full name ("Lisbon, Portugal") would cut off the feels-like reading
+                // a place name never cuts the reading off half-way
                 readonly property string feels: root.now.feelsLike !== undefined ? "  ·  feels " + Math.round(root.now.feelsLike) + "°" : ""
                 readonly property string place: root.d.location ?? ""
-                text: (fullFits.width <= width ? place : place.split(",")[0]) + feels
+                // the full place and the reading, else the city and the reading, else the city alone
+                readonly property string city: place.split(",")[0]
+                text: fullFits.width <= width ? place + feels : cityFits.width <= width ? city + feels : city
                 TextMetrics {
                     id: fullFits
                     font: placeLine.font
                     text: placeLine.place + placeLine.feels
+                }
+                TextMetrics {
+                    id: cityFits
+                    font: placeLine.font
+                    text: placeLine.city + placeLine.feels
                 }
             }
         }
