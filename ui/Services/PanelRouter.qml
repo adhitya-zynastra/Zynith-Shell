@@ -38,6 +38,33 @@ Singleton {
         const was = zones[key];
         if (!was || was.edge !== z.edge || was.size !== z.size || was.screen !== z.screen)
             zones = Object.assign({}, zones, { [key]: z });
+        follow(id, screenName, origin);
+    }
+    // A panel open from a bar follows that bar: resized, moved along its edge or to another edge while the panel
+    // is open, the panel keeps the opener's place along it and meets its new edge (it used to stay where it
+    // opened — overlapping a thickened bar, or left behind, still drawn as joined, by a bar that moved).
+    function follow(id: string, screenName: string, origin: var): void {
+        const cur = openPanels[screenName];
+        if (!cur || cur.barId !== id || cur.place !== "" || !cur.barSpan || !origin.barSpan)
+            return;
+        const was = cur.edge === "top" || cur.edge === "bottom";
+        const now = origin.edge === "top" || origin.edge === "bottom";
+        // the opener's distance from the start of the bar, kept; on another axis, the bar's middle
+        const along = was === now ? (was ? cur.originX : cur.originY) - cur.barSpan[0] : (origin.barSpan[1] - origin.barSpan[0]) / 2;
+        const x = now ? origin.barSpan[0] + along : origin.x;
+        const y = now ? origin.y : origin.barSpan[0] + along;
+        if (x === cur.originX && y === cur.originY && origin.edge === cur.edge && origin.extent === cur.extent && origin.reach === cur.reach && origin.barSpan[0] === cur.barSpan[0] && origin.barSpan[1] === cur.barSpan[1] && origin.fillOpacity === cur.fillOpacity)
+            return;
+        set(screenName, Object.assign({}, cur, {
+            originX: x,
+            originY: y,
+            edge: origin.edge,
+            extent: origin.extent,
+            reach: origin.reach,
+            barSpan: origin.barSpan,
+            fillOpacity: origin.fillOpacity,
+            barOpacity: origin.barOpacity
+        }));
     }
     function forgetBar(id: string, screenName: string): void {
         const key = id + "@" + screenName;
@@ -137,7 +164,9 @@ Singleton {
             barOpacity: origin?.barOpacity ?? 0,
             barSpan: origin?.barSpan ?? null,
             barId: origin?.barId ?? "",
-            reach: origin?.reach ?? -1
+            reach: origin?.reach ?? -1,
+            // how long the widget that opened it is along its bar (its signal mark is as wide; 0: not a widget)
+            itemSpan: origin?.itemSpan ?? 0
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,

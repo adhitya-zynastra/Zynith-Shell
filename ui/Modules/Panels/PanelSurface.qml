@@ -31,7 +31,9 @@ PanelWindow {
     readonly property int panelWidth: bare ? sw : Math.min(content.preferredWidth > 0 ? content.preferredWidth : Config.panels.width, place !== "" ? work.w - 2 * placeMargin : sw - 2 * screenMargin)
     // never taller than the screen leaves room for: past that, the content scrolls inside the card
     readonly property real maxCardHeight: place !== "" ? work.h - 2 * placeMargin : edge === "top" || edge === "bottom" ? sh - 2 * (extent + gap) : sh - 2 * screenMargin
-    readonly property real cardHeight: bare ? sh : Math.min(content.implicitHeight, maxCardHeight)
+    // whole pixels: a panel joined to a bottom (or right) bar meets it at its far edge, where a fractional height
+    // left a half-covered row — a light line along the joint
+    readonly property real cardHeight: bare ? sh : Math.round(Math.min(content.implicitHeight, maxCardHeight))
     // ── the morph: a panel that changes (another icon's panel, a tab, content that grows) glides there ──
     // [panels] switch: morph (the card moves and resizes, contents cross-fade) | fade | none;
     // morph_curve: liquid (a slight overshoot) | emphasized | smooth | style (the animation style's);

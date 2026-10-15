@@ -11,6 +11,8 @@ Loader {
     required property string name
     // the capsule group it sits in (its foreground colours the widget), or null
     property var group: null
+    // the corner radius of the plate it sits in (a group's), so its state layer nests in that; -1: the bar's
+    property real nestRadius: -1
     readonly property var spec: Config.resolveBarWidget(name)
 
     // workspaces: the native styles (regular · minimal · focus_hint, the default) are the one-to-one widget;
@@ -23,6 +25,8 @@ Loader {
         item.bar = root.bar;
         if (item.group !== undefined)
             item.group = Qt.binding(() => root.group);
+        if (item.nestRadius !== undefined)
+            item.nestRadius = Qt.binding(() => root.nestRadius);
         item.type = Qt.binding(() => BarWidgetTypes.canonical(root.spec.type));
         item.name = Qt.binding(() => root.name);
         item.settings = Qt.binding(() => root.spec.settings);

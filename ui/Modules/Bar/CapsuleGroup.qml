@@ -79,10 +79,12 @@ Item {
     // capsule (a filled pill) · plate (a tone step) · rule (no box: a hairline tick at each end, so a bar
     // reads as one surface with its groups set apart by space and rule)
     readonly property string look: (group?.style ?? "") !== "" ? group.style : (bar.groupStyle ?? "capsule")
+    // the plate's corner radius; its members' state layers nest inside it (less its padding)
+    readonly property real plateRadius: (root.group?.radius ?? -1) >= 0 ? Math.min(root.group.radius, Math.min(width, height) / 2) : root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2
     Rectangle {
         anchors.fill: parent
         // radius (native capsule_group radius): px, held to a pill; left out, the look's
-        radius: (root.group?.radius ?? -1) >= 0 ? Math.min(root.group.radius, Math.min(width, height) / 2) : root.look === "plate" ? Metrics.radiusPlate : Math.min(width, height) / 2
+        radius: root.plateRadius
         visible: group?.enabled !== false && root.look !== "rule"
         color: root.look === "plate" ? Theme.plate : Theme.alpha(Theme.colour(root.group?.fill ?? "surface_variant"), root.group?.opacity ?? 0.5)
         border.width: (root.group?.border ?? "") !== "" ? 1 : 0
@@ -129,6 +131,7 @@ Item {
                 required property int index
                 bar: root.bar
                 group: root.group
+                nestRadius: root.look === "rule" ? -1 : root.plateRadius
                 name: modelData
                 // the hidden members fade as the accordion closes over them
                 opacity: index === root.firstIndex || root.open ? 1 : 0

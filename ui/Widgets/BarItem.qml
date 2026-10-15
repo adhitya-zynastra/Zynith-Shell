@@ -43,9 +43,13 @@ Item {
     // the widget's own colour, else its capsule's foreground, else the bar's widget colour, else the theme's
     // the capsule group it sits in; its foreground (native capsule_group foreground) colours the widget
     property var group: null
+    // the radius of the plate it sits in (a group's), or -1: the bar's
+    property real nestRadius: -1
     readonly property string groupForeground: group?.foreground ?? ""
     readonly property color ink: (opt("color") ?? "") !== "" ? Theme.colour(opt("color")) : groupForeground !== "" ? Theme.colour(groupForeground) : capsule && (bar?.capsuleForeground ?? "") !== "" ? Theme.colour(bar.capsuleForeground) : (bar?.widgetColor ?? "") !== "" ? Theme.colour(bar.widgetColor) : Theme.ink
-    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : groupForeground !== "" ? Theme.colour(groupForeground) : (bar?.widgetIconColor ?? "") !== "" && !(capsule && (bar?.capsuleForeground ?? "") !== "") ? Theme.colour(bar.widgetIconColor) : ink
+    // active (its panel open, or the thing it switches on): the glyph is lit in the accent, unless a colour of
+    // its own was chosen — light, not a box around it
+    readonly property color iconInk: (opt("icon_color") ?? "") !== "" ? Theme.colour(opt("icon_color")) : groupForeground !== "" ? Theme.colour(groupForeground) : active ? Theme.accent : (bar?.widgetIconColor ?? "") !== "" && !(capsule && (bar?.capsuleForeground ?? "") !== "") ? Theme.colour(bar.widgetIconColor) : ink
     // label weight: the widget's, else the bar's (100–900)
     readonly property int weight: Number(opt("font_weight") ?? bar?.fontWeight ?? 400)
     readonly property string family: (opt("font_family") ?? "") !== "" ? opt("font_family") : (bar?.fontFamily ?? "") !== "" ? bar.fontFamily : Type.ui
@@ -152,12 +156,17 @@ Item {
             }
         }
 
-        // the highlight reaches a little past an unpadded widget, so it frames the glyph rather than clips it
+        // the hover and press layer reaches a little past an unpadded widget, so it frames the glyph rather than
+        // clips it; its corners are concentric with the bar's (the bar's radius less the inset), so it nests in
+        // any silhouette. Active is the lit glyph and the bar's signal mark, not a filled box.
         Rectangle {
+            id: stateLayer
             anchors.fill: parent
             anchors.margins: -Math.max(0, 4 - root.pad)
-            radius: Metrics.radiusMd
-            color: area.pressed ? Theme.press : root.active ? Theme.accentSoft : area.containsMouse && (root.bar?.hoverHighlight ?? true) ? Theme.hover : "transparent"
+            readonly property real inset: Math.max(2, ((root.bar?.thickness ?? Metrics.barThickness) - Math.min(width, height)) / 2)
+            readonly property real outer: root.nestRadius >= 0 ? root.nestRadius : (root.bar?.radius ?? Metrics.radiusMd)
+            radius: Math.min(Math.min(width, height) / 2, Math.max(4, outer - inset))
+            color: area.pressed ? Theme.press : area.containsMouse && (root.bar?.hoverHighlight ?? true) ? Theme.hover : "transparent"
             Behavior on color {
                 ColorAnim {}
             }
@@ -172,7 +181,13 @@ Item {
         spacing: Metrics.s2
         horizontalItemAlignment: Grid.AlignHCenter
         verticalItemAlignment: Grid.AlignVCenter
-        scale: root.sizeScale
+        // a press settles the content inward a little; it springs back on release
+        scale: root.sizeScale * (area.pressed ? 0.92 : 1)
+        Behavior on scale {
+            Anim {
+                role: "spatialFast"
+            }
+        }
     }
 
     // Resting the pointer here. open_on_hover (the widget's, else its bar's): the panel its click opens shows

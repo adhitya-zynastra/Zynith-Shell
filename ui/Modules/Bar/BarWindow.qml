@@ -388,6 +388,7 @@ PanelWindow {
             barOpacity: spec.opacity ?? 0,
             barSpan: barSpan(),
             barId: spec.id ?? "",
+            itemSpan: vertical ? item.height : item.width,
             context: context ?? "",
             history: options?.history ?? [],
             focused: options?.focused ?? false
@@ -479,7 +480,9 @@ PanelWindow {
             fill: Theme.alpha(Theme.glass, win.sheetOpacity)
             // a joined panel and the bar are one surface: no highlight line along the seam
             sheen: Material.sheenAlpha > 0 && win.joinProgress === 0
-            edge: win.border
+            // the outline gives way while a panel is joined (it ran along the joint as a light seam); the joined
+            // panel draws none either, so the two read as one surface
+            edge: win.border && win.joinProgress === 0
             edgeColor: win.borderColor
             edgeWidth: win.borderWidth
 
@@ -536,6 +539,82 @@ PanelWindow {
                         });
                         rest -= up ? 120 : -120;
                     }
+                }
+            }
+
+            // ── the signal mark: where the open panel came from. One per bar, on its inner edge (the side the panel
+            // grows from), under the widget that opened it; it glides when the panel passes to another widget here
+            Item {
+                id: mark
+                readonly property var entry: win.openEntry
+                readonly property bool mine: entry !== null && (entry.barId ?? "") === (win.spec.id ?? "") && (entry.itemSpan ?? 0) > 0
+                // the opener's centre along the bar, in the pill's coordinates
+                readonly property real centre: !entry ? 0 : win.vertical ? entry.originY - win.windowScreenY() - pill.y : entry.originX - win.windowScreenX() - pill.x
+                readonly property real span: Math.max(10, Math.round((entry?.itemSpan ?? 0) * 0.55))
+                property real at: centre
+                property real length: span
+                onCentreChanged: if (mine)
+                    at = centre
+                onSpanChanged: if (mine)
+                    length = span
+                onMineChanged: if (mine) {
+                    // a fresh opening places the mark at once; only a hand-over within the bar glides
+                    if (opacity < 0.05) {
+                        atMove.enabled = false;
+                        at = centre;
+                        length = span;
+                        atMove.enabled = true;
+                    }
+                }
+                Behavior on at {
+                    id: atMove
+                    Anim {
+                        role: "spatial"
+                    }
+                }
+                Behavior on length {
+                    Anim {
+                        role: "spatial"
+                    }
+                }
+                opacity: mine ? 1 : 0
+                Behavior on opacity {
+                    Anim {
+                        role: "effects"
+                    }
+                }
+                visible: opacity > 0.01
+                // on the inner edge: the bottom of a top bar, the right of a left bar …
+                readonly property real thick: 2
+                x: win.vertical ? (win.edge === "left" ? pill.width - thick - 1 : 1) : at - length / 2
+                y: win.vertical ? at - length / 2 : (win.edge === "top" ? pill.height - thick - 1 : 1)
+                width: win.vertical ? thick : length
+                height: win.vertical ? length : thick
+                z: 2
+                // light, not paint: a soft glow toward the bar's middle, the line itself in the accent
+                Rectangle {
+                    readonly property real reach: 7
+                    x: win.vertical ? (win.edge === "left" ? -reach : 0) : -reach
+                    y: win.vertical ? -reach : (win.edge === "top" ? -reach : 0)
+                    width: win.vertical ? reach + mark.thick : parent.width + reach * 2
+                    height: win.vertical ? parent.height + reach * 2 : reach + mark.thick
+                    radius: reach
+                    gradient: Gradient {
+                        orientation: win.vertical ? Gradient.Horizontal : Gradient.Vertical
+                        GradientStop {
+                            position: 0
+                            color: win.edge === "top" || win.edge === "left" ? "transparent" : Theme.signalGlow
+                        }
+                        GradientStop {
+                            position: 1
+                            color: win.edge === "top" || win.edge === "left" ? Theme.signalGlow : "transparent"
+                        }
+                    }
+                }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: mark.thick / 2
+                    color: Theme.accent
                 }
             }
 
