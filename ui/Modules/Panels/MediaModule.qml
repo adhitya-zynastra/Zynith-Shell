@@ -260,7 +260,9 @@ Item {
                     role: "label"
                     tone: "muted"
                     elide: Text.ElideRight
-                    text: [Media.artist, Media.album].filter(s => s !== "").join("  ·  ")
+                    // nothing playing: say where playback comes from, instead of leaving the space empty
+                    text: root.present ? [Media.artist, Media.album].filter(s => s !== "").join("  ·  ") : "Music or video in any app that shares it (a browser, Spotify, mpv) shows up here."
+                    wrapMode: root.present ? Text.NoWrap : Text.WordWrap
                     visible: text !== ""
                 }
                 // which player, when there is more than one

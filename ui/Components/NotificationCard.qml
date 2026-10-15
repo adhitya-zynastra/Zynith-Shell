@@ -36,8 +36,10 @@ Item {
         return image !== "" ? image : iconSource(entry.appIcon ?? "");
     }
 
+    // compact is shorter, not only narrower: tighter padding, a smaller badge, one line of body
+    readonly property int pad: compact ? Metrics.s3 : Metrics.s4
     implicitWidth: 360
-    implicitHeight: body.implicitHeight + Metrics.s4 * 2
+    implicitHeight: body.implicitHeight + pad * 2
 
     HoverHandler {
         id: hover
@@ -71,15 +73,15 @@ Item {
 
     Row {
         id: body
-        x: Metrics.s4
-        y: Metrics.s4
-        width: parent.width - Metrics.s4 * 2
-        spacing: Metrics.s4
+        x: root.pad
+        y: root.pad
+        width: parent.width - root.pad * 2
+        spacing: root.pad
 
         Item {
             id: badge
-            width: 36
-            height: 36
+            width: root.compact ? 28 : 36
+            height: width
 
             Rectangle {
                 anchors.fill: parent
@@ -169,7 +171,7 @@ Item {
                 tone: "muted"
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
-                maximumLineCount: root.compact ? 2 : 4
+                maximumLineCount: root.compact ? 1 : 4
                 textFormat: Text.PlainText
                 text: root.entry.body
             }
