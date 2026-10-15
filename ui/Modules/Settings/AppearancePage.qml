@@ -218,7 +218,7 @@ Column {
         }
         SettingFont {
             title: "Display font"
-            detail: "Clocks, numbers and headings"
+            detail: "Clocks and numbers (headings are set in Sora)"
             domain: "appearance"
             key: "font_display"
             fallback: "Space Grotesk (Zynith's)"

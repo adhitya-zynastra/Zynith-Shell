@@ -19,13 +19,45 @@ Column {
     visible: shown
     height: shown ? implicitHeight : 0
 
-    SectionHead {
+    // folded by default: one line saying what is inside and where it applies; opened by a click, and by itself
+    // when a search lands in it. Nothing is removed, only kept out of the way of the page's own settings.
+    property bool open: false
+    readonly property bool unfolded: open || query !== ""
+
+    Item {
         width: parent.width
-        index: "∗"
-        title: root.inactive ? root.name + " · native, off while Zynith draws it" : root.name
+        height: head.implicitHeight
+        SectionHead {
+            id: head
+            anchors.fill: parent
+            index: "∗"
+            title: root.inactive ? root.name + " · native, off while Zynith draws it" : root.name
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "data"
+                tone: disclose.containsMouse ? "accent" : "faint"
+                text: (section.count > 0 ? section.count + (section.count === 1 ? " setting" : " settings") : "") + (root.unfolded ? "  ▴" : "  ▾")
+            }
+        }
+        MouseArea {
+            id: disclose
+            anchors.fill: parent
+            anchors.margins: -Metrics.s2
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.open = !root.open
+        }
     }
     Label {
-        visible: root.inactive
+        visible: !root.unfolded
+        width: parent.width
+        role: "caption"
+        tone: "faint"
+        wrapMode: Text.WordWrap
+        text: "The native shell's own settings on this subject — they shape the lock screen, the apps' theme templates and the native fallback. Click to show them."
+    }
+    Label {
+        visible: root.inactive && root.unfolded
         width: parent.width
         role: "caption"
         tone: "faint"
@@ -34,6 +66,8 @@ Column {
     }
     RegistrySection {
         id: section
+        visible: root.unfolded
+        height: visible ? implicitHeight : 0
         width: parent.width
         section: root.entry.section
         groupFilter: root.entry.groups ?? []

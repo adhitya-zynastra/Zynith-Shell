@@ -30,7 +30,8 @@ Item {
         anchors.right: trail.left
         anchors.verticalCenter: parent.verticalCenter
 
-        // a surface's title in the heading voice (as the Control Panel's hero), its count or state as data
+        // a surface's title in the heading voice (as the Control Panel's hero); its line under it is language
+        // (what this is, what state it is in), so it is read, not tracked out as data
         Label {
             width: parent.width
             role: "heading"
@@ -40,8 +41,8 @@ Item {
         Label {
             visible: root.caption !== ""
             width: parent.width
-            role: "data"
-            tone: "faint"
+            role: "caption"
+            tone: "muted"
             text: root.caption
         }
     }
