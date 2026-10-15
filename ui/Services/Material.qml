@@ -69,20 +69,36 @@ Singleton {
         Config.setAppearance("blur_strength", Math.round(Model.clamp01(v) * 100) / 100);
     }
 
-    // niri's blur follows the Blur style's strength (only the shell process sends it, and only on a change)
-    readonly property int nativeBlurStrength: Model.resolve("blur", 0.5, blurStrength, { blurAvailable: true }).nativeBlurStrength
+    // niri follows the style (only the shell process writes, and only on a change): its global blur strength
+    // (Glass: the faintest, Blur: the chosen strength; niri has one blur, and only one style is in use) through the
+    // native shell's [shell.glass] blur_strength, and whether the backdrop is the wallpaper (xray, Glass) or what is
+    // really behind (Blur) through rice/materials.kdl, which NiriConfig validates before installing.
+    readonly property int nativeBlurStrength: resolved.nativeBlurStrength
+    readonly property string backdrop: resolved.backdrop
     property int sentBlurStrength: -1
     property bool sendsNative: false
     onNativeBlurStrengthChanged: sendNative()
+    onBackdropChanged: sendNative()
     onSendsNativeChanged: sendNative()
     function sendNative(): void {
-        if (!sendsNative || style !== "blur" || nativeBlurStrength === sentBlurStrength || !Config.loaded)
+        if (!sendsNative || !Config.loaded)
             return;
-        sentBlurStrength = nativeBlurStrength;
-        CoreClient.call("settings-set " + JSON.stringify({
-            path: ["shell", "glass", "blur_strength"],
-            value: nativeBlurStrength
-        }));
+        if (nativeBlurStrength >= 0 && nativeBlurStrength !== sentBlurStrength) {
+            sentBlurStrength = nativeBlurStrength;
+            CoreClient.call("settings-set " + JSON.stringify({
+                path: ["shell", "glass", "blur_strength"],
+                value: nativeBlurStrength
+            }));
+        }
+        if (onNiri)
+            NiriConfig.apply("materials", Model.niriFragment(backdrop));
     }
-    onStyleChanged: sendNative()
+    readonly property bool niriRulesIncluded: NiriConfig.isIncluded("materials")
+    readonly property Connections whenLoaded: Connections {
+        target: Config
+        function onLoadedChanged(): void {
+            root.sendNative();
+        }
+    }
+    Component.onCompleted: Qt.callLater(sendNative)
 }

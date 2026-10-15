@@ -24,7 +24,8 @@ TestCase {
         verify(subtle.fillAlpha - strong.fillAlpha >= 0.25, "clearer glass: " + subtle.fillAlpha + " → " + strong.fillAlpha);
         verify(strong.edgeAlpha - subtle.edgeAlpha >= 0.15, "more light on the edge");
         verify(strong.sheenAlpha > subtle.sheenAlpha);
-        verify(!strong.blur, "glass is clear: no blur");
+        compare(strong.backdrop, "wallpaper", "glass shows the wallpaper (xray), not the windows behind");
+        compare(strong.nativeBlurStrength, 0, "with niri's faintest blur");
     }
     function test_glass_never_gets_too_thin_to_read() {
         verify(M.resolve("glass", 1, 0.5, ok).fillAlpha >= 0.44);
@@ -38,6 +39,20 @@ TestCase {
     }
     function test_each_style_keeps_its_own_strength() {
         compare(M.resolve("glass", 0.2, 0.9, ok).fillAlpha, M.resolve("glass", 0.2, 0.1, ok).fillAlpha, "blur strength does not touch glass");
+    }
+    function test_each_style_names_its_backdrop_and_niri_rule() {
+        compare(M.resolve("solid", 0.5, 0.5, ok).backdrop, "none");
+        verify(!M.resolve("solid", 0.5, 0.5, ok).blur, "solid asks for nothing");
+        compare(M.resolve("blur", 0.5, 0.5, ok).backdrop, "live");
+        verify(M.niriFragment("wallpaper").indexOf("xray true") > 0);
+        verify(M.niriFragment("live").indexOf("xray false") > 0);
+        verify(M.niriFragment("live").indexOf("zynith-(bar-.+|panel|osd|notifications)") > 0);
+        verify(M.niriFragment("live").indexOf("Zynith Settings") > 0);
+    }
+    function test_pressure_keeps_the_wallpaper_behind_glass() {
+        const g = M.resolve("glass", 0.5, 0.5, { blurAvailable: true, easeEffects: true });
+        verify(g.blur, "xray reuses one blurred wallpaper: nearly free, so it stays");
+        verify(!g.shadows);
     }
     function test_blur_unavailable_is_said_not_pretended() {
         const m = M.resolve("blur", 0.5, 0.5, { blurAvailable: false, easeEffects: false });
