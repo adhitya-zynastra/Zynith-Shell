@@ -112,16 +112,32 @@ Item {
                 idB = panelId;
             return;
         }
+        // between two tabs the pages move like one strip, in the direction the tab plate travels: the new page
+        // comes in from that side while the old one leaves by the other (a shared axis with the plate above);
+        // anything else cross-fades in place
+        const from = tabIndexOf(front === 0 ? idA : idB);
+        const to = tabIndexOf(panelId);
+        const dir = tabbed && from >= 0 && to >= 0 && from !== to ? (to > from ? 1 : -1) : 0;
         // the incoming panel takes the free slot and becomes the live one at once (the card sizes to it)
         swap.stop();
+        leaving.x = 0;
         if (front === 0)
             idB = panelId;
         else
             idA = panelId;
         front = 1 - front;
+        slideOut = -dir * slideDistance;
         live.opacity = 0;
-        live.scale = contentScale;
+        live.scale = dir !== 0 ? 1 : contentScale;
+        live.x = dir * slideDistance;
         swap.start();
+    }
+    // how far a page travels on a tab change: enough to read as movement, never a full page (the card clips it)
+    readonly property real slideDistance: Math.round(Math.min(Metrics.s7 * 5, width * 0.14))
+    property real slideOut: 0
+    function tabIndexOf(id: string): int {
+        const t = id === "home" || id === "quick" ? "control" : id;
+        return tabs.findIndex(x => x.id === t);
     }
 
     ParallelAnimation {
@@ -136,9 +152,25 @@ Item {
         NumberAnimation {
             target: root.leaving
             property: "scale"
-            to: root.contentScale
+            to: root.slideOut !== 0 ? 1 : root.contentScale
             duration: Motion.contentOut + 40
             easing.type: Motion.exitEasing
+        }
+        NumberAnimation {
+            target: root.leaving
+            property: "x"
+            to: root.slideOut
+            duration: Motion.spatialFast
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.spatialFastCurve
+        }
+        NumberAnimation {
+            target: root.live
+            property: "x"
+            to: 0
+            duration: Motion.spatial
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.spatialCurve
         }
         SequentialAnimation {
             PauseAnimation {
@@ -170,6 +202,7 @@ Item {
                 root.idA = "";
             root.leaving.opacity = 1;
             root.leaving.scale = 1;
+            root.leaving.x = 0;
         }
     }
 
