@@ -57,6 +57,18 @@ Item {
         return out;
     }
     readonly property var selected: shown[Math.min(current, shown.length - 1)] ?? null
+    // the best match leads, taller than the rest (a calculator's answer as a readout); browsing has none
+    readonly property bool topHit: !grid && text.trim() !== "" && shown.length > 0 && shown[0].child !== true
+    readonly property int topHeight: shown[0]?.kind === "calc" ? rowHeight * 2 : rowHeight + (compact ? 10 : 18)
+    function rowY(i: int): real {
+        return i <= 0 ? 0 : (topHit ? topHeight - rowHeight : 0) + i * (rowHeight + list.spacing);
+    }
+    function rowH(i: int): real {
+        return i === 0 && topHit ? topHeight : rowHeight;
+    }
+    // keyboard first: the selection (Enter's target) moves only by keys. The pointer marks the row under it with
+    // a hover layer and opens what it clicks; it never moves the selection — a resting pointer under rows that
+    // are rebuilt or re-centred as you type would otherwise take the selection from what was typed.
     onShownChanged: current = Math.min(current, Math.max(0, shown.length - 1))
     onTextChanged: {
         current = 0;
@@ -124,7 +136,7 @@ Item {
         // ── the search line ─────────────────────────────────────────────────
         Item {
             width: column.inner
-            height: 52
+            height: 60
 
             Rectangle {
                 id: chip
@@ -175,9 +187,11 @@ Item {
                 color: Theme.ink
                 selectionColor: Theme.accentSoft
                 selectedTextColor: Theme.ink
-                font.family: Type.ui
-                font.pixelSize: Type.headline
+                // the query in the heading voice: what you type is the launcher's title
+                font.family: Type.heading
+                font.pixelSize: Type.headingSize - 2
                 font.weight: Font.Light
+                font.letterSpacing: -0.3
                 clip: true
                 onTextChanged: root.text = text
 
@@ -210,10 +224,11 @@ Item {
                 Label {
                     visible: field.text === ""
                     anchors.verticalCenter: parent.verticalCenter
-                    role: "headline"
+                    role: "heading"
+                    font.pixelSize: Type.headingSize - 2
                     font.weight: Font.Light
                     tone: "faint"
-                    text: root.category === "all" ? "Search" : "Search " + (Apps.categories.find(c => c.key === root.category)?.label ?? "")
+                    text: root.category === "all" ? "Open, find or calculate" : "Search " + (Apps.categories.find(c => c.key === root.category)?.label ?? "")
                 }
             }
         }
@@ -312,7 +327,7 @@ Item {
             id: list
             visible: !root.grid
             width: column.inner
-            height: visible ? Math.min(root.rows, Math.max(1, root.shown.length)) * (root.rowHeight + spacing) : 0
+            height: visible ? (root.shown.length === 0 ? 0 : root.rowY(Math.min(root.rows, root.shown.length) - 1) + root.rowH(Math.min(root.rows, root.shown.length) - 1) + spacing) : 0
             spacing: 2
             clip: true
             interactive: contentHeight > height
@@ -342,9 +357,10 @@ Item {
                 z: -1
                 visible: root.shown.length > 0
                 width: list.width
-                height: root.rowHeight
-                y: root.current * (root.rowHeight + list.spacing)
+                height: root.rowH(root.current)
+                y: root.rowY(root.current)
                 Glide on y {}
+                Glide on height {}
                 Rectangle {
                     anchors.fill: parent
                     radius: Metrics.radiusPlate
@@ -396,17 +412,30 @@ Item {
                 readonly property bool selected: index === root.current
                 readonly property bool child: modelData.child === true
 
+                readonly property bool best: index === 0 && root.topHit
+                readonly property bool calc: modelData.kind === "calc"
                 width: list.width
-                height: root.rowHeight
+                height: root.rowH(index)
                 // rows arrive one after another as the launcher opens
                 opacity: Math.min(1, Math.max(0, (root.visibleProgress - Math.min(0.5, index * 0.05)) / 0.5))
 
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Metrics.radiusPlate
+                    color: Theme.hover
+                    opacity: rowArea.containsMouse && !row.selected ? 1 : 0
+                    Behavior on opacity {
+                        Anim {
+                            role: "effects"
+                        }
+                    }
+                }
                 MouseArea {
+                    id: rowArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    onEntered: root.current = row.index
                     onClicked: mouse => {
                         if (mouse.button === Qt.RightButton && row.modelData.kind === "app") {
                             root.current = row.index;
@@ -424,7 +453,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     // [launcher] icon_size (0 by density) and show_icons (apps' own icons; others keep their glyph)
                     readonly property bool iconsOff: root.options.show_icons === false && row.modelData.kind === "app"
-                    width: row.child ? 20 : (root.options.icon_size ?? 0) > 0 ? root.options.icon_size : root.compact ? 24 : 32
+                    width: row.child ? 20 : (root.options.icon_size ?? 0) > 0 ? root.options.icon_size + (row.best ? 8 : 0) : (root.compact ? 24 : 32) + (row.best ? 8 : 0)
                     height: width
 
                     readonly property string iconSource: row.modelData.icon ? Quickshell.iconPath(row.modelData.icon, true) : ""
@@ -481,9 +510,10 @@ Item {
 
                     Label {
                         width: parent.width
-                        role: row.modelData.kind === "calc" ? "title" : row.child ? "label" : "body"
-                        numeric: row.modelData.kind === "calc"
-                        font.weight: row.selected ? Font.Medium : Font.Normal
+                        // the answer as a readout; the best match a size up; actions under an app smaller
+                        role: row.calc && row.best ? "display2" : row.calc ? "title" : row.best ? "title" : row.child ? "label" : "body"
+                        numeric: row.calc
+                        font.weight: row.calc && row.best ? Font.Light : row.selected ? Font.Medium : Font.Normal
                         text: row.modelData.title
                     }
                     Label {
@@ -528,16 +558,28 @@ Item {
                             tone: "faint"
                         }
                     }
-                    Icon {
+                    // what Enter does, on the selected row
+                    Row {
                         anchors.verticalCenter: parent.verticalCenter
-                        name: "corner-down-left"
-                        size: 13
-                        tone: "faint"
+                        spacing: Metrics.s1
                         opacity: row.selected ? 1 : 0
                         Behavior on opacity {
                             Anim {
                                 role: "effects"
                             }
+                        }
+                        Label {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !root.compact
+                            role: "data"
+                            tone: root.armed === row.modelData.key ? "danger" : "muted"
+                            text: root.armed === row.modelData.key ? "confirm" : row.calc ? "copy" : ({ app: "open", window: "focus", wallpaper: "apply", emoji: "copy" })[row.modelData.kind] ?? "run"
+                        }
+                        Icon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: "corner-down-left"
+                            size: 13
+                            tone: "faint"
                         }
                     }
                 }
@@ -583,11 +625,22 @@ Item {
                 Glide on scale {
                     epsilon: 0.001
                 }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Metrics.radiusLg
+                    color: Theme.hover
+                    opacity: tileArea.containsMouse && tile.index !== root.current ? 1 : 0
+                    Behavior on opacity {
+                        Anim {
+                            role: "effects"
+                        }
+                    }
+                }
                 MouseArea {
+                    id: tileArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onEntered: root.current = tile.index
                     onClicked: root.open(tile.index)
                 }
                 Column {
@@ -631,7 +684,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             role: "label"
             tone: "faint"
-            text: root.mode.id === "calc" ? "Type an expression" : root.mode.id === "emoji" && Launcher.emojiTable.length === 0 ? "" : "Nothing matches"
+            text: root.mode.id === "calc" ? "Type an expression — 2^10, 15% of 80, sqrt 2" : root.mode.id === "emoji" && Launcher.emojiTable.length === 0 ? "" : root.text.trim() === "" ? "Nothing here yet" : "Nothing matches “" + root.text.trim() + "”  ·  = calculates, > finds a window"
         }
 
         // ── the modes and keys, as a quiet legend ───────────────────────────
@@ -646,7 +699,7 @@ Item {
                 spacing: Metrics.s4
 
                 Repeater {
-                    model: Launcher.modes.filter(m => m.prefix !== "")
+                    model: root.text.trim() === "" || !root.appsMode ? Launcher.modes.filter(m => m.prefix !== "") : []
                     delegate: Row {
                         required property var modelData
                         spacing: Metrics.s1
@@ -674,11 +727,11 @@ Item {
                     }
                 }
                 Label {
-                    visible: root.appsMode && column.inner > 560
+                    visible: root.appsMode && (column.inner > 560 || root.text.trim() !== "")
                     anchors.verticalCenter: parent.verticalCenter
                     role: "data"
                     tone: "faint"
-                    text: "→ actions   ⌃P pin"
+                    text: root.text.trim() === "" ? "→ actions   ⌃P pin" : "↵ open   → actions   ⌃P pin   esc close"
                 }
             }
         }

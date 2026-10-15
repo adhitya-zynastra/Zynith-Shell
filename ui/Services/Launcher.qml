@@ -127,7 +127,9 @@ Singleton {
         let extra = [];
         if (q !== "") {
             if (inGlobal("calculator", true))
-                extra = extra.concat(nativeCalc ? remote("Calculator", q) : Calc.looksLikeMath(q) ? calc(q) : []);
+                // only text with a number in it is asked (the native calculator reads any word as a unit:
+                // "qzxw" came back as an answer); "5 usd to eur" still is
+                extra = extra.concat(nativeCalc ? (/\d/.test(q) ? remote("Calculator", q) : []) : Calc.looksLikeMath(q) ? calc(q) : []);
             if (inGlobal("windows", false))
                 extra = extra.concat(windows(q, 3));
             if (inGlobal("emoji", false))
