@@ -105,7 +105,7 @@ Scope {
     Connections {
         target: Ipc
         function onOsdProbe(kind: string): void {
-            root.show(kind, "Probe", "adjustments", "probe", 0.5, false);
+            root.show(kind, "Probe", "adjustments", "50", 0.5, false);
         }
     }
     Connections {
@@ -170,12 +170,16 @@ Scope {
 
                     Glass {
                         id: card
+                        // for diagnostics: its own pixels (zynith-ui ipc captureBar osd@<screen> <png>)
+                        Component.onCompleted: PanelRouter.barItems["osd@" + (win.screen?.name ?? "")] = card
                         readonly property bool gauge: root.value >= 0
                         x: win.pad + (360 - width) / 2
                         y: win.pad
-                        width: gauge ? 300 : Math.min(360, Math.max(200, content.implicitWidth + Metrics.s5 * 2))
-                        height: gauge ? 52 : 44
-                        radius: height / 2
+                        // the notification's anatomy, as a readout: a glyph tile, the kind in the data voice, the
+                        // level in display numerals over its meter; a lens like every card, not a pill
+                        width: gauge ? 320 : Math.min(360, Math.max(200, content.implicitWidth + Metrics.s4 * 2))
+                        height: gauge ? 64 : 52
+                        radius: Metrics.radiusSurface
                         raised: true
                         opacity: perScreen.presence
                         transform: Translate {
@@ -198,25 +202,27 @@ Scope {
                         Row {
                             id: content
                             anchors.left: parent.left
-                            anchors.leftMargin: Metrics.s3
+                            anchors.leftMargin: Metrics.s4
                             anchors.verticalCenter: parent.verticalCenter
-                            spacing: Metrics.s3
+                            spacing: Metrics.s4
 
-                            // the icon sits in a disc tinted by state: accent when on, quiet when off
+                            // the glyph on a plate, as a notification's: lit when on, quiet when off
                             Rectangle {
                                 id: disc
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: card.height - Metrics.s3 * 2
+                                width: 36
                                 height: width
-                                radius: width / 2
-                                color: "transparent"
+                                radius: Metrics.radiusPlate
+                                color: Theme.plate
+                                border.width: root.inactive ? 0 : Metrics.hairline
+                                border.color: Theme.signalEdge
 
                                 Icon {
                                     id: glyph
                                     anchors.centerIn: parent
                                     name: root.icon
-                                    size: card.gauge ? 19 : 16
-                                    tone: root.inactive ? "faint" : "ink"
+                                    size: 18
+                                    tone: root.inactive ? "faint" : "accent"
                                 }
                                 // a small acknowledgement on every change
                                 SequentialAnimation {
@@ -247,27 +253,42 @@ Scope {
 
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: card.gauge ? 6 : 1
-                                width: card.gauge ? card.width - disc.width - Metrics.s3 * 2 - Metrics.s5 : implicitWidth
+                                spacing: card.gauge ? 4 : 1
+                                width: card.gauge ? card.width - disc.width - Metrics.s4 * 3 : implicitWidth
 
                                 // title and value on one line for gauges; the message alone otherwise
                                 Item {
                                     visible: card.gauge
                                     width: parent.width
-                                    height: 16
+                                    height: reading.implicitHeight
                                     Label {
+                                        id: kindLabel
                                         anchors.left: parent.left
-                                        anchors.verticalCenter: parent.verticalCenter
+                                        // on the readout's baseline (the readout sits in a row, so by offset)
+                                        y: reading.baselineOffset - baselineOffset
                                         role: "data"
-                                        tone: "faint"
+                                        tone: "muted"
                                         text: root.title
                                     }
-                                    Label {
+                                    // the level: display numerals, the unit set smaller
+                                    Row {
                                         anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        role: "data"
-                                        tone: root.value > 1 ? "danger" : "ink"
-                                        text: /^\d+%?$/.test(root.label) ? String(parseInt(root.label)).padStart(3, "0") : root.label
+                                        spacing: 1
+                                        Label {
+                                            id: reading
+                                            role: "headline"
+                                            numeric: true
+                                            font.weight: Font.Light
+                                            tone: root.value > 1 ? "danger" : "ink"
+                                            text: /^\d+%?$/.test(root.label) ? String(parseInt(root.label)) : root.label
+                                        }
+                                        Label {
+                                            visible: /^\d+%$/.test(root.label) || (/^\d+$/.test(root.label) && root.value >= 0)
+                                            y: reading.baselineOffset - baselineOffset
+                                            role: "caption"
+                                            tone: "muted"
+                                            text: "%"
+                                        }
                                     }
                                 }
                                 Item {
@@ -322,7 +343,7 @@ Scope {
                                 }
                                 Label {
                                     visible: !card.gauge
-                                    width: Math.min(implicitWidth, 360 - disc.width - Metrics.s3 * 2 - Metrics.s5 * 2)
+                                    width: Math.min(implicitWidth, 360 - disc.width - Metrics.s4 * 4)
                                     role: "label"
                                     tone: root.inactive ? "muted" : "ink"
                                     text: root.label

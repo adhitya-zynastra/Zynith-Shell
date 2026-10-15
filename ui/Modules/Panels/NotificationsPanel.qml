@@ -104,7 +104,7 @@ Column {
         visible: Notifications.dnd
         width: root.inner
         height: 30
-        radius: 15
+        radius: height / 2
         color: Theme.accentSoft
         Row {
             anchors.centerIn: parent

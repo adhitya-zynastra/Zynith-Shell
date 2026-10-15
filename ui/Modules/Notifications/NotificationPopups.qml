@@ -99,11 +99,13 @@ Scope {
             BlurRegion {
                 window: win
                 items: win.cards
-                radius: Metrics.radiusLg
+                radius: Metrics.radiusSurface
             }
 
             ListView {
                 id: list
+                // for diagnostics: the cards' own pixels (zynith-ui ipc captureBar notifications@<screen> <png>)
+                Component.onCompleted: PanelRouter.barItems["notifications@" + (win.screen?.name ?? "")] = list
                 // a reply field takes the keyboard while it is being used
                 property bool typing: false
                 x: win.pad + (root.side === "left" ? 0 : 40)
@@ -240,7 +242,7 @@ Scope {
                         // the material's raised tier (denser than panels: popups land on anything)
                         Glass {
                             anchors.fill: parent
-                            radius: Metrics.radiusLg
+                            radius: Metrics.radiusSurface
                             raised: true
                             fill: Theme.glassRaised
                         }
@@ -257,8 +259,8 @@ Scope {
                             visible: slot.timeout > 0
                             anchors.bottom: parent.bottom
                             anchors.left: parent.left
-                            anchors.leftMargin: Metrics.radiusLg
-                            width: (parent.width - Metrics.radiusLg * 2) * slot.remaining
+                            anchors.leftMargin: Metrics.radiusSurface
+                            width: (parent.width - Metrics.radiusSurface * 2) * slot.remaining
                             height: 2
                             radius: 1
                             color: Theme.alpha(Theme.accent, 0.55)

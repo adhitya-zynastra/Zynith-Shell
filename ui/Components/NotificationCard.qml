@@ -269,18 +269,25 @@ Item {
 
                     delegate: Item {
                         required property var modelData
+                        required property int index
+                        // the first action is the one meant: it carries the signal; the rest stay quiet
+                        readonly property bool primary: index === 0
                         width: actionLabel.implicitWidth + Metrics.s5 * 2
                         height: 28
 
                         Rectangle {
                             anchors.fill: parent
                             radius: height / 2
-                            color: actionArea.pressed ? Theme.press : actionArea.containsMouse ? Theme.accentSoft : Theme.hover
+                            color: actionArea.pressed ? Theme.press : parent.primary ? Theme.signalFill : actionArea.containsMouse ? Theme.hover : "transparent"
+                            border.width: Metrics.hairline
+                            border.color: parent.primary ? Theme.signalEdge : actionArea.containsMouse ? Theme.hairline : Theme.rule
                         }
                         Label {
                             id: actionLabel
                             anchors.centerIn: parent
                             role: "label"
+                            font.weight: parent.primary ? Font.Medium : Font.Normal
+                            tone: parent.primary ? "accent" : "ink"
                             text: parent.modelData.text
                         }
                         MouseArea {

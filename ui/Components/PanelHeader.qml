@@ -30,17 +30,18 @@ Item {
         anchors.right: trail.left
         anchors.verticalCenter: parent.verticalCenter
 
+        // a surface's title in the heading voice (as the Control Panel's hero), its count or state as data
         Label {
             width: parent.width
-            role: "headline"
+            role: "heading"
+            font.pixelSize: Type.headline + 2
             text: root.title
         }
         Label {
             visible: root.caption !== ""
             width: parent.width
-            role: "caption"
+            role: "data"
             tone: "faint"
-            caps: true
             text: root.caption
         }
     }
