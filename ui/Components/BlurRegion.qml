@@ -19,13 +19,36 @@ QtObject {
     // so it goes at the start of a fade-out and comes as a fade-in lands.
     property bool followOpacity: false
     property real shownAt: 0.98
-    readonly property bool shown: item !== null && item.visible && (!followOpacity || item.opacity >= shownAt)
+    readonly property bool shown: items.length > 0 || (item !== null && item.visible && (!followOpacity || item.opacity >= shownAt))
 
     // more shapes in the window's coordinates: [{ x, y, w, h, cutX, cutY, cut }] — a rectangle, less the circle
     // whose bounding square is cut (an attached panel's fillets)
     property var extra: []
+    // several separate shapes instead of one item (a stack of notification cards: one region over the whole stack
+    // blurred the gaps between the cards too); each is a rounded rect of `radius`, following its item
+    property var items: []
+    readonly property Instantiator many: Instantiator {
+        model: root.items
+        delegate: Region {
+            required property var modelData
+            item: modelData
+            radius: root.radius
+        }
+        onObjectAdded: root.rebuild()
+        onObjectRemoved: root.rebuild()
+    }
+    function rebuild(): void {
+        if (items.length === 0)
+            return;
+        const list = [];
+        for (let i = 0; i < many.count; i++)
+            list.push(many.objectAt(i));
+        region.regions = list;
+        apply();
+    }
+
     readonly property Region region: Region {
-        item: root.item
+        item: root.items.length > 0 ? null : root.item
         radius: root.radius
         topLeftRadius: root.corners ? root.corners[0] : root.radius
         topRightRadius: root.corners ? root.corners[1] : root.radius

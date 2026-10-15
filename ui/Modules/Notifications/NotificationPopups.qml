@@ -90,10 +90,12 @@ Scope {
                     item: waiting
                 }
             }
-            // the compositor blurs behind the stack only, not the window's margins
+            // the compositor's backdrop behind each card, not behind the stack as one block (that showed in the gaps
+            // between cards) nor the window's margins
+            property var cards: []
             BlurRegion {
                 window: win
-                item: list
+                items: win.cards
                 radius: Metrics.radiusLg
             }
 
@@ -169,6 +171,10 @@ Scope {
                     width: list.width
                     height: entry ? card.height : 0
                     visible: entry !== null
+                    // its backdrop region follows the delegate, which is what the list moves (a region on the sheet
+                    // inside stayed where the card first appeared when newer cards pushed it along)
+                    Component.onCompleted: win.cards = win.cards.concat([slot])
+                    Component.onDestruction: win.cards = win.cards.filter(c => c !== slot)
 
                     // the swipe: the card follows the pointer sideways; far or fast enough closes it
                     property real dragX: 0
@@ -228,12 +234,12 @@ Scope {
                         x: slot.dragX
                         opacity: 1 - Math.min(0.7, Math.abs(slot.dragX) / slot.width)
 
-                        // a denser sheet than panels: popups land on anything
+                        // the material's raised tier (denser than panels: popups land on anything)
                         Glass {
                             anchors.fill: parent
                             radius: Metrics.radiusLg
                             raised: true
-                            fill: Theme.alpha(Theme.surfaceMid, 0.95)
+                            fill: Theme.glassRaised
                         }
                         NotificationCard {
                             id: card
