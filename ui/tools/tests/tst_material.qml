@@ -44,7 +44,10 @@ TestCase {
         compare(M.resolve("solid", 0.5, 0.5, ok).backdrop, "none");
         verify(!M.resolve("solid", 0.5, 0.5, ok).blur, "solid asks for nothing");
         compare(M.resolve("blur", 0.5, 0.5, ok).backdrop, "live");
-        verify(M.niriFragment("wallpaper").indexOf("xray true") > 0);
+        // Glass writes no rule (niri's own xray follows the blur region); an explicit `xray true` covered the whole
+        // surface before its region arrived — a frame of bare wallpaper over the windows as a panel opened
+        verify(M.niriFragment("wallpaper").indexOf("xray true") < 0);
+        verify(M.niriFragment("wallpaper").indexOf("layer-rule") < 0);
         verify(M.niriFragment("live").indexOf("xray false") > 0);
         verify(M.niriFragment("live").indexOf("zynith-(bar-.+|panel|osd|notifications)") > 0);
         verify(M.niriFragment("live").indexOf("Zynith Settings") > 0);

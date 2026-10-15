@@ -269,7 +269,10 @@ PanelWindow {
         // the card's corners exactly as drawn (attached: square only where it meets the bar)
         radius: card.radius
         corners: card.drawnCorners
-        followOpacity: !win.bare && !win.attached
+        // the blur only once the card is drawn over it: an attached card fades in within the first sixth of its
+        // growth, and a region switched on before that showed the bare backdrop (in Glass, the wallpaper) as a
+        // rectangle over the windows for a frame
+        followOpacity: !win.bare
         // an attached panel's fillets, each its square less the quarter circle that cuts it
         extra: win.attached ? fillets.blurShapes : []
     }
