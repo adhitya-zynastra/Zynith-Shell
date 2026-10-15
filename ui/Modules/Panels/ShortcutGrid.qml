@@ -47,7 +47,12 @@ Item {
             go(entry.press);
         }
     }
-    // what each control's ring reads: { value 0..1, segments (0: a continuous arc) }, or null for none
+    function clock(seconds: real): string {
+        const s = Math.max(0, Math.round(seconds));
+        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+    // what each control's ring reads: { value 0..1, segments (0: a continuous arc) }, or null for none; one that
+    // can be set by turning the ring also carries set(value) and the number to show while turning (text)
     function readingFor(id: string): var {
         switch (id) {
         case "wifi":
@@ -55,15 +60,15 @@ Item {
         case "bluetooth":
             return Bluetooth.enabled ? { value: Math.min(1, Bluetooth.connected.length / 3), segments: 3 } : null;
         case "audio":
-            return Audio.ready ? { value: Audio.muted ? 0 : Math.min(1, Audio.volume), segments: 0 } : null;
+            return Audio.ready ? { value: Audio.muted ? 0 : Math.min(1, Audio.volume), segments: 0, set: v => Audio.setVolume(v), text: String(Math.round(Audio.volume * 100)) } : null;
         case "mic_mute":
-            return Audio.micReady ? { value: Audio.micMuted ? 0 : Math.min(1, Audio.micVolume), segments: 0 } : null;
+            return Audio.micReady ? { value: Audio.micMuted ? 0 : Math.min(1, Audio.micVolume), segments: 0, set: v => Audio.setMicVolume(v), text: String(Math.round(Audio.micVolume * 100)) } : null;
         case "power_profile":
             return { value: ControlShortcuts.profile === "saver" ? 1 / 3 : ControlShortcuts.profile === "performance" ? 1 : 2 / 3, segments: 3 };
         case "system":
             return { value: System.cpu, segments: 0 };
         case "media":
-            return Media.present && Media.length > 0 ? { value: Media.position / Media.length, segments: 0 } : null;
+            return Media.present && Media.length > 0 ? { value: Media.position / Media.length, segments: 0, set: Media.canSeek ? v => Media.seek(v * Media.length) : undefined, text: clock(Media.position) } : null;
         case "screen_time":
             return ScreenTime.enabled ? { value: Math.min(1, ScreenTime.total / (8 * 3600)), segments: 0 } : null;
         }
@@ -113,6 +118,7 @@ Item {
                     id: compactTile
                     CompactTile {
                         width: slot.width
+                        order: slot.index
                         entry: slot.modelData
                         showLabel: root.labels
                         onPressed: root.press(slot.modelData)
@@ -128,7 +134,27 @@ Item {
         id: ct
         property var entry: null
         property bool showLabel: true
+        property int order: 0
         readonly property bool lit: entry?.on() ?? false
+        readonly property var reading: root.readingFor(entry?.id ?? "")
+        readonly property bool turnable: typeof reading?.set === "function"
+        // a press that travels around the ring turns it; one that stays put is a click
+        property point from: Qt.point(0, 0)
+        property bool turned: false
+        // the panel arriving opens the lit irises one after another; leaving, they all shut together
+        property bool awake: !ExperiencePolicy.stagger || Motion.spatial === 0
+        Timer {
+            running: root.active && !ct.awake
+            interval: 140 + ct.order * 55
+            onTriggered: ct.awake = true
+        }
+        Connections {
+            target: root
+            function onActiveChanged(): void {
+                if (!root.active && ExperiencePolicy.stagger && Motion.spatial > 0)
+                    ct.awake = false;
+            }
+        }
         signal pressed
         signal opened
         implicitHeight: button.height + (showLabel ? Metrics.s2 + name.implicitHeight : 0)
@@ -139,15 +165,34 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             size: Math.min(ct.width, 54)
             lit: ct.lit
+            awake: ct.awake
             glyph: ct.entry?.icon() ?? ""
-            reading: root.readingFor(ct.entry?.id ?? "")
+            reading: ct.reading
             hovered: area.containsMouse
-            pressed: area.pressed
+            pressed: area.pressed && !ct.turned
+            turning: area.pressed && ct.turned
             Interactive {
                 id: area
                 anchors.fill: parent
                 radius: width / 2
-                onClicked: mouse => mouse.button === Qt.RightButton && (ct.entry?.more ?? "") !== "" ? ct.opened() : ct.pressed()
+                preventStealing: ct.turnable
+                onPressed: mouse => {
+                    ct.from = Qt.point(mouse.x, mouse.y);
+                    ct.turned = false;
+                }
+                onPositionChanged: mouse => {
+                    if (!pressed || !ct.turnable || mouse.buttons !== Qt.LeftButton)
+                        return;
+                    if (!ct.turned && Math.hypot(mouse.x - ct.from.x, mouse.y - ct.from.y) < 6)
+                        return;
+                    ct.turned = true;
+                    ct.reading.set(button.valueAt(mouse.x, mouse.y));
+                }
+                onClicked: mouse => {
+                    if (ct.turned)
+                        return;
+                    mouse.button === Qt.RightButton && (ct.entry?.more ?? "") !== "" ? ct.opened() : ct.pressed();
+                }
             }
         }
         Label {

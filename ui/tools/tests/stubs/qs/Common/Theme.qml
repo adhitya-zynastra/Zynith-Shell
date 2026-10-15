@@ -14,6 +14,12 @@ QtObject {
     readonly property color well: "#222"
     readonly property color base: "#111"
     readonly property color rule: "#555"
+    readonly property color plate: "#2a2c27"
+    readonly property color surfaceHigh: "#30332c"
+    readonly property color surfaceHighest: "#3b3e36"
+    readonly property color signalFill: "#1a2a10"
+    readonly property color signalEdge: "#9c6"
+    readonly property color signalGlow: "#3349661f"
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);
     }
