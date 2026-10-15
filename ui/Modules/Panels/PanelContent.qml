@@ -173,6 +173,20 @@ Item {
         }
     }
 
+    // keyboard navigation over the tabs (PanelSurface's keys): true when it moved
+    function stepTab(by: int): bool {
+        if (!tabbed)
+            return false;
+        const i = tabs.findIndex(t => t.id === tabId);
+        return goTab((i + by + tabs.length) % tabs.length);
+    }
+    function goTab(i: int): bool {
+        if (!tabbed || i < 0 || i >= tabs.length)
+            return false;
+        PanelRouter.switchTo(tabs[i].id, screen.name);
+        return true;
+    }
+
     function wire(item: Item): void {
         item.screen = Qt.binding(() => root.screen);
         item.visibleProgress = Qt.binding(() => root.visibleProgress);

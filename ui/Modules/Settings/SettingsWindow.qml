@@ -11,9 +11,9 @@ FloatingWindow {
     title: "Zynith Settings"
     implicitWidth: 980
     implicitHeight: 660
-    // Settings is read, so it takes the material with restraint: Solid opaque; Glass and Blur only lightly
-    // translucent (never under 0.9), with niri's blur behind it in Blur
-    readonly property real sheetAlpha: Material.solid ? 1 : Math.max(Material.blur ? 0.88 : 0.92, Material.fillAlpha + 0.22)
+    // Settings is read, so it takes the material with restraint: Solid opaque; Glass and Blur a little denser than
+    // the panels (never under 0.78). Behind it niri puts the wallpaper (Glass, xray) or the blurred desktop (Blur).
+    readonly property real sheetAlpha: Material.solid ? 1 : Math.max(0.78, Material.fillAlpha + 0.12)
     color: "transparent"
 
     property string route: Quickshell.env("ZYNITH_SETTINGS_ROUTE") || "home"
