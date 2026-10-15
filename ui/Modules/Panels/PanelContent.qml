@@ -222,6 +222,13 @@ Item {
         }
     }
 
+    // a horizontal swipe over the panel (two fingers on a touchpad, or a tilt wheel) turns the page
+    SwipeArea {
+        anchors.fill: parent
+        enabled: root.tabbed
+        onStepped: by => root.stepTab(by)
+    }
+
     // keyboard navigation over the tabs (PanelSurface's keys): true when it moved
     function stepTab(by: int): bool {
         if (!tabbed)
