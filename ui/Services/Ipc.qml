@@ -348,6 +348,7 @@ Singleton {
                 spectrum: { consumers: Spectrum.consumers, active: Spectrum.active, bands: Spectrum.values.length },
                 panels: PanelRouter.openPanels,
                 network: { connected: Network.connected, kind: NetworkState.kind, strength: Number(Network.strength.toFixed(2)), wifi: Network.wifiEnabled, listed: Network.networks.length, consumers: NetworkState.consumers, nameLength: Network.name.length, nativeNameLength: NetworkState.name.length, vpn: Network.vpn !== "" },
+                scheme: { image: Scheme.image, primary: String(Scheme.target.primary ?? ""), blend: Number(Scheme.blend.toFixed(2)), wallpaper: Wallpapers.current },
                 core: { known: Core.known, clipboardEntries: Clipboard.entries.length, wallpaperMode: Wallpapers.mode, liveItems: Object.keys(Wallpapers.liveItems).length, staticKnown: Wallpapers.current !== "" },
                 notifications: { serving: Notifications.serving, wanted: Notifications.wanted, history: Notifications.history.length, popups: Notifications.popups.length, dnd: Notifications.dnd },
                 windowBehaviour: { value: Config.window.behaviour, included: WindowBehaviour.included, error: WindowBehaviour.status },
