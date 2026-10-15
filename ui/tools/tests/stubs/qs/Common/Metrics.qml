@@ -8,4 +8,5 @@ QtObject {
     readonly property int s4: 12
     readonly property int icon: 16
     readonly property int hairline: 1
+    readonly property int radiusPlate: 10
 }
