@@ -30,6 +30,9 @@ Item {
     property real notchRadius: Metrics.radiusPlate
     // the picture's own rounding where the groove opens out of its bottom edge
     property real notchMouth: Metrics.s3
+    // the card's top corners [left, right]: a full-bleed band follows them (square where an attached card meets
+    // its bar), an inset card keeps its own
+    property var topCorners: [radius, radius]
 
     property bool active: true
     readonly property var cfg: Config.controlPanel ?? ({})
@@ -173,8 +176,10 @@ Item {
             if (W <= 0 || H <= 0)
                 return "";
             const Rt = Math.min(root.radius, W / 2, H / 2);
+            const Rl = root.card ? Rt : Math.min(root.topCorners[0] ?? Rt, W / 2, H / 2);
+            const Rr = root.card ? Rt : Math.min(root.topCorners[1] ?? Rt, W / 2, H / 2);
             const Rb = root.card ? Rt : 0;
-            let p = "M 0 " + f(Rt) + arc(Rt, 1, Rt, 0) + " L " + f(W - Rt) + " 0" + arc(Rt, 1, W, Rt) + " L " + f(W) + " " + f(H - Rb) + arc(Rb, 1, W - Rb, H);
+            let p = "M 0 " + f(Rl) + arc(Rl, 1, Rl, 0) + " L " + f(W - Rr) + " 0" + arc(Rr, 1, W, Rr) + " L " + f(W) + " " + f(H - Rb) + arc(Rb, 1, W - Rb, H);
             const a = root.notchLeft - root.inset, b = root.notchRight - root.inset, top = root.notchTop - root.inset;
             if (b - a > 1 && top < H - 1 && a > Rb && b < W - Rb) {
                 const m = Math.max(0, Math.min(root.notchMouth, a - Rb, W - Rb - b, (H - top) / 2));

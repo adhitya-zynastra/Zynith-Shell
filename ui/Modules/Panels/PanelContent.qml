@@ -19,6 +19,8 @@ Item {
     property bool peek: false
     // a Control Panel page opened by itself (from its own bar icon): no hero, no tabs, its own size
     property bool focused: false
+    // the card's top corners [left, right] (a full-bleed hero follows them)
+    property var topCorners: [Metrics.radiusSurface, Metrics.radiusSurface]
 
     // the panel shown (the incoming one, from the moment it starts coming in)
     property string shownId: panelId
@@ -360,6 +362,7 @@ Item {
         heading: root.tabId === "control" || !root.headInHero ? null : Object.assign({ eyebrow: String(root.tabIndex + 1).padStart(2, "0") + " / " + (root.tabs[root.tabIndex]?.label ?? "") }, root.live.item?.heading ?? {})
         headingKey: root.tabId
         direction: root.travel
+        topCorners: root.topCorners
         animate: root.visibleProgress >= 0.99
         bottomRoom: root.heroTabs ? root.tabRow - root.seam : 0
         notchLeft: root.heroTabs ? sheetShape.tabLeft - root.seam : 0

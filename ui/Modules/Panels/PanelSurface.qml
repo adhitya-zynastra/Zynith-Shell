@@ -475,6 +475,8 @@ PanelWindow {
                     screen: win.screen
                     visibleProgress: win.revealed
                     active: win.visible
+                    // the card's own top corners (attached: square where it meets the bar), for the hero's picture
+                    topCorners: card.corners ? [card.corners[0], card.corners[1]] : [card.radius, card.radius]
                 }
             }
             // where in a scrolled panel you are
