@@ -424,10 +424,12 @@ PanelWindow {
                 // the tabs from the keyboard: Ctrl+Tab / Ctrl+Shift+Tab or Ctrl+PgDn / Ctrl+PgUp step, Alt+1… jumps
                 Keys.onPressed: event => {
                     const ctrl = event.modifiers & Qt.ControlModifier;
-                    if (ctrl && (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown))
-                        event.accepted = content.stepTab(1);
-                    else if (ctrl && (event.key === Qt.Key_Backtab || event.key === Qt.Key_PageUp))
+                    // Shift+Tab arrives as Backtab, or as Tab with Shift held (verified with real keys: the latter)
+                    const back = event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier));
+                    if (ctrl && (back || event.key === Qt.Key_PageUp))
                         event.accepted = content.stepTab(-1);
+                    else if (ctrl && (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown))
+                        event.accepted = content.stepTab(1);
                     else if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9)
                         event.accepted = content.goTab(event.key - Qt.Key_1);
                 }
