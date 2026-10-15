@@ -83,6 +83,9 @@ Scope {
             readonly property int pad: Material.shadows ? Metrics.shadowPad + 8 : 0
             implicitWidth: root.cardWidth + pad * 2 + 40
             implicitHeight: Math.max(1, list.contentHeight + waiting.height + pad * 2 + 8)
+            readonly property var state: ({ top: anchors.top, bottom: anchors.bottom, left: anchors.left, right: anchors.right, marginTop: margins.top, marginBottom: margins.bottom, marginLeft: margins.left, marginRight: margins.right, layer: Config.notifications.layer, cardWidth: root.cardWidth, height: implicitHeight, cards: list.count, screen: screen?.name ?? "" })
+            onStateChanged: Ipc.report("notifications", state)
+            Component.onCompleted: Ipc.report("notifications", state)
 
             mask: Region {
                 item: list

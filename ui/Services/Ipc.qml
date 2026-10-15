@@ -4,10 +4,21 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Zynith.Native
+import qs.Common
 
 // `quickshell -p <ui>/shell.qml ipc call zynith <method> [args]`
 Singleton {
     id: root
+
+    // diagnostics: a test OSD on request, and where each reporting surface put its window (layer-shell anchors,
+    // margins, size), which no capture of the surface's own pixels shows
+    signal osdProbe(string kind)
+    property var surfaceStates: ({})
+    function report(name: string, state: var): void {
+        const next = Object.assign({}, surfaceStates);
+        next[name] = state;
+        surfaceStates = next;
+    }
 
     // the output with keyboard focus under niri, else the first one
     function focusedScreen(): string {
@@ -299,6 +310,17 @@ Singleton {
         function panelRect(): string {
             const r = PanelRouter.rects[root.focusedScreen()] ?? null;
             return JSON.stringify(r ? Object.assign({ window: PanelRouter.windowSizes[root.focusedScreen()] ?? null }, r) : null);
+        }
+        function osd(kind: string): string {
+            root.osdProbe(kind);
+            return "ok";
+        }
+        function surfaceState(name: string): string {
+            return JSON.stringify(root.surfaceStates[name] ?? null);
+        }
+        // the durations the motion style and speed resolve to (what a style change does, which no capture shows)
+        function motion(): string {
+            return JSON.stringify({ style: Motion.style, spatialFast: Motion.spatialFast, spatial: Motion.spatial, spatialSlow: Motion.spatialSlow, effects: Motion.effects, enter: Motion.enter, exit: Motion.exit });
         }
         function stats(): string {
             return JSON.stringify(Diagnostics.summary());

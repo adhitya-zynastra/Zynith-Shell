@@ -101,6 +101,13 @@ Scope {
             root.show("keyboard-layout", "", "keyboard", Workspaces.keyboardLayout, -1, false);
         }
     }
+    // a test card (zynith-ui ipc osd <kind>), shown like any other
+    Connections {
+        target: Ipc
+        function onOsdProbe(kind: string): void {
+            root.show(kind, "Probe", "adjustments", "probe", 0.5, false);
+        }
+    }
     Connections {
         target: Events
         function onOsd(c: var): void {
@@ -149,6 +156,10 @@ Scope {
                     implicitWidth: 360 + pad * 2
                     implicitHeight: card.height + pad * 2
                     mask: Region {}
+
+                    readonly property var state: ({ top: anchors.top, bottom: anchors.bottom, left: anchors.left, right: anchors.right, marginTop: margins.top, marginBottom: margins.bottom, marginLeft: margins.left, marginRight: margins.right, pad: pad, width: implicitWidth, height: implicitHeight, hideMs: hide.interval, screen: screen?.name ?? "" })
+                    onStateChanged: Ipc.report("osd", state)
+                    Component.onCompleted: Ipc.report("osd", state)
 
                     BlurRegion {
                         window: win
