@@ -189,7 +189,7 @@ Item {
             Label {
                 role: "display2"
                 font.weight: Font.Medium
-                text: About.realName || About.user
+                text: About.displayName
                 style: Text.Raised
                 styleColor: Theme.alpha(Theme.base, 0.3)
             }

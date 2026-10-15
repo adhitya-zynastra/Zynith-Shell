@@ -312,7 +312,7 @@ Column {
                 visible: parent.width - date.implicitWidth - Metrics.s4 >= implicitWidth
                 role: "caption"
                 tone: "faint"
-                text: About.realName || About.user
+                text: About.displayName
             }
         }
     }
@@ -618,7 +618,7 @@ Column {
                     width: parent.width
                     role: "body"
                     elide: Text.ElideRight
-                    text: (About.realName || About.user) + "  ·  " + About.user + "@" + (About.host || "localhost")
+                    text: About.displayName + "  ·  " + About.user + "@" + (About.host || "localhost")
                 }
                 Label {
                     width: parent.width

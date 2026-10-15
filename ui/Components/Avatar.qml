@@ -9,7 +9,7 @@ Item {
 
     property int size: 44
     property string source: About.avatar
-    property string name: About.realName || About.user
+    property string name: About.displayName
 
     implicitWidth: size
     implicitHeight: size

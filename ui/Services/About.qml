@@ -19,7 +19,10 @@ Singleton {
     property string quickshellVersion: ""
     readonly property string zynithVersion: Quickshell.env("ZYNITH_VERSION") || "development"
     // the system account picture (AccountsService), the same one the login screen shows
-    readonly property string avatar: "file:///var/lib/AccountsService/icons/" + user
+    // the picture and name Zynith shows: its own (Settings → About → You) before the account's
+    readonly property string accountAvatar: "file:///var/lib/AccountsService/icons/" + user
+    readonly property string avatar: (Config.profile.avatar ?? "") !== "" ? (Config.profile.avatar.startsWith("file:") ? Config.profile.avatar : "file://" + Config.profile.avatar) : accountAvatar
+    readonly property string displayName: (Config.profile.name ?? "") !== "" ? Config.profile.name : (realName || user)
 
     FileView {
         path: "/etc/passwd"

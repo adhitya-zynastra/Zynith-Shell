@@ -48,6 +48,38 @@ Column {
         }
     }
 
+    // how Zynith shows you: kept in zynith.toml [profile], apart from your account and its sign-in
+    Card {
+        width: parent.width
+        caption: "You"
+        Row {
+            width: parent.width
+            spacing: Metrics.s5
+            Avatar {
+                anchors.verticalCenter: parent.verticalCenter
+                size: 64
+            }
+            SchemaForm {
+                width: parent.width - 64 - Metrics.s5
+                schema: [
+                    { key: "name", label: "Name Zynith shows", kind: "text", default: "", hint: "Empty: your account's (" + (About.realName || About.user) + ")" },
+                    { key: "avatar", label: "Picture", kind: "image", default: "", hint: "Empty: your account's picture" }
+                ]
+                valueOf: key => Config.profile[key] ?? ""
+                isSet: key => (Config.profile[key] ?? "") !== ""
+                onChanged: (key, value) => Config.setProfile(key, value)
+                onCleared: key => Config.setProfile(key, "")
+            }
+        }
+        Label {
+            width: parent.width
+            role: "caption"
+            tone: "faint"
+            wrapMode: Text.WordWrap
+            text: "Kept in ~/.config/zynith/zynith.toml under [profile]. It changes only what Zynith shows — not your account, its password or how you sign in."
+        }
+    }
+
     Card {
         width: parent.width
         caption: "The project"

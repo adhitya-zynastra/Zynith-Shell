@@ -21,7 +21,7 @@ Column {
         const h = Time.now.getHours();
         return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
     }
-    readonly property string firstName: (About.realName || About.user).split(/[\s.]+/).filter(p => p.length > 1)[0] ?? ""
+    readonly property string firstName: About.displayName.split(/[\s.]+/).filter(p => p.length > 1)[0] ?? ""
 
     // ── the scene ───────────────────────────────────────────────────────────
     Item {

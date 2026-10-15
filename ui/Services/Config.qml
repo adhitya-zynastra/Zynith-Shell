@@ -215,6 +215,16 @@ Singleton {
     readonly property var window: windowFile.values
     // which visible surfaces this UI draws instead of the native shell (the shell reads the same file)
     readonly property var surfaces: zynithFile.values.surfaces
+    // how Zynith shows its user: a name and a picture of Zynith's own (zynith.toml [profile]), apart from the
+    // OS account and its authentication; empty keeps the account's
+    readonly property var profile: zynithFile.values.profile ?? ({})
+    function setProfile(key: string, value: string): void {
+        const v = String(value ?? "").trim();
+        if (v === "")
+            zynithFile.reset("profile." + key);
+        else
+            zynithFile.set("profile." + key, v);
+    }
 
     // ── writers ─────────────────────────────────────────────────────────────
     function setReducedMotion(on: bool): void {
