@@ -37,7 +37,12 @@ Item {
 
     // the hero over the Control Panel (and its tabs, with hero_pages = all)
     readonly property bool heroShown: !focused && (cfg.hero ?? true) && (!peek || (cfg.hero_on_peek ?? false)) && (tabId === "control" || (tabbed && (cfg.hero_pages ?? "all") === "all"))
-    readonly property real contentTop: (heroShown ? hero.height : 0) + (tabbed ? tabStrip.height : 0)
+    // With the hero over connected tabs the strip sits in the hero's bottom edge: the page's sheet starts just
+    // under the picture and its tab rises through a groove cut in it (heroTabs)
+    readonly property bool heroTabs: heroShown && connectedTabs
+    readonly property real seam: Metrics.s2
+    readonly property real tabRow: tabStrip.implicitHeight - tabStrip.sheetGap
+    readonly property real contentTop: heroTabs ? hero.height + seam : (heroShown ? hero.height : 0) + (tabbed ? tabStrip.height : 0)
     implicitHeight: contentTop + (live.item?.implicitHeight ?? 0)
     // a panel may ask for its own width (0: the configured one)
     readonly property int preferredWidth: live.item?.preferredWidth ?? 0
@@ -93,6 +98,9 @@ Item {
     onPanelIdChanged: {
         if ((front === 0 ? idA : idB) === panelId)
             return;
+        // the way the tabs travel, known before the page (and so the hero's heading) changes
+        const from0 = tabIndexOf(front === 0 ? idA : idB), to0 = tabIndexOf(panelId);
+        travel = tabbed && from0 >= 0 && to0 >= 0 && from0 !== to0 ? (to0 > from0 ? 1 : -1) : 0;
         shownId = panelId;
         // nothing shown yet, or not on screen: no cross-fade
         if (switchStyle === "none" || Motion.contentOut === 0 || (idA === "" && idB === "") || visibleProgress < 0.99) {
@@ -133,6 +141,7 @@ Item {
         swap.start();
     }
     // how far a page travels on a tab change: enough to read as movement, never a full page (the card clips it)
+    property int travel: 0
     readonly property real slideDistance: Math.round(Math.min(Metrics.s7 * 5, width * 0.14))
     property real slideOut: 0
     function tabIndexOf(id: string): int {
@@ -146,7 +155,7 @@ Item {
             target: root.leaving
             property: "opacity"
             to: 0
-            duration: Motion.contentOut + 40
+            duration: root.slideOut !== 0 ? Motion.contentOut : Motion.contentOut + 40
             easing.type: Motion.exitEasing
         }
         NumberAnimation {
@@ -172,9 +181,10 @@ Item {
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Motion.spatialCurve
         }
+        // a sliding page comes in as the old one has mostly gone (two pages never read over each other)
         SequentialAnimation {
             PauseAnimation {
-                duration: Motion.contentOut / 2
+                duration: root.slideOut !== 0 ? Motion.contentOut * 0.8 : Motion.contentOut / 2
             }
             ParallelAnimation {
                 NumberAnimation {
@@ -239,7 +249,9 @@ Item {
             item.sheetInset = Qt.binding(() => root.connectedTabs ? root.sheetInset : 0);
         // the strip carries the page's head when it has the room (see stripHead)
         if (item.headInStrip !== undefined)
-            item.headInStrip = Qt.binding(() => root.headInStrip);
+            item.headInStrip = Qt.binding(() => root.headInStrip && !root.headInHero);
+        if (item.headInHero !== undefined)
+            item.headInHero = Qt.binding(() => root.headInHero);
         if (item.canGoBack !== undefined) {
             item.canGoBack = Qt.binding(() => root.history.length > 0);
             item.back.connect(() => PanelRouter.back(root.screen.name));
@@ -344,7 +356,18 @@ Item {
         width: parent.width
         height: root.heroShown ? implicitHeight : 0
         active: root.active && root.heroShown
+        // the page's heading (the dashboard: who you are), indexed as its tab
+        heading: root.tabId === "control" || !root.headInHero ? null : Object.assign({ eyebrow: String(root.tabIndex + 1).padStart(2, "0") + " / " + (root.tabs[root.tabIndex]?.label ?? "") }, root.live.item?.heading ?? {})
+        headingKey: root.tabId
+        direction: root.travel
+        animate: root.visibleProgress >= 0.99
+        bottomRoom: root.heroTabs ? root.tabRow - root.seam : 0
+        notchLeft: root.heroTabs ? sheetShape.tabLeft - root.seam : 0
+        notchRight: root.heroTabs ? sheetShape.tabRight + root.seam : 0
+        notchTop: tabStrip.y - root.seam
     }
+    // the hero carries the page's heading (the page then draws no header of its own)
+    readonly property bool headInHero: heroShown && tabbed && tabId !== "control"
     // connected tabs: the page sits on one sheet, and the current tab is that same sheet reaching up into the
     // strip, so choosing a section moves the page's own surface rather than a separate highlight. The sheet is
     // the theme's well (a lift of whatever surface it sits on, contrast-aware), never a tone of its own: a fixed
@@ -361,57 +384,27 @@ Item {
     readonly property int tabIndex: tabs.findIndex(t => t.id === tabId)
     // The sheet and the current tab's plate as one shape: drawn opaque inside one layer that takes the well's
     // opacity, so where they meet there is no doubled tone and no seam — one surface on any wallpaper.
-    Item {
+    PageShape {
         id: sheetShape
         visible: root.connectedTabs
         anchors.fill: parent
-        layer.enabled: visible
-        opacity: Theme.well.a
-        readonly property color ink: Qt.rgba(Theme.well.r, Theme.well.g, Theme.well.b, 1)
-        readonly property real r: tabStrip.plateRadius
-        readonly property real px: tabStrip.x + tabStrip.plateLeft
-        readonly property real pw: Math.max(0, tabStrip.plateRight - tabStrip.plateLeft)
-        Rectangle {
-            id: sheet
-            x: root.sheetInset
-            y: root.contentTop
-            width: parent.width - root.sheetInset * 2
-            height: Math.max(0, root.implicitHeight - root.contentTop - root.sheetInset)
-            color: sheetShape.ink
-            radius: Metrics.radiusPlate
-        }
-        // the plate reaches from the tab down into the sheet (overlapping it: one opaque shape, no seam)
-        Rectangle {
-            visible: sheetShape.pw > 0
-            x: sheetShape.px
-            y: tabStrip.y
-            width: sheetShape.pw
-            height: root.contentTop - tabStrip.y + sheetShape.r
-            color: sheetShape.ink
-            topLeftRadius: sheetShape.r
-            topRightRadius: sheetShape.r
-        }
-        ConcaveCorner {
-            visible: sheetShape.pw > 0 && sheetShape.px - r >= sheet.x - 0.5
-            r: sheetShape.r
-            fill: sheetShape.ink
-            solid: "br"
-            x: sheetShape.px - r
-            y: root.contentTop - r
-        }
-        ConcaveCorner {
-            visible: sheetShape.pw > 0 && sheetShape.px + sheetShape.pw + r <= sheet.x + sheet.width + 0.5
-            r: sheetShape.r
-            fill: sheetShape.ink
-            solid: "bl"
-            x: sheetShape.px + sheetShape.pw
-            y: root.contentTop - r
-        }
+        sheetX: root.sheetInset
+        sheetY: root.contentTop
+        sheetWidth: width - root.sheetInset * 2
+        sheetHeight: Math.max(0, root.implicitHeight - root.contentTop - root.sheetInset)
+        radius: Metrics.radiusPlate
+        tabLeft: tabStrip.x + tabStrip.plateLeft
+        tabRight: tabStrip.x + tabStrip.plateRight
+        tabTop: tabStrip.y
+        tabRadius: tabStrip.plateRadius
+        fillet: tabStrip.plateRadius
+        fill: Theme.well
+        edge: Theme.alpha(Theme.ink, Material.solid ? 0.08 : 0.12)
     }
     // the page's head, in the strip's free side: its live caption (the date, the place, the player)
     Item {
         id: stripHead
-        visible: root.headInStrip
+        visible: root.headInStrip && !root.headInHero
         x: root.sheetInset
         y: tabStrip.y
         width: parent.width - root.sheetInset * 2
@@ -433,7 +426,7 @@ Item {
         id: tabStrip
         visible: root.tabbed
         x: Metrics.s5
-        y: (root.heroShown ? hero.height : 0) + Metrics.s3
+        y: root.heroTabs ? root.contentTop - root.tabRow : (root.heroShown ? hero.height : 0) + Metrics.s3
         width: parent.width - Metrics.s5 * 2
         height: root.tabbed ? implicitHeight + (root.connectedTabs ? 0 : Metrics.s3) : 0
         tabs: root.tabs

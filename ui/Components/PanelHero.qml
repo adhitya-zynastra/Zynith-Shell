@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell.Io
 import qs.Common
 import qs.Services
@@ -8,8 +9,27 @@ import qs.Services
 // browser's preview), with who you are as the main thing on it — the picture large, the name in display
 // type, the machine under it — and the hour, the day and the weather at the other end. Everything shown is
 // [control_panel] hero_*: height, which pieces, the shade.
+//
+// On a page other than the dashboard the hero is that page's heading (heading: { eyebrow, title, detail,
+// value, unit, caption }; null shows who you are). The connected tab rises out of the page's sheet into the
+// band through a groove cut in the picture (notch*), so the tab, the page and its heading read as one piece.
 Item {
     id: root
+
+    property var heading: null
+    property string headingKey: ""
+    // +1 / -1: the way the tabs travelled (the old heading leaves that way, the new one comes from the other)
+    property int direction: 0
+    property bool animate: true
+    // room at the bottom that the tabs take (the type sits above it)
+    property real bottomRoom: 0
+    // the groove: where the tab rises into the band (this item's coordinates); none when notchRight <= notchLeft
+    property real notchLeft: 0
+    property real notchRight: 0
+    property real notchTop: 0
+    property real notchRadius: Metrics.radiusPlate
+    // the picture's own rounding where the groove opens out of its bottom edge
+    property real notchMouth: Metrics.s3
 
     property bool active: true
     readonly property var cfg: Config.controlPanel ?? ({})
@@ -134,115 +154,260 @@ Item {
             }
         }
     }
-    Rectangle {
+    // the band's outline: rounded at the top (and at the bottom as a card), with the groove where a tab rises
+    Shape {
         id: bandMask
         anchors.fill: band
         visible: false
         layer.enabled: true
-        radius: root.radius
-        // the band's bottom meets the content square; the card is rounded all round
-        Rectangle {
-            visible: !root.card
-            anchors.bottom: parent.bottom
-            width: parent.width
-            height: parent.radius
+        preferredRendererType: Shape.CurveRenderer
+        function f(n: real): string {
+            return Number(n).toFixed(2);
+        }
+        function arc(r: real, sweep: int, x: real, y: real): string {
+            return r > 0.01 ? " A " + f(r) + " " + f(r) + " 0 0 " + sweep + " " + f(x) + " " + f(y) : " L " + f(x) + " " + f(y);
+        }
+        readonly property string outline: {
+            const W = width, H = height;
+            if (W <= 0 || H <= 0)
+                return "";
+            const Rt = Math.min(root.radius, W / 2, H / 2);
+            const Rb = root.card ? Rt : 0;
+            let p = "M 0 " + f(Rt) + arc(Rt, 1, Rt, 0) + " L " + f(W - Rt) + " 0" + arc(Rt, 1, W, Rt) + " L " + f(W) + " " + f(H - Rb) + arc(Rb, 1, W - Rb, H);
+            const a = root.notchLeft - root.inset, b = root.notchRight - root.inset, top = root.notchTop - root.inset;
+            if (b - a > 1 && top < H - 1 && a > Rb && b < W - Rb) {
+                const m = Math.max(0, Math.min(root.notchMouth, a - Rb, W - Rb - b, (H - top) / 2));
+                const r = Math.max(0, Math.min(root.notchRadius, (b - a) / 2, (H - top) / 2));
+                p += " L " + f(b + m) + " " + f(H) + arc(m, 1, b, H - m);
+                p += " L " + f(b) + " " + f(top + r) + arc(r, 0, b - r, top);
+                p += " L " + f(a + r) + " " + f(top) + arc(r, 0, a, top + r);
+                p += " L " + f(a) + " " + f(H - m) + arc(m, 1, a - m, H);
+            }
+            p += " L " + f(Rb) + " " + f(H) + arc(Rb, 1, 0, H - Rb) + " Z";
+            return p;
+        }
+        ShapePath {
+            strokeWidth: 0
+            strokeColor: "transparent"
+            fillColor: "white"
+            PathSvg {
+                path: bandMask.outline
+            }
         }
     }
 
-    // ── who ──
-    Row {
-        anchors.left: parent.left
-        anchors.leftMargin: Metrics.s6 + root.inset
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0)
-        spacing: Metrics.s5
+    // ── what the hero says: who you are (the dashboard) or the page's heading. On a change the old one leaves
+    // the way the tabs travelled and the new one arrives from the other side: one axis with the tab and the page.
+    property int front: 0
+    property var frozen: null
+    property bool frozenWho: true
+    readonly property real travel: Metrics.s7 * 2
+    onHeadingKeyChanged: {
+        const was = slots[front];
+        frozen = was.who ? null : JSON.parse(JSON.stringify(was.content ?? {}));
+        frozenWho = was.who;
+        front = 1 - front;
+        const now = slots[front], gone = slots[1 - front];
+        // interrupted: the heading that was arriving leaves from where it got to, not from full view
+        const midway = swap.running;
+        swap.stop();
+        if (!animate || direction === 0 || Motion.reduced) {
+            now.x = 0;
+            now.opacity = 1;
+            gone.opacity = 0;
+            return;
+        }
+        if (!midway) {
+            gone.x = 0;
+            gone.opacity = 1;
+        }
+        now.x = direction * travel;
+        now.opacity = 0;
+        swap.start();
+    }
+    readonly property var slots: [slotA, slotB]
+    ParallelAnimation {
+        id: swap
+        NumberAnimation {
+            target: root.slots[1 - root.front]
+            property: "x"
+            to: -root.direction * root.travel
+            duration: Motion.spatialFast
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.spatialFastCurve
+        }
+        NumberAnimation {
+            target: root.slots[1 - root.front]
+            property: "opacity"
+            to: 0
+            duration: Motion.contentOut * 0.8
+            easing.type: Motion.exitEasing
+        }
+        NumberAnimation {
+            target: root.slots[root.front]
+            property: "x"
+            to: 0
+            duration: Motion.spatial
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.spatialCurve
+        }
+        // the new heading shows once the old one has mostly gone: never two lines of type over each other
+        SequentialAnimation {
+            PauseAnimation {
+                duration: Motion.contentOut * 0.8
+            }
+            NumberAnimation {
+                target: root.slots[root.front]
+                property: "opacity"
+                to: 1
+                duration: Motion.contentIn + 60
+                easing.type: Motion.enterEasing
+            }
+        }
+    }
+    Item {
+        id: slotA
+        anchors.fill: parent
+        readonly property bool isFront: root.front === 0
+        readonly property bool who: isFront ? root.heading === null : root.frozenWho
+        readonly property var content: isFront ? root.heading : root.frozen
+        visible: opacity > 0.01
+        Loader {
+            anchors.fill: parent
+            sourceComponent: slotA.who ? identity : pageHeading
+            onLoaded: if (item.slot !== undefined)
+                item.slot = slotA
+        }
+    }
+    Item {
+        id: slotB
+        anchors.fill: parent
+        opacity: 0
+        readonly property bool isFront: root.front === 1
+        readonly property bool who: isFront ? root.heading === null : root.frozenWho
+        readonly property var content: isFront ? root.heading : root.frozen
+        visible: opacity > 0.01
+        Loader {
+            anchors.fill: parent
+            sourceComponent: slotB.who ? identity : pageHeading
+            onLoaded: if (item.slot !== undefined)
+                item.slot = slotB
+        }
+    }
+    Component {
+        id: pageHeading
+        HeroHeading {
+            property Item slot: null
+            anchors.fill: parent
+            anchors.leftMargin: Metrics.s6 + root.inset
+            anchors.rightMargin: Metrics.s6 + root.inset
+            narrow: root.narrow
+            bottomRoom: Metrics.s5 + (root.card ? Metrics.s1 : 0) + root.bottomRoom
+            heading: slot?.content ?? ({})
+        }
+    }
 
-        // the picture, ringed in the accent
+    Component {
+        id: identity
         Item {
-            width: root.avatarSize + 6
-            height: width
-            anchors.bottom: parent.bottom
-            Rectangle {
-                anchors.fill: parent
-                radius: width / 2
-                color: "transparent"
-                border.width: 2
-                border.color: Theme.alpha(Theme.accent, 0.85)
-            }
-            Avatar {
-                anchors.centerIn: parent
-                size: root.avatarSize
-            }
-        }
-        Column {
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 4
-            spacing: 2
-            Label {
-                role: "data"
-                tone: "accent"
-                text: {
-                    const h = Time.now.getHours();
-                    return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-                }
-            }
-            Label {
-                role: "display2"
-                font.weight: Font.Medium
-                text: About.displayName
-                style: Text.Raised
-                styleColor: Theme.alpha(Theme.base, 0.3)
-            }
-            Label {
-                visible: root.showDetails && !root.narrow
-                role: "caption"
-                tone: "muted"
-                text: [About.user + "@" + (About.host || "localhost"), About.os, root.uptime > 0 ? root.since(root.uptime) : ""].filter(s => s !== "").join("  ·  ")
-            }
-        }
-    }
+            anchors.fill: parent
 
-    // ── when, and what it is like out ──
-    Column {
-        anchors.right: parent.right
-        anchors.rightMargin: Metrics.s6 + root.inset
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0)
-        spacing: 2
-        Label {
-            visible: root.showClock
-            anchors.right: parent.right
-            role: root.narrow ? "headline" : "display"
-            numeric: true
-            text: Qt.formatTime(Time.now, "HH:mm")
-            style: Text.Raised
-            styleColor: Theme.alpha(Theme.base, 0.3)
-        }
-        Row {
-            anchors.right: parent.right
-            spacing: Metrics.s3
+            // ── who ──
             Row {
-                visible: root.showWeather && Weather.valid
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: Metrics.s1
-                Icon {
-                    anchors.verticalCenter: parent.verticalCenter
-                    name: Weather.glyph(Weather.data.current?.code ?? 0, Weather.data.current?.isDay ?? true)
-                    size: 15
-                    tone: "accent"
+                anchors.left: parent.left
+                anchors.leftMargin: Metrics.s6 + root.inset
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0) + root.bottomRoom
+                spacing: Metrics.s5
+
+                // the picture, ringed in the accent
+                Item {
+                    width: root.avatarSize + 6
+                    height: width
+                    anchors.bottom: parent.bottom
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: "transparent"
+                        border.width: 2
+                        border.color: Theme.alpha(Theme.accent, 0.85)
+                    }
+                    Avatar {
+                        anchors.centerIn: parent
+                        size: root.avatarSize
+                    }
                 }
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    role: "data"
-                    text: Math.round(Weather.data.current?.temperature ?? 0) + (Weather.data.unit ?? "°")
+                Column {
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 4
+                    spacing: 2
+                    Label {
+                        role: "data"
+                        tone: "accent"
+                        text: {
+                            const h = Time.now.getHours();
+                            return h < 5 ? "Still up" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+                        }
+                    }
+                    Label {
+                        role: "display2"
+                        font.weight: Font.Medium
+                        text: About.displayName
+                        style: Text.Raised
+                        styleColor: Theme.alpha(Theme.base, 0.3)
+                    }
+                    Label {
+                        visible: root.showDetails && !root.narrow
+                        role: "caption"
+                        tone: "muted"
+                        text: [About.user + "@" + (About.host || "localhost"), About.os, root.uptime > 0 ? root.since(root.uptime) : ""].filter(s => s !== "").join("  ·  ")
+                    }
                 }
             }
-            Label {
-                visible: root.showClock
-                anchors.verticalCenter: parent.verticalCenter
-                role: "data"
-                tone: "muted"
-                text: Qt.formatDate(Time.now, "dddd  ·  dd MMMM")
+
+            // ── when, and what it is like out ──
+            Column {
+                anchors.right: parent.right
+                anchors.rightMargin: Metrics.s6 + root.inset
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: Metrics.s5 + (root.card ? Metrics.s1 : 0) + root.bottomRoom
+                spacing: 2
+                Label {
+                    visible: root.showClock
+                    anchors.right: parent.right
+                    role: root.narrow ? "headline" : "display"
+                    numeric: true
+                    text: Qt.formatTime(Time.now, "HH:mm")
+                    style: Text.Raised
+                    styleColor: Theme.alpha(Theme.base, 0.3)
+                }
+                Row {
+                    anchors.right: parent.right
+                    spacing: Metrics.s3
+                    Row {
+                        visible: root.showWeather && Weather.valid
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Metrics.s1
+                        Icon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            name: Weather.glyph(Weather.data.current?.code ?? 0, Weather.data.current?.isDay ?? true)
+                            size: 15
+                            tone: "accent"
+                        }
+                        Label {
+                            anchors.verticalCenter: parent.verticalCenter
+                            role: "data"
+                            text: Math.round(Weather.data.current?.temperature ?? 0) + (Weather.data.unit ?? "°")
+                        }
+                    }
+                    Label {
+                        visible: root.showClock
+                        anchors.verticalCenter: parent.verticalCenter
+                        role: "data"
+                        tone: "muted"
+                        text: Qt.formatDate(Time.now, "dddd  ·  dd MMMM")
+                    }
+                }
             }
         }
     }

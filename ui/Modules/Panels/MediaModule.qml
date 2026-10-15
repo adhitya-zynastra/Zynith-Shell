@@ -18,6 +18,8 @@ Item {
     property var screen: null
     property bool active: true
     property bool expanded: false
+    // the page's heading is on the hero above: nothing playing then says nothing here twice
+    property bool headed: false
 
     readonly property var cfg: Config.media ?? ({})
     // the record never takes more than its share of the room it is given (a page opened alone is narrow)
@@ -238,6 +240,7 @@ Item {
 
             Column {
                 id: details
+                visible: root.present || !root.headed
                 width: parent.width
                 spacing: Metrics.s1
 

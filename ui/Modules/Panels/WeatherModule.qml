@@ -47,6 +47,8 @@ Flow {
     property var screen: null
     property bool active: true
     property bool expanded: false
+    // the page's heading (now, the place, feels like) is on the hero above
+    property bool headed: false
 
     readonly property var d: Weather.data
     readonly property var now: d.current ?? ({})
@@ -72,7 +74,7 @@ Flow {
 
     // ── now ──
     Item {
-        visible: Weather.valid
+        visible: Weather.valid && !root.headed
         width: root.colW
         height: 64
         Interactive {

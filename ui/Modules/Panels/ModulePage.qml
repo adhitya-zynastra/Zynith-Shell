@@ -1,4 +1,5 @@
 import QtQuick
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -37,6 +38,42 @@ Column {
         })
     readonly property var page: pages[kind] ?? null
 
+    // the page's heading on the Control Panel's hero (title, one line of detail, its one live readout)
+    function clock(s: real): string {
+        s = Math.max(0, Math.round(s));
+        const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60);
+        return h > 0 ? h + "h " + String(m).padStart(2, "0") + "m" : m + " min";
+    }
+    function mmss(s: real): string {
+        s = Math.max(0, Math.floor(s));
+        return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    }
+    readonly property var heading: {
+        switch (kind) {
+        case "media":
+            return Media.present ? { title: Media.title, detail: [Media.artist, Media.app].filter(s => s).join("  ·  "), value: Media.length > 0 ? mmss(Media.position) : "", unit: Media.length > 0 ? "/ " + mmss(Media.length) : "", caption: Media.playing ? "Playing" : "Paused" } : { title: "Nothing playing", detail: "Music or video from any app that shares it shows up here" };
+        case "audio":
+            return { title: Audio.ready ? Audio.sinkName : "No output", detail: Audio.micReady ? (Audio.micMuted ? "Microphone muted" : "Microphone live  ·  " + Math.round(Audio.micVolume * 100) + "%") : "No microphone", value: Audio.ready ? (Audio.muted ? "Muted" : String(Math.round(Audio.volume * 100))) : "", unit: Audio.ready && !Audio.muted ? "%" : "", caption: "Output" };
+        case "power": {
+            const left = Power.present ? (Power.charging ? Power.device?.timeToFull ?? 0 : Power.device?.timeToEmpty ?? 0) : 0;
+            return { title: ControlShortcuts.profileLabels[ControlShortcuts.profile] ?? "Power", detail: !Power.present ? "On mains power" : Power.charging ? (left > 0 ? clock(left) + " to full" : "Charging") : (left > 0 ? clock(left) + " left" : "On battery"), value: Power.present ? String(Math.round(Power.level * 100)) : "", unit: Power.present ? "%" : "", caption: Power.present ? (Power.charging ? "Charging" : "Battery") : "" };
+        }
+        case "monitor":
+            return { title: "Displays", detail: "Brightness and colour", value: Backlight.available ? String(Math.round(Backlight.value * 100)) : "", unit: Backlight.available ? "%" : "", caption: Backlight.available ? "Brightness" : "" };
+        case "calendar":
+            return { title: Qt.formatDate(Time.now, "dddd"), detail: Qt.formatDate(Time.now, "d MMMM yyyy"), value: Qt.formatDate(Time.now, "dd"), unit: "", caption: Qt.formatDate(Time.now, "MMMM") };
+        case "weather": {
+            const now = Weather.data.current ?? {};
+            return Weather.valid ? { title: Weather.describe(now.code ?? 0), detail: [Weather.data.location ?? "", now.feelsLike !== undefined ? "feels " + Math.round(now.feelsLike) + "°" : ""].filter(s => s).join("  ·  "), value: String(Math.round(now.temperature ?? 0)), unit: Weather.data.unit ?? "°", caption: "Now" } : { title: "Weather", detail: "Waiting for the forecast" };
+        }
+        case "screen-time":
+            return { title: "Screen time", detail: "Where the hours went", value: ScreenTime.total > 0 ? clock(ScreenTime.total) : "", unit: "", caption: "Today" };
+        }
+        return { title: page?.title ?? "", detail: page?.caption ?? "" };
+    }
+    // the hero carries the heading (PanelContent sets this when it shows one over the page)
+    property bool headInHero: false
+
     // the sheet has no inset at its top (the current tab joins it there)
     padding: sheetInset + (headInStrip ? Metrics.s5 : Metrics.s6 - sheetInset)
     topPadding: headInStrip ? Metrics.s5 : Metrics.s6
@@ -44,7 +81,7 @@ Column {
     readonly property real inner: width - padding * 2
 
     PanelHeader {
-        visible: !root.headInStrip
+        visible: !root.headInStrip && !root.headInHero
         width: root.inner
         title: root.page?.title ?? ""
         caption: root.page?.caption ?? ""
@@ -75,6 +112,7 @@ Column {
             screen: root.screen
             active: root.active
             expanded: true
+            headed: root.headInHero
         }
     }
     Component {
@@ -115,6 +153,7 @@ Column {
             screen: root.screen
             active: root.active
             expanded: true
+            headed: root.headInHero
         }
     }
     Component {
