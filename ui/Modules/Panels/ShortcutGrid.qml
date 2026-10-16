@@ -145,7 +145,7 @@ Item {
         property bool awake: !ExperiencePolicy.stagger || Motion.spatial === 0
         Timer {
             running: root.active && !ct.awake
-            interval: 140 + ct.order * 55
+            interval: 120 + ct.order * 45
             onTriggered: ct.awake = true
         }
         Connections {

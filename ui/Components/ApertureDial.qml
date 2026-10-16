@@ -31,7 +31,7 @@ Item {
     property real open: lit && awake ? 1 : hovered ? 0.24 : 0
     Behavior on open {
         NumberAnimation {
-            duration: Motion.spatial * 1.4
+            duration: Motion.spatial
             easing.type: Easing.BezierSpline
             easing.bezierCurve: root.lit ? Motion.spatialCurve : Motion.spatialFastCurve
         }
