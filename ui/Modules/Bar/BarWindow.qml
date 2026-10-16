@@ -486,10 +486,12 @@ PanelWindow {
             raised: win.shadow && win.joinProgress === 0
             fill: Theme.alpha(Theme.glass, win.sheetOpacity)
             // a joined panel and the bar are one surface: no highlight line along the seam
-            sheen: Material.sheenAlpha > 0 && win.joinProgress === 0
+            // a bar flowing into the screen edge (concave corners) has no lit lip on that side: its sheen and outline
+            // ran along the screen edge as a 1 px line that stopped where the fillets began (they carry neither)
+            sheen: Material.sheenAlpha > 0 && win.joinProgress === 0 && !win.concave
             // the outline gives way while a panel is joined (it ran along the joint as a light seam); the joined
             // panel draws none either, so the two read as one surface
-            edge: win.border && win.joinProgress === 0
+            edge: win.border && win.joinProgress === 0 && !win.concave
             edgeColor: win.borderColor
             edgeWidth: win.borderWidth
 
