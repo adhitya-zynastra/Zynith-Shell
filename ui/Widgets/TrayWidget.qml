@@ -31,6 +31,9 @@ BarItem {
         id: entry
         required property var modelData
         property real size: Metrics.icon + 2
+        // in the drawer: its menu replaces the drawer, opening from the drawer's handle on the bar (a popup's
+        // own popup cannot hold the grab that closes it on a click elsewhere)
+        property bool inDrawer: false
         width: size
         height: size
         // an icon name the theme lacks would draw Qt's checkerboard; those get a plain glyph instead
@@ -69,8 +72,15 @@ BarItem {
                     entry.modelData.secondaryActivate();
                 } else if (mouse.button === Qt.RightButton || entry.modelData.onlyMenu) {
                     if (entry.modelData.hasMenu) {
-                        const p = entry.mapToItem(null, 0, entry.height);
-                        entry.modelData.display(root.bar, p.x, p.y + 4);
+                        // the shell draws the menu; Qt's own menu only for an item that offers no handle
+                        if (entry.modelData.menu) {
+                            if (entry.inDrawer)
+                                drawerWindow.visible = false;
+                            menu.open(entry.inDrawer ? handle : entry, entry.modelData.menu);
+                        } else {
+                            const p = entry.mapToItem(null, 0, entry.height);
+                            entry.modelData.display(root.bar, p.x, p.y + 4);
+                        }
                     }
                 } else {
                     entry.modelData.activate();
@@ -82,6 +92,16 @@ BarItem {
     Repeater {
         model: root.onBar
         delegate: TrayIcon {}
+    }
+
+    TrayMenu {
+        id: menu
+        bar: root.bar
+    }
+    ClickCatcher {
+        active: drawerWindow.visible && root.bar !== null
+        screen: root.bar?.screen ?? null
+        onCaught: drawerWindow.visible = false
     }
 
     // the drawer's handle and the drawer itself, a small grid under (or beside) the bar
@@ -106,13 +126,24 @@ BarItem {
             anchors.fill: parent
             anchors.margins: -4
             cursorShape: Qt.PointingHandCursor
-            onClicked: drawerWindow.visible = !drawerWindow.visible
+            // a click on the handle while the drawer is open first dismisses it (its grab), so a click landing
+            // just after that closes it rather than opening it again
+            onClicked: {
+                if (!drawerWindow.visible && Date.now() - drawerWindow.closedAt < 300)
+                    return;
+                drawerWindow.visible = !drawerWindow.visible;
+            }
         }
         PopupWindow {
             id: drawerWindow
             anchor.item: handle
             anchor.edges: root.vertical ? (root.bar?.edge === "right" ? Edges.Left : Edges.Right) : (root.bar?.edge === "bottom" ? Edges.Top : Edges.Bottom)
             anchor.gravity: anchor.edges
+            // a click anywhere else closes it
+            grabFocus: true
+            property real closedAt: 0
+            onVisibleChanged: if (!visible)
+                closedAt = Date.now()
             // detached_panel (native): the drawer floats clear of the bar, a card of its own, instead of
             // opening against its edge
             readonly property int gap: root.opt("detached_panel") === true ? (root.bar?.thickness ?? 30) + 16 : 10
@@ -140,6 +171,7 @@ BarItem {
                             height: drawerWindow.cell
                             TrayIcon {
                                 anchors.centerIn: parent
+                                inDrawer: true
                                 modelData: parent.modelData
                                 size: root.opt("drawer_item_size") ?? 18
                             }
