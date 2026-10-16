@@ -66,9 +66,9 @@ Item {
         case "power_profile":
             return { value: ControlShortcuts.profile === "saver" ? 1 / 3 : ControlShortcuts.profile === "performance" ? 1 : 2 / 3, segments: 3 };
         case "system":
-            return { value: System.cpu, segments: 0 };
+            return { value: System.cpu, segments: 0, ease: false };
         case "media":
-            return Media.present && Media.length > 0 ? { value: Media.position / Media.length, segments: 0, set: Media.canSeek ? v => Media.seek(v * Media.length) : undefined, text: clock(Media.position) } : null;
+            return Media.present && Media.length > 0 ? { value: Media.position / Media.length, segments: 0, set: Media.canSeek ? v => Media.seek(v * Media.length) : undefined, text: clock(Media.position), ease: false } : null;
         case "screen_time":
             return ScreenTime.enabled ? { value: Math.min(1, ScreenTime.total / (8 * 3600)), segments: 0 } : null;
         }

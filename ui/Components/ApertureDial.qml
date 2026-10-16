@@ -10,7 +10,7 @@ import qs.Common
 // arrives, so a panel's dials can open one after another rather than all at once.
 // A reading that can be set (`set`) turns: dragging around the ring moves its level, the ring thickens, a knob
 // rides its end and the number (`text`) takes the glyph's place until the hand lets go.
-//   lit: on / off · glyph: the icon · reading: { value: 0..1, segments: n (0 = continuous), set, text } or null
+//   lit: on / off · glyph: the icon · reading: { value: 0..1, segments: n (0 = continuous), set, text, ease } or null
 Item {
     id: root
 
@@ -99,8 +99,9 @@ Item {
         // the level eases to its value (a reading changing is a small motion, not a jump)
         property real shown: value
         Behavior on shown {
-            // under the hand the level follows at once
-            enabled: !root.turning
+            // under the hand the level follows at once; so does a reading that changes all the time (a CPU load,
+            // a track's position: `ease: false`), where easing every sample would keep the ring redrawing
+            enabled: !root.turning && (root.reading?.ease ?? true)
             NumberAnimation {
                 duration: Motion.spatial
                 easing.type: Easing.BezierSpline
