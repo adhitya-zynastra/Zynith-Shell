@@ -315,6 +315,14 @@ Singleton {
             }
             return out(BarEdits.lastLabel);
         }
+        // a key, by name (down up left right tab backtab enter escape), to the open panel's page as its own key
+        // handler takes it: the keyboard through a page on a desktop that takes no injected keys (test harness)
+        function panelKey(name: string): string {
+            const page = PanelRouter.livePages[root.focusedScreen()] ?? null;
+            if (!page || typeof page.handleKey !== "function")
+                return "no keyboard here";
+            return page.handleKey(name) ? "ok" : "not taken";
+        }
         function panelRect(): string {
             const r = PanelRouter.rects[root.focusedScreen()] ?? null;
             return JSON.stringify(r ? Object.assign({ window: PanelRouter.windowSizes[root.focusedScreen()] ?? null }, r) : null);

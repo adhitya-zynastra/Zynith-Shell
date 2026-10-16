@@ -6,6 +6,8 @@ import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
+import "../../Common/NotificationGroups.js" as NotificationGroups
+import "../../Common/KeyNav.js" as KeyNav
 
 // The Control Panel: quick interaction, not configuration. Built from the sections [control_panel] columns
 // names (ControlSections: the catalogue, defaults, validation); each holds what it reads only while the panel
@@ -27,8 +29,15 @@ Column {
 
     // which sections show and where: one list, [control_panel] columns (ControlSections owns the catalogue,
     // the defaults and the validation); the column layout reads the same sections one after another
-    readonly property var columns: ControlSections.arrangement(cfg)
-    readonly property var weights: ControlSections.weights(columns, cfg.column_widths)
+    // The adaptive arrangement (none written) is taken as the panel opens and kept while it is open: pressing play
+    // in the idle player grows it where it is rather than reshuffling the panel under the pointer. A written
+    // arrangement (Settings) applies at once.
+    readonly property var liveColumns: ControlSections.arrangement(cfg)
+    // a value, not a binding to liveColumns (a binding followed every change, open or not)
+    property var columns: []
+    onLiveColumnsChanged: if (!active || !ControlSections.isAdaptive(cfg))
+        columns = liveColumns
+    readonly property var weights: ControlSections.weightsFor(cfg, columns)
     readonly property real weightSum: weights.reduce((a, b) => a + b, 0)
     // every section shown, in reading order (numbers the section heads)
     readonly property var order: ControlSections.flat(columns)
@@ -71,11 +80,107 @@ Column {
         service: "backlight"
         when: root.active && (root.order.includes("levels") || root.order.includes("brightness"))
     }
-    onActiveChanged: if (active)
-        Core.refresh()
-    Component.onCompleted: Core.refresh()
+    onActiveChanged: {
+        if (active) {
+            columns = liveColumns;
+            Core.refresh();
+            root.forceActiveFocus();
+        } else {
+            keyboard = false;
+            keyPos = { zone: -1, stop: -1 };
+        }
+    }
+    Component.onCompleted: {
+        columns = liveColumns;
+        Core.refresh();
+        if (active)
+            root.forceActiveFocus();
+    }
 
     readonly property bool dnd: ControlShortcuts.dnd
+
+    // ── the keyboard: Tab / Shift+Tab from module to module, the arrows within one (and on into the next), Enter or
+    // Space to act, left / right to change a level or skip a track; Escape lets go (a second closes the panel).
+    // Each module says what it has to stop on (keyStops(): { cols, stops: [{ item, activate, adjust? }] }); one
+    // that says nothing is a single stop that opens its page, or none. Common/KeyNav.js decides the moves. ──
+    property var slotFor: ({})
+    property var keyPos: ({ zone: -1, stop: -1 })
+    property bool keyboard: false
+    function pageOf(id: string): string {
+        const page = id === "screen_time" ? "screen-time" : id;
+        return PanelCatalog.isPage(page) && page !== "control" ? page : "";
+    }
+    function zones(): var {
+        const out = [];
+        for (const id of order) {
+            const slot = slotFor[id];
+            if (!slot || !slot.shown) {
+                out.push({ id: id, cols: 1, stops: [] });
+                continue;
+            }
+            const item = slot.moduleItem;
+            if (item && typeof item.keyStops === "function") {
+                const k = item.keyStops();
+                out.push({ id: id, cols: k.cols ?? 1, stops: k.stops.filter(st => st.item) });
+            } else {
+                const page = pageOf(id);
+                out.push({ id: id, cols: 1, stops: page !== "" ? [{ item: slot, activate: () => root.go(page) }] : [] });
+            }
+        }
+        return out;
+    }
+    readonly property var keyTarget: keyboard ? currentStop()?.item ?? null : null
+    property int keyTick: 0
+    function currentStop(): var {
+        keyTick;
+        const z = zones()[keyPos.zone];
+        return z ? z.stops[keyPos.stop] ?? null : null;
+    }
+    function keyMove(key: string): void {
+        const zs = zones();
+        keyPos = KeyNav.move(zs.map(z => ({ count: z.stops.length, cols: z.cols })), keyPos, key);
+        keyboard = keyPos.zone >= 0;
+        keyTick++;
+        root.forceActiveFocus();
+    }
+    function keyAct(): void {
+        const st = currentStop();
+        if (st?.activate)
+            st.activate();
+        keyTick++;
+    }
+    function keyAdjust(by: int): bool {
+        const st = currentStop();
+        if (!st?.adjust)
+            return false;
+        st.adjust(by);
+        return true;
+    }
+    // a key by name; false when it is not this page's (it goes on to the surface: Escape then closes the panel)
+    function handleKey(name: string): bool {
+        if (["tab", "backtab", "down", "up"].includes(name)) {
+            keyMove(name);
+        } else if (name === "left" || name === "right") {
+            if (!(keyboard && keyAdjust(name === "left" ? -1 : 1)))
+                keyMove(name);
+        } else if (name === "enter" && keyboard) {
+            keyAct();
+        } else if (name === "escape" && keyboard) {
+            keyboard = false;
+            keyPos = { zone: -1, stop: -1 };
+        } else {
+            return false;
+        }
+        return true;
+    }
+    Keys.onPressed: event => {
+        if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier))
+            return;
+        const k = event.key;
+        const name = k === Qt.Key_Tab ? ((event.modifiers & Qt.ShiftModifier) ? "backtab" : "tab") : k === Qt.Key_Backtab ? "backtab" : k === Qt.Key_Down ? "down" : k === Qt.Key_Up ? "up" : k === Qt.Key_Left ? "left" : k === Qt.Key_Right ? "right" : (k === Qt.Key_Return || k === Qt.Key_Enter || k === Qt.Key_Space) ? "enter" : k === Qt.Key_Escape ? "escape" : "";
+        if (name !== "" && handleKey(name))
+            event.accepted = true;
+    }
 
     // ── the column layout ──
     Repeater {
@@ -118,6 +223,22 @@ Column {
         }
     }
 
+    // where the keyboard is: the autofocus brackets, over everything. Not a child of this Column: a positioner
+    // leaves a zero-size child undrawn (and lays out any other at its foot), so the layer sits in the page's own
+    // parent, over the same rectangle.
+    Item {
+        parent: root.parent
+        x: root.x
+        y: root.y
+        width: root.width
+        height: root.height
+        z: 10
+        FocusBrackets {
+            target: root.keyTarget
+            shown: root.keyboard && root.active
+        }
+    }
+
     function componentFor(id: string): Component {
         return ({
                 header: header,
@@ -157,6 +278,19 @@ Column {
         readonly property string title: ControlSections.title(moduleId)
         readonly property bool headed: host.heads && title !== ""
         readonly property real headH: headed ? 18 + Metrics.s3 : 0
+        readonly property Item moduleItem: loader.item
+        Component.onCompleted: {
+            const m = Object.assign({}, host.slotFor);
+            m[moduleId] = slot;
+            host.slotFor = m;
+        }
+        Component.onDestruction: {
+            if (host && host.slotFor[moduleId] === slot) {
+                const m = Object.assign({}, host.slotFor);
+                delete m[moduleId];
+                host.slotFor = m;
+            }
+        }
         readonly property real inset: host.cards ? Metrics.s4 : 0
         height: shown ? loader.height + headH + inset * 2 + host.gap : 0
         opacity: progress
@@ -328,6 +462,22 @@ Column {
         readonly property real value: key === "volume" ? Audio.volume : key === "mic" ? Audio.micVolume : Backlight.value
         readonly property bool off: key === "volume" ? Audio.muted : key === "mic" ? Audio.micMuted : false
 
+        // the keyboard: left / right step the level, Enter mutes (brightness: opens the displays)
+        function primary(): void {
+            if (key === "volume")
+                Audio.toggleMute();
+            else if (key === "mic")
+                Audio.toggleMicMute();
+            else
+                host.go("monitor");
+        }
+        function nudge(by: int): void {
+            levelBar.stepBy(by * 5);
+        }
+        function keyStops(): var {
+            return { cols: 1, stops: visible ? [{ item: level, activate: level.primary, adjust: level.nudge }] : [] };
+        }
+
         IconButton {
             anchors.verticalCenter: parent.verticalCenter
             icon: level.key === "volume" ? Audio.glyph : level.key === "mic" ? (Audio.micMuted ? "microphone-off" : "microphone") : "brightness-up"
@@ -335,6 +485,7 @@ Column {
             onClicked: level.key === "volume" ? Audio.toggleMute() : level.key === "mic" ? Audio.toggleMicMute() : level.host.go("monitor")
         }
         Slider {
+            id: levelBar
             wheelAdjusts: true
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - Metrics.control - 40 - Metrics.s3 * 2
@@ -363,7 +514,15 @@ Column {
     Component {
         id: levels
         Column {
+            id: levelsColumn
             spacing: Metrics.s2
+            function keyStops(): var {
+                let stops = [];
+                for (const c of children)
+                    if (c.keyStops)
+                        stops = stops.concat(c.keyStops().stops);
+                return { cols: 1, stops: stops };
+            }
             Repeater {
                 // which sliders, in order: [control_panel] levels
                 model: Array.from(root.cfg.levels ?? ["volume", "mic", "brightness"]).filter(k => ["volume", "mic", "brightness"].includes(k))
@@ -637,6 +796,8 @@ Column {
         MediaModule {
             screen: root.screen
             active: root.active
+            // nothing playing: a slim line, not an empty stage
+            slim: true
         }
     }
 
@@ -678,8 +839,23 @@ Column {
     Component {
         id: notifications
         Column {
+            id: glanceColumn
             spacing: Metrics.s1
+            // the keyboard: Do not disturb (Enter switches it), then each line (Enter opens the centre)
+            function keyStops(): var {
+                const stops = [];
+                for (const c of children) {
+                    if (!c.visible || c.height <= 0)
+                        continue;
+                    if (c.isDndRow)
+                        stops.push({ item: c, activate: () => ControlShortcuts.setDnd(!root.dnd) });
+                    else if (c.isGlance)
+                        stops.push({ item: c, activate: () => root.go("notifications") });
+                }
+                return { cols: 1, stops: stops };
+            }
             StateRow {
+                readonly property bool isDndRow: true
                 host: root
                 width: parent.width
                 icon: root.dnd ? "bell-off" : "bell"
@@ -689,13 +865,76 @@ Column {
                 page: "notifications"
                 onSwitched: ControlShortcuts.setDnd(!root.dnd)
             }
+            // a glance, not the centre: the newest two on a line each (who, what, how long ago); a click opens the
+            // centre, where they can be read and acted on
             Repeater {
-                model: Notifications.serving ? Notifications.history.slice(0, 3) : []
-                delegate: NotificationCard {
+                model: Notifications.serving ? Notifications.history.slice(0, 2) : []
+                delegate: Item {
+                    id: glance
                     required property var modelData
+                    readonly property bool isGlance: true
                     width: parent?.width ?? 0
-                    compact: true
-                    entry: modelData
+                    height: 30
+                    Interactive {
+                        anchors.fill: parent
+                        radius: Metrics.radiusMd
+                        onClicked: root.go("notifications")
+                    }
+                    Image {
+                        id: glanceIcon
+                        x: Metrics.s2
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 16
+                        height: 16
+                        sourceSize.width: 32
+                        sourceSize.height: 32
+                        asynchronous: true
+                        source: Notifications.iconFor(glance.modelData)
+                    }
+                    Rectangle {
+                        visible: glanceIcon.status !== Image.Ready
+                        anchors.fill: glanceIcon
+                        radius: width / 2
+                        color: Theme.accentSoft
+                        Label {
+                            anchors.centerIn: parent
+                            role: "micro"
+                            tone: "accent"
+                            text: (glance.modelData.appName || "?").charAt(0).toUpperCase()
+                        }
+                    }
+                    Label {
+                        anchors.left: glanceIcon.right
+                        anchors.leftMargin: Metrics.s3
+                        anchors.right: glanceAge.left
+                        anchors.rightMargin: Metrics.s2
+                        anchors.verticalCenter: parent.verticalCenter
+                        role: "label"
+                        elide: Text.ElideRight
+                        text: glance.modelData.summary || glance.modelData.appName || "Notification"
+                    }
+                    Label {
+                        id: glanceAge
+                        anchors.right: parent.right
+                        anchors.rightMargin: Metrics.s2
+                        anchors.verticalCenter: parent.verticalCenter
+                        role: "caption"
+                        tone: "faint"
+                        text: NotificationGroups.ago(glance.modelData.time, Time.now.getTime())
+                    }
+                }
+            }
+            Label {
+                visible: Notifications.serving && Notifications.history.length > 2
+                x: Metrics.s2
+                role: "caption"
+                tone: "accent"
+                text: "+" + (Notifications.history.length - 2) + " more in Notifications"
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.go("notifications")
                 }
             }
         }

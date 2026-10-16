@@ -136,6 +136,36 @@ Column {
             Notifications.dismiss(s.key);
     }
 
+    // a key by name (the same moves as the keys below; `ipc panelKey` reaches the page through this)
+    function handleKey(name: string): bool {
+        switch (name) {
+        case "down":
+            move(1);
+            return true;
+        case "up":
+            move(-1);
+            return true;
+        case "enter":
+            activate();
+            return true;
+        case "right":
+            more(true);
+            return true;
+        case "left":
+            more(false);
+            return true;
+        case "delete":
+            clearSelected();
+            return true;
+        case "escape":
+            if (selected === "")
+                return false;
+            selected = "";
+            return true;
+        }
+        return false;
+    }
+
     // the keyboard, when it is not in the search field or a reply
     Item {
         id: keys

@@ -75,8 +75,13 @@ Singleton {
         }
     }
 
-    // the arrangement out of the box
-    readonly property var defaultColumns: [["media"], ["shortcuts", "levels"], ["weather"]]
+    // the arrangement out of the box: Layout.adaptive, which leads with what is going on (something playing or
+    // not); defaultColumns is its resting form, the fallback for an arrangement that cannot be read
+    readonly property var adaptiveNow: Layout.adaptive(Media.present)
+    readonly property var defaultColumns: Layout.adaptive(false).columns
+    function isAdaptive(cfg: var): bool {
+        return Layout.isAdaptive(cfg);
+    }
     readonly property int maxColumns: Layout.maxColumns
 
     // the arrangement logic is Common/SectionLayout.js (pure, tested): these name the catalogue for it
@@ -87,7 +92,11 @@ Singleton {
         return Layout.validate(given, ids, defaultColumns);
     }
     function arrangement(cfg: var): var {
-        return Layout.arrangement(cfg, ids, defaultColumns);
+        return Layout.isAdaptive(cfg) ? adaptiveNow.columns : Layout.arrangement(cfg, ids, defaultColumns);
+    }
+    // the columns' weights: the adaptive arrangement's own, else [control_panel] column_widths
+    function weightsFor(cfg: var, columns: var): var {
+        return Layout.isAdaptive(cfg) ? Layout.weights(columns, adaptiveNow.weights) : Layout.weights(columns, cfg?.column_widths);
     }
     function flat(columns: var): var {
         return Layout.flat(columns);

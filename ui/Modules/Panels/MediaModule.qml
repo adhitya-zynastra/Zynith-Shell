@@ -20,19 +20,46 @@ Item {
     property bool expanded: false
     // the page's heading is on the hero above: nothing playing then says nothing here twice
     property bool headed: false
+    // on the dashboard: with nothing playing it is a slim line (a small disc, "Nothing playing", where playback
+    // comes from) rather than an empty stage; something starting grows it into the record where it is
+    property bool slim: false
+    readonly property bool idleSlim: slim && !expanded && !Media.present
+    // in a narrow column (the dashboard's second, or a narrow arrangement) it is a mini player: a smaller disc, the
+    // controls, no spectrum or lyrics (they are a click away on its page) — the full record there overflowed its plate
+    readonly property bool narrow: !expanded && width > 0 && width < 440
 
     readonly property var cfg: Config.media ?? ({})
     // the record never takes more than its share of the room it is given (a page opened alone is narrow)
     // with nothing playing the record is an empty stage: it keeps its compact size, even on its own page
-    readonly property int artWanted: expanded && Media.present ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
+    readonly property int artWanted: idleSlim ? 36 : narrow ? 72 : expanded && Media.present ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
     readonly property int artSize: width > 0 ? Math.min(artWanted, Math.round(width * 0.4)) : artWanted
     readonly property bool visualizer: (cfg.visualizer ?? true) && Spectrum.enabled
-    readonly property real reach: visualizer && ring ? (cfg.visualizer_reach ?? 18) : 6
+    readonly property real reach: idleSlim ? 0 : narrow ? 6 : visualizer && ring ? (cfg.visualizer_reach ?? 18) : 6
     readonly property bool showLyrics: Lyrics.enabled
     readonly property int lyricLines: Math.max(1, cfg.lyrics_lines ?? 2)
     readonly property bool present: Media.present
 
     implicitHeight: row.height
+
+    // the keyboard (ControlPanel): one stop; Enter plays or pauses, left / right skip back and on; with nothing
+    // playing, Enter opens its page
+    function keyStops(): var {
+        return {
+            cols: 1,
+            stops: [{
+                    item: root,
+                    activate: () => Media.present ? Media.toggle() : PanelRouter.navigate("media", root.screen?.name ?? ""),
+                    adjust: by => {
+                        if (!Media.present)
+                            return;
+                        if (by < 0)
+                            Media.previous();
+                        else
+                            Media.next();
+                    }
+                }]
+        };
+    }
 
     // what this holds while it is on screen
     readonly property bool live: active && visible
@@ -72,7 +99,7 @@ Item {
 
     readonly property string vizStyle: cfg.visualizer_style ?? "both"
     readonly property bool ring: vizStyle === "ring" || vizStyle === "both"
-    readonly property bool barsShown: visualizer && (vizStyle === "bars" || vizStyle === "both")
+    readonly property bool barsShown: visualizer && !narrow && (vizStyle === "bars" || vizStyle === "both")
     // on the page the words get a column of their own at the right
     // …when there is room for it: what is playing keeps at least the record's width beside it, else the words
     // go under it as on the dashboard
@@ -85,8 +112,14 @@ Item {
     Row {
         id: row
         width: root.width
-        spacing: Metrics.s5
+        spacing: root.idleSlim ? Metrics.s3 : Metrics.s5
         readonly property real middleHeight: middle.implicitHeight
+        Behavior on height {
+            enabled: root.live
+            Anim {
+                role: "spatial"
+            }
+        }
         height: Math.max(record.height, middle.implicitHeight, words.visible ? words.height : 0)
 
         Item {
@@ -99,7 +132,7 @@ Item {
             Shape {
                 id: spectrum
                 anchors.fill: parent
-                visible: root.visualizer && root.ring && root.present
+                visible: root.visualizer && root.ring && root.present && !root.narrow
                 preferredRendererType: Shape.CurveRenderer
                 readonly property real c: width / 2
                 readonly property real inner: root.artSize / 2 + 7
@@ -108,7 +141,7 @@ Item {
             }
             Variants {
                 id: bars
-                model: root.visualizer && root.ring ? Array.from({ length: Spectrum.bandCount * 2 }, (_, i) => i) : []
+                model: root.visualizer && root.ring && !root.narrow ? Array.from({ length: Spectrum.bandCount * 2 }, (_, i) => i) : []
                 ShapePath {
                     required property int modelData
                     readonly property int index: modelData
@@ -246,11 +279,14 @@ Item {
                 spacing: Metrics.s1
 
                 Label {
+                    width: parent.width
+                    elide: Text.ElideRight
                     role: "data"
                     tone: Media.playing ? "accent" : "faint"
                     text: !root.present ? "Nothing playing" : (Media.playing ? "Now playing" : "Paused") + (Media.app !== "" ? "  ·  " + Media.app : "")
                 }
                 Label {
+                    visible: !root.idleSlim
                     width: parent.width
                     role: root.expanded ? "headline" : "title"
                     font.weight: Font.Medium
@@ -265,13 +301,13 @@ Item {
                     tone: "muted"
                     elide: Text.ElideRight
                     // nothing playing: say where playback comes from, instead of leaving the space empty
-                    text: root.present ? [Media.artist, Media.album].filter(s => s !== "").join("  ·  ") : "Music or video in any app that shares it (a browser, Spotify, mpv) shows up here."
-                    wrapMode: root.present ? Text.NoWrap : Text.WordWrap
+                    text: root.present ? [Media.artist, Media.album].filter(s => s !== "").join("  ·  ") : root.idleSlim ? "Music or video from any app shows up here" : "Music or video in any app that shares it (a browser, Spotify, mpv) shows up here."
+                    wrapMode: root.present || root.idleSlim ? Text.NoWrap : Text.WordWrap
                     visible: text !== ""
                 }
                 // which player, when there is more than one
                 Flow {
-                    visible: (root.cfg.player_chips ?? true) && Media.players.length > 1
+                    visible: (root.cfg.player_chips ?? true) && Media.players.length > 1 && !root.narrow
                     width: parent.width
                     spacing: Metrics.s1
                     topPadding: Metrics.s1
@@ -431,7 +467,7 @@ Item {
             // ── the words ──
             Item {
                 id: wordsCompact
-                visible: root.showLyrics && root.present && !root.lyricsBeside
+                visible: root.showLyrics && root.present && !root.lyricsBeside && !root.narrow
                 width: root.lyricsBeside ? lyricsWidth : parent.width
                 readonly property real lineH: root.lyricsBeside ? 30 : 22
                 height: root.lyricsBeside ? Math.max(row.middleHeight, record.height) : root.lyricLines * lineH

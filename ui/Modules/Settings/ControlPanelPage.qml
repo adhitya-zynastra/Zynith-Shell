@@ -43,7 +43,7 @@ Column {
     // ── the sections: one arrangement, edited whole ──
     readonly property var columns: ControlSections.arrangement(cp)
     readonly property var shown: ControlSections.flat(columns)
-    readonly property var weights: ControlSections.weights(columns, cp.column_widths)
+    readonly property var weights: ControlSections.weightsFor(cp, columns)
     readonly property bool dashboard: (cp.layout ?? "dashboard") === "dashboard"
     // the retired `modules` list is still in the file: the first arrangement made here backs panels.toml up
     // (panels.toml.pre-sections, never overwritten) and moves it into `columns`
@@ -97,7 +97,11 @@ Column {
     function setWeight(c: int, w: real): void {
         const next = weights.slice();
         next[c] = Math.round(w * 10) / 10;
-        set("column_widths", next);
+        // a width set on the adaptive arrangement pins it: the columns as they are now are written with it
+        if (ControlSections.isAdaptive(cp))
+            arrange(columns, next);
+        else
+            set("column_widths", next);
     }
     function restoreSections(): void {
         const reset = () => {
@@ -236,7 +240,7 @@ Column {
             role: "label"
             tone: "faint"
             wrapMode: Text.WordWrap
-            text: root.dashboard ? "Each column top to bottom, columns left to right. Arrows reorder; the side arrows move a section to the next column." : "One column, in this order (the side arrows still choose a column for the side-by-side layout)."
+            text: (ControlSections.isAdaptive(root.cp) ? "Adaptive: while something plays the player leads the wide column; otherwise the quick controls lead and the idle player is a slim line. Any change here fixes the arrangement as you set it. " : "") + (root.dashboard ? "Each column top to bottom, columns left to right. Arrows reorder; the side arrows move a section to the next column." : "One column, in this order (the side arrows still choose a column for the side-by-side layout).")
         }
 
         Flow {
@@ -426,7 +430,7 @@ Column {
             spacing: Metrics.s2
             Chip {
                 icon: "refresh"
-                text: "Restore the default sections"
+                text: "Restore the adaptive sections"
                 active: false
                 onClicked: root.restoreSections()
             }

@@ -532,8 +532,9 @@ Singleton {
                     auto_paste: true
                 },
                 control_panel: {
-                    // which sections show and where: `columns`, each a list of sections top to bottom (left out =
-                    // ControlSections.defaultColumns; the catalogue of sections is ControlSections.entries).
+                    // which sections show and where: `columns`, each a list of sections top to bottom (left out = the
+                    // adaptive arrangement, Common/SectionLayout.js adaptive(): it leads with the player while something
+                    // plays, else with the quick controls; the catalogue of sections is ControlSections.entries).
                     // dashboard (the columns side by side, wide and short) | column (the same sections, one tall column)
                     layout: "dashboard",
                     // where it opens: auto (beside the bar that opened it; by a key, beside anchor_bar, else the work
@@ -559,8 +560,8 @@ Singleton {
                     hero_drift: true,
                     // the hero on a panel opened by hovering a bar icon (a quick look) too
                     hero_on_peek: false,
-                    // the dashboard: its width and its columns, each a list of modules top to bottom, and a
-                    // weight per column (1 each when left out)
+                    // the dashboard: its width and a weight per column of a written arrangement (1 each when left
+                    // out; the adaptive arrangement has its own)
                     dashboard_width: 1080,
                     column_widths: [1.6, 1, 1],
                     // a row of tabs over the Control Panel and its pages; which, in order (control media audio

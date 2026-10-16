@@ -261,6 +261,8 @@ Singleton {
     // where each output's panel card sits, in global coordinates (notification popups step past it; also
     // diagnostics and cropped captures). Reassigned, not mutated, so bindings on it follow.
     property var rects: ({})
+    // the page showing in each screen's panel (PanelContent): what a key sent over IPC reaches (`ipc panelKey`)
+    property var livePages: ({})
     // the panel window's actual size per output (diagnostics: should match its card's span)
     property var windowSizes: ({})
     function noteRect(screenName: string, rect: var): void {

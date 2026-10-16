@@ -77,4 +77,22 @@ TestCase {
         compare(Layout.weights([[1], [2], [3]], [1.6, 0, "x"]), [1.6, 1, 1]);
         compare(Layout.weights([[1], [2]], [9, 0.01]), [5, 0.2]);
     }
+
+    // the arrangement out of the box follows playback: the player leads while something is there, else the quick
+    // controls, and the same sections show either way (nothing appears or disappears, it only moves)
+    function test_adaptive_follows_playback() {
+        const on = Layout.adaptive(true), off = Layout.adaptive(false);
+        compare(on.columns[0][0], "media");
+        compare(off.columns[0][0], "shortcuts");
+        compare(off.columns[1][off.columns[1].length - 1], "media", "idle, the player sits at the foot of the narrow column");
+        compare(Layout.flat(on.columns).slice().sort(), Layout.flat(off.columns).slice().sort());
+        verify(on.weights[0] > on.weights[1] && off.weights[0] > off.weights[1], "asymmetric: the first column is wider");
+    }
+    function test_adaptive_only_when_nothing_is_written() {
+        verify(Layout.isAdaptive({}));
+        verify(Layout.isAdaptive({ layout: "dashboard", column_widths: [1.6, 1, 1] }), "default widths alone do not pin it");
+        verify(!Layout.isAdaptive({ columns: [["media"]] }));
+        verify(!Layout.isAdaptive({ layout: "column", modules: ["media"] }), "the retired modules list still counts");
+        verify(!Layout.isAdaptive(null));
+    }
 }

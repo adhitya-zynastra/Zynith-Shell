@@ -85,6 +85,12 @@ Item {
     readonly property real contentScale: Math.max(0.5, Math.min(1, Config.panels?.content_scale ?? 0.94))
     property int front: 0
     readonly property Loader live: front === 0 ? slotA : slotB
+    readonly property Item livePage: live.item
+    onLivePageChanged: if (screen) {
+        const m = Object.assign({}, PanelRouter.livePages);
+        m[screen.name] = livePage;
+        PanelRouter.livePages = m;
+    }
     readonly property Loader leaving: front === 0 ? slotB : slotA
     property string idA: ""
     property string idB: ""

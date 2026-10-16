@@ -78,6 +78,19 @@ Item {
     function more(entry: var): void {
         go(entry.more ?? "");
     }
+    // the keyboard (ControlPanel, Common/KeyNav.js): each tile a stop, in rows of `columns`; Enter presses it,
+    // and its page (where it has one) is a right click away as before
+    function keyStops(): var {
+        const stops = [];
+        for (let i = 0; i < tiles.count; i++) {
+            const e = entries[i];
+            stops.push({
+                item: tiles.itemAt(i),
+                activate: () => root.press(e)
+            });
+        }
+        return { cols: root.columns, stops: stops };
+    }
 
     Flow {
         id: flow
@@ -85,6 +98,7 @@ Item {
         spacing: root.gap
 
         Repeater {
+            id: tiles
             model: root.entries
 
             delegate: Loader {

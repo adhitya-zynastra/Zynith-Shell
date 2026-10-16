@@ -50,6 +50,23 @@ function arrangement(cfg, known, fallback) {
     return fallback;
 }
 
+// The arrangement out of the box when none is written: two columns, the first wider (1.35 : 1), and which one leads
+// follows what is going on. Something playing (or paused: a player is there): the record leads the wide column with
+// the weather under it, the quick controls, levels and a glance at notifications beside. Nothing playing: the quick
+// controls and levels lead, and the narrow column holds the weather, the glance and the idle player as a slim line at
+// its foot, instead of an empty stage taking a third of the panel.
+function adaptive(present) {
+    return present ? { columns: [["media", "weather"], ["shortcuts", "levels", "notifications"]], weights: [1.35, 1] }
+                   : { columns: [["shortcuts", "levels"], ["weather", "notifications", "media"]], weights: [1.35, 1] };
+}
+// whether a [control_panel] table leaves the arrangement to adaptive(): no columns written, and no retired
+// column-layout `modules` list standing in for them
+function isAdaptive(cfg) {
+    if (!cfg || cfg.columns !== undefined)
+        return false;
+    return !((cfg.layout || "dashboard") === "column" && cfg.modules !== undefined);
+}
+
 function flat(columns) {
     return columns.reduce(function (all, c) { return all.concat(c); }, []);
 }
