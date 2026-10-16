@@ -67,7 +67,10 @@ Item {
     implicitWidth: vertical ? cross : (shown ? naturalLength : 0)
     implicitHeight: vertical ? (shown ? naturalLength : 0) : cross
     opacity: shown ? 1 : 0
-    visible: implicitWidth > 0.5 && implicitHeight > 0.5
+    // a widget with something to show stays visible even while its content measures nothing: its content is
+    // laid out only while it is visible, so hiding it at zero size would keep content that arrives later (a
+    // tray app registering after the shell starts) from ever being measured
+    visible: shown || (implicitWidth > 0.5 && implicitHeight > 0.5)
 
     Behavior on implicitWidth {
         enabled: !root.vertical
