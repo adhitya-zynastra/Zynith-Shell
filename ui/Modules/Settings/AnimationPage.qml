@@ -33,6 +33,11 @@ Column {
         width: parent.width
         caption: "Motion"
 
+        // the speed and the feel, seen: it replays when either changes
+        MotionPreview {
+            width: parent.width
+        }
+
         SettingRow {
             title: "Animation speed"
             detail: "Panels, bars, the lock screen and window movement"
