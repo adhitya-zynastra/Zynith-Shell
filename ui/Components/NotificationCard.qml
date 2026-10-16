@@ -15,25 +15,15 @@ Item {
     property bool popup: false
     readonly property bool critical: entry.urgency === NotificationUrgency.Critical
     readonly property bool hovered: hover.hovered
-    readonly property bool typing: replyField.activeFocus
+    readonly property bool typing: actionsBox.typing
     signal activated
 
-    // An icon name becomes an image://icon URL even when the theme lacks it, which draws Qt's
-    // missing-image checkerboard; only names the theme really has are used.
-    function iconSource(name: string): string {
-        if (name === "")
-            return "";
-        if (name.startsWith("/"))
-            return "file://" + name;
-        if (name.startsWith("file://"))
-            return name;
-        return Quickshell.iconPath(name, true);
-    }
+    // the sender's picture, else its app's icon (Notifications.iconFor: only icons the theme really has)
     readonly property string picture: {
         const image = entry.image ?? "";
         if (image.startsWith("image://icon/"))
-            return iconSource(image.substring(13).split("?")[0]);
-        return image !== "" ? image : iconSource(entry.appIcon ?? "");
+            return Notifications.themed(image.substring(13).split("?")[0]);
+        return image !== "" ? image : Notifications.iconFor(entry);
     }
 
     // compact is shorter, not only narrower: tighter padding, a smaller badge, one line of body
@@ -210,95 +200,13 @@ Item {
                 }
             }
 
-            // a reply, for senders that take one (messengers)
-            Rectangle {
-                visible: (root.entry.reply ?? "") !== "" && root.entry.n
+            // a reply, and the sender's actions
+            NotificationActions {
+                id: actionsBox
                 width: parent.width
-                height: 32
-                radius: 16
-                color: Theme.well
-                border.width: Metrics.hairline
-                border.color: replyField.activeFocus ? Theme.accentLine : Theme.hairline
-                TextInput {
-                    id: replyField
-                    anchors.left: parent.left
-                    anchors.leftMargin: Metrics.s4
-                    anchors.right: send.left
-                    anchors.rightMargin: Metrics.s2
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Theme.ink
-                    font.family: Type.ui
-                    font.pixelSize: Type.label
-                    clip: true
-                    Keys.onReturnPressed: {
-                        Notifications.reply(root.entry.key, text);
-                        text = "";
-                    }
-                    Keys.onEscapePressed: focus = false
-                    Label {
-                        visible: replyField.text === ""
-                        anchors.verticalCenter: parent.verticalCenter
-                        role: "label"
-                        tone: "faint"
-                        text: root.entry.reply ?? ""
-                    }
-                }
-                IconButton {
-                    id: send
-                    anchors.right: parent.right
-                    anchors.rightMargin: 3
-                    anchors.verticalCenter: parent.verticalCenter
-                    size: 26
-                    iconSize: 13
-                    icon: "corner-down-left"
-                    tone: "accent"
-                    enabled: replyField.text.trim() !== ""
-                    onClicked: Notifications.reply(root.entry.key, replyField.text)
-                }
-            }
-
-            Flow {
-                visible: !root.compact && actionsRepeater.count > 0 && (Config.notifications.showActions ?? true)
-                width: parent.width
-                spacing: Metrics.s2
-                topPadding: Metrics.s2
-
-                Repeater {
-                    id: actionsRepeater
-                    model: root.entry.n ? root.entry.actions.filter(a => a.id !== "default" && a.text !== "") : []
-
-                    delegate: Item {
-                        required property var modelData
-                        required property int index
-                        // the first action is the one meant: it carries the signal; the rest stay quiet
-                        readonly property bool primary: index === 0
-                        width: actionLabel.implicitWidth + Metrics.s5 * 2
-                        height: 28
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: height / 2
-                            color: actionArea.pressed ? Theme.press : parent.primary ? Theme.signalFill : actionArea.containsMouse ? Theme.hover : "transparent"
-                            border.width: Metrics.hairline
-                            border.color: parent.primary ? Theme.signalEdge : actionArea.containsMouse ? Theme.hairline : Theme.rule
-                        }
-                        Label {
-                            id: actionLabel
-                            anchors.centerIn: parent
-                            role: "label"
-                            font.weight: parent.primary ? Font.Medium : Font.Normal
-                            tone: parent.primary ? "accent" : "ink"
-                            text: parent.modelData.text
-                        }
-                        MouseArea {
-                            id: actionArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Notifications.invoke(root.entry.key, parent.modelData.id)
-                        }
-                    }
-                }
+                topPadding: Metrics.s1
+                entry: root.entry
+                showActions: !root.compact
             }
         }
     }

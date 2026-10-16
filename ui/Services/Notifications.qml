@@ -57,6 +57,101 @@ Singleton {
         return history.find(e => e.key === key) ?? null;
     }
 
+    // ── who sent it: the app's icon and its desktop entry ────────────────────
+    // Senders name their icon loosely (an icon name, a path, a desktop id, or nothing); the theme is asked first,
+    // then the app's desktop entry, then a lookup by the app's name. Only icons that exist are returned (an
+    // unknown name would draw Qt's missing-image checkerboard); "" lets the caller draw its own mark.
+    function themed(name: string): string {
+        if (!name)
+            return "";
+        if (name.startsWith("/"))
+            return "file://" + name;
+        if (name.startsWith("file://"))
+            return name;
+        return Quickshell.iconPath(name, true) || "";
+    }
+    function desktopEntryFor(e: var): var {
+        if (!e)
+            return null;
+        return (e.desktopEntry ? DesktopEntries.byId(e.desktopEntry) : null) ?? (e.appName ? DesktopEntries.heuristicLookup(e.appName) : null);
+    }
+    // Quickshell hands the sender's app_icon (and an image-path hint) over as image://icon/<name or path>: a name
+    // there is the app's icon; a path is a picture (Notifications.pictureFor)
+    function iconNamedByImage(e: var): string {
+        const image = e?.image ?? "";
+        if (!image.startsWith("image://icon/"))
+            return "";
+        const rest = image.substring(13).split("?")[0];
+        return rest.startsWith("/") ? "" : rest;
+    }
+    function pictureFor(e: var): string {
+        const image = e?.image ?? "";
+        if (image === "")
+            return "";
+        if (image.startsWith("image://icon/")) {
+            const rest = image.substring(13).split("?")[0];
+            return rest.startsWith("/") ? "file://" + rest : "";
+        }
+        return image.startsWith("/") ? "file://" + image : image;
+    }
+    // found icons only: a miss is asked again later (the desktop entries load after the first notifications)
+    property var iconCache: ({})
+    function iconFor(e: var): string {
+        if (!e)
+            return "";
+        const id = (e.appIcon ?? "") + "|" + (e.desktopEntry ?? "") + "|" + (e.appName ?? "");
+        if (iconCache[id])
+            return iconCache[id];
+        const found = themed(e.appIcon ?? "") || themed(iconNamedByImage(e)) || themed(desktopEntryFor(e)?.icon ?? "");
+        if (found)
+            iconCache[id] = found;
+        return found;
+    }
+
+    // Open what it is about, as tapping a notification on a phone does: the sender's default action when it
+    // offers one (it is still running), else the app's window if one is open, else the app launched. The
+    // notification is done with afterwards (a resident one stays). False when there is nothing to open.
+    function open(key: int): bool {
+        const e = entry(key);
+        if (!e)
+            return false;
+        const def = e.n?.actions.find(a => a.identifier === "default");
+        if (def) {
+            def.invoke();
+            if (!e.resident)
+                remove(key);
+            return true;
+        }
+        const de = desktopEntryFor(e);
+        const ids = [e.desktopEntry, de?.id, e.appName].filter(x => x).map(x => String(x).toLowerCase().replace(/\.desktop$/, ""));
+        const win = NiriState.windowList().find(w => ids.includes((w.appId ?? "").toLowerCase()));
+        if (win)
+            NiriState.focusWindow(win.id);
+        else if (de)
+            de.execute();
+        else
+            return false;
+        dismiss(key);
+        return true;
+    }
+
+    // While the notification centre is open its list is where new ones appear: they do not also pop up beside it
+    // (a popup half under the open panel, the same card twice), and the popups already up are folded into it — the
+    // history has them all along. A critical one still live when it closes comes back up: it stays until handled.
+    property bool centerOpen: false
+    onCenterOpenChanged: {
+        if (centerOpen) {
+            popups = [];
+            queue = [];
+            return;
+        }
+        for (const e of history.slice().reverse())
+            if (e.n && e.urgency === NotificationUrgency.Critical && !popups.includes(e.key))
+                show(e.key, false);
+    }
+    // the keys that arrived while the centre was open, for it to mark as new
+    property var arrived: []
+
     // what the sender asked for, or a calm default by urgency; critical stays until handled
     function timeoutFor(e: var): int {
         if (e.urgency === NotificationUrgency.Critical || e.resident)
@@ -133,6 +228,17 @@ Singleton {
                         text: a.text
                     }))
         };
+        // Carried over from before a reload (keepOnReload re-emits what is still live): the same notification, not
+        // a new one. It takes the place of its copy restored from the history file and keeps its time, and it
+        // neither pops up nor chimes again. Without this every reload listed each live notification twice.
+        const carried = n.lastGeneration === true;
+        if (carried) {
+            const copy = history.find(x => sameAs(x, n.id, e));
+            if (copy) {
+                e.time = copy.time;
+                history = history.filter(x => x !== copy);
+            }
+        }
         const rule = ruleFor(e);
         e.timeoutOverride = rule?.timeout_ms ?? 0;
         e.bypassDnd = rule?.bypass_dnd === true;
@@ -152,18 +258,28 @@ Singleton {
             forgetLater(e.key);
         history = [e].concat(rest).slice(0, Config.notifications.historySize);
 
-        const quiet = dnd && e.urgency !== NotificationUrgency.Critical && !e.bypassDnd;
+        // (a critical one carried over comes back up: it stays until handled)
+        const quiet = (carried && e.urgency !== NotificationUrgency.Critical) || (dnd && e.urgency !== NotificationUrgency.Critical && !e.bypassDnd);
         if (rule?.show_popup !== false && !quiet)
             show(e.key, wasShowing);
-        if (rule?.play_sound !== false && !(hints["suppress-sound"] === true))
+        if (!carried && rule?.play_sound !== false && !(hints["suppress-sound"] === true))
             chime(e);
         if (e.transient)
             forgetLater(e.key);
         save();
     }
 
+    // a restored entry (no live notification) that is this live one: the same id from the same app saying the same
+    function sameAs(x: var, id: int, e: var): bool {
+        return !x.n && x.nid === id && x.appName === e.appName && x.summary === e.summary;
+    }
+
     // shows a popup now if there is room (a replacement always is), else queues it
     function show(key: int, immediate: bool): void {
+        if (centerOpen) {
+            arrived = arrived.concat([key]);
+            return;
+        }
         if (immediate || popups.length < Config.notifications.maxPopups)
             popups = [key].concat(popups);
         else
@@ -284,7 +400,14 @@ Singleton {
             return;
         }
         const cutoff = Config.notifications.retentionHours > 0 ? Date.now() - Config.notifications.retentionHours * 3600000 : 0;
-        const old = saved.filter(e => e.time >= cutoff).map(e => Object.assign(e, {
+        // a saved entry whose notification is live again (carried over the reload, already listed) is not added twice:
+        // the live one takes its time instead
+        const old = saved.filter(e => e.time >= cutoff).filter(e => {
+            const live = history.find(x => x.n && x.n.lastGeneration === true && x.n.id === e.nid && x.appName === e.appName && x.summary === e.summary);
+            if (live)
+                live.time = e.time;
+            return !live;
+        }).map(e => Object.assign(e, {
                 key: nextKey++,
                 n: null,
                 actions: []
@@ -310,7 +433,9 @@ Singleton {
                         body: e.body,
                         urgency: e.urgency,
                         time: e.time,
-                        progress: e.progress
+                        progress: e.progress,
+                        // the live notification's id, so a reload can tell its own carried-over notifications from new ones
+                        nid: e.n ? e.n.id : (e.nid ?? -1)
                     }));
             store.save(JSON.stringify(keep));
         }

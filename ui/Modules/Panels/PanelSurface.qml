@@ -376,6 +376,27 @@ PanelWindow {
         enter.start();
     }
 
+    // The surface's own keys: Escape closes, Back goes back, and the tabs: Ctrl+Tab / Ctrl+Shift+Tab or Ctrl+PgDn /
+    // Ctrl+PgUp step, Alt+1… jumps. Reached from the focus item, or from a page holding focus itself (the
+    // notification centre) when it lets a key go.
+    function surfaceKeys(event: var): void {
+        const ctrl = event.modifiers & Qt.ControlModifier;
+        // Shift+Tab arrives as Backtab, or as Tab with Shift held (verified with real keys: the latter)
+        const back = event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier));
+        if (event.key === Qt.Key_Escape) {
+            PanelRouter.close(win.screen.name);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Back) {
+            PanelRouter.back(win.screen.name);
+            event.accepted = true;
+        } else if (ctrl && (back || event.key === Qt.Key_PageUp))
+            event.accepted = content.stepTab(-1);
+        else if (ctrl && (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown))
+            event.accepted = content.stepTab(1);
+        else if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9)
+            event.accepted = content.goTab(event.key - Qt.Key_1);
+    }
+
     // the entrance plays once per showing, whether the window is new or warm
     property bool entering: false
     // counts appearances, so content can start fresh each time (warm or not)
@@ -496,20 +517,7 @@ PanelWindow {
             Item {
                 anchors.fill: parent
                 focus: true
-                Keys.onEscapePressed: PanelRouter.close(win.screen.name)
-                Keys.onBackPressed: PanelRouter.back(win.screen.name)
-                // the tabs from the keyboard: Ctrl+Tab / Ctrl+Shift+Tab or Ctrl+PgDn / Ctrl+PgUp step, Alt+1… jumps
-                Keys.onPressed: event => {
-                    const ctrl = event.modifiers & Qt.ControlModifier;
-                    // Shift+Tab arrives as Backtab, or as Tab with Shift held (verified with real keys: the latter)
-                    const back = event.key === Qt.Key_Backtab || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier));
-                    if (ctrl && (back || event.key === Qt.Key_PageUp))
-                        event.accepted = content.stepTab(-1);
-                    else if (ctrl && (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown))
-                        event.accepted = content.stepTab(1);
-                    else if ((event.modifiers & Qt.AltModifier) && event.key >= Qt.Key_1 && event.key <= Qt.Key_9)
-                        event.accepted = content.goTab(event.key - Qt.Key_1);
-                }
+                Keys.onPressed: event => win.surfaceKeys(event)
             }
 
             // clips content while the card height animates; the shadow stays outside. Content taller than the
@@ -517,6 +525,8 @@ PanelWindow {
             Flickable {
                 id: scroller
                 anchors.fill: parent
+                // keys a page with its own keyboard focus leaves unhandled come up to here
+                Keys.onPressed: event => win.surfaceKeys(event)
                 clip: true
                 contentWidth: width
                 contentHeight: content.implicitHeight
