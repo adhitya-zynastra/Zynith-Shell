@@ -104,6 +104,10 @@ Singleton {
         function panel(id: string): void {
             PanelRouter.toggle(id, root.focusedScreen(), null);
         }
+        // a panel shown beside Settings while its settings change (no catcher, no keys); again to hide it
+        function previewPanel(id: string): void {
+            PanelRouter.preview(id, root.focusedScreen());
+        }
         // the desktop widget editor
         function desktopEdit(): void {
             Desktop.toggleEditing();

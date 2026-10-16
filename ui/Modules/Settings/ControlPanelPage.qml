@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import qs.Common
 import qs.Components
@@ -115,6 +116,12 @@ Column {
         width: parent.width
         title: "Control Panel"
         caption: "Quick interaction; configuration lives here in Settings"
+    }
+    // the panel itself, beside this window: it follows every change here as it is made
+    Chip {
+        icon: "layout-dashboard"
+        text: "Show the panel while you change it (again to hide it)"
+        onClicked: Quickshell.execDetached([Paths.uiScript, "ipc", "previewPanel", "control"])
     }
 
     // ── where it opens ──

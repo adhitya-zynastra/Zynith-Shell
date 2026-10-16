@@ -77,7 +77,7 @@ Scope {
         active: root.present || root.warm
 
         PanelWindow {
-            visible: root.present && !(root.shown?.transient ?? false)
+            visible: root.present && !(root.shown?.transient ?? false) && !(root.shown?.preview ?? false)
             screen: root.modelData
             WlrLayershell.namespace: "zynith-panel-catcher"
             WlrLayershell.layer: WlrLayer.Top

@@ -208,7 +208,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     // a closing panel lets go of the keyboard at once, so typing (and a paste) reaches the window beneath
     // a hover-opened panel leaves the keyboard where it is until it is clicked (pinned)
-    WlrLayershell.keyboardFocus: win.closing || (win.entry?.transient ?? false) ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
+    WlrLayershell.keyboardFocus: win.closing || (win.entry?.transient ?? false) || (win.entry?.preview ?? false) ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     anchors {

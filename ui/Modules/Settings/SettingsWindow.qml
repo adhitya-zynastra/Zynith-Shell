@@ -361,7 +361,7 @@ FloatingWindow {
     }
     Timer {
         id: undoShown
-        interval: 6000
+        interval: 10000
         onTriggered: {
             win.lastChange = "";
             win.undone = "";

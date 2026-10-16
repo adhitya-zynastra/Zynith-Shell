@@ -186,6 +186,15 @@ Singleton {
             closeOnLeave: closeOnLeave
         }));
     }
+    // A preview (from Settings): the panel as it is, beside the window changing it. It takes no keys and lays
+    // no catcher, so clicks and typing still reach Settings; it stays until asked again (or closed).
+    function preview(id: string, screenName: string): void {
+        const cur = openPanels[screenName];
+        if (cur && cur.id === id && cur.preview)
+            return close(screenName);
+        open(id, screenName, null);
+        set(screenName, Object.assign({}, openPanels[screenName], { preview: true }));
+    }
     function pin(screenName: string): void {
         const cur = openPanels[screenName];
         if (cur?.transient)
