@@ -23,7 +23,8 @@ Item {
 
     readonly property var cfg: Config.media ?? ({})
     // the record never takes more than its share of the room it is given (a page opened alone is narrow)
-    readonly property int artWanted: expanded ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
+    // with nothing playing the record is an empty stage: it keeps its compact size, even on its own page
+    readonly property int artWanted: expanded && Media.present ? (cfg.page_art_size ?? 180) : (cfg.art_size ?? 104)
     readonly property int artSize: width > 0 ? Math.min(artWanted, Math.round(width * 0.4)) : artWanted
     readonly property bool visualizer: (cfg.visualizer ?? true) && Spectrum.enabled
     readonly property real reach: visualizer && ring ? (cfg.visualizer_reach ?? 18) : 6

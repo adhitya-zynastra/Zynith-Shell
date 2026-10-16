@@ -12,6 +12,14 @@ Singleton {
     readonly property int s3: 8
     readonly property int s4: 12
     readonly property int s5: 16
+
+    // a page's columns: as many as asked for, but never so many that one is narrower than this (a page in a
+    // narrow card takes one column instead of squeezing two)
+    readonly property int pageColumnMin: 280
+    function pageColumns(width: real, wanted: int): int {
+        const fit = Math.floor((width + s3) / (pageColumnMin + s3));
+        return Math.max(1, Math.min(Math.max(1, wanted), fit));
+    }
     readonly property int s6: 24
     readonly property int s7: 32
 

@@ -9,7 +9,7 @@ Flow {
     id: root
     // On its page the module flows into columns — top to bottom, wrapping at a height that balances them
     // ([control_panel] page_columns); in the Control Panel it is one stack, as before.
-    readonly property int pageColumns: expanded ? Math.max(1, Config.controlPanel?.page_columns ?? 2) : 1
+    readonly property int pageColumns: expanded ? Metrics.pageColumns(width, Config.controlPanel?.page_columns ?? 2) : 1
     readonly property real colW: pageColumns > 1 ? (width - spacing * (pageColumns - 1)) / pageColumns : width
     flow: pageColumns > 1 ? Flow.TopToBottom : Flow.LeftToRight
     height: pageColumns > 1 ? balancedHeight() : implicitHeight
