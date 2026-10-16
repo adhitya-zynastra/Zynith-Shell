@@ -273,8 +273,8 @@ PanelWindow {
         // without for those few frames rather than a rectangle being blurred beside it
         item: win.bare ? content.blurItem : win.dropping ? dropHead : card
         // the card's corners exactly as drawn (attached: square only where it meets the bar)
-        radius: win.dropping ? (win.drop?.head.r ?? 0) : card.radius
-        corners: win.dropping ? null : card.drawnCorners
+        radius: win.dropping ? (win.blurHead?.r ?? 0) : card.radius
+        corners: win.dropping ? (win.blurHead?.corners ?? null) : card.drawnCorners
         // the blur only once the card is drawn over it: an attached card fades in within the first sixth of its
         // growth, and a region switched on before that showed the bare backdrop (in Glass, the wallpaper) as a
         // rectangle over the windows for a frame
@@ -315,8 +315,33 @@ PanelWindow {
             along: horizontalEdge ? panelWidth : cardHeight,
             depth: horizontalEdge ? cardHeight : panelWidth,
             corners: card.drawnCorners,
-            radius: card.radius
+            radius: card.radius,
+            pathHead: false
         }) : null
+    // The blur's region reaches the compositor a frame before the picture it belongs to: while the drop swells, a
+    // region of the current head showed as a pale rim round the head still on screen. It takes the overlap of this
+    // frame's head and the last one's, so it is never larger than what is drawn (shrinking, the overlap is the new one).
+    property var lastHead: null
+    property var blurHead: null
+    onDropChanged: {
+        const h = drop?.head ?? null;
+        const p = lastHead;
+        lastHead = h;
+        if (!h || !p) {
+            blurHead = h;
+            return;
+        }
+        const x0 = Math.max(h.x, p.x), y0 = Math.max(h.y, p.y);
+        const x1 = Math.min(h.x + h.w, p.x + p.w), y1 = Math.min(h.y + h.h, p.y + p.h);
+        blurHead = {
+            x: x0,
+            y: y0,
+            w: Math.max(0, x1 - x0),
+            h: Math.max(0, y1 - y0),
+            r: Math.min(h.r, p.r),
+            corners: h.corners.map((c, i) => Math.min(c, p.corners[i]))
+        };
+    }
 
     // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
     NumberAnimation {
@@ -558,6 +583,22 @@ PanelWindow {
             height: card.height
             visible: false
             layer.enabled: win.dropping
+            // The head is a plain rounded rectangle, drawn in the frame its geometry changes: as part of the path (a
+            // Shape) it reached the screen later still, and the blur showed past it as a pale band ~10 px wide while
+            // it swelled. The neck and the menisci (no blur under them) stay a path.
+            Rectangle {
+                x: win.drop?.head.x ?? 0
+                y: win.drop?.head.y ?? 0
+                width: win.drop?.head.w ?? 0
+                height: win.drop?.head.h ?? 0
+                readonly property var c: win.drop?.head.corners ?? [0, 0, 0, 0]
+                topLeftRadius: c[0]
+                topRightRadius: c[1]
+                bottomRightRadius: c[2]
+                bottomLeftRadius: c[3]
+                color: "white"
+                antialiasing: true
+            }
             Shape {
                 anchors.fill: parent
                 preferredRendererType: Shape.CurveRenderer
@@ -575,10 +616,10 @@ PanelWindow {
         Item {
             id: dropHead
             visible: win.dropping
-            x: card.x + (win.drop?.head.x ?? 0)
-            y: card.y + (win.drop?.head.y ?? 0)
-            width: win.drop?.head.w ?? 0
-            height: win.drop?.head.h ?? 0
+            x: card.x + (win.blurHead?.x ?? 0)
+            y: card.y + (win.blurHead?.y ?? 0)
+            width: win.blurHead?.w ?? 0
+            height: win.blurHead?.h ?? 0
         }
         Item {
             id: dropBounds

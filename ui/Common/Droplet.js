@@ -12,8 +12,9 @@
 // in the card's own coordinates, so one rule serves all four edges.
 //   g: { edge: top|bottom|left|right, attached, ox (where it was asked for, along the edge, card-local),
 //        along (the card's length along the edge), depth (its size away from the edge),
-//        corners: [tl, tr, br, bl] the card's final radii, radius (the card's radius) }
-//   → { path (SVG, card-local), head: { x, y, w, h, r }, neck: { x, y, w, h } | null (card-local boxes, inside the
+//        corners: [tl, tr, br, bl] the card's final radii, radius (the card's radius),
+//        pathHead (false: leave the head out of the path, for a caller that draws it as a rounded rectangle) }
+//   → { path (SVG, card-local), head: { x, y, w, h, r, corners: [tl, tr, br, bl] }, neck: { x, y, w, h } | null (card-local boxes, inside the
 //       silhouette: for the blur and the input region), bounds: { x, y, w, h }, content (0..1: how far the page
 //       inside has arrived), join (0..1: the fillets beside the panel), phase }
 
@@ -146,7 +147,7 @@ function shape(t, g) {
     }
     var d = "";
     // head: rounded rect, corners going round from the near-start one
-    if (hw > 0.3 && hh > 0.3) {
+    if (g.pathHead !== false && hw > 0.3 && hh > 0.3) {
         var nS = rad[0], nE = rad[1], fE = rad[2], fS = rad[3];
         // corners as circular arcs (cubic, k = 0.5523), so a drop is round rather than a squircle
         var K = 0.5523;
@@ -176,6 +177,7 @@ function shape(t, g) {
     // boxes inside the silhouette, card-local: the head (with its smallest radius) and the neck at its waist
     var headBox = box(map, hx0, hy0, hx1, hy1);
     headBox.r = Math.min.apply(null, rad);
+    headBox.corners = localCorners(g.edge, rad);
     var neckBox = neck ? box(map, (hx0 + hx1) / 2 - neck.waist / 2, 0, (hx0 + hx1) / 2 + neck.waist / 2, neck.y + 1) : null;
     var bx0 = Math.min(hx0, neck ? footX - men : hx0), bx1 = Math.max(hx1, neck ? footX + footW + men : hx1);
     var bounds = box(map, bx0, 0, bx1, Math.max(hy1, 0));
@@ -208,6 +210,16 @@ function mapper(edge, along, depth) {
     return function (x, y) {
         return [x, y];
     };
+}
+// edgeCorners run back: [near start, near end, far end, far start] → [top left, top right, bottom right, bottom left]
+function localCorners(edge, e) {
+    if (edge === "bottom")
+        return [e[3], e[2], e[1], e[0]];
+    if (edge === "left")
+        return [e[0], e[3], e[2], e[1]];
+    if (edge === "right")
+        return [e[3], e[0], e[1], e[2]];
+    return [e[0], e[1], e[2], e[3]];
 }
 function box(map, x0, y0, x1, y1) {
     var a = map(x0, y0), b = map(x1, y1);

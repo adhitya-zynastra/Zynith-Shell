@@ -101,8 +101,12 @@ Singleton {
     IpcHandler {
         target: "zynith"
 
-        function panel(id: string): void {
+        // an id no panel answers to opens nothing (it made an empty card, which the next panel then grew out of)
+        function panel(id: string): string {
+            if (!PanelCatalog.byId(id))
+                return "unknown panel: " + id;
             PanelRouter.toggle(id, root.focusedScreen(), null);
+            return "ok";
         }
         // a panel shown beside Settings while its settings change (no catcher, no keys); again to hide it
         function previewPanel(id: string): void {

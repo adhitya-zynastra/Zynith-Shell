@@ -92,4 +92,18 @@ TestCase {
         const s = at(0.5, { ox: 2 });
         verify(s.head.x >= 0, "pulled in from the end: " + s.head.x);
     }
+
+    // the head's corners come back in the card's order, so a rounded rectangle (and the blur's region) can draw it
+    function test_head_corners_follow_the_card() {
+        const done = at(1, { attached: false, corners: [4, 8, 12, 16] });
+        compare(done.head.corners, [4, 8, 12, 16]);
+        for (const edge of ["top", "bottom", "left", "right"]) {
+            const end = at(1, { edge: edge, attached: false, corners: [4, 8, 12, 16] });
+            compare(end.head.corners, [4, 8, 12, 16], edge);
+        }
+        // without the head, the path holds only the neck and the menisci
+        const mid = at(0.4);
+        verify(at(0.4, { pathHead: false }).path.length < mid.path.length);
+        compare(at(0.1, { attached: false, pathHead: false }).path, "");
+    }
 }
