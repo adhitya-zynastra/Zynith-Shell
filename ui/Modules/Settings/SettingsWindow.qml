@@ -334,6 +334,90 @@ FloatingWindow {
         }
     }
 
+    // ── the last change, and the way back ──────────────────────────────────
+    // Every setting changed here can be taken back: the bar names it for a few seconds after a change, and
+    // Undo (or Ctrl+Z, outside a text field) puts the value before it back — one step per press, newest first.
+    property string lastChange: ""
+    property string undone: ""
+    Connections {
+        target: Config
+        function onChanged(label: string): void {
+            win.undone = "";
+            win.lastChange = label;
+            undoShown.restart();
+        }
+    }
+    function undo(): void {
+        const label = Config.undo();
+        if (label === "")
+            return;
+        win.undone = label;
+        win.lastChange = "";
+        undoShown.restart();
+    }
+    Shortcut {
+        sequences: [StandardKey.Undo]
+        onActivated: win.undo()
+    }
+    Timer {
+        id: undoShown
+        interval: 6000
+        onTriggered: {
+            win.lastChange = "";
+            win.undone = "";
+        }
+    }
+    Rectangle {
+        id: undoBar
+        readonly property bool shown: win.lastChange !== "" || win.undone !== ""
+        x: sidebar.width + (win.width - sidebar.width - width) / 2
+        y: win.height - height - Metrics.s5 + (shown ? 0 : height + Metrics.s6)
+        width: undoRow.implicitWidth + Metrics.s5 * 2
+        height: 40
+        radius: height / 2
+        color: Theme.mix(Theme.surfaceHigh, Theme.base, 0.2)
+        border.width: 1
+        border.color: Theme.alpha(Theme.ink, 0.1)
+        opacity: shown ? 1 : 0
+        visible: opacity > 0
+        Behavior on y {
+            NumberAnimation {
+                duration: Motion.spatialFast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.spatialFastCurve
+            }
+        }
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Motion.focus
+            }
+        }
+        Row {
+            id: undoRow
+            anchors.centerIn: parent
+            spacing: Metrics.s4
+            Label {
+                anchors.verticalCenter: parent.verticalCenter
+                role: "label"
+                text: win.undone !== "" ? "Put back: " + win.undone : "Changed: " + win.lastChange
+            }
+            Label {
+                visible: win.lastChange !== "" && Config.history.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                role: "label"
+                tone: "accent"
+                text: "Undo"
+                font.weight: Font.DemiBold
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -8
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: win.undo()
+                }
+            }
+        }
+    }
+
     // a native section's own page
     Component {
         id: nativePage

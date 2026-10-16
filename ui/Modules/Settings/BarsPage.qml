@@ -528,7 +528,7 @@ Column {
         { key: "margin", label: "Gap to the screen edge", kind: "int", default: 0, from: 0, to: 64, step: 1 },
         { key: "padding", label: "Room inside its ends", kind: "int", default: 12, from: 0, to: 40, step: 1 },
         { key: "spacing", label: "Between components (-1 follows the theme)", kind: "int", default: -1, from: -1, to: 24, step: 1 },
-        { key: "opacity", label: "Opacity (0 follows the profile)", kind: "slider", default: 0, from: 0, to: 1, step: 0.01 },
+        { key: "opacity", label: "Opacity", hint: "All the way down follows your surface style", kind: "slider", default: 0, from: 0, to: 1, step: 0.01 },
         { key: "blur", label: Material.style === "blur" ? "Blur behind it" : "Blur behind it (with the Blur surface style)", kind: "toggle", default: true },
         { key: "border", label: "Border", kind: "toggle", default: true },
         { key: "shadow", label: Material.shadows ? "Shadow" : "Shadow (" + (Material.style === "blur" ? "the Blur style floats without one" : "paused while power is short") + ")", kind: "toggle", default: true },
@@ -550,7 +550,7 @@ Column {
         { adv: true, key: "capsule_opacity", label: "Capsule opacity", kind: "slider", default: 0.5, from: 0, to: 1, step: 0.01, when: { capsule: [true] } },
         { adv: true, key: "capsule_padding", label: "Capsule padding", kind: "int", default: 0, from: 0, to: 24, step: 1, when: { capsule: [true] } },
         { adv: true, key: "capsule_thickness", label: "Capsule thickness (of the bar)", kind: "slider", default: 1, from: 0.1, to: 1, step: 0.01 },
-        { adv: true, key: "capsule_radius", label: "Capsule radius (-1 a pill)", kind: "int", default: -1, from: -1, to: 32, step: 1 },
+        { adv: true, key: "capsule_radius", label: "Capsule corners", hint: "−1 rounds the ends fully (a pill)", kind: "int", default: -1, from: -1, to: 32, step: 1 },
         { adv: true, key: "capsule_border", label: "Capsule border", kind: "colour", default: "" },
         { adv: true, key: "capsule_foreground", label: "Inside a capsule, components are", kind: "colour", default: "" }
     ]
@@ -564,7 +564,7 @@ Column {
         { key: "hover_delay", label: "Hover before a panel opens (ms)", kind: "int", default: 0, from: 0, to: 2000, step: 25, when: { open_on_hover: [true] } },
         { key: "hover_close", label: "A hovered panel closes when the pointer leaves", kind: "toggle", default: true, when: { open_on_hover: [true] } },
         { key: "hover_highlight", label: "Components light up on hover", kind: "toggle", default: true },
-        { adv: true, key: "layer", label: "Layer", kind: "choice", default: "top", options: [{ key: "bottom", label: "Under windows" }, { key: "top", label: "Above windows" }, { key: "overlay", label: "Above everything" }] },
+        { adv: true, key: "layer", label: "Stacking", kind: "choice", default: "top", options: [{ key: "bottom", label: "Under windows" }, { key: "top", label: "Above windows" }, { key: "overlay", label: "Above everything" }] },
         { adv: true, key: "margin_opposite", label: "Extra room kept on its inner side", kind: "int", default: 0, from: 0, to: 200, step: 1, when: { reserve: [true] } },
         { adv: true, key: "reveal_length", label: "Summoned along this much of the edge (0 = its own length)", kind: "int", default: 480, from: 0, to: 3840, step: 10, when: { visibility: ["smart", "autohide"] } },
         { adv: true, key: "reveal_size", label: "That strip's depth", kind: "int", default: 3, from: 1, to: 24, step: 1, when: { visibility: ["smart", "autohide"] } },
@@ -1344,7 +1344,7 @@ Column {
                             { key: "widget_spacing", label: "Spacing", kind: "int", default: 4, from: 0, to: 32, step: 1 },
                             { key: "border", label: "Border colour", kind: "colour", default: "" },
                             { key: "foreground", label: "Component colour inside", kind: "colour", default: "" },
-                            { key: "radius", label: "Corner radius (-1 is a pill)", kind: "int", default: -1, from: -1, to: 40, step: 1 }
+                            { key: "radius", label: "Corners", hint: "−1 rounds the ends fully (a pill)", kind: "int", default: -1, from: -1, to: 40, step: 1 }
                         ]
                         valueOf: key => groupItem.modelData[key] ?? schema.find(s => s.key === key)?.default
                         shows: spec => !spec.when || Object.entries(spec.when).every(([k, v]) => v.includes(groupItem.modelData[k] ?? false))

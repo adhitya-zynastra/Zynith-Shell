@@ -291,6 +291,61 @@ Singleton {
         if (file)
             file.reset(key);
     }
+
+    // ── changes made by hand (Settings), so the last can be taken back ──
+    function lookup(map: var, key: string): var {
+        let node = map;
+        for (const part of key.split("."))
+            node = node === undefined || node === null ? undefined : node[part];
+        return node;
+    }
+    function valueAt(domain: string, key: string): var {
+        return lookup(files[domain]?.values, key);
+    }
+    function defaultAt(domain: string, key: string): var {
+        return lookup(files[domain]?.defaults, key);
+    }
+    function same(a: var, b: var): bool {
+        return JSON.stringify(a) === JSON.stringify(b);
+    }
+    // the changes, newest last: { domain, key, before, label, at }. A run of changes to one setting (a slider
+    // being dragged) is one change: it keeps the value from before the run.
+    property var history: []
+    signal changed(string label)
+    function change(domain: string, key: string, value: var, label: string): void {
+        const before = valueAt(domain, key);
+        if (value !== undefined && same(before, value))
+            return;
+        const last = history.length > 0 ? history[history.length - 1] : null;
+        const now = Date.now();
+        if (last && last.domain === domain && last.key === key && now - last.at < 1500) {
+            const h = history.slice(0, -1);
+            h.push(Object.assign({}, last, { at: now }));
+            history = h;
+        } else {
+            // `present`: whether the file itself set it (then undo writes it back; else it removes the key again).
+            // A plugin from before has() (a shell not restarted since) writes the old value back instead.
+            history = history.concat([{ domain: domain, key: key, before: before, present: typeof files[domain]?.has === "function" ? files[domain].has(key) : true, label: label, at: now }]).slice(-30);
+        }
+        // undefined: back to the default (the key leaves the file)
+        if (value === undefined)
+            reset(domain, key);
+        else
+            write(domain, key, value);
+        changed(label);
+    }
+    // put the last change back: the file ends as it was before it
+    function undo(): string {
+        if (history.length === 0)
+            return "";
+        const last = history[history.length - 1];
+        history = history.slice(0, -1);
+        if (last.present)
+            write(last.domain, last.key, last.before);
+        else
+            reset(last.domain, last.key);
+        return last.label;
+    }
     readonly property var files: ({
             experience: experienceFile,
             appearance: appearanceFile,

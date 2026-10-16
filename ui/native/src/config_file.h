@@ -43,6 +43,8 @@ public:
     Q_INVOKABLE void reset(const QString& keyPath);
     // value at a dotted path in `values`, or `fallback`
     Q_INVOKABLE QVariant get(const QString& keyPath, const QVariant& fallback = QVariant()) const;
+    // whether the file itself sets keyPath (not the defaults): what a change replaced, so it can be put back exactly
+    Q_INVOKABLE bool has(const QString& keyPath) const;
     // writes the file with `contents` (a map) when it does not exist yet; used for one-time migrations
     Q_INVOKABLE bool create(const QVariantMap& contents);
     // several top-level keys in one atomic write (a null value removes its key): a change that spans keys (a bar

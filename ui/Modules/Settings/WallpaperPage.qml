@@ -108,7 +108,7 @@ Column {
             readonly property var own: Config.wallpaper ?? ({})
             schema: [{ key: "close_on_apply", label: "The browser closes once one is applied", kind: "toggle", default: false }]
             valueOf: key => own[key] ?? false
-            onChanged: (key, value) => Config.write("wallpaper", key, value)
+            onChanged: (key, value) => Config.change("wallpaper", key, value, labelOf(key))
         }
     }
 }

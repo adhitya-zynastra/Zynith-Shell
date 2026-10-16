@@ -23,9 +23,13 @@ Item {
             node = node === undefined || node === null ? undefined : node[part];
         return node;
     }
+    // through Config.change, so the Settings window can take it back
     function write(v: var): void {
-        Config.write(domain, key, v);
+        Config.change(domain, key, v, title);
     }
+    readonly property var fallback: Config.defaultAt(domain, key)
+    // a value of its own (not the default), which the row offers to put back
+    readonly property bool changedFromDefault: fallback !== undefined && value !== undefined && !Config.same(value, fallback)
 
     // as tall as its text or its control, whichever is taller (a font list unfolds in place)
     implicitHeight: Math.max(48, text.implicitHeight + Metrics.s3 * 2, slot.height + Metrics.s3 * 2)
@@ -38,10 +42,37 @@ Item {
         anchors.rightMargin: Metrics.s5
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
-        Label {
+        Row {
             width: parent.width
-            role: "body"
-            text: root.title
+            spacing: Metrics.s2
+            Label {
+                id: titleLabel
+                width: Math.min(implicitWidth, parent.width - (reset.visible ? reset.width + parent.spacing : 0))
+                role: "body"
+                text: root.title
+            }
+            // set to something of its own: one click puts the default back (and can itself be undone)
+            Item {
+                id: reset
+                visible: root.changedFromDefault && root.domain !== ""
+                anchors.verticalCenter: titleLabel.verticalCenter
+                width: 18
+                height: 18
+                Icon {
+                    anchors.centerIn: parent
+                    name: "arrow-back-up"
+                    size: 14
+                    color: resetArea.containsMouse ? Theme.accent : Theme.inkFaint
+                }
+                MouseArea {
+                    id: resetArea
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Config.change(root.domain, root.key, undefined, root.title)
+                }
+            }
         }
         Label {
             visible: root.detail !== ""

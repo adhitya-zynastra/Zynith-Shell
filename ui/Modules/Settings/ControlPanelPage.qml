@@ -15,11 +15,16 @@ Column {
     readonly property var cp: Config.controlPanel ?? ({})
     // the bar a key opens the panel beside is switched off: it opens in the top right corner instead
     readonly property bool anchorOff: (cp.anchor_bar ?? "") !== "" && Config.bars.some(b => b.id === cp.anchor_bar && b.enabled === false)
-    function set(key: string, value: var): void {
-        Config.write("panels", "control_panel." + key, value);
+    // through Config.change, so the Settings window can take a change back (label: the setting's name)
+    readonly property var names: ({ position: "Position", columns: "Sections", column_widths: "Section widths", modules: "Sections", shortcuts: "Shortcuts", tile_sizes: "Tile sizes", tabs: "Tabs" })
+    function nameOf(key: string, label: var): string {
+        return typeof label === "string" && label !== "" ? label : (names[key] ?? key.replace(/_/g, " "));
     }
-    function clear(key: string): void {
-        Config.reset("panels", "control_panel." + key);
+    function set(key: string, value: var, label: var): void {
+        Config.change("panels", "control_panel." + key, value, nameOf(key, label));
+    }
+    function clear(key: string, label: var): void {
+        Config.change("panels", "control_panel." + key, undefined, nameOf(key, label));
     }
     function same(a: var, b: var): bool {
         return JSON.stringify(a) === JSON.stringify(b);
@@ -186,8 +191,8 @@ Column {
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default)
             shows: spec => spec.key === "position_margin" ? PanelRouter.spots.includes(root.position) : root.position === "auto" || root.position === "follow"
-            onChanged: (key, value) => root.set(key, value)
-            onCleared: key => root.clear(key)
+            onChanged: (key, value) => root.set(key, value, labelOf(key))
+            onCleared: key => root.clear(key, labelOf(key))
         }
     }
 
@@ -209,8 +214,8 @@ Column {
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default)
             shows: spec => !spec.when || spec.when === (root.cp.layout ?? "dashboard")
-            onChanged: (key, value) => root.set(key, value)
-            onCleared: key => root.clear(key)
+            onChanged: (key, value) => root.set(key, value, labelOf(key))
+            onCleared: key => root.clear(key, labelOf(key))
         }
     }
 
@@ -436,7 +441,7 @@ Column {
             width: parent.width
             schema: [
                 { key: "hero", label: "The wallpaper across the top, with you on it", kind: "toggle", default: true },
-                { key: "hero_style", label: "Hero", kind: "choice", default: "card", options: [{ key: "card", label: "Inset card" }, { key: "band", label: "Full-bleed band" }], when: "hero" },
+                { key: "hero_style", label: "Its shape", kind: "choice", default: "card", options: [{ key: "card", label: "Inset card" }, { key: "band", label: "Full-bleed band" }], when: "hero" },
                 { key: "hero_pages", label: "Over", kind: "choice", default: "all", options: [{ key: "all", label: "Every tab" }, { key: "dashboard", label: "The dashboard only" }], when: "hero" },
                 { key: "hero_height", label: "Height", kind: "int", default: 150, from: 90, to: 260, step: 2, when: "hero" },
                 { key: "hero_avatar_size", label: "Picture", kind: "int", default: 64, from: 32, to: 120, step: 2, when: "hero" },
@@ -453,8 +458,8 @@ Column {
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default)
             shows: spec => !spec.when || (root.cp[spec.when] ?? true) !== false
-            onChanged: (key, value) => root.set(key, value)
-            onCleared: key => root.clear(key)
+            onChanged: (key, value) => root.set(key, value, labelOf(key))
+            onCleared: key => root.clear(key, labelOf(key))
         }
     }
 
@@ -554,8 +559,8 @@ Column {
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default)
             shows: spec => !spec.when || Object.keys(spec.when).every(k => spec.when[k].includes(root.cp[k] ?? "regular"))
-            onChanged: (key, value) => root.set(key, value)
-            onCleared: key => root.clear(key)
+            onChanged: (key, value) => root.set(key, value, labelOf(key))
+            onCleared: key => root.clear(key, labelOf(key))
         }
     }
 
@@ -576,8 +581,8 @@ Column {
             ]
             valueOf: key => root.cp[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => !root.same(root.cp[key], schema.find(s => s.key === key)?.default) && !(key === "screen_time_range" && Number(root.cp[key]) === 1)
-            onChanged: (key, value) => root.set(key, key === "screen_time_range" ? Number(value) : value)
-            onCleared: key => root.clear(key)
+            onChanged: (key, value) => root.set(key, key === "screen_time_range" ? Number(value) : value, labelOf(key))
+            onCleared: key => root.clear(key, labelOf(key))
         }
     }
 
@@ -634,8 +639,8 @@ Column {
                     ]
                     valueOf: key => own.spec[key] ?? schema.find(s => s.key === key)?.default
                     isSet: key => own.spec[key] !== undefined
-                    onChanged: (key, value) => root.set("custom." + own.modelData + "." + key, value)
-                    onCleared: key => root.clear("custom." + own.modelData + "." + key)
+                    onChanged: (key, value) => root.set("custom." + own.modelData + "." + key, value, labelOf(key))
+                    onCleared: key => root.clear("custom." + own.modelData + "." + key, labelOf(key))
                 }
             }
         }

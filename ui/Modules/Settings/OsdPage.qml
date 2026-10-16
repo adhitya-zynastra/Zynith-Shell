@@ -82,8 +82,8 @@ Column {
             ]
             valueOf: key => root.osd[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => root.osd[key] !== undefined && root.osd[key] !== schema.find(s => s.key === key)?.default
-            onChanged: (key, value) => Config.write("panels", "osd." + key, value)
-            onCleared: key => Config.reset("panels", "osd." + key)
+            onChanged: (key, value) => Config.change("panels", "osd." + key, value, labelOf(key))
+            onCleared: key => Config.change("panels", "osd." + key, undefined, labelOf(key))
         }
     }
 

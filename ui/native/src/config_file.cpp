@@ -148,8 +148,16 @@ QVariantMap withKey(QVariantMap map, const QStringList& path, const QVariant& va
             map.insert(path.first(), value.canConvert<QJSValue>() ? value.value<QJSValue>().toVariant() : value);
         return map;
     }
+    // removing from a table that is not there changes nothing; removing its last key removes the table too, so
+    // a value set and then reset leaves the file as it was (no empty [table] behind)
+    if (remove && !map.contains(path.first()))
+        return map;
     const QVariantMap inner = map.value(path.first()).toMap();
-    map.insert(path.first(), withKey(inner, path.mid(1), value, remove));
+    const QVariantMap next = withKey(inner, path.mid(1), value, remove);
+    if (remove && next.isEmpty())
+        map.remove(path.first());
+    else
+        map.insert(path.first(), next);
     return map;
 }
 
@@ -329,6 +337,17 @@ QString ConfigFile::recover(const QVariantMap& contents) {
     emit errorChanged();
     m_file.clear();
     return write(contents) ? aside : QString();
+}
+
+bool ConfigFile::has(const QString& keyPath) const {
+    QVariant node = m_file;
+    for (const QString& part : keyPath.split(QLatin1Char('.'))) {
+        const QVariantMap map = node.toMap();
+        if (!map.contains(part))
+            return false;
+        node = map.value(part);
+    }
+    return true;
 }
 
 QVariant ConfigFile::get(const QString& keyPath, const QVariant& fallback) const {

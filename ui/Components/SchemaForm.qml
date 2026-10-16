@@ -17,6 +17,11 @@ Column {
     // a setting that is unset shows its default but marks itself as following it
     property var isSet: key => false
     signal changed(string key, var value)
+    // a setting's name, for the Settings window's "Changed: …" and its undo
+    function labelOf(key: string): string {
+        const spec = Array.from(schema ?? []).find(x => x.key === key);
+        return spec?.label ?? key;
+    }
     signal cleared(string key)
     // commitOnRelease: a slider being dragged reports previewed(key, value) and only its release is a change (one
     // write, one undo step); off, every movement is a change, as before

@@ -88,4 +88,26 @@ TestCase {
         compare(f.error, "");
         compare(M.list(f.values.bar).map(b => b.id), ["main"], "the default bar again");
     }
+
+    // a key set and then reset leaves the file as it was: no empty [table] behind (Settings' undo relies on it;
+    // run-store-tests.sh compares e.toml with the untouched original afterwards)
+    function test_reset_leaves_no_empty_table() {
+        // the fixture's own header, as a real file carries the one the store wrote
+        const f = createTemporaryObject(fileComponent, this, { path: dir + "/e.toml", header: "Bars. (a v1 file as written before schema 2: indented sub-tables, a bar with its own length key)" });
+        tryVerify(() => f.loaded, 3000);
+        verify(f.values.panels === undefined, "no [panels] table to begin with");
+        f.set("panels.attach", false);
+        tryVerify(() => f.values.panels?.attach === false, 3000, "the key is written");
+        f.reset("panels.attach");
+        tryVerify(() => f.values.panels === undefined, 3000, "the emptied table goes with the key");
+        verify(!f.has("panels.attach"), "has(): the file no longer sets it");
+        f.set("panels.attach", true);
+        tryVerify(() => f.has("panels.attach"), 3000, "has(): the file sets it");
+        verify(!f.has("bar.0.nothing"), "has(): a key only the defaults might hold is not the file's");
+        f.reset("panels.attach");
+        tryVerify(() => f.values.panels === undefined, 3000);
+        f.reset("nothing.here");
+        wait(200);
+        verify(f.values.nothing === undefined, "resetting a key that is not there creates nothing");
+    }
 }

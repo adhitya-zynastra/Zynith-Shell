@@ -103,8 +103,8 @@ Column {
             ]
             valueOf: key => own[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => own[key] !== undefined && own[key] !== schema.find(s => s.key === key)?.default
-            onChanged: (key, value) => Config.write("notifications", key, value)
-            onCleared: key => Config.reset("notifications", key)
+            onChanged: (key, value) => Config.change("notifications", key, value, labelOf(key))
+            onCleared: key => Config.change("notifications", key, undefined, labelOf(key))
         }
     }
     QtObject {

@@ -74,8 +74,8 @@ Column {
             ]
             valueOf: key => own[key] ?? schema.find(s => s.key === key)?.default
             isSet: key => own[key] !== undefined && own[key] !== schema.find(s => s.key === key)?.default
-            onChanged: (key, value) => Config.write("panels", "launcher." + key, value)
-            onCleared: key => Config.reset("panels", "launcher." + key)
+            onChanged: (key, value) => Config.change("panels", "launcher." + key, value, labelOf(key))
+            onCleared: key => Config.change("panels", "launcher." + key, undefined, labelOf(key))
         }
     }
 
@@ -110,8 +110,8 @@ Column {
             }
             valueOf: key => read(key) ?? schema.find(s => s.key === key)?.default
             isSet: key => read(key) !== undefined
-            onChanged: (key, value) => Config.write("panels", path(key), value)
-            onCleared: key => Config.reset("panels", path(key))
+            onChanged: (key, value) => Config.change("panels", path(key), value, labelOf(key))
+            onCleared: key => Config.change("panels", path(key), undefined, labelOf(key))
         }
     }
 }
