@@ -21,6 +21,8 @@ Item {
     property bool sheen: Material.sheenAlpha > 0
     // a preview of another material (Appearance) sets these; left undefined, the current material's apply
     property var depthOverride: undefined
+    // how much of the shadow shows (a surface still forming — a panel's water drop — keeps it at 0, then settles in)
+    property real shadowOpacity: 1
     property var sheenOverride: undefined
     readonly property alias sheet: sheet
     // Per-corner radii only when given: an explicit -1 squares the corner on Qt 6.11 (every sheet drew square
@@ -80,7 +82,8 @@ Item {
     }
     MultiEffect {
         anchors.fill: shadowLayer
-        visible: root.shadowed
+        visible: root.shadowed && root.shadowOpacity > 0
+        opacity: root.shadowOpacity
         source: root.shadowed ? shadowLayer : null
         maskEnabled: true
         maskInverted: true

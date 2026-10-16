@@ -1,9 +1,12 @@
 import QtQuick
+import QtQuick.Effects
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
 import qs.Components
 import qs.Services
+import "../../Common/Droplet.js" as Droplet
 
 // A focused panel: placed beside the widget that opened it, grows out of the bar edge, leaves faster
 // than it arrived. The content is chosen by panel id.
@@ -148,10 +151,10 @@ PanelWindow {
     readonly property string startJoin: !attached ? "" : barSpan[0] <= cardStart - joinRadius / 2 ? "drawer" : cardStart <= barSpan[0] - joinRadius / 2 ? "t" : "flush"
     readonly property string endJoin: !attached ? "" : barSpan[1] >= cardEnd + joinRadius / 2 ? "drawer" : cardEnd >= barSpan[1] + joinRadius / 2 ? "t" : "flush"
     // how far the panel has grown out of the bar, and the fillets' radius: they arrive as the growth lands
-    readonly property real grow: attached ? revealed : 1
+    readonly property real grow: attached && !droplet ? revealed : 1
     // the fillets arrive over the second half of the growth, once the bar-side edge has cleared the bar
     readonly property real bulgeFrom: 0.5
-    readonly property real bulge: attached ? joinRadius * Math.max(0, Math.min(1, (revealed - bulgeFrom) / (1 - bulgeFrom))) : 0
+    readonly property real bulge: attached ? joinRadius * (droplet ? (drop?.join ?? 1) : Math.max(0, Math.min(1, (revealed - bulgeFrom) / (1 - bulgeFrom)))) : 0
     readonly property string joinKey: (held?.barId ?? "") + "@" + (screen?.name ?? "")
     onBulgeChanged: publishJoin()
     onAttachedChanged: publishJoin()
@@ -247,8 +250,9 @@ PanelWindow {
     }
     onHeightChanged: PanelRouter.windowSizes[screen?.name ?? ""] = [Math.round(width), Math.round(height)]
 
+    // input follows what is drawn: while the drop forms, only its bounds take the pointer
     mask: Region {
-        item: card
+        item: win.dropping ? dropBounds : card
     }
 
     // the pointer on the card holds a hover-opened panel; a press in it pins it
@@ -265,16 +269,18 @@ PanelWindow {
     }
     BlurRegion {
         window: win
-        item: win.bare ? content.blurItem : card
+        // while the drop forms, the blur follows its head (round, with the head's radius); the thin neck goes
+        // without for those few frames rather than a rectangle being blurred beside it
+        item: win.bare ? content.blurItem : win.dropping ? dropHead : card
         // the card's corners exactly as drawn (attached: square only where it meets the bar)
-        radius: card.radius
-        corners: card.drawnCorners
+        radius: win.dropping ? (win.drop?.head.r ?? 0) : card.radius
+        corners: win.dropping ? null : card.drawnCorners
         // the blur only once the card is drawn over it: an attached card fades in within the first sixth of its
         // growth, and a region switched on before that showed the bare backdrop (in Glass, the wallpaper) as a
         // rectangle over the windows for a frame
         followOpacity: !win.bare
         // an attached panel's fillets, each its square less the quarter circle that cuts it
-        extra: win.attached ? fillets.blurShapes : []
+        extra: win.attached && !win.dropping ? fillets.blurShapes : []
     }
 
     // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The
@@ -294,14 +300,33 @@ PanelWindow {
     // 0 = gone, 1 = in place
     property real revealed: 0
 
+    // ── the water drop (Common/Droplet.js): the panel gathers on the edge it opens from, draws in to a drop that
+    // hangs from a thinning neck, and swells into itself; closing runs it back, and an interrupted one reverses
+    // from where it is (the silhouette is a function of `revealed` alone). The card is drawn at its final size the
+    // whole time and only masked to the silhouette, so its fill, blur and page are revealed by the drop, never
+    // redrawn or swapped. [panels] entrance = drop (default) | grow (the earlier growth and fade). A centred or
+    // full-screen surface keeps its own entrance.
+    readonly property bool droplet: !bare && sideEdge && (pcfg.entrance ?? "drop") === "drop" && Motion.reveal > 0
+    readonly property bool dropping: droplet && visible && revealed < 0.999
+    readonly property var drop: droplet ? Droplet.shape(revealed, {
+            edge: edge,
+            attached: attached,
+            ox: horizontalEdge ? ox - cardX : oy - cardY,
+            along: horizontalEdge ? panelWidth : cardHeight,
+            depth: horizontalEdge ? cardHeight : panelWidth,
+            corners: card.drawnCorners,
+            radius: card.radius
+        }) : null
+
     // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
     NumberAnimation {
         id: enter
         target: win
         property: "revealed"
         to: 1
-        duration: win.bare ? Motion.scene + 160 : Motion.reveal
-        easing.type: win.bare ? Easing.Linear : Motion.enterEasing
+        duration: win.bare ? Motion.scene + 160 : win.droplet ? Motion.ms(560) : Motion.reveal
+        // the drop eases each of its phases itself, so it takes the progress linear
+        easing.type: win.bare || win.droplet ? Easing.Linear : Motion.enterEasing
         onFinished: win.entering = false
     }
     NumberAnimation {
@@ -309,8 +334,8 @@ PanelWindow {
         target: win
         property: "revealed"
         to: 0
-        duration: win.bare ? Motion.spatialFast : Motion.dismiss
-        easing.type: win.bare ? Easing.Linear : Motion.exitEasing
+        duration: win.bare ? Motion.spatialFast : win.droplet ? Motion.ms(320) : Motion.dismiss
+        easing.type: win.bare || win.droplet ? Easing.Linear : Motion.exitEasing
         onFinished: win.dismissed()
     }
     // content can turn out bare only once it has loaded: the entrance restarts on the bare timing from
@@ -409,16 +434,33 @@ PanelWindow {
             edge: !win.bare && !win.attached
             sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 
-            opacity: win.bare ? 1 : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
+            opacity: win.bare || win.droplet ? 1 : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
+
+            // the drop: masked to its silhouette while it forms (no layer at rest)
+            layer.enabled: win.dropping
+            layer.effect: MultiEffect {
+                maskEnabled: true
+                maskSource: dropMask
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 1
+            }
+            // a floating panel's shadow settles in once the drop has become the card
+            shadowOpacity: win.dropping ? 0 : 1
+            Behavior on shadowOpacity {
+                enabled: !win.dropping
+                NumberAnimation {
+                    duration: Motion.effects
+                }
+            }
 
             // floating: grow from the bar side, a few pixels of travel; attached: the geometry does it
-            readonly property real travel: win.bare || win.attached ? 0 : (1 - win.revealed) * Motion.revealOffset
+            readonly property real travel: win.bare || win.attached || win.droplet ? 0 : (1 - win.revealed) * Motion.revealOffset
             transform: [
                 Scale {
                     origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
                     origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
-                    xScale: win.bare || win.attached ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
-                    yScale: win.bare || win.attached ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                    xScale: win.bare || win.attached || win.droplet ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                    yScale: win.bare || win.attached || win.droplet ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                 },
                 Translate {
                     x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0
@@ -483,7 +525,9 @@ PanelWindow {
                     context: win.held?.context ?? ""
                     showings: win.showings
                     screen: win.screen
-                    visibleProgress: win.revealed
+                    // in a drop, the page arrives with the swell (its own staggers run on that)
+                    opacity: win.droplet ? (win.drop?.content ?? 1) : 1
+                    visibleProgress: win.droplet ? (win.drop?.content ?? 1) : win.revealed
                     active: win.visible
                     // the card's own top corners (attached: square where it meets the bar), for the hero's picture
                     topCorners: card.corners ? [card.corners[0], card.corners[1]] : [card.radius, card.radius]
@@ -503,6 +547,45 @@ PanelWindow {
                     ColorAnim {}
                 }
             }
+        }
+
+        // ── the drop's silhouette (the card's mask), its head (the blur's shape) and bounds (the input region) ──
+        Item {
+            id: dropMask
+            x: card.x
+            y: card.y
+            width: card.width
+            height: card.height
+            visible: false
+            layer.enabled: win.dropping
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+                ShapePath {
+                    fillColor: "white"
+                    strokeColor: "transparent"
+                    strokeWidth: 0
+                    fillRule: ShapePath.WindingFill
+                    PathSvg {
+                        path: win.dropping ? (win.drop?.path ?? "") : ""
+                    }
+                }
+            }
+        }
+        Item {
+            id: dropHead
+            visible: win.dropping
+            x: card.x + (win.drop?.head.x ?? 0)
+            y: card.y + (win.drop?.head.y ?? 0)
+            width: win.drop?.head.w ?? 0
+            height: win.drop?.head.h ?? 0
+        }
+        Item {
+            id: dropBounds
+            x: card.x + (win.drop?.bounds.x ?? 0)
+            y: card.y + (win.drop?.bounds.y ?? 0)
+            width: win.drop?.bounds.w ?? card.width
+            height: win.drop?.bounds.h ?? card.height
         }
 
         // ── the fillets joining an attached panel to its bar ──
