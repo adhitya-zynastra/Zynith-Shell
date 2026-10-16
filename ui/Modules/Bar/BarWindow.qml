@@ -175,7 +175,14 @@ PanelWindow {
     // Room for the shadow: as far as it actually reaches (Glass.shadowExtent). A fixed 18 px left the last few
     // pixels of a 24 px shadow cut off by the window's square edge — a sharp-cornered rectangle around the bar.
     // Whatever part of it would fall off-screen is taken from the margins instead.
-    readonly property int pad: Material.shadows && shadow ? pill.shadowExtent : 0
+    // The concave fillets get their own room (BarModel.edgeRoom): with shadows paused they keep their shape.
+    readonly property int pad: BarModel.edgeRoom({
+        shadows: Material.shadows,
+        shadow: shadow,
+        shadowExtent: pill.shadowExtent,
+        concave: concave,
+        concaveRadius: spec.concave_radius ?? radius
+    })
     // a bar that hides keeps its surface on the screen edge (the margin is inside it), so its summoning strip
     // is where the pointer stops
     readonly property int edgeGap: hides ? 0 : Math.max(0, margin - pad)

@@ -332,4 +332,15 @@ TestCase {
         const q = M.find(M.setCornersLinked(p.state, p.id, false), p.id);
         compare(q.radius_bottom_left, 15);
     }
+
+    // the bar's window keeps room for its concave fillets whether or not shadows are on: power saver pauses
+    // shadows, and the fillets once vanished with them (they borrowed the shadow's room)
+    function test_fillets_keep_their_room_without_shadows() {
+        const base = { shadows: true, shadow: true, shadowExtent: 24, concave: true, concaveRadius: 27 };
+        compare(M.edgeRoom(base), 27, "the larger of the two");
+        compare(M.edgeRoom(Object.assign({}, base, { shadows: false })), 27, "power saver: shadows paused, the shape stays");
+        compare(M.edgeRoom(Object.assign({}, base, { concaveRadius: 10 })), 24, "the shadow reaches further");
+        compare(M.edgeRoom(Object.assign({}, base, { concave: false, shadows: false })), 0, "nothing to keep room for");
+        compare(M.edgeRoom(Object.assign({}, base, { shadow: false, concaveRadius: 12.4 })), 13, "rounded up to whole pixels");
+    }
 }

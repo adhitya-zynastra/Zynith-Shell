@@ -740,3 +740,14 @@ function setCornersLinked(state, id, linked) {
         return b;
     });
 }
+
+// The room a bar's window keeps around its pill: as far as its shadow reaches, and never less than its concave
+// fillets need. The two are separate on purpose: power saver pauses shadows (0 reach), and the fillets — part of
+// the bar's shape, not an effect — once borrowed the shadow's room and vanished with it.
+//   o: { shadows: bool (shadows on now), shadow: bool (the bar asks for one), shadowExtent, concave: bool,
+//        concaveRadius }
+function edgeRoom(o) {
+    var shadowRoom = o.shadows && o.shadow ? Math.max(0, o.shadowExtent || 0) : 0;
+    var shapeRoom = o.concave ? Math.max(0, Math.ceil(o.concaveRadius || 0)) : 0;
+    return Math.max(shadowRoom, shapeRoom);
+}
