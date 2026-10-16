@@ -38,6 +38,35 @@ Scope {
         return most;
     }
 
+    // An open panel in the stack's corner (the Control Panel under its bar, say): the popups sit just past it
+    // rather than over its heading — below it for a stack at the top, above it at the bottom. A hover peek is
+    // left alone (it is gone in a moment), as is a panel that would leave the stack no room.
+    readonly property var panel: {
+        const entry = PanelRouter.openPanels[screenName];
+        const r = PanelRouter.rects[screenName];
+        return entry && !entry.transient && r && r.h > 0 ? r : null;
+    }
+    function dodge(edge: string, base: int): int {
+        const scr = Quickshell.screens.find(s => s.name === root.screenName);
+        if (!panel || !scr)
+            return base;
+        const sw = scr.width, sh = scr.height, px = panel.x - scr.x, py = panel.y - scr.y;
+        const mx = Config.notifications.marginX, inL = inset("left") + mx, inR = inset("right") + mx;
+        const lo = side === "left" ? inL : side === "right" ? sw - inR - cardWidth : (sw - cardWidth) / 2;
+        if (px >= lo + cardWidth || px + panel.w <= lo)
+            return base;
+        const gap = Metrics.s4;
+        if (edge === "top" && atTop && py < base + 160) {
+            const below = py + panel.h + gap;
+            return sh - below > 240 ? Math.max(base, below) : base;
+        }
+        if (edge === "bottom" && !atTop && py + panel.h > sh - base - 160) {
+            const above = sh - py + gap;
+            return sh - above > 240 ? Math.max(base, above) : base;
+        }
+        return base;
+    }
+
     // the window outlives the last popup by its exit, so the exit is seen
     property bool lingering: false
     Connections {
@@ -75,8 +104,8 @@ Scope {
                 right: root.side === "right"
             }
             margins {
-                top: Math.max(0, root.inset("top") + Config.notifications.marginY - win.pad)
-                bottom: Math.max(0, root.inset("bottom") + Config.notifications.marginY - win.pad)
+                top: Math.max(0, root.dodge("top", root.inset("top") + Config.notifications.marginY) - win.pad)
+                bottom: Math.max(0, root.dodge("bottom", root.inset("bottom") + Config.notifications.marginY) - win.pad)
                 left: Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
                 right: Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
             }

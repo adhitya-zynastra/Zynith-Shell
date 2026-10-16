@@ -258,12 +258,18 @@ Singleton {
             history: history
         }));
     }
-    // where each output's panel card sits, in global coordinates (for diagnostics and cropped captures)
+    // where each output's panel card sits, in global coordinates (notification popups step past it; also
+    // diagnostics and cropped captures). Reassigned, not mutated, so bindings on it follow.
     property var rects: ({})
     // the panel window's actual size per output (diagnostics: should match its card's span)
     property var windowSizes: ({})
     function noteRect(screenName: string, rect: var): void {
-        rects[screenName] = rect;
+        const prev = rects[screenName];
+        if (prev && prev.x === rect.x && prev.y === rect.y && prev.w === rect.w && prev.h === rect.h)
+            return;
+        const next = Object.assign({}, rects);
+        next[screenName] = rect;
+        rects = next;
     }
 
     function closeAll(): void {
