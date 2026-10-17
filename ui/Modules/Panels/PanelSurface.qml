@@ -65,6 +65,7 @@ PanelWindow {
     Behavior on ax {
         enabled: win.morphReady
         NumberAnimation {
+            id: axGlide
             duration: win.morphMs
             easing.type: Easing.BezierSpline
             easing.bezierCurve: win.morphCurve
@@ -73,6 +74,7 @@ PanelWindow {
     Behavior on ay {
         enabled: win.morphReady
         NumberAnimation {
+            id: ayGlide
             duration: win.morphMs
             easing.type: Easing.BezierSpline
             easing.bezierCurve: win.morphCurve
@@ -81,6 +83,7 @@ PanelWindow {
     Behavior on aw {
         enabled: win.morphReady
         NumberAnimation {
+            id: awGlide
             duration: win.morphMs
             easing.type: Easing.BezierSpline
             easing.bezierCurve: win.morphCurve
@@ -89,6 +92,7 @@ PanelWindow {
     Behavior on ah {
         enabled: win.morphReady || (win.revealed > 0.99 && !win.closing)
         NumberAnimation {
+            id: ahGlide
             duration: win.morphReady ? win.morphMs : Motion.morph
             easing.type: Easing.BezierSpline
             easing.bezierCurve: win.morphReady ? win.morphCurve : Motion.enterCurve
@@ -130,7 +134,7 @@ PanelWindow {
         interval: win.morphMs + 60
         onTriggered: win.span = win.target
     }
-    readonly property int pad: bare ? 0 : Math.max(Material.shadows && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
+    readonly property int pad: bare ? 0 : Math.max(card.shadowed && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
     readonly property int gap: attached ? 0 : Metrics.s3
 
     // ── attached: the panel and the bar it came from are one surface (the native shell's attached panels,
@@ -269,18 +273,19 @@ PanelWindow {
     }
     BlurRegion {
         window: win
-        // while the drop forms, the blur follows its head (round, with the head's radius); the thin neck goes
-        // without for those few frames rather than a rectangle being blurred beside it
-        item: win.bare ? content.blurItem : win.dropping ? dropHead : card
+        // only while the surface rests (MaterialSettle): a region that follows a moving card reaches the compositor
+        // out of step with it and shows past it or short of it (a pale rim, a dark band, ~45 px a frame at the
+        // drop's fastest); in motion the card carries a denser fill instead
+        item: win.bare ? content.blurItem : materialSettle.settled ? card : null
         // the card's corners exactly as drawn (attached: square only where it meets the bar)
-        radius: win.dropping ? (win.blurHead?.r ?? 0) : card.radius
-        corners: win.dropping ? (win.blurHead?.corners ?? null) : card.drawnCorners
+        radius: card.radius
+        corners: card.drawnCorners
         // the blur only once the card is drawn over it: an attached card fades in within the first sixth of its
         // growth, and a region switched on before that showed the bare backdrop (in Glass, the wallpaper) as a
         // rectangle over the windows for a frame
         followOpacity: !win.bare
         // an attached panel's fillets, each its square less the quarter circle that cuts it
-        extra: win.attached && !win.dropping ? fillets.blurShapes : []
+        extra: win.attached && materialSettle.settled ? fillets.blurShapes : []
     }
 
     // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The
@@ -318,29 +323,13 @@ PanelWindow {
             radius: card.radius,
             pathHead: false
         }) : null
-    // The blur's region reaches the compositor a frame before the picture it belongs to: while the drop swells, a
-    // region of the current head showed as a pale rim round the head still on screen. It takes the overlap of this
-    // frame's head and the last one's, so it is never larger than what is drawn (shrinking, the overlap is the new one).
-    property var lastHead: null
-    property var blurHead: null
-    onDropChanged: {
-        const h = drop?.head ?? null;
-        const p = lastHead;
-        lastHead = h;
-        if (!h || !p) {
-            blurHead = h;
-            return;
-        }
-        const x0 = Math.max(h.x, p.x), y0 = Math.max(h.y, p.y);
-        const x1 = Math.min(h.x + h.w, p.x + p.w), y1 = Math.min(h.y + h.h, p.y + p.h);
-        blurHead = {
-            x: x0,
-            y: y0,
-            w: Math.max(0, x1 - x0),
-            h: Math.max(0, y1 - y0),
-            r: Math.min(h.r, p.r),
-            corners: h.corners.map((c, i) => Math.min(c, p.corners[i]))
-        };
+    // The material in motion (Components/MaterialSettle): the compositor's backdrop only while the surface rests,
+    // a denser fill while it moves — the drop forming or retracting, any other entrance, a glide to another panel's
+    // size — thinning back once it rests. Closing, it condenses first, then lets the backdrop go and moves.
+    readonly property bool moving: visible && !bare && (revealed < 0.999 || leave.running || axGlide.running || ayGlide.running || awGlide.running || ahGlide.running)
+    MaterialSettle {
+        id: materialSettle
+        moving: win.moving
     }
 
     // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
@@ -439,8 +428,17 @@ PanelWindow {
         if (closing) {
             PanelRouter.hold(screen?.name ?? "", "panel", false);
             enter.stop();
-            leave.start();
+            // a resting surface condenses first (its fill thickens, its backdrop still on), then leaves; one still
+            // moving leaves at once (it has no backdrop to give up)
+            if (revealed >= 0.999 && !bare)
+                materialSettle.condense(() => {
+                    if (win.closing)
+                        leave.start();
+                });
+            else
+                leave.start();
         } else {
+            materialSettle.cancel();
             leave.stop();
             enter.start();
         }
@@ -476,7 +474,11 @@ PanelWindow {
             // attached, the bar's own fill, so the seam disappears
             // attached: the bar's own fill, so the seam disappears — resolved live by the bar's rule (Solid is opaque;
             // else the bar's own opacity, else the material's), not the number taken when the panel opened
-            fill: win.bare ? "transparent" : win.attached ? Theme.alpha(Theme.glass, !Material.solid && (win.held.barOpacity ?? 0) > 0 ? Math.min(1, win.held.barOpacity) : Theme.glassAlpha) : Theme.glass
+            // in motion, denser (MaterialSettle): no backdrop then
+            readonly property real restAlpha: win.attached && !Material.solid && (win.held.barOpacity ?? 0) > 0 ? Math.min(1, win.held.barOpacity) : Theme.glassAlpha
+            fill: win.bare ? "transparent" : Theme.alpha(Theme.sheetTone, materialSettle.alpha(restAlpha))
+            // the frost follows the motion frame for frame; a glide would trail it
+            easeFill: materialSettle.frost === 0
             edge: !win.bare && !win.attached
             sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 
@@ -568,6 +570,29 @@ PanelWindow {
                     topCorners: card.corners ? [card.corners[0], card.corners[1]] : [card.radius, card.radius]
                 }
             }
+            // The drop's edge: the card's hairline on the forming drop, so the bead and the drop read against any
+            // backdrop (on a dark wallpaper the drop was dark on dark, invisible until it had nearly landed). Inside
+            // the card, so the drop's mask cuts it to the silhouette. Floating, it becomes the card's own edge as the
+            // drop lands; attached (the bar's continuation has no edge), it lights the drop's sides and far end only
+            // — it runs on past the near side, under the bar, so no line crosses the neck — and fades as the joins form.
+            Rectangle {
+                visible: win.dropping && Theme.hairlineWidth > 0
+                readonly property var h: win.drop?.head ?? ({ x: 0, y: 0, w: 0, h: 0, corners: [0, 0, 0, 0] })
+                readonly property real reach: win.attached ? 4 + Math.max(h.y, h.x, card.width - h.x - h.w, card.height - h.y - h.h) : 0
+                x: h.x - (win.attached && win.edge === "left" ? reach : 0)
+                y: h.y - (win.attached && win.edge === "top" ? reach : 0)
+                width: h.w + (win.attached && (win.edge === "left" || win.edge === "right") ? reach : 0)
+                height: h.h + (win.attached && (win.edge === "top" || win.edge === "bottom") ? reach : 0)
+                topLeftRadius: h.corners[0]
+                topRightRadius: h.corners[1]
+                bottomRightRadius: h.corners[2]
+                bottomLeftRadius: h.corners[3]
+                color: "transparent"
+                border.width: Theme.hairlineWidth
+                border.color: Theme.hairline
+                opacity: win.attached ? 1 - (win.drop?.join ?? 1) : 1
+                antialiasing: true
+            }
             // where in a scrolled panel you are
             Rectangle {
                 visible: scroller.interactive
@@ -622,14 +647,6 @@ PanelWindow {
                     }
                 }
             }
-        }
-        Item {
-            id: dropHead
-            visible: win.dropping
-            x: card.x + (win.blurHead?.x ?? 0)
-            y: card.y + (win.blurHead?.y ?? 0)
-            width: win.blurHead?.w ?? 0
-            height: win.blurHead?.h ?? 0
         }
         Item {
             id: dropBounds

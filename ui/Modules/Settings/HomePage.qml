@@ -29,13 +29,10 @@ Column {
         width: parent.width
         height: 200
 
-        Image {
+        WallpaperImage {
             id: scene
             anchors.fill: parent
-            source: Scheme.image !== "" ? (Scheme.image.startsWith("/") ? "file://" + Scheme.image : Scheme.image) : ""
-            sourceSize.width: width * 2
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
+            decodeWidth: width * 2
             visible: false
         }
         Rectangle {
@@ -49,7 +46,7 @@ Column {
             anchors.fill: parent
             radius: Metrics.radiusSurface
             color: Theme.surfaceHigh
-            visible: scene.status !== Image.Ready
+            visible: !scene.ready
         }
         MultiEffect {
             anchors.fill: parent
@@ -58,7 +55,7 @@ Column {
             maskSource: heroMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1
-            opacity: scene.status === Image.Ready ? 1 : 0
+            opacity: scene.ready ? 1 : 0
             Behavior on opacity {
                 Anim {
                     role: "effects"

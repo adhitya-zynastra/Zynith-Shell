@@ -24,6 +24,9 @@ Item {
     // how much of the shadow shows (a surface still forming — a panel's water drop — keeps it at 0, then settles in)
     property real shadowOpacity: 1
     property var sheenOverride: undefined
+    // a change of fill glides (a material or palette change); a surface whose fill follows its motion every frame
+    // (MaterialSettle's frost) turns this off while it does, or the glide trails the motion
+    property bool easeFill: true
     readonly property alias sheet: sheet
     // Per-corner radii only when given: an explicit -1 squares the corner on Qt 6.11 (every sheet drew square
     // corners); undefined resets the property, so `radius` applies. Radii are held to what the shape can take.
@@ -38,7 +41,17 @@ Item {
     // The shadow falls only outside the sheet: a translucent sheet over its own shadow reads darker than
     // the native bar at the same opacity (measured: 47 vs 64 on the same wallpaper), so the sheet's shape
     // is cut out of it.
-    readonly property bool shadowed: (depthOverride !== undefined ? depthOverride > 0 : Material.shadows) && root.raised
+    readonly property bool shadowWanted: (depthOverride !== undefined ? depthOverride > 0 : Material.shadows) && root.raised
+    // Paused or resumed (Power Saver, a style change), the shadow fades rather than popping, and the layers (and the
+    // room a window leaves for the shadow, shadowReach) stay until it has faded out: a window that shrank the moment
+    // shadows paused cut the fading shadow off square.
+    property real shadowLevel: shadowWanted ? 1 : 0
+    Behavior on shadowLevel {
+        NumberAnimation {
+            duration: Motion.effects
+        }
+    }
+    readonly property bool shadowed: shadowLevel > 0
     // depth is the material's (Solid sits highest, Glass a little lower; Blur floats on its blur instead)
     readonly property real shadowBlur: 10 + 8 * (depthOverride ?? Material.shadowDepth)
     readonly property real shadowOffset: 3 + 3 * (depthOverride ?? Material.shadowDepth)
@@ -83,7 +96,7 @@ Item {
     MultiEffect {
         anchors.fill: shadowLayer
         visible: root.shadowed && root.shadowOpacity > 0
-        opacity: root.shadowOpacity
+        opacity: root.shadowOpacity * root.shadowLevel
         source: root.shadowed ? shadowLayer : null
         maskEnabled: true
         maskInverted: true
@@ -106,6 +119,7 @@ Item {
         border.color: root.edgeColor !== "" ? Theme.colour(root.edgeColor) : Theme.hairline
         // a change of material (or palette) glides instead of snapping; an interrupted one restarts from where it is
         Behavior on color {
+            enabled: root.easeFill
             ColorAnim {}
         }
         Behavior on border.color {

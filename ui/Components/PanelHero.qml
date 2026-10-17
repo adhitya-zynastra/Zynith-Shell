@@ -93,14 +93,11 @@ Item {
             anchors.fill: parent
             color: Theme.surfaceHigh
         }
-        Image {
+        // the wallpaper, changing with the palette (a new one cross-fades in as the colours do)
+        WallpaperImage {
             id: picture
             anchors.fill: parent
-            source: Scheme.image !== "" ? (Scheme.image.startsWith("/") ? "file://" + Scheme.image : Scheme.image) : ""
-            sourceSize.width: width * 1.5
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            opacity: status === Image.Ready ? 1 : 0
+            opacity: ready ? 1 : 0
             // a slow drift while the panel is open: the picture breathes rather than sits
             scale: 1.06
             Behavior on opacity {

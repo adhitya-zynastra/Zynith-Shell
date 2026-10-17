@@ -1,0 +1,2 @@
+module qs.Services
+singleton Material 1.0 Material.qml

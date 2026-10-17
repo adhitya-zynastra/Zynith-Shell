@@ -44,6 +44,8 @@ Singleton {
     // what surfaces read
     readonly property bool blur: resolved.blur
     readonly property real fillAlpha: resolved.fillAlpha
+    // the fill while a surface moves without its backdrop (MaterialSettle)
+    readonly property real motionAlpha: resolved.motionAlpha
     readonly property real raisedAlpha: resolved.raisedAlpha
     readonly property real edgeAlpha: resolved.edgeAlpha
     readonly property real sheenAlpha: resolved.sheenAlpha

@@ -281,15 +281,24 @@ PanelWindow {
     }
 
     // the compositor blurs behind the bar only while it is there: a hidden bar must leave no frosted patch
+    // The material in motion (Components/MaterialSettle): while the bar slides in or away its backdrop is off and
+    // its sheet denser. The slide is a transform, which a backdrop region does not follow: the region sat at the
+    // bar's resting place while the bar was still sliding there, a frosted patch ahead of it. (A change of length —
+    // a new title, a tray icon — moves only the bar's end a few pixels a frame, and keeps its backdrop: frosting the
+    // bar for every one of those would flicker.)
+    MaterialSettle {
+        id: barSettle
+        moving: pill.presence > 0.001 && pill.presence < 0.999
+    }
     BlurRegion {
         window: win
         // blur = false: this bar never asks for it (the profile can still turn every blur off)
-        item: pill.presence > 0.02 && win.spec.blur !== false ? pill : null
+        item: barSettle.settled && pill.presence > 0.98 && win.spec.blur !== false ? pill : null
         // the sheet's corners exactly as drawn: a blur region with one radius stood out past the corners that were
         // rounder than it, a square frosted patch most visible while a workspace slid behind the bar
         corners: pill.drawnCorners
         // and the fillets where it flows into the screen edge, which are part of the same surface
-        extra: win.concave && pill.presence > 0.98 ? scene.fillets().map(f => ({
+        extra: win.concave && barSettle.settled && pill.presence > 0.98 ? scene.fillets().map(f => ({
                     x: f.x,
                     y: f.y,
                     w: f.r,
@@ -424,7 +433,7 @@ PanelWindow {
                 y: modelData.y
                 r: modelData.r
                 solid: modelData.solid
-                fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+                fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
                 opacity: pill.presence
                 transform: Translate {
                     x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
@@ -484,7 +493,8 @@ PanelWindow {
             corners: win.corners
             // no shadow while a panel is joined: it would fall beside the joint, outside the one surface
             raised: win.shadow && win.joinProgress === 0
-            fill: Theme.alpha(Theme.glass, win.sheetOpacity)
+            fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
+            easeFill: barSettle.frost === 0
             // a joined panel and the bar are one surface: no highlight line along the seam
             // a bar flowing into the screen edge (concave corners) has no lit lip on that side: its sheen and outline
             // ran along the screen edge as a 1 px line that stopped where the fillets began (they carry neither)

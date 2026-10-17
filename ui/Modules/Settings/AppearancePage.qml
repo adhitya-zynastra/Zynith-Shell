@@ -265,16 +265,12 @@ Column {
                 ColorAnim {}
             }
 
-            Image {
+            WallpaperImage {
                 id: wall
                 anchors.fill: parent
                 anchors.margins: 1
-                source: Scheme.image !== "" ? "file://" + Scheme.image : ""
                 // one small decode, shared by the three cards (same source and size)
-                sourceSize.width: 480
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
+                decodeWidth: 480
             }
             // the bar
             Glass {

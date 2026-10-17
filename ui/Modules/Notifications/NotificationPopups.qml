@@ -106,11 +106,15 @@ Scope {
             margins {
                 top: Math.max(0, root.dodge("top", root.inset("top") + Config.notifications.marginY) - win.pad)
                 bottom: Math.max(0, root.dodge("bottom", root.inset("bottom") + Config.notifications.marginY) - win.pad)
-                left: Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
-                right: Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
+                left: root.side === "left" ? 0 : Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
+                right: root.side === "right" ? 0 : Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
             }
             readonly property int pad: Material.shadows ? Metrics.shadowPad + 8 : 0
-            implicitWidth: root.cardWidth + pad * 2 + 40
+            // On the side the stack sits against, the window reaches the screen's edge and the margin is room inside
+            // it: a card swiped that way leaves through the screen's edge. Ending short of it, the window cut a swiped
+            // card off square at its own edge.
+            readonly property int sideRoom: root.side === "right" ? Math.max(0, root.inset("right") + Config.notifications.marginX - pad) : root.side === "left" ? Math.max(0, root.inset("left") + Config.notifications.marginX - pad) : 0
+            implicitWidth: root.cardWidth + pad * 2 + 40 + sideRoom
             implicitHeight: Math.max(1, list.contentHeight + waiting.height + pad * 2 + 8)
             readonly property var state: ({ top: anchors.top, bottom: anchors.bottom, left: anchors.left, right: anchors.right, marginTop: margins.top, marginBottom: margins.bottom, marginLeft: margins.left, marginRight: margins.right, layer: Config.notifications.layer, cardWidth: root.cardWidth, height: implicitHeight, cards: list.count, screen: screen?.name ?? "" })
             onStateChanged: Ipc.report("notifications", state)
@@ -125,9 +129,12 @@ Scope {
             // the compositor's backdrop behind each card, not behind the stack as one block (that showed in the gaps
             // between cards) nor the window's margins
             property var cards: []
+            // only the cards at rest (Components/MaterialSettle): a card that slides in, is pushed along, or is
+            // swiped would leave its region behind it (a frosted patch where it was) or run ahead of it
+            readonly property bool listMoving: arriving.running || leaving.running || pushed.running
             BlurRegion {
                 window: win
-                items: win.cards
+                items: win.cards.filter(c => c.settled)
                 radius: Metrics.radiusSurface
             }
 
@@ -137,7 +144,7 @@ Scope {
                 Component.onCompleted: PanelRouter.barItems["notifications@" + (win.screen?.name ?? "")] = list
                 // a reply field takes the keyboard while it is being used
                 property bool typing: false
-                x: win.pad + (root.side === "left" ? 0 : 40)
+                x: win.pad + (root.side === "left" ? win.sideRoom : 40)
                 y: win.pad + (root.atTop ? 0 : waiting.height)
                 width: root.cardWidth
                 height: contentHeight
@@ -150,6 +157,7 @@ Scope {
                 }
 
                 add: Transition {
+                    id: arriving
                     ParallelAnimation {
                         Anim {
                             property: "opacity"
@@ -172,6 +180,7 @@ Scope {
                     }
                 }
                 remove: Transition {
+                    id: leaving
                     ParallelAnimation {
                         Anim {
                             property: "opacity"
@@ -186,6 +195,7 @@ Scope {
                     }
                 }
                 displaced: Transition {
+                    id: pushed
                     Anim {
                         property: "y"
                         role: "spatial"
@@ -209,6 +219,14 @@ Scope {
                     // inside stayed where the card first appeared when newer cards pushed it along)
                     Component.onCompleted: win.cards = win.cards.concat([slot])
                     Component.onDestruction: win.cards = win.cards.filter(c => c !== slot)
+
+                    // the material in motion: no backdrop while the list moves it or it is being swiped
+                    MaterialSettle {
+                        id: cardSettle
+                        moving: win.listMoving || slot.dragX !== 0
+                    }
+                    readonly property bool settled: cardSettle.settled
+                    onSettledChanged: win.cards = win.cards.slice()
 
                     // the swipe: the card follows the pointer sideways; far or fast enough closes it
                     property real dragX: 0
@@ -273,7 +291,8 @@ Scope {
                             anchors.fill: parent
                             radius: Metrics.radiusSurface
                             raised: true
-                            fill: Theme.glassRaised
+                            fill: Theme.alpha(Theme.surfaceHigh, cardSettle.alpha(Material.raisedAlpha))
+                            easeFill: cardSettle.frost === 0
                         }
                         NotificationCard {
                             id: card
@@ -302,7 +321,7 @@ Scope {
             Rectangle {
                 id: waiting
                 visible: Notifications.queue.length > 0
-                x: win.pad + (root.side === "left" ? 0 : 40) + (root.side === "right" ? root.cardWidth - width : root.side === "center" ? (root.cardWidth - width) / 2 : 0)
+                x: list.x + (root.side === "right" ? root.cardWidth - width : root.side === "center" ? (root.cardWidth - width) / 2 : 0)
                 y: root.atTop ? list.y + list.contentHeight + Metrics.s2 : win.pad
                 width: waitingLabel.implicitWidth + Metrics.s5 * 2
                 height: visible ? 26 : 0

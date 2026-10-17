@@ -124,7 +124,23 @@ Scope {
             id: perScreen
             required property var modelData
 
-            property real presence: root.showing ? 1 : 0
+            // leaving, the card condenses first (MaterialSettle), then fades: `gone` lets the fade start
+            property bool gone: true
+            property real presence: root.showing || !gone ? 1 : 0
+            Connections {
+                target: root
+                function onShowingChanged(): void {
+                    if (root.showing) {
+                        perScreen.gone = false;
+                        perScreen.settle?.cancel();
+                    } else if (perScreen.settle) {
+                        perScreen.settle.condense(() => perScreen.gone = true);
+                    } else {
+                        perScreen.gone = true;
+                    }
+                }
+            }
+            property var settle: null
             Behavior on presence {
                 NumberAnimation {
                     duration: root.showing ? Motion.reveal : Motion.dismiss
@@ -161,11 +177,19 @@ Scope {
                     onStateChanged: Ipc.report("osd", state)
                     Component.onCompleted: Ipc.report("osd", state)
 
+                    // the material in motion (Components/MaterialSettle): the backdrop only while the card rests —
+                    // not while it fades or slides in or out, nor while it reshapes (a gauge and a plain card)
+                    MaterialSettle {
+                        id: settle
+                        moving: perScreen.presence < 0.999 || cardWidth.running || cardHeight.running
+                        Component.onCompleted: perScreen.settle = settle
+                        Component.onDestruction: if (perScreen.settle === settle)
+                            perScreen.settle = null
+                    }
                     BlurRegion {
                         window: win
-                        item: card
+                        item: settle.settled ? card : null
                         radius: card.radius
-                        followOpacity: true
                     }
 
                     Glass {
@@ -181,6 +205,8 @@ Scope {
                         height: gauge ? 64 : 52
                         radius: Metrics.radiusSurface
                         raised: true
+                        fill: Theme.alpha(Theme.sheetTone, settle.alpha(Theme.glassAlpha))
+                        easeFill: settle.frost === 0
                         opacity: perScreen.presence
                         transform: Translate {
                             y: (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1)
@@ -188,12 +214,14 @@ Scope {
 
                         Behavior on width {
                             NumberAnimation {
+                                id: cardWidth
                                 duration: Motion.morph
                                 easing.type: Motion.standardEasing
                             }
                         }
                         Behavior on height {
                             NumberAnimation {
+                                id: cardHeight
                                 duration: Motion.morph
                                 easing.type: Motion.standardEasing
                             }
