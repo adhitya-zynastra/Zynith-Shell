@@ -60,7 +60,8 @@ Item {
             compare(settle.alpha(0.44), 0.44, "no backdrop to stand in for");
             settle.moving = false;
             settle.condense(() => root.leaves++);
-            compare(root.leaves, 1, "nothing to condense: leaves at once");
+            compare(root.leaves, 0, "never inside the caller's own handler");
+            tryCompare(root, "leaves", 1, 500, "nothing to condense: leaves on the next tick");
         }
         function test_the_dense_fill_never_thins_a_denser_rest() {
             settle.moving = true;

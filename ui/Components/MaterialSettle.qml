@@ -59,7 +59,9 @@ Item {
     function condense(then: var): void {
         if (!backdrop || Motion.reduced || frost >= 1) {
             frost = backdrop ? 1 : 0;
-            then();
+            // never from inside the caller's own change handler: a leave that finished there at once (reduced
+            // motion) set `closing` again while its change was still being handled — a binding loop
+            Qt.callLater(then);
             return;
         }
         thin.stop();
