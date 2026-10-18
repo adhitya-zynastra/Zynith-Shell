@@ -57,10 +57,11 @@ has been seen to come up without its `Config` singleton).
 ```sh
 cd ui
 for t in tools/tests/tst_*.qml; do
+  case $t in *bar_store*|*display_session*) continue;; esac   # these two have their own harness (below)
   QT_QPA_PLATFORM=offscreen /usr/lib64/qt6/bin/qmltestrunner -import ../build/ui-native/qml -import tools/tests/stubs -input $t
 done
-bash tools/tests/run-store-tests.sh                       # the config store, against the built plugin
-meson test -C build/shell                                 # native (one known third-party failure: upower_charge_limit_integration)
+bash tools/tests/run-store-tests.sh                       # the config store (tst_bar_store), with its fixtures
+meson test -C ../build/shell                                 # native (one known third-party failure: upower_charge_limit_integration)
 ```
 
 `tst_display_session.qml` drives a running niri. Run it only inside a test niri, never against your real display.
