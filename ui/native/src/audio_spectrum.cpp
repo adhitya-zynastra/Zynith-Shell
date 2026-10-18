@@ -311,9 +311,12 @@ void AudioSpectrum::tick() {
                 m_ringPos = 0;
             }
             m_sleeping = true;
+            // asleep after a wake that heard nothing, the values are already zero: say so only if they were not
+            const bool wereShown = std::any_of(m_values.cbegin(), m_values.cend(), [](qreal v) { return v != 0.0; });
             resetState();
             setActive(false);
-            emit valuesChanged();
+            if (wereShown)
+                emit valuesChanged();
             return;
         }
     } else {
@@ -351,9 +354,11 @@ void AudioSpectrum::tick() {
             m_work[m] = std::max(m_work[m], spread);
     }
 
+    // below the silence level a band shows as nothing: noise under it (a paused player's open stream) changed
+    // the values by fractions of a pixel ~1.5 times a second, and every visualizer redrew for it
     bool changed = false;
     for (int i = 0; i < m_bands; ++i) {
-        const qreal v = std::round(m_work[i] / kMaxLevel * 1000.0) / 1000.0;
+        const qreal v = m_work[i] < kSilence ? 0.0 : std::round(m_work[i] / kMaxLevel * 1000.0) / 1000.0;
         if (m_values[i] != v) {
             m_values[i] = v;
             changed = true;
