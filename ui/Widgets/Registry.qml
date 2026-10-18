@@ -20,6 +20,7 @@ Singleton {
             "active_window": activeWindow,
             "clock": clock,
             "media": media,
+            "island": island,
             "audio_visualizer": visualizer,
             "tray": tray,
             "network": network,
@@ -64,6 +65,9 @@ Singleton {
     }
     readonly property Component clock: Component {
         ClockWidget {}
+    }
+    readonly property Component island: Component {
+        IslandWidget {}
     }
     readonly property Component media: Component {
         MediaWidget {}

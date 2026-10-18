@@ -70,6 +70,7 @@ Item {
             wallpaper: wallpaper,
             control: control,
             session: session,
+            island: island,
             audio: audioPage,
             power: powerPage,
             monitor: monitorPage,
@@ -320,6 +321,10 @@ Item {
     Component {
         id: session
         SessionPanel {}
+    }
+    Component {
+        id: island
+        IslandPanel {}
     }
     Component {
         id: control

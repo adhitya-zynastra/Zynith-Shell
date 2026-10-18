@@ -27,7 +27,8 @@ Singleton {
         { id: "launcher", label: "Launcher", icon: "search", alone: true, page: false },
         { id: "clipboard", label: "Clipboard", icon: "clipboard", alone: true, page: false },
         { id: "wallpaper", label: "Wallpapers", icon: "photo", alone: true, page: false },
-        { id: "session", label: "Power menu", icon: "power", alone: true, page: false }
+        { id: "session", label: "Power menu", icon: "power", alone: true, page: false },
+        { id: "island", label: "Island", icon: "sparkles", alone: true, page: false }
     ]
     // older names that still arrive (bars.toml, keybinds): they open the same panel
     readonly property var aliases: ({ home: "control", quick: "control" })

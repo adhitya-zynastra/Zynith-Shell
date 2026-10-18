@@ -47,6 +47,21 @@ Singleton {
         const words = args === "" ? [] : args.split(/\s+/);
 
         switch (verb) {
+        // the island: put away what it shows, or switch to the next / previous thing happening
+        case "island-dismiss":
+            if (Island.primary)
+                Island.dismiss(Island.primary.id);
+            return;
+        case "island-next":
+        case "island-previous":
+            {
+                const list = Island.ordered;
+                if (list.length < 2)
+                    return;
+                const i = Math.max(0, list.findIndex(x => x.id === Island.primary?.id));
+                Island.pick(list[(i + (verb === "island-next" ? 1 : list.length - 1)) % list.length].id);
+                return;
+            }
         case "exec":
             Quickshell.execDetached(["sh", "-c", args]);
             return;

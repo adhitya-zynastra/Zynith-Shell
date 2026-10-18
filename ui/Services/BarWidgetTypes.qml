@@ -168,6 +168,20 @@ Singleton {
             ],
             actions: { left: "panel-toggle calendar" }
         },
+        { type: "island", label: "Island", icon: "sparkles",
+            settings: [
+                { key: "idle", label: "When nothing is happening", kind: "choice", default: "time", options: [{ key: "time", label: "The time" }, { key: "dot", label: "A small dot" }, { key: "hidden", label: "Nothing" }] },
+                { key: "show_media", label: "Music and video", kind: "toggle", default: true },
+                { key: "keep_paused", label: "Keep paused music in it", kind: "toggle", default: false, when: { show_media: [true] } },
+                { key: "take_notifications", label: "New notifications appear in it (instead of popups)", kind: "toggle", default: true },
+                { key: "privacy", label: "A notification shows", kind: "choice", default: "full", options: [{ key: "full", label: "Title and text" }, { key: "summary", label: "Title only" }, { key: "app", label: "Only the app" }], when: { take_notifications: [true] } },
+                { key: "show_devices", label: "When the sound moves to another output", kind: "toggle", default: true },
+                { key: "show_power", label: "When the charger goes in or out", kind: "toggle", default: true },
+                { key: "motion", label: "Its motion", kind: "choice", default: "full", options: [{ key: "full", label: "Lively" }, { key: "subtle", label: "Subtle" }, { key: "off", label: "None" }] },
+                { key: "style", label: "Looks like", kind: "choice", default: "capsule", options: [{ key: "capsule", label: "A capsule of its own" }, { key: "plain", label: "Part of the bar" }] },
+                { key: "max_width", label: "Widest it grows", kind: "int", default: 300, from: 140, to: 600, step: 10 }
+            ],
+            actions: { left: "panel-toggle island", right: "island-dismiss", scroll_up: "island-previous", scroll_down: "island-next" } },
         {
             type: "media", label: "Media", icon: "music",
             settings: [
@@ -376,7 +390,7 @@ Singleton {
             weather: "Current conditions where you are",
             sysmon: "CPU, memory and temperature",
             notifications: "Unread count; opens the notification centre",
-            island: "A living pill: music, notifications and timers as they happen",
+            island: "A living capsule: music, new notifications, the sound or the charger changing",
             media: "What is playing, with controls",
             audio_visualizer: "Bars that move with the sound",
             network: "Wi-Fi or wired; opens network settings",

@@ -85,7 +85,8 @@ Scope {
     }
 
     LazyLoader {
-        active: Notifications.popups.length > 0 || root.lingering
+        // an island that takes notifications is where they appear instead (Services/Island)
+        active: (Notifications.popups.length > 0 || root.lingering) && !Island.takesNotifications
 
         PanelWindow {
             id: win
