@@ -678,10 +678,18 @@ function place(state, id, edge, anchor) {
     anchor = anchorWord(anchor);
     if (edges.indexOf(edge) < 0 || anchors.indexOf(anchor) < 0)
         return state;
+    var others = state.bars.filter(function (x) { return x.id !== id; }).map(function (x) { return x.name; });
     return withBar(state, id, function (b) {
+        // a name the bar was given for where it sat ("Bottom left", "Bottom left 2") follows it; a name of the
+        // user's own is never touched
+        var auto = suggestName(b, others);
+        var plain = String(b.name || "").replace(/ [0-9]+$/, "");
+        var wasAuto = b.name === auto || plain === suggestName(b, []);
         b.edge = edge;
         b.anchor = anchor;
         b.offset = 0;
+        if (wasAuto)
+            b.name = suggestName(b, others);
         return b;
     });
 }

@@ -195,4 +195,15 @@ TestCase {
         const g = M.groupEntries(r.state, "b", "end", []);
         compare(g.id, "", "an empty selection makes no group");
     }
+
+    function test_a_generated_name_follows_the_bar_a_chosen_one_stays() {
+        let s = M.create({ bars: [], widgets: {} }, { edge: "bottom", anchor: "start" }, undefined, 1).state;
+        const id = s.bars[0].id;
+        compare(s.bars[0].name, "Bottom left");
+        s = M.place(s, id, "right", "end");
+        compare(s.bars[0].name, "Right bottom");
+        s = M.rename(s, id, "Status");
+        s = M.place(s, id, "top", "center");
+        compare(s.bars[0].name, "Status");
+    }
 }
