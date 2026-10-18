@@ -36,8 +36,12 @@ check() {
         cmp -s "$SHELL_BUILD/noctalia" "$PREFIX/bin/noctalia" && echo "                = this tree's build" || echo "                ≠ this tree's build ($SHELL_BUILD/noctalia)"
     fi
     echo "  UI plugin:    $UI_BUILD/qml"
-    local ui; ui=$(for p in $(pgrep -x quickshell); do tr '\0' ' ' </proc/$p/cmdline; echo; done | grep -o -- '-p [^ ]*shell.qml' | head -1)
-    echo "  running UI:   ${ui:-none}"
+    # every desktop UI running (a test niri may run its own); the one from this tree is the installed one
+    local uis; uis=$(for p in $(pgrep -x quickshell); do tr '\0' ' ' </proc/$p/cmdline; echo; done | grep -o -- '-p [^ ]*/shell.qml' | cut -c4- | sort -u)
+    if [[ -z "$uis" ]]; then echo "  running UI:   none"; fi
+    while read -r u; do [[ -n "$u" ]] || continue
+        [[ "$u" == "$ROOT/ui/shell.qml" ]] && echo "  running UI:   $u  (this tree)" || echo "  also running: $u"
+    done <<<"$uis"
     niri validate >/dev/null 2>&1 && echo "  niri config:  valid" || echo "  niri config:  INVALID (niri validate)"
 }
 if ((only_check)); then check; exit 0; fi
