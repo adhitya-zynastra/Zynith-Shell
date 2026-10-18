@@ -213,6 +213,12 @@ Singleton {
         function apps(query: string): string {
             return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");
         }
+        // every notification from one app gone from the history (as the centre's "clear this app")
+        function notificationsClearApp(app: string): string {
+            const before = Notifications.history.length;
+            Notifications.removeApp(app);
+            return String(before - Notifications.history.length);
+        }
         function dnd(on: string): string {
             Notifications.setDnd(on === "on" || on === "true" || (on === "toggle" && !Notifications.dnd));
             return Notifications.dnd ? "on" : "off";
