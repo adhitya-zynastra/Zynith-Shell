@@ -14,7 +14,7 @@ RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/zynith"
 PIDFILE="$RUN/ui.pid"
 LOG="$RUN/ui.log"
 NATIVE_SRC="$HERE/native"
-NATIVE_BUILD="${ZYNITH_NATIVE_BUILD:-$HERE/../../build-zynith-native}"
+NATIVE_BUILD="${ZYNITH_NATIVE_BUILD:-$HERE/../build/ui-native}"
 
 build_native() {
     local plugin="$NATIVE_BUILD/qml/Zynith/Native/libzynith_nativeplugin.so"

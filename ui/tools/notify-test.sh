@@ -3,7 +3,7 @@
 # can be checked without touching the session's notification owner. Popups appear on screen briefly.
 set -euo pipefail
 UI="$(cd "$(dirname "$0")/.." && pwd)"
-NATIVE="$UI/../../build-zynith-native/qml"
+NATIVE="${ZYNITH_NATIVE_BUILD:-$UI/../build/ui-native}/qml"
 # a scratch config, so toggles made during the test never reach the real shell.json
 export ZYNITH_CONFIG_DIR="$(mktemp -d)"
 trap 'rm -rf "$ZYNITH_CONFIG_DIR"' EXIT

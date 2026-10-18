@@ -4,7 +4,7 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 ui="$here/../.."
-plugin="${ZYNITH_NATIVE_BUILD:-$ui/../../build-zynith-native}/qml"
+plugin="${ZYNITH_NATIVE_BUILD:-$ui/../build/ui-native}/qml"
 scratch=/tmp/zynith-bar-store-test
 [ "${KEEP_SCRATCH:-}" = 1 ] || rm -rf "$scratch"
 mkdir -p "$scratch"

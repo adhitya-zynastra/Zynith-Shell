@@ -60,6 +60,26 @@ FloatingWindow {
             if (hits.length > n)
                 win.goToSetting(hits[n]);
         }
+        // where a named control is, in window coordinates (testing: drive the real pointer to it)
+        function rectOf(name: string): string {
+            const find = item => {
+                if (!item)
+                    return null;
+                if (item.objectName === name)
+                    return item;
+                for (const c of item.children) {
+                    const f = find(c);
+                    if (f)
+                        return f;
+                }
+                return null;
+            };
+            const it = find(win.contentItem);
+            if (!it || !it.visible)
+                return "null";
+            const p = it.mapToItem(win.contentItem, 0, 0);
+            return JSON.stringify({ x: Math.round(p.x), y: Math.round(p.y), w: Math.round(it.width), h: Math.round(it.height) });
+        }
         function captureSidebar(path: string): void {
             sidebar.grabToImage(r => r.saveToFile(path));
         }
@@ -464,6 +484,7 @@ FloatingWindow {
                     network: networkPage,
                     bluetooth: bluetoothPage,
                     plugins: pluginsPage,
+                    displays: displaysPage,
                     about: aboutPage
                     })[win.route] ?? homePage
                 onLoaded: {
@@ -522,6 +543,10 @@ FloatingWindow {
         HomePage {
             onNavigate: id => win.route = id
         }
+    }
+    Component {
+        id: displaysPage
+        DisplaysPage {}
     }
     Component {
         id: experiencePage

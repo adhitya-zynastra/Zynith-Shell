@@ -54,6 +54,7 @@ Singleton {
             native: [{ section: "niri", title: "niri" }] },
         { id: "native:keybinds", title: "Keybinds", icon: "keyboard", group: "Apps & keys", keywords: "shortcuts keys bindings", section: "keybinds" },
 
+        { id: "displays", title: "Displays", icon: "device-desktop", group: "System", keywords: "display monitor screen output orientation rotate rotation portrait landscape flip transform" },
         { id: "experience", title: "Performance", icon: "gauge", group: "System", keywords: "performance efficiency battery power saver visualizer previews background reduce motion" },
         { id: "native:power", title: "Power & idle", icon: "power", group: "System", keywords: "session panel idle suspend lock timeout", section: "power" },
         { id: "native:location", title: "Location, weather & night light", icon: "map-pin", group: "System", keywords: "location weather night light units city", section: "location" },
