@@ -1,12 +1,10 @@
 import QtQuick
-import QtQuick.Effects
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
 import qs.Components
 import qs.Services
-import "../../Common/Droplet.js" as Droplet
+import "../../Common/Emerge.js" as Emerge
 
 // A focused panel: placed beside the widget that opened it, grows out of the bar edge, leaves faster
 // than it arrived. The content is chosen by panel id.
@@ -57,7 +55,8 @@ PanelWindow {
             w: panelWidth,
             h: cardHeight
         })
-    readonly property bool morphReady: morphs && revealed > 0.99 && !closing
+    // a switch glides from wherever the shape is, also mid-entrance (the emergence follows the glide)
+    readonly property bool morphReady: morphs && revealed > 0.35 && !closing
     property real ax: cardX
     property real ay: cardY
     property real aw: panelWidth
@@ -116,14 +115,31 @@ PanelWindow {
             h: Math.max(a.y + a.h, b.y + b.h) - y
         };
     }
+    // A panel appears with a little room above and below its card, so a page that grows while it emerges (the
+    // network list arriving: +28 px) moves inside the window it has. Every resize is a synchronous expose and a new
+    // swapchain on the GUI thread — measured as 45–60 ms holds mid-entrance. The room is transparent and takes no
+    // input (the mask is the card); the window settles to the card after the next glide.
+    readonly property int headroom: 48
+    function roomy(t: var): var {
+        if (bare)
+            return t;
+        const y = Math.max(0, t.y - headroom), y2 = Math.min(sh, t.y + t.h + headroom);
+        return { x: t.x, y: y, w: t.w, h: Math.max(t.h, y2 - y) };
+    }
+    function contains(a: var, b: var): bool {
+        return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
+    }
     onTargetChanged: {
         // only a panel already on screen glides; one appearing (or a bare one) takes its size at once — a
         // window resized twice while it was being shown kept the stale size (the wallpaper browser at 432 px)
         if (!morphReady) {
             settle.stop();
-            span = target;
+            span = roomy(target);
             return;
         }
+        // still inside the window (the headroom a panel appears with): nothing to resize
+        if (!settle.running && contains(span, target))
+            return;
         const now = { x: ax, y: ay, w: aw, h: ah };
         span = unite(settle.running ? unite(span, now) : now, target);
         settle.restart();
@@ -155,10 +171,10 @@ PanelWindow {
     readonly property string startJoin: !attached ? "" : barSpan[0] <= cardStart - joinRadius / 2 ? "drawer" : cardStart <= barSpan[0] - joinRadius / 2 ? "t" : "flush"
     readonly property string endJoin: !attached ? "" : barSpan[1] >= cardEnd + joinRadius / 2 ? "drawer" : cardEnd >= barSpan[1] + joinRadius / 2 ? "t" : "flush"
     // how far the panel has grown out of the bar, and the fillets' radius: they arrive as the growth lands
-    readonly property real grow: attached && !droplet ? revealed : 1
+    readonly property real grow: 1
     // the fillets arrive over the second half of the growth, once the bar-side edge has cleared the bar
     readonly property real bulgeFrom: 0.5
-    readonly property real bulge: attached ? joinRadius * (droplet ? (drop?.join ?? 1) : Math.max(0, Math.min(1, (revealed - bulgeFrom) / (1 - bulgeFrom)))) : 0
+    readonly property real bulge: attached ? joinRadius * Math.max(0, Math.min(1, (revealed - bulgeFrom) / (1 - bulgeFrom))) : 0
     readonly property string joinKey: (held?.barId ?? "") + "@" + (screen?.name ?? "")
     onBulgeChanged: publishJoin()
     onAttachedChanged: publishJoin()
@@ -195,8 +211,9 @@ PanelWindow {
     // the join). Read from the bar's span, not `attached` (which is itself worked out from this position).
     readonly property real alongLo: barSpan ? Math.min(screenMargin, Math.max(0, barSpan[0])) : screenMargin
     readonly property real alongHiGap: barSpan ? Math.min(screenMargin, Math.max(0, (horizontalEdge ? sw : sh) - barSpan[1])) : screenMargin
-    readonly property real cardX: bare ? 0 : place !== "" ? placedX : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, alongLo, sw - panelWidth - alongHiGap)
-    readonly property real cardY: bare ? 0 : place !== "" ? placedY : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, alongLo, sh - cardHeight - alongHiGap)
+    // whole pixels: its edges are shared with the bar and the join fillets (see BarWindow's pillLength)
+    readonly property real cardX: Math.round(bare ? 0 : place !== "" ? placedX : edge === "center" ? Math.round((sw - panelWidth) / 2) : edge === "left" ? extent + gap : edge === "right" ? sw - extent - gap - panelWidth : clamp(ox - panelWidth / 2, alongLo, sw - panelWidth - alongHiGap))
+    readonly property real cardY: Math.round(bare ? 0 : place !== "" ? placedY : edge === "center" ? (content.preferredTop < 0 ? Math.round((sh - cardHeight) / 2) : Math.round(sh * content.preferredTop)) : edge === "top" ? extent + gap : edge === "bottom" ? sh - extent - gap - cardHeight : clamp(oy - cardHeight / 2, alongLo, sh - cardHeight - alongHiGap))
     readonly property var cardRect: ({
             x: Math.round((screen?.x ?? 0) + cardX),
             y: Math.round((screen?.y ?? 0) + cardY),
@@ -240,12 +257,18 @@ PanelWindow {
         interval: 60
         onTriggered: win.nudge = 0
     }
-    // after the surface is mapped again, once more (the first configure can swallow a size change)
+    // after the surface is mapped again, once more (the first configure can swallow a size change) — but only at
+    // rest: each nudge is a resize, and a resize is a synchronous expose and a new swapchain on the GUI thread. Fired
+    // 120 ms after showing, the two of them landed in the middle of the entrance as 50–100 ms holds.
     Timer {
         id: settleSize
         interval: 120
-        onTriggered: if (Math.abs(win.width - win.implicitWidth) > 1 || Math.abs(win.height - win.implicitHeight) > 1)
-            win.reassert()
+        onTriggered: {
+            if (win.moving)
+                restart();
+            else if (Math.abs(win.width - win.implicitWidth) > 1 || Math.abs(win.height - win.implicitHeight) > 1)
+                win.reassert();
+        }
     }
     onWidthChanged: {
         PanelRouter.windowSizes[screen?.name ?? ""] = [Math.round(width), Math.round(height)];
@@ -254,9 +277,9 @@ PanelWindow {
     }
     onHeightChanged: PanelRouter.windowSizes[screen?.name ?? ""] = [Math.round(width), Math.round(height)]
 
-    // input follows what is drawn: while the drop forms, only its bounds take the pointer
+    // input follows what is drawn (the card, whatever shape it has now)
     mask: Region {
-        item: win.dropping ? dropBounds : card
+        item: card
     }
 
     // the pointer on the card holds a hover-opened panel; a press in it pins it
@@ -305,24 +328,15 @@ PanelWindow {
     // 0 = gone, 1 = in place
     property real revealed: 0
 
-    // ── the water drop (Common/Droplet.js): the panel gathers on the edge it opens from, draws in to a drop that
-    // hangs from a thinning neck, and swells into itself; closing runs it back, and an interrupted one reverses
-    // from where it is (the silhouette is a function of `revealed` alone). The card is drawn at its final size the
-    // whole time and only masked to the silhouette, so its fill, blur and page are revealed by the drop, never
-    // redrawn or swapped. [panels] entrance = drop (default) | grow (the earlier growth and fade). A centred or
-    // full-screen surface keeps its own entrance.
-    readonly property bool droplet: !bare && sideEdge && (pcfg.entrance ?? "drop") === "drop" && Motion.reveal > 0
-    readonly property bool dropping: droplet && visible && revealed < 0.999
-    readonly property var drop: droplet ? Droplet.shape(revealed, {
-            edge: edge,
-            attached: attached,
-            ox: horizontalEdge ? ox - cardX : oy - cardY,
-            along: horizontalEdge ? panelWidth : cardHeight,
-            depth: horizontalEdge ? cardHeight : panelWidth,
-            corners: card.drawnCorners,
-            radius: card.radius,
-            pathHead: false
-        }) : null
+    // ── emerging (Common/Emerge.js): the panel comes out of the component that opened it as a capsule the size of
+    // the icon, on the bar's inner edge, and grows into its card — along the bar a beat before it deepens, its corners
+    // relaxing from a capsule's to the surface's — on a spring that settles without bouncing; closing runs it back,
+    // and an interrupted one reverses from where it is (the shape is a function of `revealed` alone). The card
+    // itself is the shape (no mask, no layer): its page stays put on the screen and the growing shape uncovers it.
+    // A centred or full-screen surface keeps its own entrance.
+    readonly property bool emerges: !bare && sideEdge && Motion.reveal > 0
+    readonly property var seedRect: Emerge.seed(edge, { x: ox, y: oy }, held?.itemSpan ?? 32, { x: ax, y: ay, w: aw, h: ah })
+    readonly property var shape: emerges && revealed < 0.999 ? Emerge.frame(revealed, seedRect, { x: ax, y: ay, w: aw, h: ah }, Metrics.radiusSurface, edge) : null
     // The material in motion (Components/MaterialSettle): the compositor's backdrop only while the surface rests,
     // a denser fill while it moves — the drop forming or retracting, any other entrance, a glide to another panel's
     // size — thinning back once it rests. Closing, it condenses first, then lets the backdrop go and moves.
@@ -338,9 +352,9 @@ PanelWindow {
         target: win
         property: "revealed"
         to: 1
-        duration: win.bare ? Motion.scene + 160 : win.droplet ? Motion.ms(560) : Motion.reveal
-        // the drop eases each of its phases itself, so it takes the progress linear
-        easing.type: win.bare || win.droplet ? Easing.Linear : Motion.enterEasing
+        duration: win.bare ? Motion.scene + 160 : win.emerges ? Motion.ms(420) : Motion.reveal
+        // the emergence springs its own geometry, so it takes the progress linear
+        easing.type: win.bare || win.emerges ? Easing.Linear : Motion.enterEasing
         onFinished: win.entering = false
     }
     NumberAnimation {
@@ -348,14 +362,14 @@ PanelWindow {
         target: win
         property: "revealed"
         to: 0
-        duration: win.bare ? Motion.spatialFast : win.droplet ? Motion.ms(320) : Motion.dismiss
-        easing.type: win.bare || win.droplet ? Easing.Linear : Motion.exitEasing
+        duration: win.bare ? Motion.spatialFast : win.emerges ? Motion.ms(280) : Motion.dismiss
+        easing.type: win.bare || win.emerges ? Easing.Linear : Motion.exitEasing
         onFinished: win.dismissed()
     }
     // content can turn out bare only once it has loaded: the entrance restarts on the bare timing from
     // where it is, so the choreography still gets its full length
     onBareChanged: {
-        span = target;
+        span = roomy(target);
         settleSize.restart();
         if (bare && enter.running)
             restartEnter();
@@ -438,7 +452,7 @@ PanelWindow {
     onVisibleChanged: {
         if (visible) {
             settle.stop();
-            span = target;
+            span = roomy(target);
             begin();
             settleSize.restart();
         } else {
@@ -448,12 +462,16 @@ PanelWindow {
 
     // frame pacing while the surface animates (Diagnostics; costs nothing when idle)
     property var frameDeltas: []
+    readonly property bool gliding: axGlide.running || ayGlide.running || awGlide.running || ahGlide.running
+    property string pacingName: ""
     FrameAnimation {
-        running: enter.running || leave.running
+        running: enter.running || leave.running || win.gliding
         onTriggered: win.frameDeltas.push(frameTime * 1000)
         onRunningChanged: {
-            if (!running && win.frameDeltas.length > 1) {
-                Diagnostics.record(win.closing ? "panel-close" : "panel-open", win.frameDeltas.slice(1));
+            if (running) {
+                win.pacingName = leave.running ? "panel-close" : enter.running ? "panel-open" : "panel-switch";
+            } else if (win.frameDeltas.length > 1) {
+                Diagnostics.record(win.pacingName, win.frameDeltas.slice(1));
                 win.frameDeltas = [];
             }
         }
@@ -490,12 +508,13 @@ PanelWindow {
             // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
             Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
 
-            // attached, the card grows out of the bar's edge (its far side moves; the joint stays put)
-            x: win.ax - win.winX + (win.attached && win.edge === "right" ? win.aw * (1 - win.grow) : 0)
-            y: win.ay - win.winY + (win.attached && win.edge === "bottom" ? win.ah * (1 - win.grow) : 0)
-            width: win.aw * (win.attached && !win.horizontalEdge ? win.grow : 1)
-            height: win.ah * (win.attached && win.horizontalEdge ? win.grow : 1)
-            radius: Metrics.radiusSurface
+            // the card is the shape: emerging, the capsule growing into it; at rest (and gliding to another panel's
+            // size), the card itself
+            x: (win.shape ? win.shape.x : win.ax) - win.winX
+            y: (win.shape ? win.shape.y : win.ay) - win.winY
+            width: win.shape ? win.shape.w : win.aw
+            height: win.shape ? win.shape.h : win.ah
+            radius: win.shape ? win.shape.radius : Metrics.radiusSurface
             // the bar-side corners: square where the bar continues past them, rounded where the panel runs past
             // the bar (a fillet then joins the bar's side instead)
             corners: !win.attached ? null : ({
@@ -516,33 +535,28 @@ PanelWindow {
             edge: !win.bare && !win.attached
             sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 
-            opacity: win.bare || win.droplet ? 1 : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
+            // the capsule appears within the first frames rather than popping in
+            // (never quite 0: drawn at 1% from the first frame, the page's first paint — its icons, its text — happens
+            // in the first-frame wait before the motion, not as a ~60 ms stall halfway through it)
+            opacity: win.bare ? 1 : win.emerges ? Math.max(0.01, Math.min(1, win.revealed * 8)) : win.attached ? Math.min(1, win.revealed * 6) : win.revealed
 
-            // the drop: masked to its silhouette while it forms (no layer at rest)
-            layer.enabled: win.dropping
-            layer.effect: MultiEffect {
-                maskEnabled: true
-                maskSource: dropMask
-                maskThresholdMin: 0.5
-                maskSpreadAtMin: 1
-            }
-            // a floating panel's shadow settles in once the drop has become the card
-            shadowOpacity: win.dropping ? 0 : 1
+            // a floating panel's shadow only at rest: in motion (emerging, gliding to another panel, leaving) the
+            // surface has none, so no shadow can trail, double or smear behind a moving shape
+            shadowOpacity: win.moving ? 0 : 1
             Behavior on shadowOpacity {
-                enabled: !win.dropping
                 NumberAnimation {
                     duration: Motion.effects
                 }
             }
 
             // floating: grow from the bar side, a few pixels of travel; attached: the geometry does it
-            readonly property real travel: win.bare || win.attached || win.droplet ? 0 : (1 - win.revealed) * Motion.revealOffset
+            readonly property real travel: win.bare || win.attached || win.emerges ? 0 : (1 - win.revealed) * Motion.revealOffset
             transform: [
                 Scale {
                     origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
                     origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
-                    xScale: win.bare || win.attached || win.droplet ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
-                    yScale: win.bare || win.attached || win.droplet ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                    xScale: win.bare || win.attached || win.emerges ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
+                    yScale: win.bare || win.attached || win.emerges ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                 },
                 Translate {
                     x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0
@@ -579,16 +593,12 @@ PanelWindow {
 
                 PanelContent {
                     id: content
-                    // attached: the page slides out from behind the bar with the growing edge
-                    transform: Translate {
-                        x: win.attached && win.edge === "left" ? -win.aw * (1 - win.grow) : 0
-                        y: win.attached && win.edge === "top" ? -win.ah * (1 - win.grow) : 0
-                    }
-
-                    // laid out at the size it is going to, centred in the card while the card glides there (the
-                    // card clips it), so nothing reflows every frame
+                    // laid out at the size it is going to, so nothing reflows every frame: while the shape emerges the
+                    // page stays where it will be on the screen (the shape uncovers it); while the card glides to
+                    // another panel's size it is centred in it (the card clips it)
                     width: win.panelWidth
-                    x: Math.round((scroller.width - width) / 2)
+                    x: win.shape ? Math.round(win.ax - win.shape.x) : Math.round((scroller.width - width) / 2)
+                    y: win.shape ? Math.round(win.ay - win.shape.y) : 0
                     panelId: win.held?.id ?? ""
                     peek: win.held?.transient ?? false
                     focused: win.held?.focused ?? false
@@ -596,36 +606,16 @@ PanelWindow {
                     context: win.held?.context ?? ""
                     showings: win.showings
                     screen: win.screen
-                    // in a drop, the page arrives with the swell (its own staggers run on that)
-                    opacity: win.droplet ? (win.drop?.content ?? 1) : 1
-                    visibleProgress: win.droplet ? (win.drop?.content ?? 1) : win.revealed
+                    // the page fades in once the shape has room for it. Emerging, the shape is the reveal: the page is
+                    // whole from the first frame (visibleProgress 1), so every row paints in the first-frame wait.
+                    // Pages that staggered their rows on visibleProgress left each row undrawn until its turn, and
+                    // all of them painted at once at ~42% — a ~60 ms stall in the middle of the motion.
+                    opacity: win.emerges ? (win.shape ? Math.max(0.01, win.shape.content) : 1) : 1
+                    visibleProgress: win.emerges ? 1 : win.revealed
                     active: win.visible
                     // the card's own top corners (attached: square where it meets the bar), for the hero's picture
                     topCorners: card.corners ? [card.corners[0], card.corners[1]] : [card.radius, card.radius]
                 }
-            }
-            // The drop's edge: the card's hairline on the forming drop, so the bead and the drop read against any
-            // backdrop (on a dark wallpaper the drop was dark on dark, invisible until it had nearly landed). Inside
-            // the card, so the drop's mask cuts it to the silhouette. Floating, it becomes the card's own edge as the
-            // drop lands; attached (the bar's continuation has no edge), it lights the drop's sides and far end only
-            // — it runs on past the near side, under the bar, so no line crosses the neck — and fades as the joins form.
-            Rectangle {
-                visible: win.dropping && Theme.hairlineWidth > 0
-                readonly property var h: win.drop?.head ?? ({ x: 0, y: 0, w: 0, h: 0, corners: [0, 0, 0, 0] })
-                readonly property real reach: win.attached ? 4 + Math.max(h.y, h.x, card.width - h.x - h.w, card.height - h.y - h.h) : 0
-                x: h.x - (win.attached && win.edge === "left" ? reach : 0)
-                y: h.y - (win.attached && win.edge === "top" ? reach : 0)
-                width: h.w + (win.attached && (win.edge === "left" || win.edge === "right") ? reach : 0)
-                height: h.h + (win.attached && (win.edge === "top" || win.edge === "bottom") ? reach : 0)
-                topLeftRadius: h.corners[0]
-                topRightRadius: h.corners[1]
-                bottomRightRadius: h.corners[2]
-                bottomLeftRadius: h.corners[3]
-                color: "transparent"
-                border.width: Theme.hairlineWidth
-                border.color: Theme.hairline
-                opacity: win.attached ? 1 - (win.drop?.join ?? 1) : 1
-                antialiasing: true
             }
             // where in a scrolled panel you are
             Rectangle {
@@ -641,53 +631,6 @@ PanelWindow {
                     ColorAnim {}
                 }
             }
-        }
-
-        // ── the drop's silhouette (the card's mask), its head (the blur's shape) and bounds (the input region) ──
-        Item {
-            id: dropMask
-            x: card.x
-            y: card.y
-            width: card.width
-            height: card.height
-            visible: false
-            layer.enabled: win.dropping
-            // The head is a plain rounded rectangle, drawn in the frame its geometry changes: as part of the path (a
-            // Shape) it reached the screen later still, and the blur showed past it as a pale band ~10 px wide while
-            // it swelled. The neck and the menisci (no blur under them) stay a path.
-            Rectangle {
-                x: win.drop?.head.x ?? 0
-                y: win.drop?.head.y ?? 0
-                width: win.drop?.head.w ?? 0
-                height: win.drop?.head.h ?? 0
-                readonly property var c: win.drop?.head.corners ?? [0, 0, 0, 0]
-                topLeftRadius: c[0]
-                topRightRadius: c[1]
-                bottomRightRadius: c[2]
-                bottomLeftRadius: c[3]
-                color: "white"
-                antialiasing: true
-            }
-            Shape {
-                anchors.fill: parent
-                preferredRendererType: Shape.CurveRenderer
-                ShapePath {
-                    fillColor: "white"
-                    strokeColor: "transparent"
-                    strokeWidth: 0
-                    fillRule: ShapePath.WindingFill
-                    PathSvg {
-                        path: win.dropping ? (win.drop?.path ?? "") : ""
-                    }
-                }
-            }
-        }
-        Item {
-            id: dropBounds
-            x: card.x + (win.drop?.bounds.x ?? 0)
-            y: card.y + (win.drop?.bounds.y ?? 0)
-            width: win.drop?.bounds.w ?? card.width
-            height: win.drop?.bounds.h ?? card.height
         }
 
         // ── the fillets joining an attached panel to its bar ──
@@ -738,14 +681,18 @@ PanelWindow {
                 const oy = f.solid === "bl" || f.solid === "br" ? f.y : f.y + r;
                 return { x: f.x, y: f.y, w: r, h: r, cutX: ox - r, cutY: oy - r, cut: 2 * r };
             })
+            // counted, not keyed on the array: `shapes` is a new array every frame the card moves, and a Repeater
+            // given a new array rebuilds every delegate — measured as a quarter of the GUI thread during an entrance,
+            // and the garbage it left collected in 50–100 ms pauses in the middle of the motion
             Repeater {
-                model: fillets.shapes
+                model: fillets.shapes.length
                 delegate: ConcaveCorner {
-                    required property var modelData
-                    x: modelData.x
-                    y: modelData.y
+                    required property int index
+                    readonly property var f: fillets.shapes[index] ?? { x: 0, y: 0, solid: "tl" }
+                    x: f.x
+                    y: f.y
                     r: fillets.r
-                    solid: modelData.solid
+                    solid: f.solid
                     fill: card.fill
                     opacity: card.opacity
                 }

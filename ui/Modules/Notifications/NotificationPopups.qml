@@ -67,15 +67,20 @@ Scope {
         return base;
     }
 
-    // the window outlives the last popup by its exit, so the exit is seen
+    // the window outlives the last popup by its exit, so the exit is seen — only when there was one: the list is
+    // also re-set while already empty (opening the notification centre does), and lingering then created an empty
+    // window just to destroy it, a ~100 ms stall of the GUI thread in the middle of the centre's entrance
     property bool lingering: false
+    property int lastCount: 0
     Connections {
         target: Notifications
         function onPopupsChanged(): void {
-            if (Notifications.popups.length === 0) {
+            const n = Notifications.popups.length;
+            if (n === 0 && root.lastCount > 0) {
                 root.lingering = true;
                 linger.restart();
             }
+            root.lastCount = n;
         }
     }
     Timer {
