@@ -29,6 +29,9 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kLauncherIconSizeRange{20, 64, 2};
   inline constexpr Range<std::int64_t> kOsdDurationRange{600, 5000, 100};
   inline constexpr Range<std::int64_t> kCarouselCardWidthRange{400, 1400, 20};
+  // zynith: live wallpaper renderer frame cap and volume (0 = silent).
+  inline constexpr Range<std::int64_t> kLiveWallpaperFpsRange{1, 144, 1};
+  inline constexpr Range<std::int64_t> kLiveWallpaperVolumeRange{0, 100, 5};
   inline constexpr Range<float> kCornerRadiusScaleRange{0.0F, 2.0F, 0.05F};
   inline constexpr Range<std::int64_t> kControlCenterWidthRange{600, 1200, 10};
   inline constexpr Range<std::int64_t> kScreenCornersSizeRange{1, 100, 1};

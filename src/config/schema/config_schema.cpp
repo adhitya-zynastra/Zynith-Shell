@@ -1638,6 +1638,20 @@ namespace noctalia::config::schema {
     return s;
   }
 
+  // zynith: [wallpaper.live] — how the external live-wallpaper renderer runs (shell/wallpaper/live).
+  const Schema<WallpaperLiveConfig>& wallpaperLiveSchema() {
+    static const Schema<WallpaperLiveConfig> s = {
+        pathStringField(&WallpaperLiveConfig::renderer, "renderer"),
+        pathStringField(&WallpaperLiveConfig::steamRoot, "steam_root"),
+        field(&WallpaperLiveConfig::fps, "fps", kLiveWallpaperFpsRange),
+        field(&WallpaperLiveConfig::volume, "volume", kLiveWallpaperVolumeRange),
+        enumField(&WallpaperLiveConfig::scaling, "scaling", kLiveWallpaperScalings),
+        field(&WallpaperLiveConfig::mouse, "mouse"),
+        field(&WallpaperLiveConfig::fullscreenPause, "fullscreen_pause"),
+    };
+    return s;
+  }
+
   const Schema<WallpaperConfig>& wallpaperSchema() {
     static const Schema<WallpaperConfig> s = {
         field(&WallpaperConfig::enabled, "enabled"),
@@ -1656,6 +1670,7 @@ namespace noctalia::config::schema {
         field(&WallpaperConfig::carousel, "carousel"),
         field(&WallpaperConfig::carouselCardWidth, "carousel_card_width", kCarouselCardWidthRange),
         subTable(&WallpaperConfig::automation, "automation", wallpaperAutomationSchema()),
+        subTable(&WallpaperConfig::live, "live", wallpaperLiveSchema()),
         namedMap<WallpaperConfig, WallpaperMonitorOverride>(
             &WallpaperConfig::monitorOverrides, "monitor", wallpaperMonitorSchema(),
             [](WallpaperMonitorOverride& o, std::string_view name) { o.match = std::string(name); },

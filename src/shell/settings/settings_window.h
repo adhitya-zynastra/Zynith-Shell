@@ -83,6 +83,8 @@ public:
   // Reopens the section saved by closeForWidgetEditor(), if any.
   void reopenAfterWidgetEditor();
   [[nodiscard]] bool isOpen() const noexcept { return m_surface != nullptr && m_surface->isRunning(); }
+  // zynith: the settings registry as this window would show it now (for the Zynith Settings bridge)
+  [[nodiscard]] std::vector<settings::SettingEntry> registrySnapshot() const;
   [[nodiscard]] wl_surface* wlSurface() const noexcept {
     return m_surface != nullptr ? m_surface->wlSurface() : nullptr;
   }

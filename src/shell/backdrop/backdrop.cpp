@@ -122,11 +122,18 @@ void Backdrop::onOutputChange() {
   syncInstances();
 }
 
+std::string Backdrop::pathFor(const std::string& connector) const {
+  if (m_pathFor) {
+    return m_pathFor(connector);
+  }
+  return m_config != nullptr ? m_config->getWallpaperPath(connector) : std::string();
+}
+
 void Backdrop::onStateChange() {
   kLog.info("state changed, checking wallpaper updates");
 
   for (auto& inst : m_instances) {
-    auto newPath = m_config->getWallpaperPath(inst->connectorName);
+    auto newPath = pathFor(inst->connectorName);
     if (newPath.empty() || newPath == inst->currentPath) {
       continue;
     }
@@ -239,7 +246,7 @@ void Backdrop::syncInstances() {
 }
 
 void Backdrop::createInstance(const WaylandOutput& output) {
-  auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
+  auto wallpaperPath = pathFor(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto inst = std::make_unique<BackdropInstance>();
@@ -270,7 +277,7 @@ void Backdrop::createInstance(const WaylandOutput& output) {
     }
     std::string path = instPtr->currentPath;
     if (path.empty()) {
-      path = m_config->getWallpaperPath(instPtr->connectorName);
+      path = pathFor(instPtr->connectorName);
     }
     if (!path.empty()) {
       loadWallpaper(*instPtr, path);

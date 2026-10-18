@@ -1,4 +1,5 @@
 #include "app/main_loop.h"
+#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
@@ -121,18 +122,27 @@ void Application::initUi() {
   reconcileOutputSurfaces();
 }
 
-void Application::initUiRenderSurfacesAndSettings() {
-
+void Application::initBackgroundRendering() {
+  if (m_backgroundRenderingInitialized) {
+    return;
+  }
+  m_backgroundRenderingInitialized = true;
   m_renderContext.initialize(m_glShared);
   m_renderContext.setGraphicsResetCallback([this](RenderGraphicsResetStatus status) { onGraphicsReset(status); });
   if (!m_glShared.hasSharedContext()) {
     m_asyncTextureCache.setMakeCurrentCallback([this]() { m_renderContext.backend().makeCurrentNoSurface(); });
   }
+  m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
+  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
+}
+
+void Application::initUiRenderSurfacesAndSettings() {
+  initBackgroundRendering(); // normally already done by paintEarlyBackground()
   m_renderContext.setTextFontFamily(m_configService.config().shell.fontFamily);
   Style::setRtl(i18n::Service::instance().rtl());
   m_renderContext.setTextBaseDirection(i18n::Service::instance().rtl());
-  m_wallpaper.initialize(m_wayland, &m_configService, &m_renderContext, &m_sharedTextureCache, &m_themeService);
-  m_backdrop.initialize(m_wayland, &m_configService, &m_sharedTextureCache, &m_glShared);
+  m_liveWallpaper.initialize(m_wayland, m_configService, m_wallpaper);
+  m_liveWallpaper.registerIpc(m_ipcService);
   m_settingsWindow.initialize(
       m_wayland, &m_configService, &m_renderContext, &m_dependencyService, m_upowerService.get(), &m_idleManager,
       &m_compositorPlatform, m_accountsService.get()
@@ -320,6 +330,16 @@ void Application::initLockScreenAndSession() {
   );
   m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, m_mprisService.get(), &m_weatherService, &m_httpClient);
   m_wallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
+  m_liveWallpaper.setAutomationGate([this]() { return !m_lockScreen.isActive(); });
+  m_wallpaperState.initialize(m_configService, m_wallpaper, m_liveWallpaper);
+  m_backdrop.setPathProvider([this](const std::string& connector) { return m_wallpaperState.stillFor(connector); });
+  m_lockScreen.setWallpaperPathProvider([this](const std::string& connector) {
+    return m_wallpaperState.stillFor(connector);
+  });
+  m_wallpaperStateConn = m_wallpaperState.changed().connect([this]() {
+    m_backdrop.onStateChange();
+    m_lockScreen.onWallpaperChanged();
+  });
   m_configService.addReloadCallback([this]() {
     if (m_logindService != nullptr) {
       m_logindService->setSessionLockIntegrationEnabled(m_configService.isLockScreenEnabled());
@@ -334,6 +354,7 @@ void Application::initLockScreenAndSession() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_idleManager.setSessionLocked(true);
         m_screenTimeService.setSessionLocked(true);
+        zynith::notifyUi("lock", "on");
         m_hookManager.fire(HookKind::SessionLocked);
         if (m_logindService != nullptr) {
           m_logindService->setSessionLockedHint(true);
@@ -345,6 +366,7 @@ void Application::initLockScreenAndSession() {
         m_lockscreenWidgetsController.onLockStateChanged();
         m_idleManager.setSessionLocked(false);
         m_screenTimeService.setSessionLocked(false);
+        zynith::notifyUi("lock", "off");
         m_hookManager.fire(HookKind::SessionUnlocked);
         releaseSleepDelayInhibitIfPending();
         requestAllSurfacesRedraw();
@@ -700,7 +722,8 @@ void Application::initPanelManagerAndPanels() {
   m_panelManager.registerPanel(
       "wallpaper",
       std::make_unique<WallpaperPanel>(
-          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService
+          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService,
+          &m_liveWallpaper
       )
   );
   m_panelManager.registerPanel("tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService));

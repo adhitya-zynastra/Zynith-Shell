@@ -56,12 +56,28 @@ namespace noctalia::cli {
       Command{"add", "Add a plugin source", {}, {}, {}, kMsgPluginsSourceAddPositionals, {}, false},
       Command{"remove", "Remove a plugin source", {}, {}, {}, kMsgPluginsSourceRemovePositionals, {}, false},
   };
+  // zynith: plugin capability grants (scripting/plugin_capabilities.h)
+  inline constexpr std::array<std::string_view, 7> kMsgPluginCapabilityChoices{
+      "exec", "shell", "network", "files", "notifications", "clipboard", "env"};
+  inline constexpr std::array kMsgPluginsGrantPositionals{
+      Positional{"author/plugin", {}, {}, true, false, false},
+      Positional{"capability", {}, kMsgPluginCapabilityChoices, true, true, false},
+  };
+  inline constexpr std::array kMsgPluginsCapabilitiesPositionals{
+      Positional{"author/plugin", {}, {}, false, false, false},
+  };
   inline constexpr std::array kMsgPluginsSubcommands{
       Command{"list", "List installed plugins", {}, {}, {}, {}, {}, false},
       Command{"enable", "Enable a plugin", {}, {}, {}, kMsgPluginsEnablePositionals, {}, false},
       Command{"disable", "Disable a plugin", {}, {}, {}, kMsgPluginsDisablePositionals, {}, false},
       Command{"update", "Update a plugin source", {}, {}, {}, kMsgPluginsUpdatePositionals, {}, false},
       Command{"source", "Manage plugin sources", {}, {}, {}, {}, kMsgPluginsSourceSubcommands, false},
+      Command{"grant", "Grant capabilities a plugin declares", {}, {}, {}, kMsgPluginsGrantPositionals, {}, false},
+      Command{"revoke", "Revoke granted capabilities", {}, {}, {}, kMsgPluginsGrantPositionals, {}, false},
+      Command{
+          "capabilities", "Show declared, granted and effective capabilities", {}, {}, {},
+          kMsgPluginsCapabilitiesPositionals, {}, false
+      },
   };
 
   inline constexpr std::array<std::string_view, 7> kMsgBarAutoHideSetStateChoices{"on",    "off", "smart", "true",
@@ -126,6 +142,28 @@ namespace noctalia::cli {
   };
   inline constexpr std::array kMsgClipboardCopyPositionals{
       Positional{"text", {}, {}, true, false, false},
+  };
+  // zynith: the history stays in the shell (encrypted at rest); other UIs read previews and pick entries.
+  inline constexpr std::array kMsgClipboardHistoryPositionals{
+      Positional{"limit", "Most recent entries to list (default 50)", {}, false, false, false},
+  };
+  inline constexpr std::array kMsgClipboardEntryPositionals{
+      Positional{"id", "Entry id from clipboard-history", {}, true, false, false},
+  };
+  // zynith: what the Zynith UI's clipboard and wallpaper browsers need
+  inline constexpr std::array<std::string_view, 2> kMsgOnOff{"on", "off"};
+  inline constexpr std::array kMsgClipboardPinPositionals{
+      Positional{"id", "Entry id from clipboard-history", {}, true, false, false},
+      Positional{"state", "on or off", kMsgOnOff, true, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgClipboardPasteKinds{"text", "image"};
+  inline constexpr std::array kMsgClipboardPastePositionals{
+      Positional{"kind", "text (default) or image", kMsgClipboardPasteKinds, false, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgFavoriteActions{"add", "remove"};
+  inline constexpr std::array kMsgWallpaperFavoritePositionals{
+      Positional{"action", {}, kMsgFavoriteActions, true, false, false},
+      Positional{"path", "Image path", {}, true, false, true},
   };
   inline constexpr std::array kMsgEffectsProfileSetPositionals{
       Positional{"kind", {}, kMsgEffectsProfileSetKindChoices, true, false, false},
@@ -228,6 +266,24 @@ namespace noctalia::cli {
   inline constexpr std::array kMsgWallpaperGetPositionals{
       Positional{"connector", {}, {}, false, false, false},
   };
+  // zynith: live wallpapers (shell/wallpaper/live).
+  inline constexpr std::array kMsgWallpaperLiveSetPositionals{
+      Positional{"workshop-id", "Wallpaper Engine Steam Workshop id", {}, true, false, false},
+  };
+  inline constexpr std::array<std::string_view, 2> kMsgWallpaperLiveListActions{"add", "remove"};
+  inline constexpr std::array kMsgWallpaperLiveListPositionals{
+      Positional{"action", {}, kMsgWallpaperLiveListActions, true, false, false},
+      Positional{"workshop-id", {}, {}, true, false, false},
+  };
+  // zynith: what another UI needs to show a live wallpaper list
+  inline constexpr std::array<std::string_view, 3> kMsgWallpaperLiveListSources{"collection", "favorites", "recent"};
+  inline constexpr std::array kMsgWallpaperLiveListItemsPositionals{
+      Positional{"source", "collection (default), favorites or recent", kMsgWallpaperLiveListSources, false, false, false},
+  };
+  inline constexpr std::array kMsgWallpaperLiveCarouselPositionals{
+      Positional{"state", "on or off, then optionally an interval in seconds and sequential|shuffle", {}, true,
+                 true, false},
+  };
   inline constexpr std::array kMsgWallpaperNextPositionals{
       Positional{"connector", {}, {}, false, false, false},
   };
@@ -236,6 +292,11 @@ namespace noctalia::cli {
   };
   inline constexpr std::array kMsgWallpaperRandomPositionals{
       Positional{"connector", {}, {}, false, false, false},
+  };
+  inline constexpr std::array kMsgWallpaperRevealPositionals{
+      Positional{"connector", {}, {}, true, false, false},
+      Positional{"x", "0..1 across the output", {}, true, false, false},
+      Positional{"y", "0..1 down the output", {}, true, false, false},
   };
   inline constexpr std::array kMsgWallpaperSetPositionals{
       Positional{"connector", {}, {}, false, false, false},
@@ -345,6 +406,98 @@ namespace noctalia::cli {
     inline constexpr Command clipboardClear{"clipboard-clear", "Clear clipboard history", {}, {}, {}, {}, {}, false};
     inline constexpr Command clipboardCopy{
         "clipboard-copy", "Copy text to the clipboard", {}, {}, {}, kMsgClipboardCopyPositionals, {}, false
+    };
+    inline constexpr Command clipboardHistory{
+        "clipboard-history",
+        "Print clipboard history as JSON: id, preview, mime, image, bytes, pinned, time (newest first)",
+        {},
+        {},
+        {},
+        kMsgClipboardHistoryPositionals,
+        {},
+        false
+    };
+    inline constexpr Command clipboardRemove{
+        "clipboard-remove", "Remove one entry from the clipboard history", {}, {}, {}, kMsgClipboardEntryPositionals,
+        {}, false
+    };
+    inline constexpr Command clipboardPin{
+        "clipboard-pin", "Pin or unpin a clipboard history entry", {}, {}, {}, kMsgClipboardPinPositionals, {}, false
+    };
+    inline constexpr Command clipboardImage{
+        "clipboard-image", "Print an image entry as a data URI (for a preview; refused above 8 MB)", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
+    };
+    inline constexpr Command screenTime{
+        "screen-time", "Print screen time as JSON: total, per app, per hour (today) or per day ([days])", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command chargeLimit{
+        "charge-limit", "Print the battery charge limit as JSON, or turn UPower's preset on|off", {}, {}, {}, {}, {},
+        false
+    };
+    inline constexpr Command brightnessStatus{
+        "brightness-status", "Print every display's brightness as JSON (id, label, value, controllable)", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command sysmonStats{
+        "sysmon-stats",
+        "Print the system monitor's sample as JSON; {\"gpu_temp\":true,\"gpu_usage\":true,\"gpu_vram\":true,"
+        "\"disks\":[\"/\"]} holds those on a lease renewed by each query",
+        {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command brightnessRescan{
+        "brightness-rescan", "Look for DDC/CI monitors again (with [brightness] enable_ddcutil)", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command settingsSchema{
+        "settings-schema", "Print the native settings registry as JSON: the sections, or one [section]'s settings", {},
+        {}, {}, {}, {}, false
+    };
+    inline constexpr Command settingsSet{
+        "settings-set", "Set one native setting: {\"path\": [...], \"value\": ...} (as the native Settings would)", {},
+        {}, {}, {}, {}, false
+    };
+    inline constexpr Command settingsReset{
+        "settings-reset", "Remove one native setting's override: {\"path\": [...]}", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command launcherProviders{
+        "launcher-providers", "Print the launcher's providers as JSON (built-in and plugin)", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command launcherQuery{
+        "launcher-query", "Query one launcher provider: <provider-id> <text>; prints its results as JSON", {}, {}, {},
+        {}, {}, false
+    };
+    inline constexpr Command launcherActivate{
+        "launcher-activate", "Activate a result: {\"provider\": id, \"result\": id, \"text\": query}", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command calendarEvents{
+        "calendar-events", "Print the synced calendar events of the next [days] (default 14) as JSON", {}, {}, {}, {},
+        {}, false
+    };
+    inline constexpr Command effectsStatus{
+        "effects-status", "Print the EasyEffects output and input profiles, and the active ones, as JSON", {}, {}, {},
+        {}, {}, false
+    };
+    inline constexpr Command clipboardEntryText{
+        "clipboard-entry-text", "Print up to 16 KB of a text entry, for a preview of the selected entry", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
+    };
+    inline constexpr Command clipboardPaste{
+        "clipboard-paste", "Paste the clipboard into the focused window, as [shell] clipboard_auto_paste says", {}, {},
+        {}, kMsgClipboardPastePositionals, {}, false
+    };
+    inline constexpr Command clipboardSelect{
+        "clipboard-select", "Copy a clipboard history entry back to the clipboard", {}, {}, {},
+        kMsgClipboardEntryPositionals, {}, false
+    };
+    inline constexpr Command surfacesSync{
+        "surfaces-sync", "Re-read ~/.config/zynith/zynith.toml [surfaces] and hand surfaces to or from the Zynith UI",
+        {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command weatherStatus{
+        "weather-status", "Print the current weather and forecast as JSON (what the shell already fetched)", {}, {}, {},
+        {}, {}, false
     };
     inline constexpr Command clipboardText{
         "clipboard-text",
@@ -612,7 +765,7 @@ namespace noctalia::cli {
     };
     inline constexpr Command plugins{
         "plugins",
-        "Manage plugins and sources (list/enable/disable/update, source list/add/remove)",
+        "Manage plugins, sources and capabilities (list/enable/disable/update, source …, grant/revoke/capabilities)",
         {},
         {},
         {},
@@ -765,6 +918,49 @@ namespace noctalia::cli {
         {},
         false
     };
+    inline constexpr Command wallpaperFavorites{
+        "wallpaper-favorites", "Print the favourite static wallpapers as a JSON array of paths", {}, {}, {}, {}, {},
+        false
+    };
+    inline constexpr Command wallpaperFavorite{
+        "wallpaper-favorite", "Add or remove a static wallpaper in the favourites", {}, {}, {},
+        kMsgWallpaperFavoritePositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveLibrary{
+        "wallpaper-live-library",
+        "Print the live wallpaper library as JSON: every installed item, the favourites, collection and recent lists",
+        {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command wallpaperLiveCarousel{
+        "wallpaper-live-carousel", "Cycle the live wallpaper collection: on|off [seconds] [sequential|shuffle]",
+        {}, {}, {}, kMsgWallpaperLiveCarouselPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveCollection{
+        "wallpaper-live-collection", "Add or remove a Wallpaper Engine item in the live collection", {}, {}, {},
+        kMsgWallpaperLiveListPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveFavorite{
+        "wallpaper-live-favorite", "Add or remove a Wallpaper Engine item in the live favorites", {}, {}, {},
+        kMsgWallpaperLiveListPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveList{
+        "wallpaper-live-list", "Print a live wallpaper list as JSON: id, title, kind, preview, favorite, current", {}, {},
+        {}, kMsgWallpaperLiveListItemsPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveNext{
+        "wallpaper-live-next", "Switch to the next wallpaper of the live collection now", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command wallpaperLiveSet{
+        "wallpaper-live-set", "Show a Wallpaper Engine wallpaper as the live wallpaper", {}, {}, {},
+        kMsgWallpaperLiveSetPositionals, {}, false
+    };
+    inline constexpr Command wallpaperLiveStatus{
+        "wallpaper-live-status", "Print live wallpaper state as JSON", {}, {}, {}, {}, {}, false
+    };
+    inline constexpr Command wallpaperLiveStop{
+        "wallpaper-live-stop", "Stop the live wallpaper and return to the static wallpaper", {}, {}, {}, {}, {},
+        false
+    };
     inline constexpr Command wallpaperRandom{"wallpaper-random",
                                              "Switch to a random wallpaper immediately",
                                              {},
@@ -773,6 +969,11 @@ namespace noctalia::cli {
                                              kMsgWallpaperRandomPositionals,
                                              {},
                                              false};
+    // zynith: the next wallpaper change on an output grows out of a point (where it was chosen)
+    inline constexpr Command wallpaperReveal{
+        "wallpaper-reveal", "Make the next wallpaper change on an output a disc growing from x, y (0..1)", {}, {}, {},
+        kMsgWallpaperRevealPositionals, {}, false
+    };
     inline constexpr Command wallpaperSet{
         "wallpaper-set",
         "Set wallpaper for all or a specific output (persisted)",
@@ -858,7 +1059,29 @@ namespace noctalia::cli {
       msg::caffeineToggle,
       msg::clipboardClear,
       msg::clipboardCopy,
+      msg::clipboardHistory,
+      msg::clipboardRemove,
+      msg::clipboardSelect,
+      msg::clipboardPin,
+      msg::clipboardImage,
+      msg::clipboardPaste,
+      msg::clipboardEntryText,
+      msg::screenTime,
+      msg::chargeLimit,
+      msg::brightnessStatus,
+      msg::brightnessRescan,
+      msg::sysmonStats,
+      msg::settingsSchema,
+      msg::settingsSet,
+      msg::settingsReset,
+      msg::launcherProviders,
+      msg::launcherQuery,
+      msg::launcherActivate,
+      msg::calendarEvents,
+      msg::effectsStatus,
       msg::clipboardText,
+      msg::surfacesSync,
+      msg::weatherStatus,
       msg::colorSchemeGet,
       msg::colorSchemeSet,
       msg::controlCenterStyleSet,
@@ -939,9 +1162,21 @@ namespace noctalia::cli {
       msg::volumeSet,
       msg::volumeUp,
       msg::wallpaperGet,
+      msg::wallpaperFavorites,
+      msg::wallpaperFavorite,
+      msg::wallpaperLiveLibrary,
+      msg::wallpaperLiveCarousel,
+      msg::wallpaperLiveCollection,
+      msg::wallpaperLiveFavorite,
+      msg::wallpaperLiveList,
+      msg::wallpaperLiveNext,
+      msg::wallpaperLiveSet,
+      msg::wallpaperLiveStatus,
+      msg::wallpaperLiveStop,
       msg::wallpaperNext,
       msg::wallpaperPrevious,
       msg::wallpaperRandom,
+      msg::wallpaperReveal,
       msg::wallpaperSet,
       msg::wifiDisable,
       msg::wifiEnable,

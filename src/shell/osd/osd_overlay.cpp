@@ -18,6 +18,10 @@
 #include "ui/style.h"
 #include "wayland/surface.h"
 #include "wayland/wayland_connection.h"
+#include "zynith/surfaces.h"
+#include "zynith/ui_events.h"
+
+#include <nlohmann/json.hpp>
 #include "shell/surface/surface_role.h"
 
 #include <algorithm>
@@ -172,6 +176,41 @@ namespace {
     }
   }
 
+  // zynith: the names the Zynith UI receives
+  [[nodiscard]] const char* osdKindName(OsdKind kind) {
+    switch (kind) {
+    case OsdKind::Volume:
+      return "volume";
+    case OsdKind::Microphone:
+      return "microphone";
+    case OsdKind::Brightness:
+      return "brightness";
+    case OsdKind::Wifi:
+      return "wifi";
+    case OsdKind::Bluetooth:
+      return "bluetooth";
+    case OsdKind::PowerProfile:
+      return "power-profile";
+    case OsdKind::Caffeine:
+      return "caffeine";
+    case OsdKind::NightLight:
+      return "nightlight";
+    case OsdKind::Dnd:
+      return "dnd";
+    case OsdKind::LockKeys:
+      return "lock-keys";
+    case OsdKind::KeyboardLayout:
+      return "keyboard-layout";
+    case OsdKind::Media:
+      return "media";
+    case OsdKind::Privacy:
+      return "privacy";
+    case OsdKind::KeyboardBacklight:
+      return "keyboard-backlight";
+    }
+    return "other";
+  }
+
   [[nodiscard]] float iconDiscSize(float s) { return Style::controlHeight * 1.2F * s; }
 
   [[nodiscard]] std::uint32_t osdSurfaceWidth(float s, const std::string& orientation, float innerPadX) {
@@ -309,6 +348,23 @@ void OsdOverlay::requestLayout() {
 }
 
 void OsdOverlay::show(const OsdContent& content) {
+  // zynith: when the Zynith UI draws the OSD, it gets what this would have shown, kind filters included
+  if (zynith::uiOwns("osd")) {
+    if (m_config == nullptr || isOsdKindEnabled(m_config->config().osd.kinds, content.kind)) {
+      const nlohmann::json event{
+          {"kind", osdKindName(content.kind)},
+          {"title", osdTitle(content.kind)},
+          {"icon", content.icon},
+          {"value", content.value},
+          {"progress", content.progress},
+          {"showProgress", content.showProgress},
+          {"overLimit", content.overLimit},
+          {"inactive", content.inactive},
+      };
+      zynith::notifyUi("osd", event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace));
+    }
+    return;
+  }
   if (m_wayland == nullptr || m_renderContext == nullptr) {
     return;
   }

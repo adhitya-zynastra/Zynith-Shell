@@ -1,4 +1,7 @@
 #include "shell/launcher/launcher_panel.h"
+#include "zynith/ui_events.h"
+
+#include <nlohmann/json.hpp>
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
@@ -1642,6 +1645,8 @@ void LauncherPanel::setQuery(std::string query) {
 }
 
 void LauncherPanel::onProviderResultsChanged() {
+  // zynith: the Zynith launcher may be the one showing these results
+  (void)zynith::notifyUi("launcher");
   // Only re-gather while the panel is open and built; after onClose the scene
   // nodes are gone and a refresh would touch null grid/label pointers.
   if (m_input == nullptr) {
@@ -2452,4 +2457,67 @@ bool LauncherPanel::handleKeyEvent(std::uint32_t sym, std::uint32_t modifiers) {
   }
 
   return false;
+}
+
+// ── zynith: providers for the Zynith launcher ───────────────────────────────────────────────────────────
+
+std::string LauncherPanel::zynithProvidersJson() const {
+  nlohmann::json out = nlohmann::json::array();
+  for (const auto& p : m_providers) {
+    out.push_back({
+        {"id", std::string(p->id())},
+        {"name", p->displayName()},
+        {"prefix", std::string(p->prefix())},
+        {"glyph", std::string(p->defaultGlyphName())},
+        {"global", p->includeInGlobalSearch()},
+        {"copies", p->supportsAutoPaste()},
+        {"dynamic", p->isDynamic()},
+    });
+  }
+  return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+}
+
+std::string LauncherPanel::zynithQueryJson(std::string_view providerId, std::string_view text) const {
+  nlohmann::json out = nlohmann::json::array();
+  for (const auto& p : m_providers) {
+    if (p->id() != providerId) {
+      continue;
+    }
+    const auto results = p->queryPrefixed(text);
+    for (std::size_t i = 0; i < results.size() && i < 60; ++i) {
+      const auto& r = results[i];
+      out.push_back({
+          {"id", r.id},
+          {"title", r.title},
+          {"subtitle", r.subtitle},
+          {"glyph", r.glyphName},
+          {"icon", r.iconName},
+          {"iconPath", r.iconPath},
+          {"badge", r.badge},
+          {"origin", r.origin},
+          {"category", r.category},
+          {"score", r.score},
+      });
+    }
+    break;
+  }
+  return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+}
+
+std::string LauncherPanel::zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text) {
+  for (const auto& p : m_providers) {
+    if (p->id() != providerId) {
+      continue;
+    }
+    for (const auto& r : p->queryPrefixed(text)) {
+      if (r.id == resultId) {
+        if (!p->activate(r)) {
+          return "error: not activated\n";
+        }
+        return p->supportsAutoPaste() ? "ok copied\n" : "ok\n";
+      }
+    }
+    return "error: no such result\n";
+  }
+  return "error: no such provider\n";
 }

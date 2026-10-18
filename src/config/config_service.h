@@ -89,6 +89,13 @@ public:
   [[nodiscard]] std::string getDefaultWallpaperPath() const;
   // Last applied wallpaper, else default. Drives palette generation and template previews.
   [[nodiscard]] std::string getPaletteWallpaperPath() const;
+  // zynith: runtime-only palette source, never persisted. While a live wallpaper is on screen the palette,
+  // theme templates and wallpaper hooks follow the live item's preview image instead of the static
+  // wallpaper (see shell/wallpaper/live/live_wallpaper_controller.cpp). An empty path clears it. When the
+  // effective palette path changes, the wallpaper-change callback fires exactly as it does for a static
+  // wallpaper change, so every palette consumer updates through its usual path.
+  void setPaletteSourceOverride(const std::string& path);
+  [[nodiscard]] const std::string& paletteSourceOverride() const noexcept { return m_paletteSourceOverride; }
   // Greeter sync fallback when no monitor-specific path is chosen.
   [[nodiscard]] std::string getGreeterSyncWallpaperPath() const;
   void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
@@ -261,6 +268,7 @@ private:
   std::unordered_set<std::string> m_configFileCalendarAccountNames;
   std::string m_defaultWallpaperPath;
   std::string m_lastWallpaperPath;
+  std::string m_paletteSourceOverride; // zynith: live wallpaper preview, runtime only
   std::unordered_map<std::string, std::string> m_monitorWallpaperPaths;
   std::vector<WallpaperFavorite> m_wallpaperFavorites;
   mutable std::unordered_map<std::string, bool> m_effectiveOverrideCache;

@@ -395,6 +395,42 @@ namespace noctalia::theme {
     });
   }
 
+  std::string ThemeService::wallpaperScheme() const { return m_config.config().theme.wallpaperScheme; }
+
+  std::optional<ThemeService::PrimedWallpaperPalette>
+  ThemeService::computeWallpaperPalette(const std::string& path, const std::string& schemeName) {
+    const auto scheme = schemeFromString(schemeName).value_or(Scheme::Content);
+    std::error_code ec;
+    const auto writeTime = std::filesystem::last_write_time(path, ec);
+    if (ec) {
+      return std::nullopt;
+    }
+    auto image = loadAndResize(path, scheme);
+    if (!image) {
+      return std::nullopt;
+    }
+    auto generated = generate(image->rgb, scheme);
+    if (!generated) {
+      return std::nullopt;
+    }
+    return PrimedWallpaperPalette{
+        .path = path,
+        .scheme = schemeName,
+        .mtimeNs = writeTime.time_since_epoch().count(),
+        .generated = std::move(*generated),
+    };
+  }
+
+  void ThemeService::primeWallpaperPalette(PrimedWallpaperPalette primed) {
+    if (primed.mtimeNs == 0) {
+      return;
+    }
+    m_wallpaperCacheGenerated = std::move(primed.generated);
+    m_wallpaperCachePath = std::move(primed.path);
+    m_wallpaperCacheScheme = std::move(primed.scheme);
+    m_wallpaperCacheMtimeNs = primed.mtimeNs;
+  }
+
   std::optional<GeneratedPalette>
   ThemeService::resolveWallpaperGenerated(const ThemeConfig& cfg, const std::string& wallpaperPath) {
     if (wallpaperPath.empty()) {
@@ -419,8 +455,11 @@ namespace noctalia::theme {
         && m_wallpaperCachePath == wallpaperPath
         && m_wallpaperCacheScheme == cfg.wallpaperScheme
         && m_wallpaperCacheMtimeNs == mtimeNs) {
+      kLog.info("palette from {} (ready)", wallpaperPath);
       return m_wallpaperCacheGenerated;
     }
+    // zynith: decoding here blocks the main loop; a wallpaper change normally arrives with it done (WallpaperPreload)
+    kLog.info("palette from {} (decoding on the main thread)", wallpaperPath);
 
     profiling::StopWatch loadWatch;
     auto image = loadAndResize(wallpaperPath, *scheme);

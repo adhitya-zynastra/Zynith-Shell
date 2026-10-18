@@ -1,4 +1,6 @@
 #include "shell/panel/panel_manager.h"
+#include "zynith/surfaces.h"
+#include "zynith/ui_events.h"
 
 #include "capture/screencopy_capture.h"
 #include "capture/screencopy_util.h"
@@ -541,7 +543,35 @@ void PanelManager::unregisterPanel(const std::string& id) {
   m_panels.erase(it);
 }
 
+namespace {
+  // zynith: a panel whose surface the Zynith UI draws (zynith.toml [surfaces]) is handed to it, whatever
+  // asked for it here (a hot corner, a native keybinding, IPC): the UI opens its own instead.
+  bool forwardToZynith(const std::string& panelId, std::string_view context, bool toggle) {
+    std::string_view surface;
+    if (panelId == "control-center") {
+      surface = "control_center";
+    } else if (panelId == "launcher" || panelId == "wallpaper" || panelId == "clipboard" || panelId == "session") {
+      surface = panelId;
+    } else {
+      return false;
+    }
+    if (!zynith::uiOwns(surface)) {
+      return false;
+    }
+    std::string payload = std::string(toggle ? "toggle " : "open ") + panelId;
+    if (!context.empty()) {
+      payload += " ";
+      payload += context;
+    }
+    // the UI is not running: the native panel opens as before
+    return zynith::notifyUi("panel", payload);
+  }
+} // namespace
+
 void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest request) {
+  if (forwardToZynith(panelId, request.context, false)) {
+    return;
+  }
   if (m_inTransition) {
     return;
   }
@@ -1567,6 +1597,9 @@ void PanelManager::destroyPanel() {
 }
 
 void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest request) {
+  if (forwardToZynith(panelId, request.context, true)) {
+    return;
+  }
   if (m_persistentHost.hasPanel(panelId)) {
     if (m_persistentHost.isOpen(panelId)) {
       m_persistentHost.close(panelId);
@@ -1601,6 +1634,9 @@ void PanelManager::togglePanel(const std::string& panelId, PanelOpenRequest requ
 }
 
 void PanelManager::togglePanel(const std::string& panelId) {
+  if (forwardToZynith(panelId, {}, true)) {
+    return;
+  }
   if (m_persistentHost.hasPanel(panelId)) {
     if (m_persistentHost.isOpen(panelId)) {
       m_persistentHost.close(panelId);

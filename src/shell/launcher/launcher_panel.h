@@ -49,6 +49,13 @@ public:
   void clearUsage();
   void syncUsageTrackingState();
 
+  // zynith: the providers and their results for the Zynith launcher (launcher-providers, -query, -activate).
+  // A provider queried this way answers as it would here; an async one says when fresh results land
+  // (event launcher), and the UI asks again.
+  [[nodiscard]] std::string zynithProvidersJson() const;
+  [[nodiscard]] std::string zynithQueryJson(std::string_view providerId, std::string_view text) const;
+  [[nodiscard]] std::string zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text);
+
   // Invoked after a terminal close when the activation copied text and the provider
   // supports auto-paste. The host schedules virtual-keyboard paste (clipboard path).
   void setCopiedActivationCallback(std::function<void()> callback) { m_onCopiedActivation = std::move(callback); }

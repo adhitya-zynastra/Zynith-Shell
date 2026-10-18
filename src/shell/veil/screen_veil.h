@@ -14,12 +14,14 @@
 #include "config/config_types.h"
 #include "render/animation/animation.h"
 #include "render/animation/animation_manager.h"
+#include "render/animation/motion_role.h"
 #include "render/core/blur_cache.h"
 #include "render/core/color.h"
 #include "render/core/texture_manager.h"
 #include "render/scene/node.h"
 #include "wayland/layer_surface.h"
 
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -60,6 +62,11 @@ public:
 
   // Fade the whole veil. Base duration: divided by [shell.animation] speed like every shell fade.
   void fadeTo(float opacity, float durationMs, Easing easing, std::function<void()> onDone = {});
+  // zynith: fade out with a motion role, starting on the first frame the compositor asks this surface for —
+  // i.e. once it is actually on screen — not now. Animation progress is wall-clock based, so a fade started
+  // before the compositor presents the surface (the unlock veil is created while the session is still
+  // locked and hidden) would show its first frame already part-way through.
+  void fadeOutOnPresent(motion::Role role, std::function<void()> onDone = {});
 
   // True once the veil has prepared a frame with its content (safe to reveal things under it).
   [[nodiscard]] bool ready() const noexcept { return m_ready; }
@@ -67,6 +74,19 @@ public:
 
 private:
   bool create(wl_output* output, const Style& style, float initialOpacity);
+  struct PendingFade {
+    motion::Role role;
+    std::function<void()> onDone;
+    std::chrono::steady_clock::time_point requestedAt;
+  };
+  std::optional<PendingFade> m_pendingFade;
+  // After the fade completes the veil must first present a frame at opacity 0 (confirmed by the next frame
+  // callback) before its owner may destroy it; destroying on the animation's completion alone removed a veil
+  // whose last presented frame was still half opaque (measured 2026-09-27: a ~50 % jump at the end).
+  std::function<void()> m_finishAfterPresent;
+  int m_finishFramesLeft = 0;
+  int m_fadeFrames = 0;
+  std::chrono::steady_clock::time_point m_fadeStartedAt{};
   void prepareFrame(bool needsUpdate, bool needsLayout);
   void applyContent();
   void releaseTextures();

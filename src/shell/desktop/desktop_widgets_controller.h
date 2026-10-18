@@ -67,6 +67,10 @@ public:
   void toggleRuntimeVisibility();
   [[nodiscard]] bool isEffectivelyVisible() const noexcept;
 
+  /// zynith: re-reads who draws the desktop widgets ([surfaces] desktop_widgets in zynith.toml). While the
+  /// Zynith UI draws them, this shell shows none of its own (and holds no spectrum listener for them).
+  void syncOwnership() { applyVisibility(); }
+
   [[nodiscard]] bool isEditing() const noexcept;
   [[nodiscard]] std::optional<LayerPopupParentContext> popupParentContextForSurface(wl_surface* surface) const;
   [[nodiscard]] std::optional<LayerPopupParentContext> fallbackPopupParentContext() const;

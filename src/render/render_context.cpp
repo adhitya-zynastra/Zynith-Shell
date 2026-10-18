@@ -556,6 +556,7 @@ void RenderContext::renderNode(
               .fillColor = wallpaper->fillColor(),
               .transform = worldTransform,
               .span = wallpaper->spanParams(),
+              .opacity = effectiveOpacity,
           }
       );
     }

@@ -88,4 +88,8 @@ struct WallpaperDrawParams {
   Color fillColor = rgba(0.0F, 0.0F, 0.0F, 1.0F);
   Mat3 transform = Mat3::identity();
   WallpaperSpanParams span{};
+  // zynith: node opacity (parent chain included). Wallpaper nodes used to ignore it, so a ScreenVeil — a
+  // WallpaperNode under a tint — faded only its tint and the image vanished in one step when the veil was
+  // destroyed: the unlock "pop-in". 1 = the unchanged opaque path.
+  float opacity = 1.0F;
 };

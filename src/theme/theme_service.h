@@ -49,6 +49,21 @@ namespace noctalia::theme {
 
     void registerIpc(IpcService& ipc);
 
+    // zynith: a wallpaper palette computed off the main thread. wallpaperScheme() is read on the main thread when
+    // the work is handed out; computeWallpaperPalette() is pure (decode, resize, generate) and safe on any thread;
+    // primeWallpaperPalette() (main thread) stores its result where resolveWallpaperGenerated() looks first, so the
+    // wallpaper change that follows resolves without decoding anything.
+    struct PrimedWallpaperPalette {
+      std::string path;
+      std::string scheme;
+      std::int64_t mtimeNs = 0;
+      GeneratedPalette generated;
+    };
+    [[nodiscard]] std::string wallpaperScheme() const;
+    [[nodiscard]] static std::optional<PrimedWallpaperPalette>
+    computeWallpaperPalette(const std::string& path, const std::string& scheme);
+    void primeWallpaperPalette(PrimedWallpaperPalette primed);
+
     // Writes the current wallpaper-generated palette to ~/.config/noctalia/palettes/
     // and switches palette source to custom.
     [[nodiscard]] bool saveWallpaperPaletteAsCustom(std::string* paletteNameOut, std::string* errorOut = nullptr);

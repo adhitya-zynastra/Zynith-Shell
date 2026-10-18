@@ -57,6 +57,9 @@ namespace noctalia::theme {
       bool force = false; // an explicit re-apply: every hook re-runs even for unchanged outputs
     };
 
+    // zynith: the user's hookless templates (the Zynith UI's palette among them), rendered on the caller's thread
+    // the moment a request is accepted, so they never wait for the worker's hooks or community templates
+    void renderHooklessUserTemplates(const ApplyRequest& request) const;
     [[nodiscard]] bool reapplyLast() const;
     [[nodiscard]] ApplyRequest makeRequest(const GeneratedPalette& palette, std::string_view defaultMode) const;
     [[nodiscard]] static bool sameInputs(const ApplyRequest& a, const ApplyRequest& b);

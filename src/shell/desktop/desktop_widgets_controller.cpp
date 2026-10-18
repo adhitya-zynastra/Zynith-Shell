@@ -8,6 +8,7 @@
 #include "shell/desktop/editor/desktop_widgets_editor.h"
 #include "shell/desktop/editor/desktop_widgets_editor_types.h"
 #include "shell/lockscreen/lockscreen_widgets_controller.h"
+#include "zynith/surfaces.h"
 
 #include <algorithm>
 #include <charconv>
@@ -155,6 +156,10 @@ void DesktopWidgetsController::registerIpc(IpcService& ipc) {
 }
 
 bool DesktopWidgetsController::runtimeWantsVisible() const noexcept {
+  // zynith: the Zynith UI draws the desktop widgets; this shell's own would be a second, hidden copy
+  if (zynith::uiOwns("desktop_widgets")) {
+    return false;
+  }
   switch (m_runtimeVisibility) {
   case RuntimeVisibility::ForceShown:
     return true;
@@ -326,6 +331,9 @@ void DesktopWidgetsController::enterEdit() {
   }
   if (m_config != nullptr && !m_config->config().desktopWidgets.enabled) {
     return;
+  }
+  if (zynith::uiOwns("desktop_widgets")) {
+    return; // the Zynith UI has its own editor
   }
   if (m_onEnterEdit) {
     m_onEnterEdit();

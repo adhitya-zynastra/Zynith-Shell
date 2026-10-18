@@ -59,7 +59,9 @@
 #include "shell/switcher/window_switcher.h"
 #include "shell/tray/tray_menu.h"
 #include "shell/wallpaper/panel/wallpaper_scanner.h"
+#include "shell/wallpaper/live/live_wallpaper_controller.h"
 #include "shell/wallpaper/wallpaper.h"
+#include "shell/wallpaper/wallpaper_state.h"
 #include "system/battery_warning_monitor.h"
 #include "system/dependency_service.h"
 #include "system/desktop_entry_poll_source.h"
@@ -91,6 +93,7 @@
 #include "wayland/virtual_keyboard_service.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/workspace_poll_source.h"
+#include "zynith/wallpaper_preload.h"
 
 #include <atomic>
 #include <cstdint>
@@ -175,6 +178,11 @@ private:
   void initUi();
   // Sub-phases of initUi(), called in order.
   void initUiRenderSurfacesAndSettings();
+  // zynith: brings the render context, backdrop and wallpaper up (idempotent) and, the first time, presents
+  // the wallpaper before the rest of startup runs. See application_services.cpp.
+  void initBackgroundRendering();
+  void paintEarlyBackground();
+  bool m_backgroundRenderingInitialized = false;
   void initLockScreenAndSession();
   void initInputDispatch();
   void initPanelManagerAndPanels();
@@ -211,6 +219,10 @@ private:
   void syncScreenTimeService();
   void performGreeterSync(bool quiet = false);
   void scheduleGreeterAutoSync();
+  // zynith: a wallpaper change decodes off the main thread first (startWallpaperPreload, false when there is
+  // nothing to decode), then runs every consumer at once (runWallpaperChange)
+  bool startWallpaperPreload();
+  void runWallpaperChange();
   bool runShellCommandBlocking(const std::string& command);
   bool runIdleAction(const IdleActionRequest& action);
   void onIconThemeChanged();
@@ -345,7 +357,14 @@ private:
   ScreenCorners m_screenCorners;
   TrayMenu m_trayMenu;
   Wallpaper m_wallpaper;
+  // zynith: live wallpapers. Declared after m_wallpaper so it is destroyed first (it releases outputs
+  // back to the static backend and terminates the renderer).
+  LiveWallpaperController m_liveWallpaper;
   Backdrop m_backdrop;
+  // zynith: one wallpaper state for desktop, overview, lock and palette. Declared after the views it
+  // drives, so it is destroyed (and disconnected) before any of them.
+  WallpaperState m_wallpaperState;
+  Signal<>::ScopedConnection m_wallpaperStateConn;
   SettingsWindow m_settingsWindow;
   LayerPopupHostRegistry m_layerPopupHosts;
   ColorPickerDialogPopup m_colorPickerDialogPopup;
@@ -389,6 +408,11 @@ private:
   Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;
   Timer m_launcherAutoPasteTimer;
+  // zynith: metrics the UI asked sysmon-stats for, held until a lease (renewed by each query) runs out
+  std::unordered_map<std::string, std::chrono::steady_clock::time_point> m_sysmonLeases;
+  Timer m_sysmonLeaseTimer;
+  void sysmonLease(const std::string& key);
+  void sysmonExpireLeases();
   Timer m_pluginAutoUpdateTimer;
   Timer m_pluginAutoUpdateStartTimer; // one-shot: the first background check, a few minutes after startup
   std::unordered_set<std::string> m_notifiedPluginUpdates; // "source:author/plugin version" already announced
@@ -396,6 +420,11 @@ private:
   std::uint64_t m_greeterSyncGeneration = 0;
   int m_graphicsRecoveryAttempts = 0;
   bool m_graphicsRecoveryScheduled = false;
+  // zynith: last, so it is destroyed first (its worker thread delivers into the members above)
+  zynith::WallpaperPreload m_wallpaperPreload{[this](zynith::WallpaperPreload::Result result) {
+    onWallpaperPreloaded(std::move(result));
+  }};
+  void onWallpaperPreloaded(zynith::WallpaperPreload::Result result);
 
   std::unique_ptr<MainLoop> m_mainLoop;
 };

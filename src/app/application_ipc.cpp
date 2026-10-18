@@ -1,3 +1,5 @@
+#include "zynith/settings_bridge.h"
+#include "zynith/surfaces.h"
 #include "app/main_loop.h"
 #include "application.h"
 #include "application_internal.h"
@@ -58,6 +60,7 @@
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
 #include "render/text/font_weight_catalog.h"
+#include "scripting/plugin_capabilities.h"
 #include "scripting/plugin_ipc.h"
 #include "scripting/plugin_manifest.h"
 #include "scripting/plugin_panel_shell.h"
@@ -94,6 +97,7 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -135,6 +139,13 @@ void Application::initIpc() {
         json += panelOpen ? ("\"" + m_panelManager.activePanelId() + "\"") : "null";
         json += ",\n  \"locked\": ";
         json += m_lockScreen.isActive() ? "true" : "false";
+        // zynith: toggles another UI shows while the shell still owns them
+        json += std::format(
+            ",\n  \"caffeine\": {},\n  \"nightlight\": {{\"enabled\": {}, \"forced\": {}, \"active\": {}}},\n  \"dnd\": {}",
+            m_idleInhibitor.enabled() ? "true" : "false", m_gammaService.enabled() ? "true" : "false",
+            m_gammaService.forceEnabled() ? "true" : "false", m_gammaService.active() ? "true" : "false",
+            m_notificationManager.doNotDisturb() ? "true" : "false"
+        );
         // The shell is non-dumpable, so /proc/<pid>/fd is root-owned from outside: report our own resources.
         const auto res = security::readSelfResources();
         json += std::format(
@@ -413,6 +424,482 @@ void Application::initIpc() {
       return "error: failed to set the clipboard selection\n";
     }
     return "ok\n";
+  });
+
+  // zynith: previews only; a full payload leaves the shell only by being put back on the clipboard.
+  m_ipcService.bind(noctalia::cli::msg::clipboardHistory, [this](const std::string& args) -> std::string {
+    std::size_t limit = 50;
+    if (!args.empty()) {
+      try {
+        limit = static_cast<std::size_t>(std::clamp(std::stoi(args), 1, 500));
+      } catch (const std::exception&) {
+        return "error: clipboard-history [limit] expects a number\n";
+      }
+    }
+    nlohmann::json out = nlohmann::json::array();
+    for (const ClipboardEntry& entry : m_clipboardService.history()) {
+      if (out.size() >= limit) {
+        break;
+      }
+      std::string preview = entry.textPreview;
+      if (preview.size() > 240) {
+        std::size_t cut = 240;
+        while (cut > 0 && (static_cast<unsigned char>(preview[cut]) & 0xC0) == 0x80) {
+          --cut;
+        }
+        preview.resize(cut);
+      }
+      out.push_back({
+          {"id", entry.storageId},
+          {"preview", preview},
+          {"mime", entry.dataMimeType},
+          {"image", entry.isImage()},
+          {"bytes", entry.byteSize},
+          {"pinned", entry.pinned},
+          {"time",
+           std::chrono::duration_cast<std::chrono::milliseconds>(entry.capturedAt.time_since_epoch()).count()},
+      });
+    }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  const auto historyIndex = [this](const std::string& id) -> std::optional<std::size_t> {
+    const auto& history = m_clipboardService.history();
+    for (std::size_t i = 0; i < history.size(); ++i) {
+      if (history[i].storageId == id) {
+        return i;
+      }
+    }
+    return std::nullopt;
+  };
+
+  m_ipcService.bind(noctalia::cli::msg::clipboardSelect, [this, historyIndex](const std::string& args) -> std::string {
+    const auto index = historyIndex(args);
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    return m_clipboardService.promoteEntry(*index) ? "ok\n" : "error: failed to set the clipboard selection\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::clipboardRemove, [this, historyIndex](const std::string& args) -> std::string {
+    const auto index = historyIndex(args);
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::clipboardPin, [this, historyIndex](const std::string& args) -> std::string {
+    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+    if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
+      return "error: usage: clipboard-pin <id> <on|off>\n";
+    }
+    const auto index = historyIndex(std::string(tokens[0]));
+    if (!index) {
+      return "error: no clipboard entry " + std::string(tokens[0]) + "\n";
+    }
+    return m_clipboardService.setEntryPinned(*index, tokens[1] == "on") ? "ok\n" : "error: entry not changed\n";
+  });
+
+  // zynith: one image at a time, for the entry the UI has selected; nothing is written to disk
+  m_ipcService.bind(noctalia::cli::msg::clipboardImage, [this, historyIndex](const std::string& args) -> std::string {
+    constexpr std::size_t kMaxPreviewBytes = 8U * 1024U * 1024U;
+    const auto index = historyIndex(StringUtils::trim(args));
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    const ClipboardEntry& entry = m_clipboardService.history()[*index];
+    if (!entry.isImage()) {
+      return "error: not an image\n";
+    }
+    if (entry.byteSize > kMaxPreviewBytes) {
+      return "error: too large for a preview\n";
+    }
+    auto uri = m_clipboardService.imageDataUri(*index);
+    if (!uri.has_value()) {
+      return "error: image unavailable\n";
+    }
+    // the service labels every payload octet-stream; image decoders want the real type
+    constexpr std::string_view kGeneric = "data:application/octet-stream;";
+    if (uri->starts_with(kGeneric) && entry.dataMimeType.starts_with("image/")) {
+      uri->replace(0, kGeneric.size(), "data:" + entry.dataMimeType + ";");
+    }
+    if (!m_panelManager.isOpenPanel("clipboard")) {
+      m_clipboardService.evictEntryPayload(*index);
+    }
+    return *uri + "\n";
+  });
+
+  // zynith: the selected text entry, whole up to 16 KB, for the preview pane; nothing else leaves
+  m_ipcService.bind(noctalia::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
+    constexpr std::size_t kMaxPreviewText = 16U * 1024U;
+    const auto index = historyIndex(StringUtils::trim(args));
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    if (m_clipboardService.history()[*index].isImage()) {
+      return "error: not text\n";
+    }
+    if (!m_clipboardService.ensureEntryLoaded(*index)) {
+      return "error: entry unavailable\n";
+    }
+    const ClipboardEntry& entry = m_clipboardService.history()[*index];
+    std::string text(entry.data.begin(), entry.data.end());
+    if (text.size() > kMaxPreviewText) {
+      std::size_t cut = kMaxPreviewText;
+      while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
+        --cut;
+      }
+      text.resize(cut);
+    }
+    if (!m_panelManager.isOpenPanel("clipboard")) {
+      m_clipboardService.evictEntryPayload(*index);
+    }
+    return text;
+  });
+
+  // zynith: what the Control Panel's screen-time module shows
+  m_ipcService.bind(noctalia::cli::msg::screenTime, [this](const std::string& args) -> std::string {
+    int days = 1;
+    try {
+      if (!StringUtils::trim(args).empty()) {
+        days = std::clamp(std::stoi(StringUtils::trim(args)), 1, 30);
+      }
+    } catch (const std::exception&) {
+      return "error: screen-time [days]\n";
+    }
+    const ScreenTimeSnapshot snap = m_screenTimeService.snapshot(days);
+    nlohmann::json apps = nlohmann::json::array();
+    for (const auto& a : snap.apps) {
+      apps.push_back({{"key", a.appKey}, {"name", a.displayName}, {"seconds", a.total.count()}});
+    }
+    nlohmann::json buckets = nlohmann::json::array();
+    for (const auto& b : snap.buckets) {
+      buckets.push_back(b.count());
+    }
+    const nlohmann::json out{
+        {"enabled", m_screenTimeService.enabled()},
+        {"days", snap.rangeDays},
+        {"hourly", snap.hourlyBuckets},
+        {"total", snap.total.count()},
+        {"apps", apps},
+        {"buckets", buckets},
+        {"labels", snap.bucketLabels},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the battery's charge limit (UPower's preset), for the Control Panel's power module
+  m_ipcService.bind(noctalia::cli::msg::chargeLimit, [this](const std::string& args) -> std::string {
+    if (m_upowerService == nullptr) {
+      return "error: no UPower\n";
+    }
+    const UPowerDeviceInfo* battery = m_upowerService->defaultSystemBattery();
+    if (battery == nullptr) {
+      return "error: no battery\n";
+    }
+    const std::string arg = StringUtils::trim(args);
+    if (arg == "on" || arg == "off") {
+      if (!battery->chargeLimit.methodAvailable) {
+        return "error: this battery's limit cannot be changed\n";
+      }
+      return m_upowerService->enableChargeThreshold(battery->path, arg == "on") ? "ok\n" : "error: not changed\n";
+    }
+    const auto& c = battery->chargeLimit;
+    nlohmann::json out{
+        {"supported", c.supported},
+        {"settable", c.methodAvailable},
+        {"enabled", c.enabled},
+        {"pending", c.requestPending},
+    };
+    if (c.configuredStart) {
+      out["start"] = *c.configuredStart;
+    }
+    if (c.configuredEnd) {
+      out["end"] = *c.configuredEnd;
+    }
+    if (battery->healthPercent()) {
+      out["health"] = *battery->healthPercent();
+    }
+    out["energy_full"] = battery->energyFull;
+    out["energy_full_design"] = battery->energyFullDesign;
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: every display's brightness, for the Control Panel's monitor module
+  m_ipcService.bind(noctalia::cli::msg::brightnessStatus, [this](const std::string& /*args*/) -> std::string {
+    nlohmann::json displays = nlohmann::json::array();
+    if (m_brightnessService != nullptr) {
+      for (const auto& d : m_brightnessService->displays()) {
+        displays.push_back({
+            {"id", d.id},
+            {"label", d.label},
+            {"value", d.brightness},
+            {"controllable", d.controllable},
+            {"width", d.physicalWidth},
+            {"height", d.physicalHeight},
+            {"scale", d.scale},
+        });
+      }
+    }
+    const nlohmann::json out{
+        {"available", m_brightnessService != nullptr && m_brightnessService->available()},
+        {"ddc", m_configService.config().brightness.enableDdcutil},
+        {"displays", displays},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the system monitor's sample for the Zynith UI's sysmon widgets (one sampler, not two)
+  m_ipcService.bind(noctalia::cli::msg::sysmonStats, [this](const std::string& args) -> std::string {
+    if (m_systemMonitor == nullptr) {
+      return "error: system monitor unavailable\n";
+    }
+    const nlohmann::json want = args.empty() ? nlohmann::json::object() : nlohmann::json::parse(args, nullptr, false);
+    std::vector<std::string> disks;
+    if (want.is_object()) {
+      for (const char* key : {"gpu_temp", "gpu_usage", "gpu_vram"}) {
+        if (want.value(key, false)) {
+          sysmonLease(key);
+        }
+      }
+      if (want.contains("disks") && want["disks"].is_array()) {
+        for (const auto& d : want["disks"]) {
+          if (d.is_string() && !d.get<std::string>().empty()) {
+            disks.push_back(d.get<std::string>());
+            sysmonLease("disk:" + d.get<std::string>());
+          }
+        }
+      }
+    }
+    const SystemStats s = m_systemMonitor->latest();
+    nlohmann::json net = nlohmann::json::object();
+    for (const auto& [name, t] : s.netThroughputByInterface) {
+      net[name] = {{"rx", t.rxBytesPerSec}, {"tx", t.txBytesPerSec}};
+    }
+    nlohmann::json diskOut = nlohmann::json::object();
+    for (const auto& path : disks) {
+      if (const auto d = m_systemMonitor->diskStats(path)) {
+        diskOut[path] = {{"used_pct", d->usagePercent}, {"total", d->totalBytes}, {"free", d->freeBytes}, {"available", d->availableBytes}};
+      }
+    }
+    nlohmann::json out{
+        {"cpu", s.cpuUsagePercent},
+        {"cpu_temp", s.cpuTempC ? nlohmann::json(*s.cpuTempC) : nlohmann::json(nullptr)},
+        {"cpu_freq_mhz", s.cpuFreqMhz},
+        {"ram_pct", s.ramUsagePercent},
+        {"ram_used_mb", s.ramUsedMb},
+        {"ram_total_mb", s.ramTotalMb},
+        {"swap_used_mb", s.swapUsedMb},
+        {"swap_total_mb", s.swapTotalMb},
+        {"gpu_temp", s.gpuTempC ? nlohmann::json(*s.gpuTempC) : nlohmann::json(nullptr)},
+        {"gpu_usage", s.gpuUsagePercent ? nlohmann::json(*s.gpuUsagePercent) : nlohmann::json(nullptr)},
+        {"gpu_vram_used", s.gpuVramUsedBytes ? nlohmann::json(*s.gpuVramUsedBytes) : nlohmann::json(nullptr)},
+        {"gpu_vram_total", s.gpuVramTotalBytes ? nlohmann::json(*s.gpuVramTotalBytes) : nlohmann::json(nullptr)},
+        {"net_rx", s.netRxBytesPerSec},
+        {"net_tx", s.netTxBytesPerSec},
+        {"interfaces", net},
+        {"disks", diskOut},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::brightnessRescan, [this](const std::string& /*args*/) -> std::string {
+    if (m_brightnessService == nullptr || !m_configService.config().brightness.enableDdcutil) {
+      return "error: DDC/CI is off ([brightness] enable_ddcutil)\n";
+    }
+    m_brightnessService->requestDdcRescan();
+    return "ok\n";
+  });
+
+  // zynith: the native settings, for the Zynith Settings app. Writes go through ConfigService overrides like
+  // the native Settings window's, and never while locked (a config reload under the lock once crashed the shell).
+  m_ipcService.bind(noctalia::cli::msg::settingsSchema, [this](const std::string& args) -> std::string {
+    return zynith::settings_bridge::schemaJson(
+        m_settingsWindow.registrySnapshot(), m_configService, StringUtils::trim(args)
+    );
+  });
+  m_ipcService.bind(noctalia::cli::msg::settingsSet, [this](const std::string& args) -> std::string {
+    if (m_lockScreen.isActive()) {
+      return "error: locked\n";
+    }
+    return zynith::settings_bridge::set(m_settingsWindow.registrySnapshot(), m_configService, args);
+  });
+  m_ipcService.bind(noctalia::cli::msg::settingsReset, [this](const std::string& args) -> std::string {
+    if (m_lockScreen.isActive()) {
+      return "error: locked\n";
+    }
+    return zynith::settings_bridge::reset(m_settingsWindow.registrySnapshot(), m_configService, args);
+  });
+
+  // zynith: the launcher's providers (calculator with units and currencies, plugins…) for the Zynith launcher
+  m_ipcService.bind(noctalia::cli::msg::launcherProviders, [this](const std::string& /*args*/) -> std::string {
+    return m_launcherPanel != nullptr ? m_launcherPanel->zynithProvidersJson() : "[]\n";
+  });
+  m_ipcService.bind(noctalia::cli::msg::launcherQuery, [this](const std::string& args) -> std::string {
+    if (m_launcherPanel == nullptr) {
+      return "[]\n";
+    }
+    const auto space = args.find(' ');
+    const std::string id = space == std::string::npos ? args : args.substr(0, space);
+    const std::string text = space == std::string::npos ? std::string() : args.substr(space + 1);
+    return m_launcherPanel->zynithQueryJson(id, text);
+  });
+  m_ipcService.bind(noctalia::cli::msg::launcherActivate, [this](const std::string& args) -> std::string {
+    if (m_launcherPanel == nullptr) {
+      return "error: no launcher\n";
+    }
+    const nlohmann::json req = nlohmann::json::parse(args, nullptr, false);
+    if (!req.is_object() || !req.contains("provider") || !req.contains("result")) {
+      return "error: launcher-activate {\"provider\": …, \"result\": …, \"text\": …}\n";
+    }
+    return m_launcherPanel->zynithActivate(
+        req.value("provider", std::string()), req.value("result", std::string()), req.value("text", std::string())
+    );
+  });
+
+  // zynith: the synced calendar's coming events, for the Control Panel's calendar module
+  m_ipcService.bind(noctalia::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
+    int days = 14;
+    try {
+      if (!StringUtils::trim(args).empty()) {
+        days = std::clamp(std::stoi(StringUtils::trim(args)), 1, 90);
+      }
+    } catch (const std::exception&) {
+      return "error: calendar-events [days]\n";
+    }
+    const auto now = std::chrono::system_clock::now();
+    const auto from = std::chrono::floor<std::chrono::days>(now);
+    const auto until = from + std::chrono::days(days);
+    const auto secs = [](std::chrono::system_clock::time_point t) {
+      return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+    };
+    const CalendarSnapshot& snap = m_calendarService.snapshot();
+    nlohmann::json events = nlohmann::json::array();
+    for (const auto& e : snap.events) {
+      if (e.end < from || e.start >= until) {
+        continue;
+      }
+      events.push_back({
+          {"title", e.title},
+          {"calendar", e.calendarName},
+          {"color", e.colorHex},
+          {"location", e.location},
+          {"url", e.url},
+          {"start", secs(e.start)},
+          {"end", secs(e.end)},
+          {"all_day", e.allDay},
+      });
+    }
+    const nlohmann::json out{
+        {"enabled", m_calendarService.enabled()},
+        {"valid", snap.valid},
+        {"events", events},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: EasyEffects' profiles, for the Control Panel's audio module (effects-profile-set applies one)
+  m_ipcService.bind(noctalia::cli::msg::effectsStatus, [this](const std::string& /*args*/) -> std::string {
+    if (m_easyEffectsService == nullptr) {
+      return nlohmann::json{{"available", false}}.dump() + "\n";
+    }
+    m_easyEffectsService->refreshProfiles();
+    const auto kindJson = [this](AudioEffectsProfileKind kind) {
+      return nlohmann::json{
+          {"profiles", m_easyEffectsService->effectsProfiles(kind)},
+          {"active", m_easyEffectsService->activeEffectsProfile(kind)},
+      };
+    };
+    const nlohmann::json out{
+        {"available", true},
+        {"output", kindJson(AudioEffectsProfileKind::Output)},
+        {"input", kindJson(AudioEffectsProfileKind::Input)},
+    };
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
+  // released keyboard focus; the short wait lets the target window have it back.
+  m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
+    const bool isImage = StringUtils::trim(args) == "image";
+    const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
+    if (mode == ClipboardAutoPasteMode::Off) {
+      return "ok: auto paste is off\n";
+    }
+    m_clipboardAutoPasteTimer.stop();
+    m_clipboardAutoPasteTimer.start(std::chrono::milliseconds(Style::animFast + 30), [this, isImage]() {
+      DeferredCall::callLater([this, isImage]() {
+        (void)clipboard_paste::pasteEntry(
+            isImage, m_configService.config().shell.clipboardAutoPaste, m_virtualKeyboardService
+        );
+      });
+    });
+    return "ok\n";
+  });
+
+  // zynith: the weather the shell already polls, for another UI to show without polling again
+  m_ipcService.bind(noctalia::cli::msg::weatherStatus, [this](const std::string&) -> std::string {
+    const auto& snap = m_weatherService.snapshot();
+    nlohmann::json out{
+        {"enabled", m_weatherService.enabled()},
+        {"valid", snap.valid},
+        {"loading", m_weatherService.loading()},
+        {"error", m_weatherService.error()},
+        {"unit", m_weatherService.displayTemperatureUnit()},
+        {"location", snap.locationName},
+    };
+    if (snap.valid) {
+      out["current"] = {
+          {"temperature", m_weatherService.displayTemperature(snap.current.temperatureC)},
+          {"code", snap.current.weatherCode},
+          {"isDay", snap.current.isDay},
+          {"wind", snap.current.windSpeedKmh},
+          {"windDirection", snap.current.windDirectionDeg},
+          {"uv", snap.current.uvIndex},
+          {"humidity", snap.current.relativeHumidityPercent},
+      };
+      if (snap.current.apparentTemperatureC) {
+        out["current"]["feelsLike"] = m_weatherService.displayTemperature(*snap.current.apparentTemperatureC);
+      }
+      out["timezone"] = snap.timezone;
+      out["utcOffset"] = snap.utcOffsetSeconds;
+      out["elevation"] = snap.elevationM;
+      out["source"] = snap.sourceLabel;
+      nlohmann::json days = nlohmann::json::array();
+      for (const auto& d : snap.forecastDays) {
+        days.push_back({
+            {"date", d.dateIso},
+            {"max", m_weatherService.displayTemperature(d.temperatureMaxC)},
+            {"min", m_weatherService.displayTemperature(d.temperatureMinC)},
+            {"code", d.weatherCode},
+            {"sunrise", d.sunriseIso},
+            {"sunset", d.sunsetIso},
+        });
+      }
+      out["days"] = days;
+      nlohmann::json hours = nlohmann::json::array();
+      for (const auto& h : snap.forecastHours) {
+        hours.push_back({
+            {"time", h.timeIso},
+            {"temperature", m_weatherService.displayTemperature(h.temperatureC)},
+            {"code", h.weatherCode},
+            {"isDay", h.isDay},
+            {"humidity", h.relativeHumidityPercent},
+            {"rain", h.precipitationProbabilityPercent},
+            {"wind", h.windSpeedKmh},
+        });
+      }
+      out["hours"] = hours;
+    }
+    return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+  });
+
+  m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
+    m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
+    m_desktopWidgetsController.syncOwnership();
+    return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + ", desktop_widgets "
+        + (zynith::uiOwns("desktop_widgets") ? "zynith" : "native") + "\n";
   });
 
   m_ipcService.bind(
@@ -705,6 +1192,51 @@ void Application::initIpc() {
           m_pluginManager.disable(parts[1]);
           return "ok\n";
         }
+        // zynith: capabilities. A plugin gets what it declares in plugin.toml and is granted here.
+        if (cmd == "grant" || cmd == "revoke") {
+          if (parts.size() < 3 || parts[1].find('/') == std::string::npos) {
+            return "error: plugins " + cmd + " <author/plugin> <capability...>\n";
+          }
+          std::string words;
+          for (std::size_t i = 2; i < parts.size(); ++i) {
+            words += parts[i] + " ";
+          }
+          std::string unknown;
+          const auto caps = scripting::parseCapabilityList(words, &unknown);
+          if (!unknown.empty()) {
+            return "error: unknown capability '" + unknown + "' (exec shell network files notifications clipboard env)\n";
+          }
+          auto& registry = scripting::PluginCapabilities::instance();
+          std::string error;
+          const bool ok = cmd == "grant" ? registry.grant(parts[1], caps, &error) : registry.revoke(parts[1], caps, &error);
+          if (!ok) {
+            return "error: " + error + "\n";
+          }
+          return std::format(
+              "ok: {} granted {} · effective {}\n", parts[1], scripting::describeCapabilities(registry.granted(parts[1])),
+              scripting::describeCapabilities(registry.effective(parts[1]))
+          );
+        }
+        if (cmd == "capabilities") {
+          auto& registry = scripting::PluginCapabilities::instance();
+          registry.reloadGrants();
+          std::string out;
+          for (const auto& s : m_pluginManager.list(scripting::CatalogAccess::LocalOnly)) {
+            if ((parts.size() > 1 && s.id != parts[1]) || (parts.size() == 1 && !s.enabled)) {
+              continue;
+            }
+            // a plugin that has not run yet (a lock screen widget while unlocked) is read from its manifest
+            const auto dir = scripting::PluginRegistry::instance().findPluginDir(s.id);
+            const scripting::CapabilitySet declared = dir ? scripting::declaredCapabilities(*dir) : registry.declared(s.id);
+            const scripting::CapabilitySet granted = registry.granted(s.id);
+            out += std::format(
+                "{} declared {} · granted {} · effective {}\n", s.id, scripting::describeCapabilities(declared),
+                scripting::describeCapabilities(granted),
+                scripting::describeCapabilities(static_cast<scripting::CapabilitySet>(declared & granted))
+            );
+          }
+          return out.empty() ? "(no matching plugins)\n" : out;
+        }
         if (cmd == "update") {
           if (parts.size() != 2) {
             return "error: plugins update <source-name>\n";
@@ -836,3 +1368,55 @@ bool Application::runIdleAction(const IdleActionRequest& action) {
   }
   return false;
 }
+
+// ── zynith: sysmon leases ─────────────────────────────────────────────────────
+
+namespace {
+  constexpr auto kSysmonLease = std::chrono::seconds(15);
+}
+
+void Application::sysmonLease(const std::string& key) {
+  const bool fresh = !m_sysmonLeases.contains(key);
+  m_sysmonLeases[key] = std::chrono::steady_clock::now();
+  if (fresh) {
+    if (key == "gpu_temp") {
+      m_systemMonitor->retainGpuTemp();
+    } else if (key == "gpu_usage") {
+      m_systemMonitor->retainGpuUsage();
+    } else if (key == "gpu_vram") {
+      m_systemMonitor->retainGpuVram();
+    } else if (key.starts_with("disk:")) {
+      m_systemMonitor->retainDiskPath(key.substr(5));
+    }
+  }
+  if (!m_sysmonLeaseTimer.active()) {
+    m_sysmonLeaseTimer.startRepeating(std::chrono::seconds(5), [this]() { sysmonExpireLeases(); });
+  }
+}
+
+void Application::sysmonExpireLeases() {
+  const auto now = std::chrono::steady_clock::now();
+  for (auto it = m_sysmonLeases.begin(); it != m_sysmonLeases.end();) {
+    if (now - it->second < kSysmonLease) {
+      ++it;
+      continue;
+    }
+    const std::string& key = it->first;
+    if (m_systemMonitor != nullptr) {
+      if (key == "gpu_temp") {
+        m_systemMonitor->releaseGpuTemp();
+      } else if (key == "gpu_usage") {
+        m_systemMonitor->releaseGpuUsage();
+      } else if (key == "gpu_vram") {
+        m_systemMonitor->releaseGpuVram();
+      } else if (key.starts_with("disk:")) {
+        m_systemMonitor->releaseDiskPath(key.substr(5));
+      }
+    }
+    it = m_sysmonLeases.erase(it);
+  }
+  if (m_sysmonLeases.empty()) {
+    m_sysmonLeaseTimer.stop();
+  }
+}
+

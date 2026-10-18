@@ -1,4 +1,6 @@
 #include "shell/wallpaper/wallpaper.h"
+#include <nlohmann/json.hpp>
+#include "zynith/ui_events.h"
 
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
@@ -32,6 +34,7 @@
 #include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <format>
 #include <optional>
 #include <string_view>
 #include <system_error>
@@ -505,7 +508,7 @@ std::vector<WallpaperChange> Wallpaper::onStateChange() {
 
   std::vector<WallpaperChange> changes;
   for (auto& inst : m_instances) {
-    auto newPath = m_config->getWallpaperPath(inst->connectorName);
+    auto newPath = displayPathFor(inst->connectorName);
     if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
       continue;
     }
@@ -545,6 +548,7 @@ std::vector<WallpaperChange> Wallpaper::onStateChange() {
         continue;
       case TransitionRedirect::Unrelated:
         inst->queuedPath = newPath;
+        hurryTransition(*inst);
         changes.push_back({.path = newPath, .connector = inst->connectorName});
         continue;
       }
@@ -748,6 +752,67 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
+  // zynith: the favourite static wallpapers, for the Zynith UI's browser
+  ipc.bind(
+      noctalia::cli::msg::wallpaperFavorites,
+      [this](const std::string&) -> std::string {
+        if (m_config == nullptr) {
+          return "error: wallpaper service not initialized\n";
+        }
+        nlohmann::json out = nlohmann::json::array();
+        for (const WallpaperFavorite& favorite : m_config->wallpaperFavorites()) {
+          out.push_back(favorite.path);
+        }
+        return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
+      },
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
+  );
+  ipc.bind(
+      noctalia::cli::msg::wallpaperFavorite,
+      [this](const std::string& args) -> std::string {
+        if (m_config == nullptr) {
+          return "error: wallpaper service not initialized\n";
+        }
+        const std::string trimmed = StringUtils::trim(args);
+        const auto space = trimmed.find(' ');
+        const std::string action = trimmed.substr(0, space);
+        const std::string path = space == std::string::npos ? std::string() : StringUtils::trim(trimmed.substr(space + 1));
+        if ((action != "add" && action != "remove") || path.empty() || path.front() != '/') {
+          return "error: usage: wallpaper-favorite <add|remove> <absolute path>\n";
+        }
+        if (action == "add") {
+          if (!m_config->isWallpaperFavorite(path)) {
+            m_config->addWallpaperFavorite(path);
+          }
+        } else if (m_config->isWallpaperFavorite(path)) {
+          m_config->removeWallpaperFavorite(path);
+        }
+        zynith::notifyUi("wallpaper");
+        return "ok\n";
+      },
+      IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
+  );
+  // zynith: where the next change on an output was chosen (the wallpaper browser's card), as 0..1 of the output
+  ipc.bind(noctalia::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
+    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+    if (tokens.size() != 3) {
+      return "error: wallpaper-reveal <connector> <x> <y>\n";
+    }
+    if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
+      return error;
+    }
+    float x = 0.5F;
+    float y = 0.5F;
+    try {
+      x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
+      y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
+    } catch (...) {
+      return "error: x and y are numbers from 0 to 1\n";
+    }
+    m_revealOrigin = RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
+    return "ok\n";
+  });
+
   ipc.bind(
       noctalia::cli::msg::wallpaperSet, [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
         if (m_config == nullptr) {
@@ -869,6 +934,77 @@ void Wallpaper::setOutputExternallyManaged(const std::string& connector, bool ma
   if (changed && m_wallpaperEnabled && m_wayland != nullptr) {
     syncInstances();
   }
+}
+
+std::vector<std::string> Wallpaper::upcomingImagePaths() const {
+  std::vector<std::string> out;
+  for (const auto& inst : m_instances) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr) {
+      continue;
+    }
+    const std::string path = displayPathFor(inst->connectorName);
+    if (path.empty() || path == inst->currentPath || path == inst->pendingPath
+        || std::find(out.begin(), out.end(), path) != out.end()) {
+      continue;
+    }
+    // a colour ("#rrggbb…") or anything that is not a file has nothing to decode
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec)) {
+      continue;
+    }
+    out.push_back(path);
+  }
+  return out;
+}
+
+std::pair<int, int> Wallpaper::coverBounds() const {
+  const auto mode = m_config->config().wallpaper.fillMode;
+  if (mode != WallpaperFillMode::Crop && mode != WallpaperFillMode::Fit && mode != WallpaperFillMode::Stretch) {
+    return {0, 0};
+  }
+  int width = 0;
+  int height = 0;
+  for (const auto& inst : m_instances) {
+    if (inst->surface == nullptr) {
+      continue;
+    }
+    const int scale = std::max(1, static_cast<int>(inst->scale));
+    width = std::max(width, static_cast<int>(inst->surface->width()) * scale);
+    height = std::max(height, static_cast<int>(inst->surface->height()) * scale);
+  }
+  return {width, height};
+}
+
+std::string Wallpaper::displayPathFor(const std::string& connector) const {
+  return m_transientPath.empty() ? m_config->getWallpaperPath(connector) : m_transientPath;
+}
+
+void Wallpaper::setTransientImage(const std::string& path, bool instant) {
+  if (path == m_transientPath && instant == m_transientInstant) {
+    return;
+  }
+  m_transientPath = path;
+  m_transientInstant = instant;
+  kLog.info("transient image {}", path.empty() ? std::string("cleared") : path);
+  // Existing surfaces move to the new target through the normal transition machinery.
+  for (auto& inst : m_instances) {
+    if (inst->surface == nullptr || inst->wallpaperNode == nullptr || inst->surface->width() == 0) {
+      continue; // not configured yet: its configure callback loads the current target
+    }
+    const std::string target = displayPathFor(inst->connectorName);
+    if (!target.empty()) {
+      loadWallpaper(*inst, target);
+    }
+  }
+}
+
+bool Wallpaper::settled() const {
+  for (const auto& inst : m_instances) {
+    if (inst->transitioning || inst->currentPath.empty() || inst->currentPath != displayPathFor(inst->connectorName)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void Wallpaper::resetAutomationState() {
@@ -1220,7 +1356,7 @@ Wallpaper::SwitchOutcome Wallpaper::switchWallpaperTo(PickWallpaper action, std:
 }
 
 void Wallpaper::createInstance(const WaylandOutput& output) {
-  auto wallpaperPath = m_config->getWallpaperPath(output.connectorName);
+  auto wallpaperPath = displayPathFor(output.connectorName);
   kLog.info("creating on {} ({}), path={}", output.connectorName, output.description, wallpaperPath);
 
   auto instance = std::make_unique<WallpaperInstance>();
@@ -1252,7 +1388,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->surface->setSceneRoot(instance->sceneRoot.get());
 
   auto* inst = instance.get();
-  instance->surface->setConfigureCallback([this, inst, wallpaperPath](std::uint32_t width, std::uint32_t height) {
+  instance->surface->setConfigureCallback([this, inst](std::uint32_t width, std::uint32_t height) {
     const auto sw = static_cast<float>(width);
     const auto sh = static_cast<float>(height);
     inst->sceneRoot->setSize(sw, sh);
@@ -1261,8 +1397,9 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
     inst->wallpaperNode->setPosition(0.0F, 0.0F);
     inst->wallpaperNode->setSize(sw, sh);
 
-    if (inst->currentPath.empty() && !wallpaperPath.empty()) {
-      loadWallpaper(*inst, wallpaperPath);
+    // Resolved now, not at creation: a transient image may have been set or cleared since.
+    if (const std::string target = displayPathFor(inst->connectorName); inst->currentPath.empty() && !target.empty()) {
+      loadWallpaper(*inst, target);
     } else {
       updateRendererState(*inst);
     }
@@ -1329,6 +1466,7 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
   if (instance.transitioning) {
     if (redirectActiveTransition(instance, path) == TransitionRedirect::Unrelated) {
       instance.queuedPath = path;
+      hurryTransition(instance);
     }
     return;
   }
@@ -1348,7 +1486,9 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
 
   if (instance.currentPath.empty()) {
     const auto& wpConfig = m_config->config().wallpaper;
-    if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty()) {
+    const bool instantTransient = m_transientInstant && !m_transientPath.empty() && path == m_transientPath;
+    if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty() && !instantTransient
+        && !m_startupTransitionSuppressed) {
       instance.currentSourceKind = WallpaperSourceKind::Color;
       instance.currentTexture = {};
       instance.currentColor = rgba(0.0F, 0.0F, 0.0F, 0.0F);
@@ -1417,10 +1557,27 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
   }
 
   const auto& transitions = wpConfig.transitions;
-  const auto picked =
+  auto picked =
       transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0F, static_cast<float>(transitions.size()))))];
+  // zynith: chosen at a point (wallpaper-reveal, a few seconds old at most): a disc grows from there, once
+  std::optional<std::pair<float, float>> origin;
+  if (m_revealOrigin.has_value() && m_revealOrigin->connector == instance.connectorName
+      && std::chrono::steady_clock::now() - m_revealOrigin->at < std::chrono::seconds(5)) {
+    picked = WallpaperTransition::Disc;
+    origin = std::pair{m_revealOrigin->x, m_revealOrigin->y};
+    m_revealOrigin.reset();
+  }
   instance.activeTransition = picked;
   instance.transitionParams = randomizeParams(picked, wpConfig.edgeSmoothness, aspectRatio);
+  if (origin.has_value()) {
+    instance.transitionParams.centerX = origin->first;
+    instance.transitionParams.centerY = origin->second;
+  }
+  kLog.info(
+      "transition on {}: {}{} over {:.0f} ms", instance.connectorName, origin.has_value() ? "disc from the chosen point" : "configured",
+      origin.has_value() ? std::format(" ({:.2f}, {:.2f})", origin->first, origin->second) : std::string{},
+      wpConfig.transitionDurationMs
+  );
   startTransitionAnimation(instance, 0.0F, WallpaperTransitionDirection::Forward);
 }
 
@@ -1456,6 +1613,30 @@ void Wallpaper::startTransitionAnimation(
   );
 
   updateRendererState(instance);
+  instance.surface->requestRedraw();
+}
+
+void Wallpaper::hurryTransition(WallpaperInstance& instance) {
+  // the rest of the running transition in a fifth of the configured duration at most, from where it is, so the
+  // latest choice follows at once instead of after the full duration (rapid choices never queue up behind each
+  // other: one slot). A share of the duration, not a fixed time: a slow reveal hurries in proportion.
+  constexpr float kHurryShare = 0.2F;
+  if (!instance.transitioning || instance.transitionAnimId == 0) {
+    return;
+  }
+  const float durationMs = m_config->config().wallpaper.transitionDurationMs;
+  const float kHurryMs = durationMs * kHurryShare;
+  const float toTime = transitionTargetTime(instance.transitionDirection);
+  const float remaining = std::abs(toTime - instance.transitionTime) * durationMs;
+  if (remaining <= kHurryMs) {
+    return;
+  }
+  instance.animations.cancel(std::exchange(instance.transitionAnimId, 0));
+  auto* inst = &instance;
+  instance.transitionAnimId = instance.animations.animateTimer(
+      instance.transitionTime, toTime, kHurryMs, Easing::Linear, [inst](float time) { setTransitionTime(*inst, time); },
+      [this, inst]() { finishTransition(*inst); }
+  );
   instance.surface->requestRedraw();
 }
 

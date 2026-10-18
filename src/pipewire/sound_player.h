@@ -69,6 +69,7 @@ private:
   void processStream(ActiveStream& streamState);
   void markFinished(ActiveStream& streamState);
   void removeFinished();
+  void scheduleSweep();
 
   pw_loop* m_loop = nullptr;
   float m_volume = 1.0F;
@@ -76,4 +77,8 @@ private:
   std::unordered_map<std::uint64_t, std::unordered_map<std::string, std::shared_ptr<const SoundBuffer>>>
       m_pluginBuffers;
   std::vector<std::unique_ptr<ActiveStream>> m_active;
+  // zynith: a finished stream is destroyed on the next loop turn, not at the next cue. Left connected it
+  // kept the sink running and woke this loop every graph cycle, for as long as the shell stayed quiet.
+  bool m_sweepScheduled = false;
+  std::shared_ptr<bool> m_alive = std::make_shared<bool>(true);
 };

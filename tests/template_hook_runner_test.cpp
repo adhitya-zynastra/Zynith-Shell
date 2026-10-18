@@ -1,6 +1,7 @@
 #include "theme/hook_runner.h"
 
 #include <cassert>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -93,6 +94,27 @@ namespace {
     std::filesystem::remove(running);
   }
 
+  // zynith: a hook that never exits (one that launched an application) must not hold up the hooks behind it
+  void test_bounded_wait_leaves_a_stuck_hook_behind() {
+    using namespace std::chrono_literals;
+    const auto after = sentinelPath("bounded_after");
+    std::filesystem::remove(after);
+
+    {
+      noctalia::theme::HookRunner runner(1);
+      runner.enqueue("sleep 3", /*generation=*/1);
+      const auto start = std::chrono::steady_clock::now();
+      assert(!runner.waitIdle(200ms));
+      assert(std::chrono::steady_clock::now() - start < 2s);
+      // the stuck hook no longer counts: the next one gets its slot at once, and a wait for it returns
+      runner.enqueue("printf ran > " + after.string(), /*generation=*/2);
+      assert(runner.waitIdle(2s));
+      assert(runner.pendingCount() == 0);
+      assert(readSentinel(after) == "ran");
+    }
+    std::filesystem::remove(after);
+  }
+
 } // namespace
 
 int main() {
@@ -100,5 +122,6 @@ int main() {
   test_drops_hooks_from_superseded_generations();
   test_invalidate_drops_queued_hooks();
   test_shutdown_drops_backlog_and_awaits_running();
+  test_bounded_wait_leaves_a_stuck_hook_behind();
   return 0;
 }

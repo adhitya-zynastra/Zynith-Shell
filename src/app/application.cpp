@@ -96,6 +96,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iterator>
+#include <unistd.h>
+#include <ctime>
+#include <sstream>
+#include <fstream>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -201,6 +206,28 @@ void Application::run(std::function<void()> startupReadyCallback) {
   initLogFile();
   initLogLevelFromEnvironment();
   kLog.info("noctalia {}", noctalia::build_info::displayVersion());
+  // zynith: startup accounting — how long the process existed before run() (dynamic loading, static
+  // initialisers, the Application constructor). /proc/self/stat field 22 is the start time in clock ticks.
+  {
+    std::ifstream statFile("/proc/self/stat");
+    std::string stat((std::istreambuf_iterator<char>(statFile)), std::istreambuf_iterator<char>());
+    const auto close = stat.rfind(')');
+    std::istringstream fields(close == std::string::npos ? std::string() : stat.substr(close + 2));
+    std::string field;
+    unsigned long long startTicks = 0;
+    for (int i = 3; i <= 22 && (fields >> field); ++i) {
+      if (i == 22) {
+        startTicks = std::stoull(field);
+      }
+    }
+    timespec boot{};
+    ::clock_gettime(CLOCK_BOOTTIME, &boot);
+    const double nowMs = static_cast<double>(boot.tv_sec) * 1000.0 + static_cast<double>(boot.tv_nsec) / 1e6;
+    const double startMs = static_cast<double>(startTicks) * 1000.0 / static_cast<double>(::sysconf(_SC_CLK_TCK));
+    if (startTicks > 0) {
+      kLog.info("startup: run() reached {:.0f} ms after process start", nowMs - startMs);
+    }
+  }
   runStartupPhase("initServices", [this]() { initServices(); });
   runStartupPhase("initPlugins", [this]() {
     // Configure the plugin registry from [plugins] before any UI consumes it, and

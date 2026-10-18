@@ -44,6 +44,11 @@ public:
       WaylandConnection& wayland, RenderContext* renderContext, ConfigService* configService,
       SharedTextureCache* textureCache, SystemBus* systemBus, CompositorPlatform* compositorPlatform
   );
+  // zynith: the wallpaper each lock surface shows (WallpaperState::stillFor), so a live wallpaper is
+  // represented by its poster. A custom [lockscreen] wallpaper still takes precedence.
+  void setWallpaperPathProvider(std::function<std::string(const std::string&)> provider) {
+    m_wallpaperPathFor = std::move(provider);
+  }
   void setSessionHooks(
       std::function<void()> onLocked, std::function<void()> onUnlocked, std::function<void()> onLockAborted
   );
@@ -107,6 +112,7 @@ private:
   void applyWallpaperStyleToSurfaces();
   [[nodiscard]] bool isInteractiveOutput(const WaylandOutput& output) const;
   [[nodiscard]] std::string wallpaperPathForOutput(const std::string& connectorName) const;
+  std::function<std::string(const std::string&)> m_wallpaperPathFor;
   void createInstance(const WaylandOutput& output);
   void resetLockState();
   void clearInstances();

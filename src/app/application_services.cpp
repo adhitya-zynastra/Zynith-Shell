@@ -1,4 +1,5 @@
 #include "app/main_loop.h"
+#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
@@ -19,6 +20,8 @@
 #include "compositors/compositor_detect.h"
 #include "compositors/niri/niri_config_fragments.h"
 #include "compositors/niri/niri_fragment_writer.h"
+#include "compositors/niri/niri_runtime.h"
+#include "wayland/surface.h"
 #include "dbus/modem/modem_manager_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
@@ -102,6 +105,9 @@
 
 #include <algorithm>
 #include <chrono>
+
+#include <nlohmann/json.hpp>
+#include <wayland-client-core.h>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -446,6 +452,55 @@ void Application::syncStorageKeyProvider() {
   m_storageKeyProvider.configure(storage.keySource, storage.keyFile, encryptedDataExists);
 }
 
+// zynith: early background. At login, niri shows its own grey background from the moment its output is up
+// until the shell's wallpaper presents a frame. Measured on the 2026-09-27 login: the wallpaper surface was only
+// created after ~900 ms of service setup (D-Bus round-trips to NetworkManager, BlueZ, UPower… that nothing on
+// screen needs yet), so the grey lasted ~1.4 s. The wallpaper only needs Wayland, GL and the config, all of
+// which exist at this point, so it is created and presented here — before the services — with a short local
+// event pump (configure → render → commit). The backdrop is created first to keep the canonical same-layer
+// order of reconcileOutputSurfaces(), which later runs as usual and finds both already in place.
+//
+// The shell's own startup transition cannot animate here (the main loop is not running yet, and the service
+// block that follows would stall and then jump it), so the first frame is shown opaque and niri is asked for
+// its compositor-side screen transition instead: niri crossfades from what it was showing to the wallpaper
+// on its own, however busy the shell is.
+void Application::paintEarlyBackground() {
+  const auto start = std::chrono::steady_clock::now();
+  initBackgroundRendering();
+  if (!m_configService.config().wallpaper.enabled) {
+    return;
+  }
+  if (compositors::detect() == compositors::CompositorKind::Niri) {
+    (void)m_compositorPlatform.niriRuntime().requestAction(
+        nlohmann::json{{"DoScreenTransition", nlohmann::json{{"delay_ms", 0}}}}, true
+    );
+  }
+  m_wallpaper.setStartupTransitionSuppressed(true);
+  m_backdrop.onOutputChange();
+  m_wallpaper.onOutputChange();
+  wl_display* display = m_wayland.display();
+  bool painted = false;
+  for (int round = 0; round < 12; ++round) { // bounded: a missing configure must not hold up startup
+    if (wl_display_roundtrip(display) < 0) {
+      break;
+    }
+    Surface::drainPendingFrameWork();
+    Surface::drainPendingRenders();
+    wl_display_flush(display);
+    if (m_wallpaper.settled() && m_wallpaper.hasInstances()) {
+      if (painted) {
+        break; // the frame queued in the previous round has been rendered and committed
+      }
+      painted = true;
+    }
+  }
+  m_wallpaper.setStartupTransitionSuppressed(false);
+  kLog.info(
+      "startup: early background {} after {:.1f} ms", painted ? "presented" : "not ready",
+      std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - start).count()
+  );
+}
+
 void Application::initServices() {
   if (!security::initializeSecurityPrimitives()) {
     kLog.error("libsodium initialization failed; encrypted persistence is unavailable");
@@ -734,6 +789,7 @@ void Application::initStyleThemeAndWayland() {
   auto* sharedGlPtr = m_glShared.hasSharedContext() ? &m_glShared : nullptr;
   m_sharedTextureCache.initialize(sharedGlPtr);
   m_asyncTextureCache.initialize(sharedGlPtr);
+  paintEarlyBackground();
   m_wayland.setTextInputService(&m_textInputService);
   m_wayland.setVirtualKeyboardService(&m_virtualKeyboardService);
 
@@ -768,6 +824,8 @@ void Application::reconcileOutputSurfaces() {
   // output set, so re-running it is safe. initialize() only wires dependencies.
   m_backdrop.onOutputChange();
   m_wallpaper.onOutputChange();
+  // After the static backend: the live controller hands outputs over (or resumes Live mode) on top of it.
+  m_liveWallpaper.onOutputChange();
   m_bar.onOutputChange();
   m_dock.onOutputChange();
   m_desktopWidgetsController.onOutputChange();
@@ -803,6 +861,7 @@ void Application::initWaylandCallbacks() {
     if (m_panelManager.isOpenPanel("clipboard")) {
       m_panelManager.refresh();
     }
+    zynith::notifyUi("clipboard");
   });
   m_scriptApi.setClipboardText(m_clipboardService.clipboardText());
   m_compositorPlatform.setWorkspaceAlertService(&m_workspaceAlertService);
@@ -898,50 +957,11 @@ void Application::initAuxServicesAndHooks() {
     m_gammaService.reload(m_configService.config().nightlight, m_configService.config().location);
   });
 
-  // Register all wallpaper consumers in the single-callback slot.
+  // Register all wallpaper consumers in the single-callback slot. The images are decoded off the main thread
+  // first; the consumers run when they are ready (at once when there is nothing to decode).
   m_configService.setWallpaperChangeCallback([this]() {
-    const auto wallpaperChanges = m_wallpaper.onStateChange();
-    if (m_syncScriptApiOutputs) {
-      m_syncScriptApiOutputs();
-    }
-    m_backdrop.onStateChange();
-    m_lockScreen.onWallpaperChanged();
-    m_themeService.onWallpaperChange();
-    if (m_panelManager.isOpenPanel("control-center")) {
-      m_panelManager.refresh();
-    }
-    scheduleGreeterAutoSync();
-    const auto fireWallpaperChangedHook = [this](const std::string& path, const std::string& connector) {
-      m_hookManager.fire(
-          HookKind::WallpaperChanged, {{"NOCTALIA_WALLPAPER_PATH", path}, {"NOCTALIA_WALLPAPER_CONNECTOR", connector}}
-      );
-    };
-    if (wallpaperChanges.empty()) {
-      fireWallpaperChangedHook(m_configService.getPaletteWallpaperPath(), {});
-    } else {
-      for (const auto& change : wallpaperChanges) {
-        fireWallpaperChangedHook(change.path, change.connector);
-      }
-    }
-    if (compositors::isKde()) {
-      const auto applyKdeWallpaper = [](const std::string& path, const std::string& connector) {
-        if (path.empty()) {
-          return;
-        }
-        std::string cmd = "plasma-apply-wallpaperimage";
-        if (!connector.empty()) {
-          cmd += " --screen " + connector;
-        }
-        cmd += " \"" + path + "\"";
-        (void)process::runAsync(cmd);
-      };
-      if (wallpaperChanges.empty()) {
-        applyKdeWallpaper(m_configService.getPaletteWallpaperPath(), {});
-      } else {
-        for (const auto& change : wallpaperChanges) {
-          applyKdeWallpaper(change.path, change.connector);
-        }
-      }
+    if (!startWallpaperPreload()) {
+      runWallpaperChange();
     }
   });
 
@@ -997,6 +1017,92 @@ void Application::initAuxServicesAndHooks() {
     kLog.warn("system monitor service disabled: {}", e.what());
     m_scriptApi.setSystemMonitor(nullptr);
     m_systemMonitor.reset();
+  }
+}
+
+bool Application::startWallpaperPreload() {
+  if (!m_sharedTextureCache.shared()) {
+    return false;
+  }
+  std::vector<std::string> paths;
+  for (auto& path : m_wallpaper.upcomingImagePaths()) {
+    if (!m_sharedTextureCache.contains(path)) {
+      paths.push_back(std::move(path));
+    }
+  }
+  if (paths.empty()) {
+    return false;
+  }
+  zynith::WallpaperPreload::Job job;
+  job.paths = std::move(paths);
+  std::tie(job.coverWidth, job.coverHeight) = m_wallpaper.coverBounds();
+  if (m_configService.config().theme.source == PaletteSource::Wallpaper) {
+    job.palettePath = m_configService.getPaletteWallpaperPath();
+    job.paletteScheme = m_themeService.wallpaperScheme();
+  }
+  m_wallpaperPreload.submit(std::move(job));
+  return true;
+}
+
+void Application::onWallpaperPreloaded(zynith::WallpaperPreload::Result result) {
+  for (const auto& image : result.images) {
+    (void)m_sharedTextureCache.adopt(image.path, image.rgba.data(), image.width, image.height);
+  }
+  if (result.palette.has_value()) {
+    m_themeService.primeWallpaperPalette(std::move(*result.palette));
+  }
+  kLog.info("wallpaper decoded off the main thread in {:.0f} ms", result.decodeMs);
+  runWallpaperChange();
+  // an image the change did not end up showing (the state moved on) is not kept
+  for (const auto& image : result.images) {
+    m_sharedTextureCache.dropUnused(image.path);
+  }
+}
+
+void Application::runWallpaperChange() {
+  const auto wallpaperChanges = m_wallpaper.onStateChange();
+  if (m_syncScriptApiOutputs) {
+    m_syncScriptApiOutputs();
+  }
+  m_backdrop.onStateChange();
+  m_lockScreen.onWallpaperChanged();
+  m_themeService.onWallpaperChange();
+  zynith::notifyUi("wallpaper");
+  if (m_panelManager.isOpenPanel("control-center")) {
+    m_panelManager.refresh();
+  }
+  scheduleGreeterAutoSync();
+  const auto fireWallpaperChangedHook = [this](const std::string& path, const std::string& connector) {
+    m_hookManager.fire(
+        HookKind::WallpaperChanged, {{"NOCTALIA_WALLPAPER_PATH", path}, {"NOCTALIA_WALLPAPER_CONNECTOR", connector}}
+    );
+  };
+  if (wallpaperChanges.empty()) {
+    fireWallpaperChangedHook(m_configService.getPaletteWallpaperPath(), {});
+  } else {
+    for (const auto& change : wallpaperChanges) {
+      fireWallpaperChangedHook(change.path, change.connector);
+    }
+  }
+  if (compositors::isKde()) {
+    const auto applyKdeWallpaper = [](const std::string& path, const std::string& connector) {
+      if (path.empty()) {
+        return;
+      }
+      std::string cmd = "plasma-apply-wallpaperimage";
+      if (!connector.empty()) {
+        cmd += " --screen " + connector;
+      }
+      cmd += " \"" + path + "\"";
+      (void)process::runAsync(cmd);
+    };
+    if (wallpaperChanges.empty()) {
+      applyKdeWallpaper(m_configService.getPaletteWallpaperPath(), {});
+    } else {
+      for (const auto& change : wallpaperChanges) {
+        applyKdeWallpaper(change.path, change.connector);
+      }
+    }
   }
 }
 

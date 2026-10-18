@@ -64,6 +64,7 @@ std::vector<PollSource*> Application::currentPollSources() {
   sources.push_back(&m_calendarPollSource);
   sources.push_back(&m_thumbnailService);
   sources.push_back(&m_wallpaperScanner);
+  sources.push_back(&m_liveWallpaper.process());
   sources.push_back(&m_asyncTextureCache);
   return sources;
 }
