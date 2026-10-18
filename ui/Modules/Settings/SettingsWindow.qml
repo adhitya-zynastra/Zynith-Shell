@@ -60,6 +60,20 @@ FloatingWindow {
             if (hits.length > n)
                 win.goToSetting(hits[n]);
         }
+        // scrolling diagnostics: the page's position and size, and since resetScroll the time the page first moved
+        // (ms since the epoch) and its frame pacing while moving
+        function scrollStats(): string {
+            const f = win.scrollFrames.slice(1);
+            const sorted = f.slice().sort((a, b) => a - b);
+            return JSON.stringify({ route: win.route, contentY: Math.round(pageFlick.contentY), contentHeight: Math.round(pageFlick.contentHeight), height: Math.round(pageFlick.height), movedAt: win.scrollMovedAt, frames: f.length, meanMs: f.length ? Number((f.reduce((a, b) => a + b, 0) / f.length).toFixed(2)) : 0, p95Ms: f.length ? Number(sorted[Math.floor(f.length * 0.95)].toFixed(1)) : 0, worstMs: f.length ? Number(sorted[f.length - 1].toFixed(1)) : 0, over20: f.filter(d => d > 20).length });
+        }
+        function resetScroll(): void {
+            win.scrollMovedAt = 0;
+            win.scrollFrames = [];
+        }
+        function scrollTop(): void {
+            pageFlick.contentY = 0;
+        }
         // where a named control is, in window coordinates (testing: drive the real pointer to it)
         function rectOf(name: string): string {
             const find = item => {
@@ -104,9 +118,13 @@ FloatingWindow {
         color: Theme.alpha(Theme.surfaceLow, win.sheetAlpha)
 
         Flickable {
+            id: sideFlick
             anchors.fill: parent
             anchors.margins: Metrics.s5
             contentHeight: sideColumn.implicitHeight
+            WheelScroll {
+                flick: sideFlick
+            }
             clip: true
             boundsBehavior: Flickable.StopAtBounds
         Column {
@@ -335,11 +353,21 @@ FloatingWindow {
 
     // ── page ────────────────────────────────────────────────────────────────
     Flickable {
+        id: pageFlick
         anchors.left: sidebar.right
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         contentHeight: page.implicitHeight + Metrics.s7 * 2
+        // for diagnostics (ipc scrollStats): when the page first moved after a reset, and its frame pacing while it moves
+        WheelScroll {
+            flick: pageFlick
+        }
+        onContentYChanged: {
+            if (win.scrollMovedAt === 0)
+                win.scrollMovedAt = Date.now();
+            scrollActive.restart();
+        }
         clip: true
         boundsBehavior: Flickable.StopAtBounds
 
@@ -352,6 +380,17 @@ FloatingWindow {
             readonly property var routeSpec: Routes.find(win.route)
             sourceComponent: routeSpec.section ? nativePage : routePage
         }
+    }
+
+    property double scrollMovedAt: 0
+    property var scrollFrames: []
+    Timer {
+        id: scrollActive
+        interval: 120
+    }
+    FrameAnimation {
+        running: scrollActive.running
+        onTriggered: win.scrollFrames.push(frameTime * 1000)
     }
 
     // ── the last change, and the way back ──────────────────────────────────
