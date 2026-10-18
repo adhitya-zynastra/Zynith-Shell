@@ -348,6 +348,8 @@ Singleton {
             return JSON.stringify({
                 material: { style: Material.style, glassStrength: Material.glassStrength, blurStrength: Material.blurStrength, blur: Material.blur, blurAvailable: Material.blurAvailable, fillAlpha: Number(Material.fillAlpha.toFixed(3)), shadows: Material.shadows, paused: Material.paused },
                 efficiency: ExperiencePolicy.efficiency,
+                // how many on-screen things ask the shared clock for seconds (0: it ticks once a minute)
+                secondsDemand: Time.secondsDemand,
                 level: ExperiencePolicy.level,
                 limitedBy: ExperiencePolicy.limitedBy,
                 power: { onBattery: Power.onBattery, level: Number(Power.level.toFixed(2)), low: Power.low, powerSaver: Power.powerSaver },
