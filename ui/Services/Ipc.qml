@@ -261,6 +261,26 @@ Singleton {
         function bars(): string {
             return JSON.stringify(PanelRouter.bars);
         }
+        // diagnostics: each component of a bar ("<bar id>@<output>") and where it is on the screen, for driving the
+        // real pointer to it (testing): [{ name, type, x, y, w, h }]
+        function barWidgets(key: string): string {
+            const scene = PanelRouter.barItems[key];
+            const at = PanelRouter.bars[key]?.win;
+            if (!scene || !at)
+                return "[]";
+            const out = [];
+            const walk = item => {
+                for (const c of item.children) {
+                    if (c.ownerKey !== undefined && c.type !== undefined && c.visible && c.width > 0) {
+                        const p = c.mapToItem(scene, 0, 0);
+                        out.push({ name: c.name, type: c.type, x: Math.round(at[0] + p.x), y: Math.round(at[1] + p.y), w: Math.round(c.width), h: Math.round(c.height) });
+                    }
+                    walk(c);
+                }
+            };
+            walk(scene);
+            return JSON.stringify(out);
+        }
         // diagnostics: each registered surface's window (to match render-loop logs)
         function windows(): string {
             const out = {};

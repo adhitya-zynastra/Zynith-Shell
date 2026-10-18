@@ -77,6 +77,7 @@ Scope {
         active: root.present || root.warm
 
         PanelWindow {
+            id: catcherWin
             visible: root.present && !(root.shown?.transient ?? false) && !(root.shown?.preview ?? false)
             screen: root.modelData
             WlrLayershell.namespace: "zynith-panel-catcher"
@@ -90,6 +91,28 @@ Scope {
                 right: true
             }
             color: ExperiencePolicy.richEffects && !root.closing ? Theme.scrim : "transparent"
+
+            // The bars are not part of it: a click on another bar icon reaches that icon, which opens its panel in
+            // this surface (a morph). The catcher lay over the bars, so that click closed the panel and the hover
+            // opened the other one afresh — a close and a reopen where a switch was meant.
+            readonly property var barRects: Object.keys(PanelRouter.bars).filter(k => k.endsWith("@" + root.screenName) && !PanelRouter.bars[k].hidden).map(k => PanelRouter.bars[k].bar)
+            function hole(i: int): var {
+                return barRects[i] ?? [0, 0, 0, 0];
+            }
+            mask: Region {
+                x: 0
+                y: 0
+                width: catcherWin.width
+                height: catcherWin.height
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(0)[0]; y: catcherWin.hole(0)[1]; width: catcherWin.hole(0)[2]; height: catcherWin.hole(0)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(1)[0]; y: catcherWin.hole(1)[1]; width: catcherWin.hole(1)[2]; height: catcherWin.hole(1)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(2)[0]; y: catcherWin.hole(2)[1]; width: catcherWin.hole(2)[2]; height: catcherWin.hole(2)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(3)[0]; y: catcherWin.hole(3)[1]; width: catcherWin.hole(3)[2]; height: catcherWin.hole(3)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(4)[0]; y: catcherWin.hole(4)[1]; width: catcherWin.hole(4)[2]; height: catcherWin.hole(4)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(5)[0]; y: catcherWin.hole(5)[1]; width: catcherWin.hole(5)[2]; height: catcherWin.hole(5)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(6)[0]; y: catcherWin.hole(6)[1]; width: catcherWin.hole(6)[2]; height: catcherWin.hole(6)[3] }
+                Region { intersection: Intersection.Subtract; x: catcherWin.hole(7)[0]; y: catcherWin.hole(7)[1]; width: catcherWin.hole(7)[2]; height: catcherWin.hole(7)[3] }
+            }
 
             Behavior on color {
                 ColorAnimation {

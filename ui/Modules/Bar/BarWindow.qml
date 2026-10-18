@@ -204,7 +204,10 @@ PanelWindow {
     // centred in a stretch that is not the whole edge: the compositor can only centre on the whole output, so the
     // window is placed from the start side instead
     readonly property bool centredInRange: anchorAt === "center" && rangeStart !== rangeEnd
-    readonly property real pillLength: anchorAt === "fill" ? (range[1] - range[0]) - offset * 2 : fixedLength > 0 ? fixedLength : Math.max(thickness, contentLength)
+    // whole pixels: the sheet's ends are edges it shares with its concave fillets and with a joined panel's; on a
+    // fractional pixel each side antialiased its half of it and the compositor stacked them — a light line through
+    // the concave curve (seen at a media bar's end, 1920.3125)
+    readonly property real pillLength: Math.ceil(anchorAt === "fill" ? (range[1] - range[0]) - offset * 2 : fixedLength > 0 ? fixedLength : Math.max(thickness, contentLength))
 
     WlrLayershell.namespace: "zynith-bar-" + (spec.id ?? "bar")
     WlrLayershell.layer: spec.layer === "overlay" ? WlrLayer.Overlay : spec.layer === "bottom" ? WlrLayer.Bottom : WlrLayer.Top
@@ -240,7 +243,11 @@ PanelWindow {
     readonly property int crossSize: thickness + edgeInset + pad
     readonly property int pillAlong: pillLength + alongInset + pad
     // wider than the bar when its summoning strip is longer; the extra is transparent and takes no input
-    readonly property int alongSize: anchorAt === "fill" ? pillAlong : Math.max(pillAlong, Math.min(screenLength, revealLength))
+    // a window the compositor centres is a whole number of pixels from the edge only if what is left over is even
+    readonly property int alongSize: {
+        const s = anchorAt === "fill" ? pillAlong : Math.max(pillAlong, Math.min(screenLength, revealLength));
+        return anchorAt === "center" && !centredInRange && (Math.round(screenLength) - s) % 2 !== 0 ? s + 1 : s;
+    }
     readonly property int alongExtra: alongSize - pillAlong
     implicitWidth: vertical ? crossSize : alongSize
     implicitHeight: vertical ? alongSize : crossSize
@@ -315,7 +322,7 @@ PanelWindow {
     // along the bar: at its anchor, the extra summoning room on the far side (both sides when centred)
     function alongPos(): real {
         if (anchorAt === "center")
-            return alongInset + alongExtra / 2;
+            return alongInset + Math.floor(alongExtra / 2);
         return anchorAt === "end" ? pad + alongExtra : alongInset;
     }
     function pillX(): real {
@@ -428,14 +435,18 @@ PanelWindow {
         anchors.fill: parent
 
         // ── concave fillets ──
+        // counted, so a fillet moving with the bar (revealing, a panel's join growing) keeps its item: a new array
+        // as the model rebuilt every delegate each frame (see PanelSurface's fillets)
+        readonly property var filletList: win.concave ? scene.fillets() : []
         Repeater {
-            model: win.concave ? scene.fillets() : []
+            model: scene.filletList.length
             delegate: ConcaveCorner {
-                required property var modelData
-                x: modelData.x
-                y: modelData.y
-                r: modelData.r
-                solid: modelData.solid
+                required property int index
+                readonly property var f: scene.filletList[index] ?? { x: 0, y: 0, r: 0, solid: "tl" }
+                x: f.x
+                y: f.y
+                r: f.r
+                solid: f.solid
                 fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
                 opacity: pill.presence
                 transform: Translate {
@@ -492,8 +503,10 @@ PanelWindow {
             height: win.vertical ? win.pillLength : win.thickness
             radius: win.radius
             corners: win.corners
-            // no shadow while a panel is joined: it would fall beside the joint, outside the one surface
-            raised: win.shadow && win.joinProgress === 0
+            // no shadow while a panel opened from this bar is out: joined, the two are one surface, and the bar's
+            // shadow fell across the panel (through its translucent fill — a dark band along a full-length bar's
+            // whole edge); it fades back once the panel has gone (Glass fades shadowLevel)
+            raised: win.shadow && win.joinProgress === 0 && (win.openEntry?.barId ?? "") !== (win.spec.id ?? "")
             fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
             easeFill: barSettle.frost === 0
             // a joined panel and the bar are one surface: no highlight line along the seam
