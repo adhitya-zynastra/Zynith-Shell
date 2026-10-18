@@ -30,7 +30,9 @@ Singleton {
             over33: prev.over33 + deltas.filter(d => d > 33.4).length,
             worst: Math.max(prev.worst, sorted[sorted.length - 1]),
             sum: prev.sum + sum,
-            lastMedian: sorted[Math.floor(sorted.length / 2)]
+            lastMedian: sorted[Math.floor(sorted.length / 2)],
+            // the last run frame by frame: where in a transition the slow frames fall (start = building, spread = drawing)
+            last: deltas.map(d => Math.round(d))
         };
         records = r;
     }
@@ -45,7 +47,8 @@ Singleton {
                 meanMs: Number((v.sum / Math.max(1, v.frames)).toFixed(2)),
                 worstMs: Number(v.worst.toFixed(1)),
                 over20ms: v.over20,
-                over33ms: v.over33
+                over33ms: v.over33,
+                last: v.last
             };
         }
         return out;

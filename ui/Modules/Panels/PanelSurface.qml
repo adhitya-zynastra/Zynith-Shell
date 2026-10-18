@@ -390,9 +390,43 @@ PanelWindow {
     property bool entering: false
     // counts appearances, so content can start fresh each time (warm or not)
     property int showings: 0
+    // A new window's first frame (creating the surface, the first render of everything on it) took up to ~100 ms,
+    // and inside the entrance that is a jump: the drop skipped six frames of its motion. The entrance waits for
+    // that frame, so the cost is a moment before the motion, never a gap in it (at most firstFrame's interval).
+    property bool presented: false
+    property bool awaitingFirstFrame: false
+    property double awaitSince: 0
+    Connections {
+        target: win.presented ? null : (card.Window.window ?? null)
+        function onFrameSwapped(): void {
+            win.presented = true;
+            if (win.awaitingFirstFrame) {
+                win.awaitingFirstFrame = false;
+                firstFrame.stop();
+                Diagnostics.record("panel-first-frame", [Date.now() - win.awaitSince]);
+                win.begin();
+            }
+        }
+    }
+    Timer {
+        id: firstFrame
+        interval: 160
+        onTriggered: {
+            win.presented = true;
+            win.awaitingFirstFrame = false;
+            Diagnostics.record("panel-first-frame-timeout", [interval]);
+            win.begin();
+        }
+    }
     function begin(): void {
         if (entering)
             return;
+        if (!presented) {
+            awaitingFirstFrame = true;
+            awaitSince = Date.now();
+            firstFrame.restart();
+            return;
+        }
         entering = true;
         showings++;
         leave.stop();
