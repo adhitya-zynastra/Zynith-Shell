@@ -54,8 +54,11 @@ PanelWindow {
     // per-corner radii (px), as the native bars had them; left out, the radius above
     // concave_edge_corners (with no edge margin): fillets where the bar meets the screen — at its ends on the
     // screen edge, or on its inner edge when it also reaches the screen's ends; those corners are square
-    readonly property bool concave: spec.concave_edge_corners === true && margin === 0
-    readonly property string concaveMode: anchorAt === "fill" && offset === 0 ? "inner" : "edge"
+    // which ends of the bar reach the neighbouring screen edges (BarModel.endsTouch), and whether any corner is
+    // concave (BarModel.cornerShapes: per corner, or an older bar's concave_edge_corners)
+    readonly property var touch: BarModel.endsTouch(spec, range, screenLength)
+    readonly property real concaveExtent: BarModel.concaveExtent(spec, touch, Metrics.radiusScale)
+    readonly property bool concave: concaveExtent > 0
     // which of the pill's corners touch the screen edge (tl tr br bl)
     readonly property var edgeCorners: ({
             top: [0, 1],
@@ -75,7 +78,7 @@ PanelWindow {
         h: pill.height
     }, Metrics.radiusScale, joinProgress > 0 ? Object.assign({}, join, {
         progress: joinProgress
-    }) : null)
+    }) : null, touch)
     // bar-wide defaults the widgets read
     readonly property real contentScale: spec.scale ?? 1
     readonly property int fontWeight: Number(spec.font_weight ?? 400)
@@ -181,7 +184,7 @@ PanelWindow {
         shadow: shadow,
         shadowExtent: pill.shadowExtent,
         concave: concave,
-        concaveRadius: spec.concave_radius ?? radius
+        concaveRadius: concaveExtent
     })
     // a bar that hides keeps its surface on the screen edge (the margin is inside it), so its summoning strip
     // is where the pointer stops
@@ -441,18 +444,16 @@ PanelWindow {
                 }
             }
         }
+        // the concave corners' curves (BarModel.fillets), each kept inside the room the window has on that side
         function fillets(): var {
-            const r = Math.max(0, Math.min(spec.concave_radius ?? radius, concaveMode === "edge" ? alongInset : pad));
-            if (r < 1)
-                return [];
-            const px = pill.x, py = pill.y, pw = pill.width, ph = pill.height;
-            const table = {
-                top: { inner: [[px, py + ph, "tl"], [px + pw - r, py + ph, "tr"]], edge: [[px - r, py, "tr"], [px + pw, py, "tl"]] },
-                bottom: { inner: [[px, py - r, "bl"], [px + pw - r, py - r, "br"]], edge: [[px - r, py + ph - r, "br"], [px + pw, py + ph - r, "bl"]] },
-                left: { inner: [[px + pw, py, "tl"], [px + pw, py + ph - r, "bl"]], edge: [[px, py - r, "bl"], [px, py + ph, "tl"]] },
-                right: { inner: [[px - r, py, "tr"], [px - r, py + ph - r, "br"]], edge: [[px + pw - r, py - r, "br"], [px + pw - r, py + ph, "tr"]] }
+            const px = pill.x, py = pill.y, pw = pill.width, ph = pill.height, W = win.width, H = win.height;
+            const room = {
+                start: win.vertical ? py : px,
+                end: win.vertical ? H - (py + ph) : W - (px + pw),
+                outer: ({ top: py, bottom: H - (py + ph), left: px, right: W - (px + pw) })[win.edge],
+                inner: ({ top: H - (py + ph), bottom: py, left: W - (px + pw), right: px })[win.edge]
             };
-            return table[edge][concaveMode].map(f => ({ x: f[0], y: f[1], solid: f[2], r: r }));
+            return BarModel.fillets(spec, { x: px, y: py, w: pw, h: ph }, room, win.touch, Metrics.radiusScale);
         }
 
         // ── contact shadow: depth at the seam while a panel opened from this bar is attached ──

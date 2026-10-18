@@ -277,6 +277,244 @@ function separate(state, id, section, index) {
     });
 }
 
+// ── groups: components that sit together in one capsule ─────────────────────
+// A group lives in its bar ([[bar.group]]: id, name, members, look) and sits on the bar as one entry,
+// "group:<id>", in a section. Its members are ordinary component instances. Groups do not nest.
+
+function groupsOf(bar) {
+    return list(bar.group);
+}
+function groupById(bar, gid) {
+    var g = groupsOf(bar).filter(function (x) { return x && x.id === gid; })[0];
+    return g || null;
+}
+function newGroupId(bar) {
+    var taken = groupsOf(bar).map(function (g) { return g.id; });
+    var n = 1;
+    while (taken.indexOf("g" + n) >= 0)
+        n++;
+    return "g" + n;
+}
+// where an entry is: { section, index } for one on the bar, { group, index } for a group's member
+function entryAt(bar, at) {
+    if (at.group !== undefined) {
+        var g = groupById(bar, at.group);
+        return g ? list(g.members)[at.index] : undefined;
+    }
+    return list((bar.widgets || {})[at.section])[at.index];
+}
+
+// the components at `indices` of a section become a group in place (at the first of them); returns { state, id }
+function groupEntries(state, id, section, indices, name) {
+    var bar = find(state, id);
+    if (!bar || sections.indexOf(section) < 0)
+        return { state: state, id: "" };
+    var entries = list((bar.widgets || {})[section]);
+    var picked = indices.filter(function (i, k) { return indices.indexOf(i) === k && i >= 0 && i < entries.length; }).sort(function (a, b) { return a - b; });
+    var members = picked.map(function (i) { return entries[i]; }).filter(function (n) { return String(n).indexOf("group:") !== 0; });
+    if (members.length === 0)
+        return { state: state, id: "" };
+    var gid = newGroupId(bar);
+    var rest = [];
+    entries.forEach(function (n, i) {
+        if (i === picked[0])
+            rest.push("group:" + gid);
+        if (picked.indexOf(i) < 0 || String(n).indexOf("group:") === 0)
+            rest.push(n);
+    });
+    var next = withBar(state, id, function (b) {
+        var w = Object.assign({}, b.widgets || {});
+        w[section] = rest;
+        b.widgets = w;
+        b.group = groupsOf(b).concat([{ id: gid, name: name || "Group " + gid.slice(1), members: members }]);
+        return b;
+    });
+    return { state: next, id: gid };
+}
+
+// a group's members back on the bar where the group was; the group goes
+function ungroup(state, id, gid) {
+    var bar = find(state, id);
+    var g = bar ? groupById(bar, gid) : null;
+    if (!g)
+        return state;
+    return withBar(state, id, function (b) {
+        var w = Object.assign({}, b.widgets || {});
+        sections.forEach(function (s) {
+            var out = [];
+            list(w[s]).forEach(function (n) {
+                if (n === "group:" + gid)
+                    out = out.concat(list(g.members));
+                else
+                    out.push(n);
+            });
+            w[s] = out;
+        });
+        b.widgets = w;
+        b.group = groupsOf(b).filter(function (x) { return x.id !== gid; });
+        if (b.group.length === 0)
+            delete b.group;
+        return b;
+    });
+}
+
+function setGroupKey(state, id, gid, key, value) {
+    return withBar(state, id, function (b) {
+        b.group = groupsOf(b).map(function (g) {
+            if (g.id !== gid)
+                return g;
+            var c = Object.assign({}, g);
+            if (value === undefined)
+                delete c[key];
+            else
+                c[key] = value;
+            return c;
+        });
+        return b;
+    });
+}
+function renameGroup(state, id, gid, name) {
+    var clean = String(name || "").trim();
+    return clean === "" ? state : setGroupKey(state, id, gid, "name", clean);
+}
+
+// Moves one entry (a component, or a whole group) from `from` to `to`, each { section, index } or
+// { group, index }: a drop of the editor. A group cannot go into a group. A group left with no members goes
+// (its entry too). Indices of `to` are positions in the list as it is before the move.
+function moveEntry(state, id, from, to) {
+    var bar = find(state, id);
+    if (!bar)
+        return state;
+    var item = entryAt(bar, from);
+    if (item === undefined)
+        return state;
+    var isGroup = String(item).indexOf("group:") === 0;
+    if (to.group !== undefined && (isGroup || !groupById(bar, to.group)))
+        return state;
+    if (to.group === undefined && sections.indexOf(to.section) < 0)
+        return state;
+    var sameList = from.group !== undefined ? to.group === from.group : (to.group === undefined && to.section === from.section);
+    var target = to.index;
+    if (sameList && target > from.index)
+        target--;
+    if (sameList && target === from.index)
+        return state;
+    return withBar(state, id, function (b) {
+        var w = Object.assign({}, b.widgets || {});
+        var groups = groupsOf(b).map(function (g) { return Object.assign({}, g, { members: list(g.members) }); });
+        var take = function (at) {
+            if (at.group !== undefined) {
+                var g = groups.filter(function (x) { return x.id === at.group; })[0];
+                g.members.splice(at.index, 1);
+            } else {
+                var l = list(w[at.section]);
+                l.splice(at.index, 1);
+                w[at.section] = l;
+            }
+        };
+        var put = function (at, index) {
+            if (at.group !== undefined) {
+                var g = groups.filter(function (x) { return x.id === at.group; })[0];
+                g.members.splice(Math.max(0, Math.min(index, g.members.length)), 0, item);
+            } else {
+                var l = list(w[at.section]);
+                l.splice(Math.max(0, Math.min(index, l.length)), 0, item);
+                w[at.section] = l;
+            }
+        };
+        take(from);
+        put(to, target);
+        // an emptied group goes
+        groups = groups.filter(function (g) {
+            if (g.members.length > 0)
+                return true;
+            sections.forEach(function (s) {
+                w[s] = list(w[s]).filter(function (n) { return n !== "group:" + g.id; });
+            });
+            return false;
+        });
+        b.widgets = w;
+        if (groups.length > 0)
+            b.group = groups;
+        else
+            delete b.group;
+        return b;
+    });
+}
+
+// a component (not a group) at `at` removed; its table goes if nothing else names it
+function removeEntry(state, id, at) {
+    var bar = find(state, id);
+    if (!bar)
+        return state;
+    var item = entryAt(bar, at);
+    if (item === undefined)
+        return state;
+    if (String(item).indexOf("group:") === 0) {
+        // a whole group: it and its members
+        var g = groupById(bar, String(item).slice(6));
+        var gone = withBar(state, id, function (b) {
+            var w = Object.assign({}, b.widgets || {});
+            w[at.section] = list(w[at.section]).filter(function (n, i) { return i !== at.index; });
+            b.widgets = w;
+            b.group = groupsOf(b).filter(function (x) { return !g || x.id !== g.id; });
+            if (b.group.length === 0)
+                delete b.group;
+            return b;
+        });
+        return dropOrphans(gone, g ? list(g.members).map(String) : []);
+    }
+    if (at.group === undefined)
+        return removeComponent(state, id, at.section, at.index);
+    var next = withBar(state, id, function (b) {
+        var w = Object.assign({}, b.widgets || {});
+        var groups = groupsOf(b).map(function (g) {
+            return g.id === at.group ? Object.assign({}, g, { members: list(g.members).filter(function (n, i) { return i !== at.index; }) }) : g;
+        }).filter(function (g) {
+            if (list(g.members).length > 0)
+                return true;
+            sections.forEach(function (s) {
+                w[s] = list(w[s]).filter(function (n) { return n !== "group:" + g.id; });
+            });
+            return false;
+        });
+        b.widgets = w;
+        if (groups.length > 0)
+            b.group = groups;
+        else
+            delete b.group;
+        return b;
+    });
+    return dropOrphans(next, [String(item)]);
+}
+
+// a new component of `type` at `to` ({ section, index } or { group, index }); returns { state, name }
+function insertComponent(state, id, type, to) {
+    var bar = find(state, id);
+    if (!bar)
+        return { state: state, name: "" };
+    var made = instantiate(state, type);
+    var next = withBar(made.state, id, function (b) {
+        if (to.group !== undefined) {
+            b.group = groupsOf(b).map(function (g) {
+                if (g.id !== to.group)
+                    return g;
+                var m = list(g.members);
+                m.splice(Math.max(0, Math.min(to.index, m.length)), 0, made.name);
+                return Object.assign({}, g, { members: m });
+            });
+        } else {
+            var w = Object.assign({}, b.widgets || {});
+            var l = list(w[to.section]);
+            l.splice(Math.max(0, Math.min(to.index === undefined ? l.length : to.index, l.length)), 0, made.name);
+            w[to.section] = l;
+            b.widgets = w;
+        }
+        return b;
+    });
+    return { state: next, name: made.name };
+}
+
 // ── bars ────────────────────────────────────────────────────────────────────
 
 // what a new bar starts as: a small floating bar where asked, holding nothing (its components are the user's)
@@ -683,7 +921,7 @@ function innerCornerIndices(edge) {
 // A corner's own value wins over `radius` (left out or below 0, it follows `radius`; `radius` below 0 is half
 // the thickness, a pill). Flowing into the screen edge squares the corners there. A joined panel squares the
 // inner corners on its side as it grows (progress 0..1). Every radius is held to half the sheet's short side.
-function cornerRadii(bar, size, radiusScale, join) {
+function cornerRadii(bar, size, radiusScale, join, touch) {
     var scale = radiusScale === undefined ? 1 : radiusScale;
     var thickness = typeof bar.thickness === "number" ? bar.thickness : 34;
     var base = typeof bar.radius === "number" && bar.radius >= 0 ? bar.radius * scale : thickness / 2;
@@ -691,11 +929,11 @@ function cornerRadii(bar, size, radiusScale, join) {
         var v = bar[k];
         return typeof v === "number" && v >= 0 ? v * scale : base;
     });
-    var flows = bar.concave_edge_corners === true && (bar.margin || 0) === 0;
-    if (flows) {
-        var fill = bar.anchor === "fill" && (bar.offset || 0) === 0;
-        (fill ? innerCornerIndices(bar.edge) : edgeCornerIndices(bar.edge)).forEach(function (i) { c[i] = 0; });
-    }
+    // a concave corner is square on the sheet itself: its curve is the fillet drawn beside it
+    cornerShapes(bar, touch).forEach(function (sh, i) {
+        if (sh.shape !== "round")
+            c[i] = 0;
+    });
     if (join && join.progress > 0 && (join.start || join.end)) {
         var inner = innerCornerIndices(bar.edge);
         var horizontal = bar.edge === "top" || bar.edge === "bottom";
@@ -708,6 +946,186 @@ function cornerRadii(bar, size, radiusScale, join) {
     }
     var most = Math.max(0, Math.min(size.w, size.h) / 2);
     return c.map(function (r) { return Math.max(0, Math.min(r, most)); });
+}
+
+// ── corner shapes: round, square, concave ─────────────────────────────────────
+// Each corner has a shape (shape_top_left … : "concave", or left out for the usual rounded corner) and a size (its
+// radius_* key, else the bar's radius). A concave corner curves inward: a fillet drawn just outside the bar joins
+// it to a screen edge. So it can only be where the bar touches one —
+//   · beyond the bar's end, along its own screen edge, when the bar sits flush against that edge (no margin);
+//   · beside the bar's end, along the neighbouring screen edge, when that end reaches it (inner side always, the
+//     outer side only with a gap to the bar's own edge — otherwise that corner is the screen's own corner).
+// Where it cannot be, a concave corner is drawn square (and the editor says why). An older bar's
+// concave_edge_corners (no shape_* keys) still means what it did: the edge corners, or a full-length bar's inner
+// ones, concave at concave_radius.
+
+var shapeKeys = ["shape_top_left", "shape_top_right", "shape_bottom_right", "shape_bottom_left"];
+var cornerLabels = ["Top left", "Top right", "Bottom right", "Bottom left"];
+
+// which end of the bar a corner is at: "start" (left / top) or "end"
+function cornerEnd(edge, i) {
+    var vert = edge === "left" || edge === "right";
+    return vert ? (i === 0 || i === 1 ? "start" : "end") : (i === 0 || i === 3 ? "start" : "end");
+}
+// the corner's side: "outer" (on the bar's own screen edge) or "inner"
+function cornerSide(edge, i) {
+    return edgeCornerIndices(edge).indexOf(i) >= 0 ? "outer" : "inner";
+}
+
+// whether each end of the bar reaches the neighbouring screen edge: { start, end }. `range` is the stretch of the
+// edge the bar is laid out along (alongRange) and `length` the edge's length; left out, the whole edge.
+function endsTouch(bar, range, length) {
+    var a = bar.anchor || "center";
+    var flushOffset = (bar.offset || 0) === 0;
+    var rs = range ? range[0] === 0 : true;
+    var re = range && length !== undefined ? range[1] >= length : true;
+    return {
+        start: flushOffset && rs && (a === "fill" || a === "start"),
+        end: flushOffset && re && (a === "fill" || a === "end")
+    };
+}
+
+// why corner i cannot curve inward here ("" when it can)
+function concaveBlocked(bar, i, touch) {
+    var t = touch || endsTouch(bar);
+    var end = cornerEnd(bar.edge, i), side = cornerSide(bar.edge, i);
+    var margin = bar.margin || 0;
+    if (t[end])
+        return side === "inner" || margin > 0 ? "" : "This corner sits in the screen's own corner.";
+    if (side === "outer")
+        return margin === 0 ? "" : "It curves into the screen edge, so the bar needs no gap to that edge (Gap to edge 0).";
+    return "Nothing to curve into: this end of the bar does not reach a screen edge.";
+}
+
+function legacyConcave(bar) {
+    if (bar.concave_edge_corners !== true || (bar.margin || 0) !== 0)
+        return [];
+    return bar.anchor === "fill" && (bar.offset || 0) === 0 ? innerCornerIndices(bar.edge) : edgeCornerIndices(bar.edge);
+}
+function explicitShapes(bar) {
+    return shapeKeys.some(function (k) { return bar[k] !== undefined; });
+}
+
+// every corner as it is drawn: [{ shape: "round" | "square" | "concave", size, wanted, blocked }] in tl tr br bl
+// order; `wanted` is what the bar asks for, `blocked` why a concave one is drawn square instead
+// sizes are as drawn: the radius keys follow the theme's corner scale (`scale`), as rounded corners always have;
+// concave_radius and the half-thickness default do not (what the bars drew before per-corner shapes)
+function cornerShapes(bar, touch, scale) {
+    var k = scale === undefined ? 1 : scale;
+    var t = touch || endsTouch(bar);
+    var thickness = typeof bar.thickness === "number" ? bar.thickness : 34;
+    var base = typeof bar.radius === "number" && bar.radius >= 0 ? bar.radius * k : thickness / 2;
+    var concaveBase = typeof bar.concave_radius === "number" && bar.concave_radius >= 0 ? bar.concave_radius : base;
+    var explicit = explicitShapes(bar);
+    var legacy = explicit ? [] : legacyConcave(bar);
+    return cornerKeys.map(function (key, i) {
+        var own = typeof bar[key] === "number" && bar[key] >= 0 ? bar[key] * k : undefined;
+        var concave = explicit ? bar[shapeKeys[i]] === "concave" : legacy.indexOf(i) >= 0;
+        if (concave) {
+            var size = explicit && own !== undefined ? own : concaveBase;
+            var blocked = concaveBlocked(bar, i, t);
+            return { shape: blocked === "" ? "concave" : "square", size: size, wanted: "concave", blocked: blocked };
+        }
+        var r = own !== undefined ? own : base;
+        return { shape: r <= 0 ? "square" : "round", size: r, wanted: r <= 0 ? "square" : "round", blocked: "" };
+    });
+}
+
+// the largest concave curve the bar draws (the room its window keeps for it)
+function concaveExtent(bar, touch, radiusScale) {
+    return cornerShapes(bar, touch, radiusScale).reduce(function (m, c) { return c.shape === "concave" ? Math.max(m, c.size) : m; }, 0);
+}
+
+// The fillets of the concave corners, in the bar window's coordinates: [{ x, y, r, solid, corner }] — a square
+// r × r box beside the corner, `solid` the box corner that meets the bar ("tl" …), the rest curved away.
+//   pill: { x, y, w, h } (the bar's sheet in its window); room: { start, end, inner, outer } (px the window has
+//   beyond each end and on each side, so a curve is never cut off)
+function fillets(bar, pill, room, touch, radiusScale) {
+    var t = touch || endsTouch(bar);
+    var edge = edges.indexOf(bar.edge) >= 0 ? bar.edge : "top";
+    var vert = edge === "left" || edge === "right";
+    var inward = ({ top: [0, 1], bottom: [0, -1], left: [1, 0], right: [-1, 0] })[edge];
+    var along = vert ? [0, 1] : [1, 0];
+    var pts = [[pill.x, pill.y], [pill.x + pill.w, pill.y], [pill.x + pill.w, pill.y + pill.h], [pill.x, pill.y + pill.h]];
+    var out = [];
+    cornerShapes(bar, t, radiusScale).forEach(function (c, i) {
+        if (c.shape !== "concave")
+            return;
+        var end = cornerEnd(edge, i), side = cornerSide(edge, i);
+        var endSign = end === "start" ? -1 : 1;
+        var o, w, limit;
+        if (t[end]) {
+            // beside the end, along the neighbouring screen edge
+            var sideSign = side === "inner" ? 1 : -1;
+            o = [inward[0] * sideSign, inward[1] * sideSign];
+            w = [-along[0] * endSign, -along[1] * endSign];
+            limit = side === "inner" ? room.inner : room.outer;
+        } else {
+            // beyond the end, along the bar's own screen edge
+            o = [along[0] * endSign, along[1] * endSign];
+            w = inward;
+            limit = end === "start" ? room.start : room.end;
+        }
+        var r = Math.max(0, Math.min(c.size, limit, Math.min(pill.w, pill.h)));
+        if (r < 1)
+            return;
+        var p = pts[i];
+        var xs = [p[0], p[0] + o[0] * r, p[0] + w[0] * r], ys = [p[1], p[1] + o[1] * r, p[1] + w[1] * r];
+        var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+        var solid = (Math.abs(p[1] - y0) < 0.01 ? "t" : "b") + (Math.abs(p[0] - x0) < 0.01 ? "l" : "r");
+        out.push({ x: x0, y: y0, r: r, solid: solid, corner: i });
+    });
+    return out;
+}
+
+// one corner's shape: "round" | "square" | "concave". The first per-corner choice turns an older bar's
+// concave_edge_corners into explicit shapes (drawn the same), so the four corners are then each the user's.
+// `scale`: the theme's corner scale, so an older bar's concave sizes are written as the radii that draw them
+function setCornerShape(state, id, i, shape, scale) {
+    var k = scale === undefined || scale <= 0 ? 1 : scale;
+    var bar = find(state, id);
+    if (!bar || i < 0 || i > 3)
+        return state;
+    return withBar(state, id, function (b) {
+        if (!explicitShapes(b)) {
+            cornerShapes(b, undefined, k).forEach(function (c, n) {
+                if (c.wanted === "concave") {
+                    b[shapeKeys[n]] = "concave";
+                    b[cornerKeys[n]] = Math.round(c.size / k * 100) / 100;
+                }
+            });
+            delete b.concave_edge_corners;
+        }
+        var thickness = typeof b.thickness === "number" ? b.thickness : 34;
+        if (shape === "concave") {
+            b[shapeKeys[i]] = "concave";
+        } else {
+            delete b[shapeKeys[i]];
+            if (shape === "square")
+                b[cornerKeys[i]] = 0;
+            else if (typeof b[cornerKeys[i]] === "number" && b[cornerKeys[i]] <= 0)
+                b[cornerKeys[i]] = Math.round(thickness / 2);
+        }
+        // nothing concave left and no explicit shape: the keys go, the bar reads as it did
+        if (!shapeKeys.some(function (k) { return b[k] !== undefined; }))
+            shapeKeys.forEach(function (k) { delete b[k]; });
+        return b;
+    });
+}
+// one corner's size (px, before the theme's scale); undefined follows the bar's radius again
+function setCornerSize(state, id, i, px, scale) {
+    return withBar(state, id, function (b) {
+        if (!explicitShapes(b) && legacyConcave(b).length > 0) {
+            // keep an older bar's concave corners as they are drawn while one size changes
+            var r = setCornerShape({ bars: [b], widgets: {} }, b.id, i, cornerShapes(b)[i].wanted, scale).bars[0];
+            b = Object.assign({}, r);
+        }
+        if (px === undefined)
+            delete b[cornerKeys[i]];
+        else
+            b[cornerKeys[i]] = Math.max(0, Math.round(px));
+        return b;
+    });
 }
 
 // which corners the user cannot round on this bar (it flows into the screen edge there), for Settings to say so
