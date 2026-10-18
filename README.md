@@ -1,3 +1,5 @@
+> **Zynith** — this tree is Zynith, built on Noctalia. Start with [`ZYNITH.md`](ZYNITH.md): the map of the project, how to build, install and test it, and what lives where.
+
 # Noctalia
 
 Noctalia is a native Wayland desktop shell for people who want a polished, configurable Linux desktop without stitching
