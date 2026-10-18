@@ -358,6 +358,61 @@ Singleton {
         { type: "divider", label: "Divider", icon: "minus", settings: [] }
     ]
 
+    // ── the library, as the bar editor shows it: kinds in plain categories, each with a line on what it is for ──
+    readonly property var categories: [
+        { key: "navigate", label: "Apps & windows", kinds: ["launcher", "workspaces", "taskbar", "active_window"] },
+        { key: "info", label: "Time & info", kinds: ["clock", "weather", "sysmon", "notifications"] },
+        { key: "media", label: "Media", kinds: ["island", "media", "audio_visualizer"] },
+        { key: "status", label: "Status", kinds: ["network", "bluetooth", "volume", "brightness", "battery", "power_profile", "tray", "keyboard_layout", "lock_keys", "privacy"] },
+        { key: "controls", label: "Quick controls", kinds: ["control-center", "nightlight", "caffeine", "theme_mode", "clipboard", "wallpaper", "screenshot", "settings", "session", "custom_button"] },
+        { key: "layout", label: "Layout", kinds: ["spacer", "divider", "text"] }
+    ]
+    readonly property var descriptions: ({
+            launcher: "Opens the app launcher",
+            workspaces: "Your workspaces; click one to go there",
+            taskbar: "Running apps, one icon each",
+            active_window: "The title of the focused window",
+            clock: "The time and date, in any format",
+            weather: "Current conditions where you are",
+            sysmon: "CPU, memory and temperature",
+            notifications: "Unread count; opens the notification centre",
+            island: "A living pill: music, notifications and timers as they happen",
+            media: "What is playing, with controls",
+            audio_visualizer: "Bars that move with the sound",
+            network: "Wi-Fi or wired; opens network settings",
+            bluetooth: "Bluetooth and its devices",
+            volume: "Sound level; scroll to change",
+            brightness: "Screen brightness; scroll to change",
+            battery: "Charge and time left",
+            power_profile: "Performance, balanced or power saver",
+            tray: "Icons of apps running in the background",
+            keyboard_layout: "The current keyboard layout",
+            lock_keys: "Caps Lock and Num Lock",
+            privacy: "Shows when the camera, microphone or screen is in use",
+            "control-center": "Opens the Control Panel",
+            nightlight: "Warmer colours in the evening",
+            caffeine: "Keeps the screen awake",
+            theme_mode: "Switch light and dark",
+            clipboard: "Clipboard history",
+            wallpaper: "Change the wallpaper",
+            screenshot: "Take a screenshot",
+            settings: "Opens Settings",
+            session: "Lock, log out, restart, shut down",
+            custom_button: "Your own button: an icon that runs a command",
+            spacer: "Empty room that pushes things apart",
+            divider: "A thin line between components",
+            text: "Words of your own"
+        })
+    function categoryOf(type: string): string {
+        const t = canonical(type);
+        return categories.find(c => c.kinds.includes(t))?.key ?? "controls";
+    }
+    // the library, filtered by a search (label, kind, description) and a category key ("" = all)
+    function library(query: string, category: string): var {
+        const q = String(query ?? "").trim().toLowerCase();
+        return types.filter(t => (category === "" || categoryOf(t.type) === category) && (q === "" || t.label.toLowerCase().includes(q) || t.type.includes(q) || (descriptions[t.type] ?? "").toLowerCase().includes(q)));
+    }
+
     function find(type: string): var {
         const t = canonical(type);
         return types.find(x => x.type === t) ?? null;

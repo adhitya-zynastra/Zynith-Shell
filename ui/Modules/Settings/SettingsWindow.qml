@@ -74,6 +74,28 @@ FloatingWindow {
         function scrollTop(): void {
             pageFlick.contentY = 0;
         }
+        // scrolls the page so a named control is in view (testing: before driving the pointer to it)
+        function reveal(name: string): string {
+            const find = item => {
+                if (!item)
+                    return null;
+                if (item.objectName === name)
+                    return item;
+                for (const c of item.children) {
+                    const f = find(c);
+                    if (f)
+                        return f;
+                }
+                return null;
+            };
+            const it = find(page.item);
+            if (!it || !it.visible)
+                return "null";
+            const y = it.mapToItem(pageFlick.contentItem, 0, 0).y;
+            if (y < pageFlick.contentY + 40 || y + it.height > pageFlick.contentY + pageFlick.height - 40)
+                pageFlick.contentY = Math.max(0, Math.min(pageFlick.contentHeight - pageFlick.height, y - pageFlick.height / 3));
+            return "ok";
+        }
         // where a named control is, in window coordinates (testing: drive the real pointer to it)
         function rectOf(name: string): string {
             const find = item => {
@@ -406,7 +428,12 @@ FloatingWindow {
             undoShown.restart();
         }
     }
+    // on the Bars page, Undo and Redo are the bar editor's own (bar edits are whole-file writes of their own history)
     function undo(): void {
+        if (win.route === "bars") {
+            BarEdits.undo();
+            return;
+        }
         const label = Config.undo();
         if (label === "")
             return;
@@ -417,6 +444,11 @@ FloatingWindow {
     Shortcut {
         sequences: [StandardKey.Undo]
         onActivated: win.undo()
+    }
+    Shortcut {
+        sequences: [StandardKey.Redo, "Ctrl+Y"]
+        enabled: win.route === "bars"
+        onActivated: BarEdits.redo()
     }
     Timer {
         id: undoShown

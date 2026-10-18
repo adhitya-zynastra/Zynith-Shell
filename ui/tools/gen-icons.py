@@ -36,6 +36,7 @@ speakerphone battery-eco battery-off plug-connected cloud-sun umbrella temperatu
 wand windmill haze gauge-filled bolt-off moon-2 dashboard calendar-week calendar-month hourglass-high ripple
 adjustments-alt shield-half arrow-narrow-up scale battery-charging-2 bolt-filled plug-filled brightness-up-filled brightness-down-filled repeat repeat-once shield-check
 restore replace bookmark device-floppy arrow-left arrow-right chevron-up
+layers-off arrow-forward-up arrow-bar-to-up arrow-bar-down arrows-horizontal arrow-down-right square border-corner-rounded border-corner-square border-radius
 """.split()
 
 

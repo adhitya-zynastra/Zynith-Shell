@@ -14,11 +14,14 @@ Singleton {
     id: root
 
     readonly property var state: Config.barState
-    // [{ label, before }] newest last
+    // [{ label, before }] newest last; `future`: what Undo took back, for Redo (a new change clears it)
     property var history: []
-    readonly property int depth: 30
+    property var future: []
+    readonly property int depth: 50
     readonly property bool canUndo: history.length > 0
     readonly property string undoLabel: canUndo ? history[history.length - 1].label : ""
+    readonly property bool canRedo: future.length > 0
+    readonly property string redoLabel: canRedo ? future[future.length - 1].label : ""
     // the last thing done (for a page to say so), and when
     property string lastLabel: ""
     property int revision: 0
@@ -35,6 +38,7 @@ Singleton {
             return false;
         const h = history.concat([{ label: label, before: before }]);
         history = h.length > depth ? h.slice(h.length - depth) : h;
+        future = [];
         lastLabel = label;
         revision++;
         return true;
@@ -43,12 +47,27 @@ Singleton {
         if (!canUndo)
             return "";
         const last = history[history.length - 1];
+        const now = JSON.parse(JSON.stringify(state));
         if (!Config.applyBars(last.before))
             return "";
         history = history.slice(0, -1);
+        future = future.concat([{ label: last.label, after: now }]);
         lastLabel = "Undid: " + last.label;
         revision++;
         return last.label;
+    }
+    function redo(): string {
+        if (!canRedo)
+            return "";
+        const next = future[future.length - 1];
+        const now = JSON.parse(JSON.stringify(state));
+        if (!Config.applyBars(next.after))
+            return "";
+        future = future.slice(0, -1);
+        history = history.concat([{ label: next.label, before: now }]);
+        lastLabel = "Redid: " + next.label;
+        revision++;
+        return next.label;
     }
 
     // ── a value being dragged: shown on the bar at once, written only when let go ──
@@ -148,6 +167,36 @@ Singleton {
         table.actions = actions;
         widgets[name] = table;
         commit({ bars: state.bars, widgets: widgets }, "Change what " + gesture.replace(/_/g, " ") + " does");
+    }
+    // ── the editor's operations: drag and drop, groups, corners ──
+    function insertComponent(id: string, type: string, to: var): string {
+        const r = BarModel.insertComponent(state, id, type, to);
+        return commit(r.state, "Add " + (BarWidgetTypes.find(type)?.label ?? type)) ? r.name : "";
+    }
+    function moveEntry(id: string, from: var, to: var): void {
+        commit(BarModel.moveEntry(state, id, from, to), "Move a component");
+    }
+    function removeEntry(id: string, at: var): void {
+        commit(BarModel.removeEntry(state, id, at), "Remove");
+    }
+    function groupEntries(id: string, section: string, indices: var, name: string): string {
+        const r = BarModel.groupEntries(state, id, section, indices, name);
+        return commit(r.state, "Group components") ? r.id : "";
+    }
+    function ungroup(id: string, gid: string): void {
+        commit(BarModel.ungroup(state, id, gid), "Ungroup");
+    }
+    function renameGroup(id: string, gid: string, name: string): void {
+        commit(BarModel.renameGroup(state, id, gid, name), "Rename the group");
+    }
+    function setGroupKey(id: string, gid: string, key: string, value: var): void {
+        commit(BarModel.setGroupKey(state, id, gid, key, value), "Change the group");
+    }
+    function setCornerShape(id: string, corner: int, shape: string): void {
+        commit(BarModel.setCornerShape(state, id, corner, shape, Metrics.radiusScale), BarModel.cornerLabels[corner] + " corner: " + shape);
+    }
+    function setCornerSize(id: string, corner: int, px: var): void {
+        commit(BarModel.setCornerSize(state, id, corner, px, Metrics.radiusScale), BarModel.cornerLabels[corner] + " corner size");
     }
     // presets: mode "add" | "replace" (replace turns the bars there were off; nothing is deleted)
     function applyPreset(key: string, mode: string): var {

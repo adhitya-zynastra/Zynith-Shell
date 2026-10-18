@@ -9,7 +9,7 @@ Text {
     text: Icons.glyph(name)
     font.family: Type.icons
     font.pixelSize: size
-    color: tone === "muted" ? Theme.inkMuted : tone === "faint" ? Theme.inkFaint : tone === "accent" ? Theme.accent : tone === "danger" ? Theme.danger : Theme.ink
+    color: tone === "muted" ? Theme.inkMuted : tone === "faint" ? Theme.inkFaint : tone === "accent" ? Theme.accent : tone === "danger" ? Theme.danger : tone === "onAccent" ? Theme.onAccent : Theme.ink
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter
     renderType: Text.NativeRendering
