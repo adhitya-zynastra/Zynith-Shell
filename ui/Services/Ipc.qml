@@ -341,6 +341,13 @@ Singleton {
             }
             return out(BarEdits.lastLabel);
         }
+        // the open launcher's state, for tests: { text, current, shown, rows, height }
+        function launcherState(): string {
+            const page = PanelRouter.livePages[root.focusedScreen()] ?? null;
+            if (!page || page.results === undefined)
+                return "no launcher";
+            return JSON.stringify({ text: page.text, current: page.current, shown: page.shown.length, rows: page.rows, height: page.implicitHeight });
+        }
         // a key, by name (down up left right tab backtab enter escape), to the open panel's page as its own key
         // handler takes it: the keyboard through a page on a desktop that takes no injected keys (test harness)
         function panelKey(name: string): string {

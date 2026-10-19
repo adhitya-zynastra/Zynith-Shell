@@ -40,7 +40,10 @@ Item {
     readonly property bool showCategories: appsMode && (options.categories ?? true) && Apps.presentCategories.length > 1
     readonly property bool grid: appsMode && options.layout === "grid" && text.trim() === ""
     readonly property int gridColumns: 6
-    readonly property var results: active ? Launcher.search(text, grid ? gridColumns * 3 : rows, category) : []
+    // `rows` is how many show at once, not how many there are: browsing walks the whole catalogue (the view scrolls;
+    // it only creates the rows on screen), a search keeps its best 60. Asking for `rows` results made Down loop over
+    // the same eight apps.
+    readonly property var results: active ? Launcher.search(text, text.trim() === "" ? 100000 : 60, category) : []
     // the list as shown: an expanded app's actions follow it, indented
     readonly property var shown: {
         if (expanded === "" || !(options.actions ?? true))
@@ -104,9 +107,10 @@ Item {
         r.run();
         PanelRouter.close(screen.name);
     }
+    // stops at the ends: wrapping round a long list reads as the list repeating
     function move(delta: int): void {
         if (shown.length > 0)
-            current = (current + delta + shown.length) % shown.length;
+            current = Math.max(0, Math.min(shown.length - 1, current + delta));
     }
     function cycleCategory(delta: int): void {
         const keys = ["all"].concat(Apps.presentCategories.map(c => c.key));
@@ -327,7 +331,9 @@ Item {
             id: list
             visible: !root.grid
             width: column.inner
-            height: visible ? (root.shown.length === 0 ? 0 : root.rowY(Math.min(root.rows, root.shown.length) - 1) + root.rowH(Math.min(root.rows, root.shown.length) - 1) + spacing) : 0
+            // always `rows` tall (and room for a taller best match): the launcher keeps one size while you type, so its
+            // window is never resized per keystroke; fewer results leave space, none show what to try instead
+            height: visible ? root.rows * (root.rowHeight + spacing) + (root.compact ? 10 : 18) : 0
             spacing: 2
             clip: true
             interactive: contentHeight > height
@@ -340,15 +346,39 @@ Item {
                     list.positionViewAtIndex(root.current, ListView.Contain);
                 }
             }
-            Behavior on height {
-                Anim {
-                    role: "spatialFast"
-                }
-            }
-
             model: ScriptModel {
                 values: root.shown
                 objectProp: "key"
+            }
+
+            // nothing matched: what to try instead, in the space the rows keep
+            Column {
+                visible: root.shown.length === 0 && root.active
+                anchors.centerIn: parent
+                width: parent.width - Metrics.s6 * 2
+                spacing: Metrics.s2
+                Icon {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    name: root.text.trim() === "" ? "apps" : "search"
+                    size: 28
+                    tone: "faint"
+                }
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    role: "label"
+                    tone: "muted"
+                    elide: Text.ElideRight
+                    text: root.mode.id === "calc" ? "Type an expression" : root.text.trim() === "" ? (root.appsMode ? "No apps in this category" : "Nothing here yet") : "Nothing matches \u201c" + root.text.trim() + "\u201d"
+                }
+                Label {
+                    width: parent.width
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    role: "caption"
+                    tone: "faint"
+                    text: root.mode.id === "calc" ? "2^10, 15% of 80, sqrt 2" : root.appsMode ? "Try fewer letters, another category (Alt+\u2190/\u2192), or a prefix: " + Launcher.modes.filter(m => m.prefix !== "").map(m => m.prefix).join("  ") : "Try fewer letters, or clear the prefix for apps"
+                }
             }
 
             // the selection: one shape gliding between rows, an accent mark at its edge
@@ -591,10 +621,20 @@ Item {
             id: gridView
             visible: root.grid
             width: column.inner
-            height: visible ? Math.ceil(Math.min(root.results.length, root.gridColumns * 3) / root.gridColumns) * cellHeight : 0
+            // three rows on screen, every app reachable (it scrolls to the selection)
+            height: visible ? 3 * cellHeight : 0
             cellWidth: Math.floor(width / root.gridColumns)
             cellHeight: 96
-            interactive: false
+            clip: true
+            interactive: contentHeight > height
+            boundsBehavior: Flickable.StopAtBounds
+            Connections {
+                target: root
+                enabled: root.grid
+                function onCurrentChanged(): void {
+                    gridView.positionViewAtIndex(root.current, GridView.Contain);
+                }
+            }
             model: ScriptModel {
                 values: root.grid ? root.results : []
                 objectProp: "key"
@@ -674,17 +714,6 @@ Item {
                     tone: "accent"
                 }
             }
-        }
-
-        Label {
-            visible: root.shown.length === 0
-            width: column.inner
-            height: root.rowHeight
-            verticalAlignment: Text.AlignVCenter
-            horizontalAlignment: Text.AlignHCenter
-            role: "label"
-            tone: "faint"
-            text: root.mode.id === "calc" ? "Type an expression — 2^10, 15% of 80, sqrt 2" : root.mode.id === "emoji" && Launcher.emojiTable.length === 0 ? "" : root.text.trim() === "" ? "Nothing here yet" : "Nothing matches “" + root.text.trim() + "”  ·  = calculates, > finds a window"
         }
 
         // ── the modes and keys, as a quiet legend ───────────────────────────
