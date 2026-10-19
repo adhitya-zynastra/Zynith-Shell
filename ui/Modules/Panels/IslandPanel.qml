@@ -5,7 +5,7 @@ import qs.Components
 import qs.Services
 
 // The island opened: the thing it shows, with what you can do about it. It grows out of the island in the bar
-// (PanelSurface: the same drop as every panel), so it reads as the island taking a larger shape, not a window
+// (PanelSurface: the same emergence as every panel), so it reads as the island taking a larger shape, not a window
 // appearing. Several things at once: a chip each, to switch.
 Item {
     id: root
