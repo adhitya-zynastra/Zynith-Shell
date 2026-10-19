@@ -108,10 +108,12 @@ function resolve(style, glassStrength, blurStrength, env) {
     out.raisedAlpha = Math.max(out.raisedAlpha, out.fillAlpha);
     // In motion a surface has no compositor backdrop: a backdrop region cannot follow a moving surface frame for
     // frame (it reaches the compositor out of step with the picture, by up to ~45 px a frame at a panel's fastest),
-    // so it is set only once the surface rests. Meanwhile the surface carries motionAlpha, dense enough that what is
-    // really behind it does not show through sharp, and thins to fillAlpha once its backdrop is in (Common/
-    // MaterialSettle). The style's own legibility value without blur, as it already uses when blur is paused.
-    out.motionAlpha = !out.blur ? out.fillAlpha : st === "blur" ? Math.max(out.fillAlpha, 0.86) : Math.min(1, out.fillAlpha + (1 - out.fillAlpha) * 0.5);
+    // so it is set only once the surface rests (Common/MaterialSettle). The fill stays the style's own meanwhile: a
+    // denser one (0.86 for Blur, 0.75 for Glass) hid what is behind, but in the dark sheet tone it read as a dark tint
+    // on every opening that then lifted as the surface settled — measured on the launcher as its centre going from 48
+    // to 30 and back. Blur keeps the backdrop's brightness, so the same fill in motion keeps the surface's; what is
+    // behind is only sharp until the backdrop arrives.
+    out.motionAlpha = out.fillAlpha;
     return out;
 }
 

@@ -299,6 +299,12 @@ Scope {
                             raised: true
                             fill: Theme.alpha(Theme.surfaceHigh, cardSettle.alpha(Material.raisedAlpha))
                             easeFill: cardSettle.frost === 0
+                            // Glass in motion carries the wallpaper itself (MaterialSettle): where the card is now
+                            still: cardSettle.still
+                            standIn: cardSettle.standIn
+                            screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
+                            screenX: (win.anchors.left ? win.margins.left : win.anchors.right ? screenSize.width - win.margins.right - win.implicitWidth : (screenSize.width - win.implicitWidth) / 2) + list.x + slot.x + sheet.x
+                            screenY: (win.anchors.top ? win.margins.top : screenSize.height - win.margins.bottom - win.implicitHeight) + list.y + slot.y - list.contentY
                         }
                         NotificationCard {
                             id: card

@@ -27,6 +27,20 @@ Item {
             root.leaves = 0;
         }
 
+        // the shipped materials move in their own fill (Common/MaterialModel): nothing darkens, nothing to condense
+        function test_a_motion_fill_equal_to_the_rest_changes_nothing() {
+            const was = Material.motionAlpha;
+            Material.motionAlpha = Material.fillAlpha;
+            settle.moving = true;
+            verify(!settle.settled, "still no backdrop in motion");
+            compare(settle.alpha(0.44), 0.44);
+            settle.moving = false;
+            let left = false;
+            settle.condense(() => left = true);
+            tryCompare(settle, "frost", 0);
+            tryVerify(() => left, 100, "leaves without a condense step");
+            Material.motionAlpha = was;
+        }
         function test_moving_has_no_backdrop_and_a_dense_fill_at_once() {
             settle.moving = true;
             verify(!settle.settled);

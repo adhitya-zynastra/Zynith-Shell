@@ -22,11 +22,21 @@ Item {
     visible: false
 
     property bool moving: false
-    // nothing to settle without a backdrop: Solid, or blur paused or unavailable
-    readonly property bool backdrop: Material.blur
+    // nothing to settle without a backdrop (Solid, or blur paused or unavailable), or when the motion fill is the
+    // material's own (Common/MaterialModel: it is, so no surface darkens while it moves)
+    readonly property bool backdrop: Material.blur && Material.motionAlpha > Material.fillAlpha
     readonly property bool settled: !moving
     // 0: the material's own fill (at rest), 1: the motion fill
     property real frost: 0
+    // Glass's backdrop is the wallpaper (niri's xray): in motion the surface draws that itself (Components/Glass
+    // standIn), and for a moment after it rests, while the compositor's backdrop arrives a frame behind
+    readonly property bool xray: Material.style === "glass" && Material.blur
+    readonly property bool standIn: xray && (moving || standInHold.running)
+    readonly property string still: xray ? Wallpapers.still : ""
+    Timer {
+        id: standInHold
+        interval: 80
+    }
     property bool condensing: false
 
     function alpha(rest: real): real {
@@ -37,6 +47,8 @@ Item {
     }
 
     onMovingChanged: {
+        if (!moving)
+            standInHold.restart();
         if (moving) {
             // at once: the backdrop is already gone, so the fill must already be dense
             thin.stop();

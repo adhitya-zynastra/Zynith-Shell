@@ -532,6 +532,12 @@ PanelWindow {
             fill: win.bare ? "transparent" : Theme.alpha(Theme.sheetTone, materialSettle.alpha(restAlpha))
             // the frost follows the motion frame for frame; a glide would trail it
             easeFill: materialSettle.frost === 0
+            // Glass in motion: the wallpaper the backdrop will show, drawn by the card itself (MaterialSettle, Glass)
+            still: win.bare ? "" : materialSettle.still
+            standIn: !win.bare && materialSettle.standIn
+            screenX: win.winX + x
+            screenY: win.winY + y
+            screenSize: Qt.size(win.sw, win.sh)
             edge: !win.bare && !win.attached
             sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 

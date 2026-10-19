@@ -109,16 +109,13 @@ TestCase {
         compare(M.migrate({ surface_style: "glass" }, { profile: "max" }), null);
     }
 
-    // in motion, without its backdrop: dense enough to hide what is behind; at rest the style's own; nothing to settle
-    // when there is no blur (Solid, or blur paused or unavailable)
-    function test_motion_alpha_covers_what_the_backdrop_would() {
-        const glass = M.resolve("glass", 1, 0.5, ok), blur = M.resolve("blur", 0.5, 0.15, ok), solid = M.resolve("solid", 0.5, 0.5, ok);
-        verify(glass.motionAlpha >= 0.7 && glass.motionAlpha > glass.fillAlpha, "glass " + glass.motionAlpha);
-        verify(blur.motionAlpha >= 0.86, "blur " + blur.motionAlpha);
-        compare(solid.motionAlpha, solid.fillAlpha);
+    // in motion, without its backdrop, the style's own fill: a denser one read as a dark tint on every opening
+    function test_motion_alpha_is_the_resting_fill() {
+        for (const st of ["glass", "blur", "solid"]) {
+            const m = M.resolve(st, 0.5, 0.5, ok);
+            compare(m.motionAlpha, m.fillAlpha, st);
+        }
         const paused = M.resolve("blur", 0.5, 0.15, { blurAvailable: true, easeEffects: true });
         compare(paused.motionAlpha, paused.fillAlpha, "no blur to wait for: nothing changes at rest");
-        const none = M.resolve("glass", 0.5, 0.5, { blurAvailable: false });
-        compare(none.motionAlpha, none.fillAlpha);
     }
 }

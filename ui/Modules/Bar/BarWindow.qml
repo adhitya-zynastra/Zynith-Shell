@@ -509,6 +509,12 @@ PanelWindow {
             raised: win.shadow && win.joinProgress === 0 && (win.openEntry?.barId ?? "") !== (win.spec.id ?? "")
             fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
             easeFill: barSettle.frost === 0
+            // Glass while it slides in or out carries the wallpaper itself (MaterialSettle): where the pill is now
+            still: barSettle.still
+            standIn: barSettle.standIn
+            screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
+            screenX: win.windowScreenX() + x + (win.edge === "left" ? -away : win.edge === "right" ? away : 0)
+            screenY: win.windowScreenY() + y + (win.edge === "top" ? -away : win.edge === "bottom" ? away : 0)
             // a joined panel and the bar are one surface: no highlight line along the seam
             // a bar flowing into the screen edge (concave corners) has no lit lip on that side: its sheen and outline
             // ran along the screen edge as a 1 px line that stopped where the fillets began (they carry neither)

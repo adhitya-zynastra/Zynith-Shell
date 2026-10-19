@@ -207,6 +207,12 @@ Scope {
                         raised: true
                         fill: Theme.alpha(Theme.sheetTone, settle.alpha(Theme.glassAlpha))
                         easeFill: settle.frost === 0
+                        // Glass in motion carries the wallpaper itself (MaterialSettle): where the card is on the screen
+                        still: settle.still
+                        standIn: settle.standIn
+                        screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
+                        screenX: (win.anchors.left ? win.margins.left : win.anchors.right ? screenSize.width - win.margins.right - win.implicitWidth : (screenSize.width - win.implicitWidth) / 2) + x
+                        screenY: (win.top ? win.margins.top : screenSize.height - win.margins.bottom - win.implicitHeight) + y + (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1)
                         opacity: perScreen.presence
                         transform: Translate {
                             y: (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1)

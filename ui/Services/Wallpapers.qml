@@ -38,6 +38,22 @@ Singleton {
     property string liveCurrent: ""
     property string livePending: ""
     property var liveItems: ({})     // id -> { id, title, kind, preview, renderable, updated }
+    // a still of what is on the desktop now — the static image, or the live wallpaper's preview — kept without the
+    // library (two small answers at start and on each wallpaper change): Glass draws it while a surface moves
+    property string still: ""
+    function syncStill(): void {
+        CoreClient.call("wallpaper-live-status", text => {
+            let d = null;
+            try {
+                d = JSON.parse(text);
+            } catch (e) {}
+            if (d && d.mode === "live" && (d.palette_source ?? "") !== "")
+                root.still = d.palette_source;
+            else
+                CoreClient.call("wallpaper-get", t => root.still = t.trim());
+        });
+    }
+    Component.onCompleted: syncStill()
     property var liveFavorites: []
     property var liveCollection: []
     property var liveRecent: []
@@ -213,6 +229,7 @@ Singleton {
         function onWallpaper(): void {
             if (root.consumers > 0)
                 root.sync();
+            root.syncStill();
         }
     }
 
