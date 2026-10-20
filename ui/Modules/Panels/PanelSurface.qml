@@ -294,21 +294,34 @@ PanelWindow {
         onPressedChanged: if (pressed)
             PanelRouter.pin(win.screen?.name ?? "")
     }
+    // The selected material from the first frame to the last (Components/BackdropBox): the compositor's backdrop stays
+    // on while the card emerges, glides to another panel or leaves, following the card as drawn — its transforms
+    // applied, since a region ignores them. (It used to be withheld in motion, and the card read as Solid until it
+    // rested: ~0.3–0.6 s on every opening, longer whenever the page kept resizing.)
+    BackdropBox {
+        id: backdrop
+        moving: win.moving
+        rect: ({
+                x: card.x + cardScale.origin.x * (1 - cardScale.xScale) + cardShift.x,
+                y: card.y + cardScale.origin.y * (1 - cardScale.yScale) + cardShift.y,
+                w: card.width * cardScale.xScale,
+                h: card.height * cardScale.yScale
+            })
+    }
     BlurRegion {
+        id: blurRegion
         window: win
-        // only while the surface rests (MaterialSettle): a region that follows a moving card reaches the compositor
-        // out of step with it and shows past it or short of it (a pale rim, a dark band, ~45 px a frame at the
-        // drop's fastest); in motion the card carries a denser fill instead
-        item: win.bare ? content.blurItem : materialSettle.settled ? card : null
+        item: win.bare ? content.blurItem : backdrop
+        gate: win.bare ? content.blurItem : card
         // the card's corners exactly as drawn (attached: square only where it meets the bar)
         radius: card.radius
         corners: card.drawnCorners
-        // the blur only once the card is drawn over it: an attached card fades in within the first sixth of its
-        // growth, and a region switched on before that showed the bare backdrop (in Glass, the wallpaper) as a
-        // rectangle over the windows for a frame
-        followOpacity: !win.bare
-        // an attached panel's fillets, each its square less the quarter circle that cuts it
-        extra: win.attached && materialSettle.settled ? fillets.blurShapes : []
+        // from the first frame of an entrance (the glass forms as the card fades in); a card that fades out lets it go
+        // as it starts to close (a blur cannot fade), while one that runs back into its icon keeps it to the end
+        active: win.bare || !win.closing || win.emerges
+        // an attached panel's fillets, each its square less the quarter circle that cuts it (at rest: they grow
+        // with the join while it moves)
+        extra: win.attached && !win.moving ? fillets.blurShapes : []
     }
 
     // dims the desktop behind a bare panel; never blurs it, so an applied wallpaper shows through. The
@@ -337,14 +350,8 @@ PanelWindow {
     readonly property bool emerges: !bare && sideEdge && Motion.reveal > 0
     readonly property var seedRect: Emerge.seed(edge, { x: ox, y: oy }, held?.itemSpan ?? 32, { x: ax, y: ay, w: aw, h: ah })
     readonly property var shape: emerges && revealed < 0.999 ? Emerge.frame(revealed, seedRect, { x: ax, y: ay, w: aw, h: ah }, Metrics.radiusSurface, edge) : null
-    // The material in motion (Components/MaterialSettle): the compositor's backdrop only while the surface rests,
-    // a denser fill while it moves — the drop forming or retracting, any other entrance, a glide to another panel's
-    // size — thinning back once it rests. Closing, it condenses first, then lets the backdrop go and moves.
+    // the card is moving: emerging, leaving, or gliding to another panel's size (its backdrop follows it frame by frame)
     readonly property bool moving: visible && !bare && (revealed < 0.999 || leave.running || axGlide.running || ayGlide.running || awGlide.running || ahGlide.running)
-    MaterialSettle {
-        id: materialSettle
-        moving: win.moving
-    }
 
     // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
     NumberAnimation {
@@ -460,6 +467,7 @@ PanelWindow {
         }
     }
 
+
     // frame pacing while the surface animates (Diagnostics; costs nothing when idle)
     property var frameDeltas: []
     readonly property bool gliding: axGlide.running || ayGlide.running || awGlide.running || ahGlide.running
@@ -480,17 +488,9 @@ PanelWindow {
         if (closing) {
             PanelRouter.hold(screen?.name ?? "", "panel", false);
             enter.stop();
-            // a resting surface condenses first (its fill thickens, its backdrop still on), then leaves; one still
-            // moving leaves at once (it has no backdrop to give up)
-            if (revealed >= 0.999 && !bare)
-                materialSettle.condense(() => {
-                    if (win.closing)
-                        leave.start();
-                });
-            else
-                leave.start();
+            // at once, in its own material: the backdrop follows it back into the icon
+            leave.start();
         } else {
-            materialSettle.cancel();
             leave.stop();
             enter.start();
         }
@@ -527,17 +527,8 @@ PanelWindow {
             // attached, the bar's own fill, so the seam disappears
             // attached: the bar's own fill, so the seam disappears — resolved live by the bar's rule (Solid is opaque;
             // else the bar's own opacity, else the material's), not the number taken when the panel opened
-            // in motion, denser (MaterialSettle): no backdrop then
             readonly property real restAlpha: win.attached && !Material.solid && (win.held.barOpacity ?? 0) > 0 ? Math.min(1, win.held.barOpacity) : Theme.glassAlpha
-            fill: win.bare ? "transparent" : Theme.alpha(Theme.sheetTone, materialSettle.alpha(restAlpha))
-            // the frost follows the motion frame for frame; a glide would trail it
-            easeFill: materialSettle.frost === 0
-            // Glass in motion: the wallpaper the backdrop will show, drawn by the card itself (MaterialSettle, Glass)
-            still: win.bare ? "" : materialSettle.still
-            standIn: !win.bare && materialSettle.standIn
-            screenX: win.winX + x
-            screenY: win.winY + y
-            screenSize: Qt.size(win.sw, win.sh)
+            fill: win.bare ? "transparent" : Theme.alpha(Theme.sheetTone, restAlpha)
             edge: !win.bare && !win.attached
             sheen: !win.bare && !win.attached && Material.sheenAlpha > 0
 
@@ -559,12 +550,14 @@ PanelWindow {
             readonly property real travel: win.bare || win.attached || win.emerges ? 0 : (1 - win.revealed) * Motion.revealOffset
             transform: [
                 Scale {
+                    id: cardScale
                     origin.x: win.edge === "center" ? card.width / 2 : win.edge === "left" ? 0 : win.edge === "right" ? card.width : win.place !== "" ? (win.place.endsWith("left") ? 0 : win.place.endsWith("right") ? card.width : card.width / 2) : win.ox - win.cardX
                     origin.y: win.edge === "center" ? (win.place === "center" ? card.height / 2 : 0) : win.edge === "top" ? 0 : win.edge === "bottom" ? card.height : win.place !== "" ? card.height / 2 : win.oy - win.cardY
                     xScale: win.bare || win.attached || win.emerges ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                     yScale: win.bare || win.attached || win.emerges ? 1 : Motion.revealScale + (1 - Motion.revealScale) * win.revealed
                 },
                 Translate {
+                    id: cardShift
                     x: win.edge === "left" ? -card.travel : win.edge === "right" ? card.travel : 0
                     y: win.edge === "top" ? -card.travel : win.edge === "bottom" ? card.travel : 0
                 }

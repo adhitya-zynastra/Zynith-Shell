@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Effects
-import QtQuick.Shapes
 import qs.Common
 import qs.Services
 
@@ -25,8 +24,7 @@ Item {
     // how much of the shadow shows (a surface still forming — a panel's water drop — keeps it at 0, then settles in)
     property real shadowOpacity: 1
     property var sheenOverride: undefined
-    // a change of fill glides (a material or palette change); a surface whose fill follows its motion every frame
-    // (MaterialSettle's frost) turns this off while it does, or the glide trails the motion
+    // a change of fill glides (a material or palette change)
     property bool easeFill: true
     readonly property alias sheet: sheet
     // Per-corner radii only when given: an explicit -1 squares the corner on Qt 6.11 (every sheet drew square
@@ -104,58 +102,6 @@ Item {
         maskSource: root.shadowed ? shapeLayer : null
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1
-    }
-
-    // ── the backdrop's stand-in, in motion ──
-    // Glass's resting backdrop is the wallpaper (niri's xray, blurred). A moving surface has no compositor backdrop
-    // (MaterialSettle), so what showed through instead was the window really behind it: over a dark window, a dark
-    // tint on every opening that lifted as the surface settled (the launcher's centre 36 → 48). Moving, the sheet
-    // carries the wallpaper itself, softened and lined up with the screen, so it reads the same as at rest.
-    //   standIn: draw it now · still: the wallpaper image · screenX/Y: this item's top left on its screen
-    property bool standIn: false
-    property string still: ""
-    property real screenX: 0
-    property real screenY: 0
-    property size screenSize: Qt.size(1920, 1080)
-    Loader {
-        anchors.fill: parent
-        // kept while there is a still (decoded once, cached), shown only in motion
-        active: root.still !== ""
-        visible: root.standIn
-        sourceComponent: Item {
-            // the wallpaper small (an eighth of the screen's width), drawn cropped to the screen as the desktop draws
-            // it; bilinear upscaling softens it like the backdrop's blur
-            Image {
-                id: wall
-                visible: false
-                source: root.still
-                sourceSize.width: Math.ceil(root.screenSize.width / 8)
-                asynchronous: true
-                smooth: true
-            }
-            // texture pixel q lands on the screen at q × k + off (PreserveAspectCrop), so in this item at that − screenX/Y
-            readonly property real k: wall.implicitWidth > 0 ? Math.max(root.screenSize.width / wall.implicitWidth, root.screenSize.height / wall.implicitHeight) : 1
-            readonly property real offX: (root.screenSize.width - wall.implicitWidth * k) / 2
-            readonly property real offY: (root.screenSize.height - wall.implicitHeight * k) / 2
-            Shape {
-                anchors.fill: parent
-                visible: wall.status === Image.Ready
-                ShapePath {
-                    strokeWidth: 0
-                    strokeColor: "transparent"
-                    fillItem: wall
-                    fillTransform: PlanarTransform.fromAffineMatrix(parent.parent.k, 0, 0, parent.parent.k, parent.parent.offX - root.screenX, parent.parent.offY - root.screenY)
-                    PathRectangle {
-                        width: root.width
-                        height: root.height
-                        topLeftRadius: root.drawnCorners[0]
-                        topRightRadius: root.drawnCorners[1]
-                        bottomRightRadius: root.drawnCorners[2]
-                        bottomLeftRadius: root.drawnCorners[3]
-                    }
-                }
-            }
-        }
     }
 
     Rectangle {

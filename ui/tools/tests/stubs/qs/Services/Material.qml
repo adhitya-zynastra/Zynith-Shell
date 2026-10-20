@@ -4,5 +4,4 @@ import QtQuick
 QtObject {
     property bool blur: true
     property real fillAlpha: 0.44
-    property real motionAlpha: 0.72
 }

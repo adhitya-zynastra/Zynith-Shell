@@ -291,30 +291,34 @@ PanelWindow {
     }
 
     // the compositor blurs behind the bar only while it is there: a hidden bar must leave no frosted patch
-    // The material in motion (Components/MaterialSettle): while the bar slides in or away its backdrop is off and
-    // its sheet denser. The slide is a transform, which a backdrop region does not follow: the region sat at the
-    // bar's resting place while the bar was still sliding there, a frosted patch ahead of it. (A change of length —
-    // a new title, a tray icon — moves only the bar's end a few pixels a frame, and keeps its backdrop: frosting the
-    // bar for every one of those would flicker.)
-    MaterialSettle {
-        id: barSettle
+    // The material from the first frame (Components/BackdropBox): while the bar slides in or away its backdrop follows
+    // the sheet as drawn — the slide is a transform, which a region does not follow on its own — in step with it, so
+    // it never runs ahead as a frosted patch. It goes as the bar starts to hide (a blur cannot fade out). A change of
+    // length (a new title, a tray icon) moves only the bar's end; at rest the box is the sheet itself.
+    readonly property real slideX: edge === "left" ? -pill.away : edge === "right" ? pill.away : 0
+    readonly property real slideY: edge === "top" ? -pill.away : edge === "bottom" ? pill.away : 0
+    BackdropBox {
+        id: barBackdrop
         moving: pill.presence > 0.001 && pill.presence < 0.999
+        rect: ({ x: pill.x + win.slideX, y: pill.y + win.slideY, w: pill.width, h: pill.height })
     }
     BlurRegion {
         window: win
         // blur = false: this bar never asks for it (the profile can still turn every blur off)
-        item: barSettle.settled && pill.presence > 0.98 && win.spec.blur !== false ? pill : null
+        item: win.spec.blur !== false ? barBackdrop : null
+        gate: pill
+        active: !win.wantsHidden && pill.presence > 0.001
         // the sheet's corners exactly as drawn: a blur region with one radius stood out past the corners that were
         // rounder than it, a square frosted patch most visible while a workspace slid behind the bar
         corners: pill.drawnCorners
-        // and the fillets where it flows into the screen edge, which are part of the same surface
-        extra: win.concave && barSettle.settled && pill.presence > 0.98 ? scene.fillets().map(f => ({
-                    x: f.x,
-                    y: f.y,
+        // and the fillets where it flows into the screen edge, which are part of the same surface (sliding with it)
+        extra: win.concave ? scene.fillets().map(f => ({
+                    x: f.x + win.slideX,
+                    y: f.y + win.slideY,
                     w: f.r,
                     h: f.r,
-                    cutX: (f.solid === "tr" || f.solid === "br" ? f.x : f.x + f.r) - f.r,
-                    cutY: (f.solid === "bl" || f.solid === "br" ? f.y : f.y + f.r) - f.r,
+                    cutX: (f.solid === "tr" || f.solid === "br" ? f.x : f.x + f.r) - f.r + win.slideX,
+                    cutY: (f.solid === "bl" || f.solid === "br" ? f.y : f.y + f.r) - f.r + win.slideY,
                     cut: 2 * f.r
                 })) : []
     }
@@ -447,7 +451,7 @@ PanelWindow {
                 y: f.y
                 r: f.r
                 solid: f.solid
-                fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
+                fill: Theme.alpha(Theme.sheetTone, win.sheetOpacity)
                 opacity: pill.presence
                 transform: Translate {
                     x: win.edge === "left" ? -pill.away : win.edge === "right" ? pill.away : 0
@@ -507,14 +511,7 @@ PanelWindow {
             // shadow fell across the panel (through its translucent fill — a dark band along a full-length bar's
             // whole edge); it fades back once the panel has gone (Glass fades shadowLevel)
             raised: win.shadow && win.joinProgress === 0 && (win.openEntry?.barId ?? "") !== (win.spec.id ?? "")
-            fill: Theme.alpha(Theme.sheetTone, barSettle.alpha(win.sheetOpacity))
-            easeFill: barSettle.frost === 0
-            // Glass while it slides in or out carries the wallpaper itself (MaterialSettle): where the pill is now
-            still: barSettle.still
-            standIn: barSettle.standIn
-            screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
-            screenX: win.windowScreenX() + x + (win.edge === "left" ? -away : win.edge === "right" ? away : 0)
-            screenY: win.windowScreenY() + y + (win.edge === "top" ? -away : win.edge === "bottom" ? away : 0)
+            fill: Theme.alpha(Theme.sheetTone, win.sheetOpacity)
             // a joined panel and the bar are one surface: no highlight line along the seam
             // a bar flowing into the screen edge (concave corners) has no lit lip on that side: its sheen and outline
             // ran along the screen edge as a 1 px line that stopped where the fillets began (they carry neither)

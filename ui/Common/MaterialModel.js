@@ -33,7 +33,7 @@ function levelOf(strength) {
 // style: "glass" | "solid" | "blur"; strength: 0..1 for that style (glass and blur each keep their own)
 // env: { blurAvailable: bool, easeEffects: bool }  (easeEffects: genuine pressure — power saver, battery low)
 // → { style, fillAlpha, raisedAlpha, edgeAlpha, sheenAlpha, wellAlpha, blur, blurRequested, shadows, shadowDepth,
-//     nativeBlurStrength, motionAlpha (the fill while moving, without a backdrop), paused: [what is paused, for the page to say] }
+//     nativeBlurStrength, paused: [what is paused, for the page to say] }
 function resolve(style, glassStrength, blurStrength, env) {
     var st = styles.indexOf(style) >= 0 ? style : "glass";
     var e = env || {};
@@ -106,14 +106,6 @@ function resolve(style, glassStrength, blurStrength, env) {
         }
     }
     out.raisedAlpha = Math.max(out.raisedAlpha, out.fillAlpha);
-    // In motion a surface has no compositor backdrop: a backdrop region cannot follow a moving surface frame for
-    // frame (it reaches the compositor out of step with the picture, by up to ~45 px a frame at a panel's fastest),
-    // so it is set only once the surface rests (Common/MaterialSettle). The fill stays the style's own meanwhile: a
-    // denser one (0.86 for Blur, 0.75 for Glass) hid what is behind, but in the dark sheet tone it read as a dark tint
-    // on every opening that then lifted as the surface settled — measured on the launcher as its centre going from 48
-    // to 30 and back. Blur keeps the backdrop's brightness, so the same fill in motion keeps the surface's; what is
-    // behind is only sharp until the backdrop arrives.
-    out.motionAlpha = out.fillAlpha;
     return out;
 }
 

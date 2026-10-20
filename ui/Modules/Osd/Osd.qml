@@ -124,23 +124,7 @@ Scope {
             id: perScreen
             required property var modelData
 
-            // leaving, the card condenses first (MaterialSettle), then fades: `gone` lets the fade start
-            property bool gone: true
-            property real presence: root.showing || !gone ? 1 : 0
-            Connections {
-                target: root
-                function onShowingChanged(): void {
-                    if (root.showing) {
-                        perScreen.gone = false;
-                        perScreen.settle?.cancel();
-                    } else if (perScreen.settle) {
-                        perScreen.settle.condense(() => perScreen.gone = true);
-                    } else {
-                        perScreen.gone = true;
-                    }
-                }
-            }
-            property var settle: null
+            property real presence: root.showing ? 1 : 0
             Behavior on presence {
                 NumberAnimation {
                     duration: root.showing ? Motion.reveal : Motion.dismiss
@@ -177,18 +161,23 @@ Scope {
                     onStateChanged: Ipc.report("osd", state)
                     Component.onCompleted: Ipc.report("osd", state)
 
-                    // the material in motion (Components/MaterialSettle): the backdrop only while the card rests —
-                    // not while it fades or slides in or out, nor while it reshapes (a gauge and a plain card)
-                    MaterialSettle {
-                        id: settle
-                        moving: perScreen.presence < 0.999 || cardWidth.running || cardHeight.running
-                        Component.onCompleted: perScreen.settle = settle
-                        Component.onDestruction: if (perScreen.settle === settle)
-                            perScreen.settle = null
+                    // the backdrop from the first frame (Components/BackdropBox), following the card as it slides
+                    // and reshapes (a gauge and a plain card); gone as it starts to leave (a blur cannot fade out)
+                    BackdropBox {
+                        id: backdrop
+                        moving: perScreen.presence > 0.001 && perScreen.presence < 0.999 || cardWidth.running || cardHeight.running
+                        rect: ({
+                                x: card.x,
+                                y: card.y + (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1),
+                                w: card.width,
+                                h: card.height
+                            })
                     }
                     BlurRegion {
                         window: win
-                        item: settle.settled ? card : null
+                        item: backdrop
+                        gate: card
+                        active: root.showing
                         radius: card.radius
                     }
 
@@ -205,14 +194,7 @@ Scope {
                         height: gauge ? 64 : 52
                         radius: Metrics.radiusSurface
                         raised: true
-                        fill: Theme.alpha(Theme.sheetTone, settle.alpha(Theme.glassAlpha))
-                        easeFill: settle.frost === 0
-                        // Glass in motion carries the wallpaper itself (MaterialSettle): where the card is on the screen
-                        still: settle.still
-                        standIn: settle.standIn
-                        screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
-                        screenX: (win.anchors.left ? win.margins.left : win.anchors.right ? screenSize.width - win.margins.right - win.implicitWidth : (screenSize.width - win.implicitWidth) / 2) + x
-                        screenY: (win.top ? win.margins.top : screenSize.height - win.margins.bottom - win.implicitHeight) + y + (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1)
+                        fill: Theme.alpha(Theme.sheetTone, Theme.glassAlpha)
                         opacity: perScreen.presence
                         transform: Translate {
                             y: (1 - perScreen.presence) * Motion.revealOffset * (win.top ? -1 : 1)

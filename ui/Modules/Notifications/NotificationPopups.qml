@@ -135,12 +135,12 @@ Scope {
             // the compositor's backdrop behind each card, not behind the stack as one block (that showed in the gaps
             // between cards) nor the window's margins
             property var cards: []
-            // only the cards at rest (Components/MaterialSettle): a card that slides in, is pushed along, or is
-            // swiped would leave its region behind it (a frosted patch where it was) or run ahead of it
+            // each card's backdrop follows it as it slides in, is pushed along or swiped (Components/BackdropBox), so the
+            // material is there from its first frame; a card leaving lets it go at once (a blur cannot fade out)
             readonly property bool listMoving: arriving.running || leaving.running || pushed.running
             BlurRegion {
                 window: win
-                items: win.cards.filter(c => c.settled)
+                items: win.cards.filter(c => !c.leavingNow).map(c => c.backdrop)
                 radius: Metrics.radiusSurface
             }
 
@@ -226,13 +226,20 @@ Scope {
                     Component.onCompleted: win.cards = win.cards.concat([slot])
                     Component.onDestruction: win.cards = win.cards.filter(c => c !== slot)
 
-                    // the material in motion: no backdrop while the list moves it or it is being swiped
-                    MaterialSettle {
-                        id: cardSettle
+                    // where its backdrop goes, in the window's coordinates: the card as drawn (its slide, the arrival's
+                    // scale about its centre, a swipe), in step with it while it moves
+                    readonly property bool leavingNow: !Notifications.popups.includes(slot.modelData)
+                    onLeavingNowChanged: win.cards = win.cards.slice()
+                    readonly property Item backdrop: BackdropBox {
+                        parent: win.contentItem
                         moving: win.listMoving || slot.dragX !== 0
+                        rect: ({
+                                x: list.x - list.contentX + slot.x + slot.dragX + slot.width * (1 - slot.scale) / 2,
+                                y: list.y - list.contentY + slot.y + slot.height * (1 - slot.scale) / 2,
+                                w: slot.width * slot.scale,
+                                h: slot.height * slot.scale
+                            })
                     }
-                    readonly property bool settled: cardSettle.settled
-                    onSettledChanged: win.cards = win.cards.slice()
 
                     // the swipe: the card follows the pointer sideways; far or fast enough closes it
                     property real dragX: 0
@@ -297,14 +304,7 @@ Scope {
                             anchors.fill: parent
                             radius: Metrics.radiusSurface
                             raised: true
-                            fill: Theme.alpha(Theme.surfaceHigh, cardSettle.alpha(Material.raisedAlpha))
-                            easeFill: cardSettle.frost === 0
-                            // Glass in motion carries the wallpaper itself (MaterialSettle): where the card is now
-                            still: cardSettle.still
-                            standIn: cardSettle.standIn
-                            screenSize: Qt.size(win.screen?.width ?? 1920, win.screen?.height ?? 1080)
-                            screenX: (win.anchors.left ? win.margins.left : win.anchors.right ? screenSize.width - win.margins.right - win.implicitWidth : (screenSize.width - win.implicitWidth) / 2) + list.x + slot.x + sheet.x
-                            screenY: (win.anchors.top ? win.margins.top : screenSize.height - win.margins.bottom - win.implicitHeight) + list.y + slot.y - list.contentY
+                            fill: Theme.alpha(Theme.surfaceHigh, Material.raisedAlpha)
                         }
                         NotificationCard {
                             id: card

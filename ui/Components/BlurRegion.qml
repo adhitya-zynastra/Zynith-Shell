@@ -19,7 +19,11 @@ QtObject {
     // so it goes at the start of a fade-out and comes as a fade-in lands.
     property bool followOpacity: false
     property real shownAt: 0.98
-    readonly property bool shown: items.length > 0 || (item !== null && item.visible && (!followOpacity || item.opacity >= shownAt))
+    // whether the surface wants its backdrop now (an OSD leaving lets it go as its fade starts: the blur cannot fade)
+    property bool active: true
+    // whose visibility and opacity count (the item itself, unless it only marks where: Components/BackdropBox)
+    property Item gate: item
+    readonly property bool shown: active && (items.length > 0 || (item !== null && gate !== null && gate.visible && (!followOpacity || gate.opacity >= shownAt)))
 
     // more shapes in the window's coordinates: [{ x, y, w, h, cutX, cutY, cut }] — a rectangle, less the circle
     // whose bounding square is cut (an attached panel's fillets)

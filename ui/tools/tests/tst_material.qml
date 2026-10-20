@@ -109,13 +109,4 @@ TestCase {
         compare(M.migrate({ surface_style: "glass" }, { profile: "max" }), null);
     }
 
-    // in motion, without its backdrop, the style's own fill: a denser one read as a dark tint on every opening
-    function test_motion_alpha_is_the_resting_fill() {
-        for (const st of ["glass", "blur", "solid"]) {
-            const m = M.resolve(st, 0.5, 0.5, ok);
-            compare(m.motionAlpha, m.fillAlpha, st);
-        }
-        const paused = M.resolve("blur", 0.5, 0.15, { blurAvailable: true, easeEffects: true });
-        compare(paused.motionAlpha, paused.fillAlpha, "no blur to wait for: nothing changes at rest");
-    }
 }

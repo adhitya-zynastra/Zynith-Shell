@@ -121,7 +121,7 @@ PanelWindow {
         anchors.fill: parent
         opacity: Motion.bezier(Motion.enterCurve, ed.phase(0, 0.6))
 
-        readonly property string still: Wallpapers.still
+        readonly property string still: Wallpapers.mode === "live" ? (Wallpapers.liveItems[Wallpapers.liveCurrent]?.preview ?? "") : Wallpapers.current
         Rectangle {
             anchors.fill: parent
             color: Theme.base
