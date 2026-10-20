@@ -139,9 +139,11 @@ PanelWindow {
     function contains(a: var, b: var): bool {
         return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
     }
+    // a panel's depth is remembered once it is on screen and at rest: while a page loads it can report another size
+    // for a moment (the Sound page is first the Control Panel tab's 980 px), which made every later window that deep
+    onMovingChanged: if (!moving && visible && sideEdge && place === "" && !bare)
+        PanelRouter.noteDepth(edgeKey, horizontalEdge ? target.h : target.w)
     onTargetChanged: {
-        if (sideEdge && place === "" && !bare)
-            PanelRouter.noteDepth(edgeKey, horizontalEdge ? target.h : target.w);
         // hidden (about to be shown, or warm): the card's size, with headroom — free, nothing is on screen
         if (!visible) {
             span = roomy(target);
