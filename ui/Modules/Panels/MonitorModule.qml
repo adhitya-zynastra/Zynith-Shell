@@ -107,8 +107,26 @@ Flow {
             width: root.colW
             spacing: Metrics.s1
 
+            // on its page: the display as an instrument (which screen, its size, the brightness read large)
+            Instrument {
+                visible: root.expanded
+                width: parent.width
+                icon: display.value < 0.34 ? "brightness-down" : "brightness-up"
+                iconOn: display.value > 0
+                iconInteractive: false
+                caption: "BRIGHTNESS"
+                title: /^eDP|^LVDS|^DSI/.test(display.modelData.id) ? "Built-in display" : display.modelData.id
+                detail: [display.modelData.id, display.modelData.width ? display.modelData.width + "×" + display.modelData.height : ""].filter(t => t !== "").join("  ·  ")
+                value: String(Math.round(display.value * 100))
+                unit: "%"
+                level: display.value
+                onLevelMoved: v => {
+                    display.value = v;
+                    root.set(display.modelData.id, v);
+                }
+            }
             Label {
-                visible: root.displays.length > 1 || root.expanded
+                visible: !root.expanded && root.displays.length > 1
                 width: parent.width
                 role: "caption"
                 tone: "faint"
@@ -116,6 +134,7 @@ Flow {
                 text: display.modelData.id + (root.expanded && display.modelData.width ? "  ·  " + display.modelData.width + "×" + display.modelData.height : "")
             }
             Row {
+                visible: !root.expanded
                 width: parent.width
                 spacing: Metrics.s3
                 Icon {

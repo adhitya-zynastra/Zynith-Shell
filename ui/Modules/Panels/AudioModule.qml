@@ -115,79 +115,180 @@ Flow {
         }
     }
 
-    // ── on the page: every device ──
-    Repeater {
-        model: root.expanded ? [
-            { key: "output", title: "Output", nodes: Audio.sinks, current: Audio.sink },
-            { key: "input", title: "Input", nodes: Audio.sources, current: Audio.source }
-        ] : []
-        delegate: Column {
-            id: devices
-            required property var modelData
-            width: root.colW
-            spacing: Metrics.s2
+    // ── on the page: where it plays, then where else it can ──
+    // Devices grouped by where they are, so six look-alike rows read as a choice: this computer, Bluetooth, the
+    // displays, the network (AirPlay receivers).
+    function kindOf(n: var): string {
+        const name = (n?.name ?? "") + " " + (n?.description ?? "");
+        if (/raop|airplay/i.test(name))
+            return "network";
+        if (/bluez/i.test(n?.name ?? ""))
+            return "bluetooth";
+        if (/hdmi|displayport|\bdp\b/i.test(name))
+            return "display";
+        return "here";
+    }
+    // which device groups are unfolded (by key), as you leave them while the page is open
+    property var openGroups: ({})
+    readonly property var kinds: [
+        { key: "here", title: "This computer" },
+        { key: "bluetooth", title: "Bluetooth" },
+        { key: "display", title: "Displays" },
+        { key: "network", title: "On the network" }
+    ]
+    function outputGlyph(n: var): string {
+        const f = n?.properties?.["device.form-factor"] ?? "";
+        const k = kindOf(n);
+        return f === "headphones" || f === "headset" || k === "bluetooth" ? "headphones" : k === "display" ? "device-tv" : k === "network" ? "device-laptop" : "device-speaker";
+    }
+    function kindLabel(n: var): string {
+        const f = n?.properties?.["device.form-factor"] ?? "";
+        return ({ here: f === "headphones" || f === "headset" ? "Headphones" : "Built-in", bluetooth: "Bluetooth", display: "Display audio", network: "AirPlay receiver" })[kindOf(n)];
+    }
 
+    Column {
+        visible: root.expanded
+        width: root.colW
+        spacing: Metrics.s3
+
+        Instrument {
+            width: parent.width
+            icon: Audio.ready ? (Audio.muted ? "volume-off" : root.outputGlyph(Audio.sink)) : "volume-off"
+            iconOn: Audio.ready && !Audio.muted
+            caption: "PLAYING ON"
+            title: Audio.ready ? Audio.sinkName : "No output"
+            detail: !Audio.ready ? "Nothing to play on" : Audio.muted ? "Muted · click the speaker to unmute" : root.kindLabel(Audio.sink)
+            value: Audio.ready ? (Audio.muted ? "Muted" : String(Math.round(Audio.volume * 100))) : ""
+            unit: Audio.ready && !Audio.muted ? "%" : ""
+            level: Audio.ready ? Audio.volume : -1
+            dimmed: Audio.muted
+            onIconClicked: Audio.toggleMute()
+            onLevelMoved: v => Audio.setVolume(v)
+        }
+
+        SectionHead {
+            visible: Audio.sinks.length > 1
+            width: parent.width
+            title: "PLAY ON"
             Label {
-                role: "caption"
+                role: "data"
                 tone: "faint"
-                caps: true
-                text: devices.modelData.title
+                text: String(Audio.sinks.length)
             }
-            // the default's own level
-            Row {
-                width: parent.width
-                spacing: Metrics.s3
-                visible: devices.modelData.current !== null
-                readonly property bool out: devices.modelData.key === "output"
-                IconButton {
-                    anchors.verticalCenter: parent.verticalCenter
-                    icon: parent.out ? Audio.glyph : (Audio.micMuted ? "microphone-off" : "microphone")
-                    onClicked: parent.out ? Audio.toggleMute() : Audio.toggleMicMute()
-                }
-                Slider {
-                    wheelAdjusts: true
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - Metrics.control - 40 - Metrics.s3 * 2
-                    value: parent.out ? Audio.volume : Audio.micVolume
-                    opacity: (parent.out ? Audio.muted : Audio.micMuted) ? 0.5 : 1
-                    onMoved: v => parent.out ? Audio.setVolume(v) : Audio.setMicVolume(v)
-                }
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 40
-                    horizontalAlignment: Text.AlignRight
-                    role: "label"
-                    numeric: true
-                    tone: "muted"
-                    text: Math.round((parent.out ? Audio.volume : Audio.micVolume) * 100)
+        }
+        // grouped; past [panels] device_rows the groups scroll rather than stretching the panel
+        Flickable {
+            id: outputs
+            visible: Audio.sinks.length > 1
+            width: parent.width
+            readonly property int rows: Math.max(1, Config.panels?.device_rows ?? 6)
+            height: Math.min(groups.implicitHeight, rows * 46 + 4 * 28)
+            contentHeight: groups.implicitHeight
+            interactive: contentHeight > height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            Column {
+                id: groups
+                width: outputs.width
+                spacing: Metrics.s2
+                Repeater {
+                    model: root.kinds.filter(k => Audio.sinks.some(n => root.kindOf(n) === k.key))
+                    delegate: Column {
+                        id: group
+                        required property var modelData
+                        readonly property var members: Audio.sinks.filter(n => root.kindOf(n) === group.modelData.key)
+                        // the group playing now is open; the others fold to one line until asked for
+                        readonly property bool open: root.openGroups[group.modelData.key] ?? group.members.includes(Audio.sink)
+                        width: groups.width
+                        spacing: 2
+                        Item {
+                            width: parent.width
+                            height: 26
+                            Label {
+                                anchors.left: parent.left
+                                anchors.leftMargin: Metrics.s2
+                                anchors.verticalCenter: parent.verticalCenter
+                                role: "caption"
+                                tone: "faint"
+                                text: group.modelData.title + (group.open ? "" : "  ·  " + group.members.length)
+                            }
+                            Icon {
+                                anchors.right: parent.right
+                                anchors.rightMargin: Metrics.s2
+                                anchors.verticalCenter: parent.verticalCenter
+                                name: group.open ? "chevron-down" : "chevron-right"
+                                size: 14
+                                tone: "faint"
+                            }
+                            Interactive {
+                                anchors.fill: parent
+                                radius: Metrics.radiusMd
+                                onClicked: {
+                                    const next = Object.assign({}, root.openGroups);
+                                    next[group.modelData.key] = !group.open;
+                                    root.openGroups = next;
+                                }
+                            }
+                        }
+                        Repeater {
+                            model: group.open ? group.members : []
+                            delegate: ListRow {
+                                required property var modelData
+                                width: group.width
+                                icon: root.outputGlyph(modelData)
+                                title: Audio.nodeName(modelData)
+                                active: modelData === Audio.sink
+                                trailing: modelData === Audio.sink ? "Playing" : ""
+                                onClicked: Audio.setSink(modelData)
+                            }
+                        }
+                    }
                 }
             }
-            // the default first; past [panels] device_rows (6) the list scrolls rather than stretching the panel
-            // (a network full of AirPlay receivers lists them all)
-            ListView {
-                id: deviceList
-                width: devices.width
-                readonly property int rows: Math.max(1, Config.panels?.device_rows ?? 6)
-                model: [devices.modelData.current].filter(n => n !== null && devices.modelData.nodes.includes(n)).concat(devices.modelData.nodes.filter(n => n !== devices.modelData.current))
-                height: count === 0 ? 0 : Math.min(contentHeight, rows * contentHeight / count)
-                interactive: count > rows
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                delegate: ListRow {
+        }
+        Label {
+            visible: Audio.sinks.length === 0
+            role: "label"
+            tone: "faint"
+            text: "No output devices"
+        }
+    }
+
+    // the microphone: its own level, and the others to switch to
+    Column {
+        visible: root.expanded
+        width: root.colW
+        spacing: Metrics.s3
+        // apart from the device list above it in one column; level with the output in two
+        topPadding: root.pageColumns > 1 ? 0 : Metrics.s3
+
+        Instrument {
+            width: parent.width
+            icon: Audio.micReady && !Audio.micMuted ? "microphone" : "microphone-off"
+            iconOn: Audio.micReady && !Audio.micMuted
+            caption: "LISTENING WITH"
+            title: Audio.micReady ? Audio.nodeName(Audio.source) : "No microphone"
+            detail: !Audio.micReady ? "Nothing to record with" : Audio.micMuted ? "Muted" : Audio.recording.length > 0 ? Audio.recording.length + (Audio.recording.length === 1 ? " app is listening" : " apps are listening") : "Live"
+            value: Audio.micReady ? (Audio.micMuted ? "Off" : String(Math.round(Audio.micVolume * 100))) : ""
+            unit: Audio.micReady && !Audio.micMuted ? "%" : ""
+            level: Audio.micReady ? Audio.micVolume : -1
+            dimmed: Audio.micMuted
+            onIconClicked: Audio.toggleMicMute()
+            onLevelMoved: v => Audio.setMicVolume(v)
+        }
+        Flow {
+            visible: Audio.sources.length > 1
+            width: parent.width
+            spacing: Metrics.s2
+            Repeater {
+                model: Audio.sources
+                delegate: Chip {
                     required property var modelData
-                    width: deviceList.width
-                    icon: devices.modelData.key === "output" ? (modelData.properties?.["device.form-factor"] === "headphones" || modelData.properties?.["device.form-factor"] === "headset" ? "headphones" : "device-speaker") : "microphone"
-                    title: Audio.nodeName(modelData)
-                    active: modelData === devices.modelData.current
-                    trailing: modelData === devices.modelData.current ? "Default" : ""
-                    onClicked: devices.modelData.key === "output" ? Audio.setSink(modelData) : Audio.setSource(modelData)
+                    icon: modelData === Audio.source ? "check" : "microphone"
+                    text: Audio.nodeName(modelData)
+                    active: modelData === Audio.source
+                    onClicked: Audio.setSource(modelData)
                 }
-            }
-            Label {
-                visible: devices.modelData.nodes.length === 0
-                role: "label"
-                tone: "faint"
-                text: devices.modelData.key === "output" ? "No output devices" : "No input devices"
             }
         }
     }
@@ -198,12 +299,15 @@ Flow {
         spacing: Metrics.s2
         visible: root.apps.length > 0 || root.expanded
 
-        Label {
+        SectionHead {
             visible: root.expanded
-            role: "caption"
-            tone: "faint"
-            caps: true
-            text: "Apps"
+            width: parent.width
+            title: "APPS"
+            Label {
+                role: "data"
+                tone: "faint"
+                text: String(Audio.playback.length)
+            }
         }
         Label {
             visible: root.expanded && Audio.playback.length === 0

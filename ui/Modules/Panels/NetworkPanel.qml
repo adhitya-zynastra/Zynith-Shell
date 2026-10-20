@@ -18,10 +18,8 @@ Column {
     padding: Metrics.s6
     spacing: Metrics.s4
     readonly property real inner: width - padding * 2
-    // wide rather than tall: [panels] list_width, and the list in list_columns columns
-    readonly property int preferredWidth: Config.panels?.list_width ?? 760
-    readonly property int listColumns: Math.max(1, Config.panels?.list_columns ?? 2)
-    readonly property real cell: (inner - Metrics.s2 * (listColumns - 1)) / listColumns
+    // [panels] list_width: one column, the connection first
+    readonly property int preferredWidth: Config.panels?.list_width ?? 440
 
     // the list (and NetworkManager's per-network signals) exists only while this panel is on screen
     property bool holding: false
@@ -42,7 +40,7 @@ Column {
     PanelHeader {
         width: root.inner
         title: "Wi‑Fi"
-        caption: Network.connected ? Network.name : Network.wifiEnabled ? "Not connected" : "Off"
+        caption: Network.wired ? "Wired connection" : Network.wifiEnabled ? (Network.connected ? "Connected" : "Not connected") : "Off"
         canGoBack: root.canGoBack
         onBack: root.back()
 
@@ -53,38 +51,77 @@ Column {
         }
     }
 
-    Grid {
+    // the connection: what you are on, how well, and what keeps it private
+    Instrument {
         width: root.inner
-        columns: root.listColumns
-        rowSpacing: Metrics.s1
-        columnSpacing: Metrics.s2
-        visible: Network.wifiEnabled
+        icon: Network.glyph
+        iconOn: Network.connected
+        caption: Network.connected ? "CONNECTED TO" : "WI‑FI"
+        title: Network.connected ? Network.name : Network.wifiEnabled ? "Not connected" : "Wi‑Fi is off"
+        detail: Network.wired ? "Ethernet" : !Network.wifiEnabled ? "Click to turn Wi‑Fi on" : !Network.connected ? "Choose a network below" : [root.current ? (root.current.secured ? "Secured" : "Open network") : "", Network.vpn !== "" ? "VPN · " + Network.vpn : ""].filter(t => t !== "").join("  ·  ")
+        value: Network.connected && !Network.wired ? String(Math.round(Network.strength * 100)) : ""
+        unit: value !== "" ? "%" : ""
+        onIconClicked: Network.setWifiEnabled(!Network.wifiEnabled)
+    }
 
-        Repeater {
-            model: ScriptModel {
-                values: Network.networks.slice(0, 9)
-                objectProp: "ssid"
+    // the one connected, and the rest: the ones you have used first (they join without a password), then by signal
+    readonly property var current: Network.networks.find(n => n.connected) ?? null
+    readonly property var others: Network.networks.filter(n => !n.connected)
+    readonly property var saved: others.filter(n => n.known)
+    readonly property var nearby: others.filter(n => !n.known)
+
+    Repeater {
+        model: Network.wifiEnabled ? [
+            { title: "SAVED", list: root.saved },
+            { title: "NEARBY", list: root.nearby }
+        ].filter(g => g.list.length > 0) : []
+        delegate: Column {
+            id: group
+            required property var modelData
+            width: root.inner
+            spacing: Metrics.s1
+            SectionHead {
+                width: parent.width
+                title: group.modelData.title
+                Label {
+                    role: "data"
+                    tone: "faint"
+                    text: String(group.modelData.list.length)
+                }
             }
-
-            delegate: ListRow {
-                required property var modelData
-                width: root.cell
-                icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
-                title: modelData.ssid
-                detail: !modelData.secured ? "Open" : modelData.known ? "Saved" : "Secured"
-                trailing: modelData.connected ? "Connected" : modelData.busy ? "…" : ""
-                active: modelData.connected
-                busy: modelData.busy
-                onClicked: modelData.connected ? Network.disconnect() : Network.connectTo(modelData.ssid)
+            Repeater {
+                model: ScriptModel {
+                    values: group.modelData.list.slice(0, 6)
+                    objectProp: "ssid"
+                }
+                delegate: ListRow {
+                    required property var modelData
+                    width: group.width
+                    icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
+                    title: modelData.ssid
+                    detail: (modelData.secured ? "Secured" : "Open") + "  ·  " + Math.round(modelData.strength * 100) + "%"
+                    trailing: modelData.busy ? "Joining…" : modelData.secured && !modelData.known ? "Password" : ""
+                    busy: modelData.busy
+                    onClicked: Network.connectTo(modelData.ssid)
+                }
             }
         }
+    }
 
-        Label {
-            visible: Network.networks.length === 0
-            width: root.cell
-            role: "body"
-            tone: "faint"
-            text: "Looking for networks…"
-        }
+    Label {
+        visible: Network.wifiEnabled && root.others.length === 0
+        width: root.inner
+        role: "caption"
+        tone: "faint"
+        wrapMode: Text.WordWrap
+        text: Network.networks.length === 0 ? "Looking for networks…" : "No other networks nearby"
+    }
+    ListRow {
+        visible: Network.connected && !Network.wired
+        width: root.inner
+        icon: "x"
+        title: "Disconnect"
+        detail: "Leave " + Network.name
+        onClicked: Network.disconnect()
     }
 }

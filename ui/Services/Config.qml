@@ -505,8 +505,8 @@ Singleton {
                     // how far the outgoing and incoming contents shrink while they cross (1 = not at all)
                     content_scale: 0.94,
                     // the list panels (Wi‑Fi, Bluetooth): wide, their rows in columns
-                    list_width: 760,
-                    list_columns: 2,
+                    list_width: 440,
+                    list_columns: 1,
                     // audio devices shown before their list scrolls
                     device_rows: 6,
                     // the session menu: orbs (round glyphs over the dimmed desktop, as the native modal menu) | card

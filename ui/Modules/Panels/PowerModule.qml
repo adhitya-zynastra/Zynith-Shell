@@ -50,6 +50,8 @@ Flow {
     property var screen: null
     property bool active: true
     property bool expanded: false
+    // the page's heading is on a hero above it (ModulePage.headInHero)
+    property bool headed: false
 
     readonly property var battery: Power.device
     spacing: Metrics.s3
@@ -90,6 +92,21 @@ Flow {
         if (st === UPowerDeviceState.Discharging)
             return pct + (battery.timeToEmpty > 0 ? " · " + duration(battery.timeToEmpty) + " left" : " · on battery");
         return pct;
+    }
+
+    // ── on its page: the battery as an instrument (the charge read large, what it is doing, the profile in use) ──
+    Instrument {
+        // the Control Panel's hero already reads it out over the page
+        visible: root.expanded && !root.headed
+        width: root.colW
+        icon: Power.present ? Power.glyph : "plug"
+        iconOn: !Power.present || Power.charging || Power.level > 0.2
+        iconInteractive: false
+        caption: Power.present ? (Power.charging ? "CHARGING" : "BATTERY") : "POWER"
+        title: ControlShortcuts.profileLabels[ControlShortcuts.profile] ?? "Power"
+        detail: Power.present ? root.batteryLine : "On mains power"
+        value: Power.present ? String(Math.round(Power.level * 100)) : ""
+        unit: Power.present ? "%" : ""
     }
 
     // ── header: the profile in use (the Control Panel's section head names the section; here, the Experience) ──

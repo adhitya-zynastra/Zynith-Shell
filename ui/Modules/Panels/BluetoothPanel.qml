@@ -18,24 +18,34 @@ Column {
     padding: Metrics.s6
     spacing: Metrics.s4
     readonly property real inner: width - padding * 2
-    // wide rather than tall: [panels] list_width, and the list in list_columns columns
-    readonly property int preferredWidth: Config.panels?.list_width ?? 760
-    readonly property int listColumns: Math.max(1, Config.panels?.list_columns ?? 2)
-    readonly property real cell: (inner - Metrics.s2 * (listColumns - 1)) / listColumns
+    // [panels] list_width: one column, what is connected first
+    readonly property int preferredWidth: Config.panels?.list_width ?? 440
 
-    readonly property var devices: (Bluetooth.adapter?.devices.values ?? []).filter(d => d.paired || d.name).slice().sort((a, b) => (b.connected - a.connected) || (b.paired - a.paired) || a.name.localeCompare(b.name))
+    readonly property var all: (Bluetooth.adapter?.devices.values ?? []).filter(d => d.paired || d.name)
+    readonly property var connectedDevices: all.filter(d => d.connected)
+    readonly property var pairedDevices: all.filter(d => d.paired && !d.connected).sort((a, b) => a.name.localeCompare(b.name))
+    readonly property var found: all.filter(d => !d.paired && !d.connected && d.name)
+    readonly property var lead: connectedDevices[0] ?? null
+    // what kind of thing it is, from BlueZ's own icon name
+    function glyph(d: var): string {
+        const i = d?.icon ?? "";
+        return /mouse/.test(i) ? "mouse" : /keyboard/.test(i) ? "keyboard" : /audio|headset|headphone/.test(i) ? "headphones" : /phone/.test(i) ? "device-mobile" : /watch/.test(i) ? "device-watch" : /computer|laptop/.test(i) ? "device-laptop" : "bluetooth";
+    }
+    function battery(d: var): string {
+        return d?.batteryAvailable ? Math.round(d.battery * 100) + "%" : "";
+    }
 
     PanelHeader {
         width: root.inner
         title: "Bluetooth"
-        caption: Bluetooth.available ? Bluetooth.summary : "No adapter"
+        caption: !Bluetooth.available ? "No adapter" : !Bluetooth.enabled ? "Off" : root.connectedDevices.length === 0 ? "Nothing connected" : root.connectedDevices.length + " connected"
         canGoBack: root.canGoBack
         onBack: root.back()
 
         IconButton {
             visible: Bluetooth.enabled
             anchors.verticalCenter: parent.verticalCenter
-            icon: "activity"
+            icon: "scan"
             tone: "muted"
             active: Bluetooth.adapter?.discovering ?? false
             onClicked: Bluetooth.adapter.discovering = !Bluetooth.adapter.discovering
@@ -51,27 +61,62 @@ Column {
     Component.onDestruction: if (Bluetooth.adapter?.discovering)
         Bluetooth.adapter.discovering = false
 
-    Grid {
+    // what is connected now: the device and its battery, or the state of the radio
+    Instrument {
         width: root.inner
-        columns: root.listColumns
-        rowSpacing: Metrics.s1
-        columnSpacing: Metrics.s2
-        visible: Bluetooth.enabled
+        icon: !Bluetooth.enabled ? "bluetooth-off" : root.lead ? root.glyph(root.lead) : "bluetooth"
+        iconOn: Bluetooth.enabled && root.lead !== null
+        caption: root.lead ? "CONNECTED" : "BLUETOOTH"
+        title: !Bluetooth.available ? "No adapter" : !Bluetooth.enabled ? "Bluetooth is off" : root.lead ? root.lead.name : "Nothing connected"
+        detail: !Bluetooth.enabled ? "Click to turn Bluetooth on" : root.connectedDevices.length > 1 ? "and " + (root.connectedDevices.length - 1) + " more" : root.lead ? (root.lead.batteryAvailable ? "Battery" : "Connected") : root.pairedDevices.length > 0 ? "Choose a paired device below" : "Scan to find a device"
+        value: root.lead && root.lead.batteryAvailable ? String(Math.round(root.lead.battery * 100)) : ""
+        unit: value !== "" ? "%" : ""
+        onIconClicked: Bluetooth.setEnabled(!Bluetooth.enabled)
+    }
 
-        Repeater {
-            model: root.devices.slice(0, 10)
-
-            delegate: ListRow {
-                required property var modelData
-                width: root.cell
-                icon: modelData.connected ? "bluetooth-connected" : "bluetooth"
-                title: modelData.name
-                detail: modelData.batteryAvailable ? Math.round(modelData.battery * 100) + "%" : modelData.paired ? "Paired" : ""
-                trailing: modelData.connected ? "Connected" : modelData.pairing ? "Pairing" : ""
-                active: modelData.connected
-                busy: modelData.pairing
-                onClicked: modelData.connected ? modelData.disconnect() : modelData.paired ? modelData.connect() : modelData.pair()
+    Repeater {
+        model: Bluetooth.enabled ? [
+            { title: "CONNECTED", list: root.connectedDevices.slice(1), action: "Disconnect" },
+            { title: "PAIRED", list: root.pairedDevices, action: "Connect" },
+            { title: "FOUND", list: root.found, action: "Pair" }
+        ].filter(g => g.list.length > 0) : []
+        delegate: Column {
+            id: group
+            required property var modelData
+            width: root.inner
+            spacing: Metrics.s1
+            SectionHead {
+                width: parent.width
+                title: group.modelData.title
+                Label {
+                    role: "data"
+                    tone: "faint"
+                    text: String(group.modelData.list.length)
+                }
+            }
+            Repeater {
+                model: group.modelData.list.slice(0, 6)
+                delegate: ListRow {
+                    required property var modelData
+                    width: group.width
+                    icon: root.glyph(modelData)
+                    title: modelData.name
+                    detail: [root.battery(modelData), modelData.pairing ? "Pairing…" : ""].filter(t => t !== "").join("  ·  ")
+                    trailing: group.modelData.action
+                    active: modelData.connected
+                    busy: modelData.pairing
+                    onClicked: modelData.connected ? modelData.disconnect() : modelData.paired ? modelData.connect() : modelData.pair()
+                }
             }
         }
+    }
+    // the lead device's own way out
+    ListRow {
+        visible: Bluetooth.enabled && root.lead !== null
+        width: root.inner
+        icon: "x"
+        title: "Disconnect"
+        detail: root.lead ? root.lead.name : ""
+        onClicked: root.lead.disconnect()
     }
 }

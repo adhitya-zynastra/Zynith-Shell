@@ -130,6 +130,7 @@ Column {
             screen: root.screen
             active: root.active
             expanded: true
+            headed: root.headInHero
         }
     }
     Component {
