@@ -65,7 +65,8 @@ BarItem {
             muted: !Media.playing
             x: 0
             NumberAnimation on x {
-                running: viewport.scrolls
+                // only while the bar is on screen: slid away, the scroll ran the animation clock for nobody
+                running: viewport.scrolls && (root.bar?.shown ?? 1) > 0
                 loops: Animation.Infinite
                 from: 0
                 to: -(label.implicitWidth - viewport.width + 24)

@@ -123,7 +123,10 @@ PanelWindow {
     // always | autohide (reveal at the edge) | smart (hidden while the active workspace has windows)
     readonly property string visibility: oneOf("visibility", ["always", "smart", "autohide"], "always")
     readonly property bool hides: visibility === "autohide" || visibility === "smart"
-    readonly property bool panelHere: PanelRouter.openPanels[screen?.name ?? ""] !== undefined
+    // a hidden bar stays out while the panel it opened is out (its join needs it), not for every panel on the screen:
+    // opening Sound from the left bar brought out every autohide bar, and with them a scrolling title and a seconds
+    // clock — the latter ticking every clock in the UI (measured: ~3% of a core while a panel rested open)
+    readonly property bool panelHere: (PanelRouter.openPanels[screen?.name ?? ""]?.barId ?? "") === (spec.id ?? "")
     // the pointer on the bar, or on the edge strip that summons it; leaving lets it go after hide_delay_ms
     property bool held: false
     readonly property bool hovered: hover.hovered

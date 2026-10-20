@@ -80,92 +80,100 @@ Item {
         color: root.ink
     }
 
-    // the dial
-    Item {
-        id: dial
-        visible: root.analog
+    // the dial, built only for an analog clock: a digital one still carried three hidden hands, which swept every
+    // second whenever anything asked for seconds and re-rendered the whole desktop window for each sweep
+    Loader {
         anchors.centerIn: parent
         width: Math.min(parent.width, parent.height)
         height: width
-        readonly property real r: width / 2
-
-        Rectangle {
-            visible: root.opt("circle") !== false
+        active: root.analog
+        sourceComponent: dialComponent
+    }
+    Component {
+        id: dialComponent
+        Item {
+            id: dial
             anchors.fill: parent
-            radius: width / 2
-            color: Theme.alpha(Theme.base, 0.35)
-            border.width: Math.max(1, dial.r * 0.02)
-            border.color: Theme.alpha(root.ink, 0.35)
-        }
-        Repeater {
-            model: 12
-            delegate: Rectangle {
-                required property int index
-                readonly property bool major: index % 3 === 0
-                width: Math.max(1.5, dial.r * (major ? 0.035 : 0.02))
-                height: dial.r * (major ? 0.14 : 0.08)
+            readonly property real r: width / 2
+
+            Rectangle {
+                visible: root.opt("circle") !== false
+                anchors.fill: parent
                 radius: width / 2
-                color: Theme.alpha(root.ink, major ? 0.9 : 0.5)
-                x: dial.r - width / 2
-                y: dial.r * 0.06
-                transform: Rotation {
-                    origin.x: width / 2
-                    origin.y: dial.r - dial.r * 0.06
-                    angle: index * 30
-                }
+                color: Theme.alpha(Theme.base, 0.35)
+                border.width: Math.max(1, dial.r * 0.02)
+                border.color: Theme.alpha(root.ink, 0.35)
             }
-        }
-        component Hand: Rectangle {
-            id: hand
-            property real angle: 0
-            property real length: 0.6
-            property real thickness: 0.04
-            width: Math.max(1.5, dial.r * thickness)
-            height: dial.r * length
-            radius: width / 2
-            x: dial.r - width / 2
-            y: dial.r - height
-            transform: Rotation {
-                origin.x: hand.width / 2
-                origin.y: hand.height
-                angle: hand.angle
-                Behavior on angle {
-                    enabled: !Motion.reduced
-                    // unwrap at the top of the dial so the hand never spins back the long way
-                    NumberAnimation {
-                        duration: Motion.spatialFast
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Motion.spatialFastCurve
+            Repeater {
+                model: 12
+                delegate: Rectangle {
+                    required property int index
+                    readonly property bool major: index % 3 === 0
+                    width: Math.max(1.5, dial.r * (major ? 0.035 : 0.02))
+                    height: dial.r * (major ? 0.14 : 0.08)
+                    radius: width / 2
+                    color: Theme.alpha(root.ink, major ? 0.9 : 0.5)
+                    x: dial.r - width / 2
+                    y: dial.r * 0.06
+                    transform: Rotation {
+                        origin.x: width / 2
+                        origin.y: dial.r - dial.r * 0.06
+                        angle: index * 30
                     }
                 }
             }
-        }
-        // angles grow without wrapping, so 59 -> 0 is one step forward
-        readonly property real minutesTotal: root.time.getHours() * 60 + root.time.getMinutes()
-        Hand {
-            angle: dial.minutesTotal * 0.5
-            length: 0.5
-            thickness: 0.06
-            color: root.ink
-        }
-        Hand {
-            angle: dial.minutesTotal * 6
-            length: 0.74
-            thickness: 0.04
-            color: root.ink
-        }
-        Hand {
-            angle: (dial.minutesTotal * 60 + root.time.getSeconds()) * 6
-            length: 0.82
-            thickness: 0.018
-            color: Theme.accent
-        }
-        Rectangle {
-            anchors.centerIn: parent
-            width: dial.r * 0.08
-            height: width
-            radius: width / 2
-            color: Theme.accent
+            component Hand: Rectangle {
+                id: hand
+                property real angle: 0
+                property real length: 0.6
+                property real thickness: 0.04
+                width: Math.max(1.5, dial.r * thickness)
+                height: dial.r * length
+                radius: width / 2
+                x: dial.r - width / 2
+                y: dial.r - height
+                transform: Rotation {
+                    origin.x: hand.width / 2
+                    origin.y: hand.height
+                    angle: hand.angle
+                    Behavior on angle {
+                        enabled: !Motion.reduced
+                        // unwrap at the top of the dial so the hand never spins back the long way
+                        NumberAnimation {
+                            duration: Motion.spatialFast
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Motion.spatialFastCurve
+                        }
+                    }
+                }
+            }
+            // angles grow without wrapping, so 59 -> 0 is one step forward
+            readonly property real minutesTotal: root.time.getHours() * 60 + root.time.getMinutes()
+            Hand {
+                angle: dial.minutesTotal * 0.5
+                length: 0.5
+                thickness: 0.06
+                color: root.ink
+            }
+            Hand {
+                angle: dial.minutesTotal * 6
+                length: 0.74
+                thickness: 0.04
+                color: root.ink
+            }
+            Hand {
+                angle: (dial.minutesTotal * 60 + root.time.getSeconds()) * 6
+                length: 0.82
+                thickness: 0.018
+                color: Theme.accent
+            }
+            Rectangle {
+                anchors.centerIn: parent
+                width: dial.r * 0.08
+                height: width
+                radius: width / 2
+                color: Theme.accent
+            }
         }
     }
 }
