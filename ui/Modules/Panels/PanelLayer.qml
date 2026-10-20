@@ -17,25 +17,24 @@ Scope {
     property bool closing: false
     readonly property bool present: shown !== null
 
-    // the panel the warm (closed, kept-alive) window last held: reopening as a different one makes a fresh
-    // window — a warm window shown again as another panel kept a stale compositor size (the wallpaper browser
-    // after the session menu stayed 432 px wide)
-    property string warmId: ""
-    property bool recycling: false
+    // A warm (closed, kept-alive) window is reused for whichever panel opens next. It is shown only after it has taken
+    // the new panel's size (`mapped` follows `shown` one call later, within the same pass of the event loop): a warm
+    // window mapped first and resized after kept the old size at the compositor (the wallpaper browser after the
+    // session menu stayed 432 px wide). That used to be avoided by throwing the warm window away whenever another panel
+    // opened — a whole new window and page, ~40 ms more before the first frame.
+    property bool mapped: false
+    onShownChanged: {
+        if (shown === null)
+            mapped = false;
+        else if (!mapped)
+            Qt.callLater(() => root.mapped = root.shown !== null);
+    }
     onEntryChanged: {
         if (entry) {
-            if (!shown && warm && warmId !== "" && warmId !== entry.id) {
-                cool.stop();
-                recycling = true;
-                Qt.callLater(() => {
-                    root.recycling = false;
-                    root.closing = false;
-                    root.shown = root.entry;
-                });
-                return;
-            }
+            // shown before the warm timer stops, or the loader sees neither for an instant and drops the window
             closing = false;
             shown = entry;
+            cool.stop();
         } else if (shown) {
             closing = true;
         }
@@ -43,14 +42,16 @@ Scope {
 
     function finishClose(): void {
         if (closing) {
-            warmId = shown?.id ?? "";
             // a bare panel (the wallpaper browser) is never kept warm: hidden, its content stops being bare,
             // the window shrank, and shown again it kept that size (432 px). It reopens on a fresh window.
             const wasBare = surface.item?.bare ?? false;
-            closing = false;
-            shown = null;
+            // warm first: cleared the other way round, the loader saw neither present nor warm for an instant and
+            // destroyed the window, then built an unused new one — nothing was ever kept warm
             if (ExperiencePolicy.panelKeepAliveMs > 0 && !wasBare)
                 cool.restart();
+            // hidden before `closing` clears: a surface whose close is taken back re-enters, and a warm one must not
+            shown = null;
+            closing = false;
         }
     }
 
@@ -130,10 +131,10 @@ Scope {
 
     LazyLoader {
         id: surface
-        active: (root.present || root.warm) && !root.recycling
+        active: root.present || root.warm
 
         PanelSurface {
-            visible: root.present
+            visible: root.mapped
             screen: root.modelData
             entry: root.shown
             closing: root.closing

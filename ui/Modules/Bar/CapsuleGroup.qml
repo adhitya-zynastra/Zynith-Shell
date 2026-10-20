@@ -46,7 +46,9 @@ Item {
     }
     property bool rested: false
     Timer {
-        interval: Math.max(0, root.hoverMember()?.opt("hover_delay") ?? 350)
+        // the member's own timing: longer when another panel is already out (BarItem.hoverSwitchDelay)
+        readonly property var m: root.hoverMember()
+        interval: m ? (m.switching ? Math.max(m.hoverDelay, m.hoverSwitchDelay) : m.hoverDelay) : 350
         running: hover.hovered && !root.rested && root.hoverMember() !== null
         onTriggered: {
             root.rested = true;

@@ -202,6 +202,11 @@ Item {
     }
     readonly property bool openOnHover: flag(settings.open_on_hover) ?? flag(barSpec.open_on_hover) ?? false
     readonly property int hoverDelay: (settings.hover_delay ?? -1) >= 0 ? settings.hover_delay : Math.max(0, barSpec.hover_delay ?? 0)
+    // with another panel already out on this screen, the pointer must rest a little longer before that panel turns into
+    // this one: a sweep across the bar acts only where it stops, not on every icon it crosses (each was a page built
+    // and a glide begun, then abandoned — 40–60 ms frames in a fast sweep)
+    readonly property int hoverSwitchDelay: (settings.hover_switch_delay ?? -1) >= 0 ? settings.hover_switch_delay : Math.max(0, barSpec.hover_switch_delay ?? 110)
+    readonly property bool switching: PanelRouter.current(root.screen?.name ?? "") !== null
     readonly property int hoverCloseDelay: (settings.hover_close_delay ?? -1) >= 0 ? settings.hover_close_delay : Math.max(0, barSpec.hover_close_delay ?? 300)
     readonly property bool hoverClose: flag(settings.hover_close) ?? flag(barSpec.hover_close) ?? true
     readonly property string hoverAction: {
@@ -218,7 +223,7 @@ Item {
     property bool hoverOpened: false
     Timer {
         id: hoverIntent
-        interval: root.hoverDelay
+        interval: root.switching ? Math.max(root.hoverDelay, root.hoverSwitchDelay) : root.hoverDelay
         running: root.hovered && root.hoverAction !== "" && !root.hoverOpened
         onTriggered: root.restOpen()
     }

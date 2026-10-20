@@ -264,6 +264,16 @@ Singleton {
     // the page showing in each screen's panel (PanelContent): what a key sent over IPC reaches (`ipc panelKey`)
     property var livePages: ({})
     // the panel window's actual size per output (diagnostics: should match its card's span)
+    // the deepest panel seen on each screen edge this session ("eDP-1:left" -> px): a panel window on that edge starts
+    // that deep, so switching to a deeper panel there does not grow the window mid-glide (PanelSurface.roomy)
+    property var edgeDepths: ({})
+    function noteDepth(key: string, depth: real): void {
+        if (depth > (edgeDepths[key] ?? 0)) {
+            const next = Object.assign({}, edgeDepths);
+            next[key] = depth;
+            edgeDepths = next;
+        }
+    }
     property var windowSizes: ({})
     function noteRect(screenName: string, rect: var): void {
         const prev = rects[screenName];

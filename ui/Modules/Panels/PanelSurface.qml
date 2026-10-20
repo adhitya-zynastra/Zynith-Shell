@@ -119,36 +119,39 @@ PanelWindow {
     // network list arriving: +28 px) moves inside the window it has. Every resize is a synchronous expose and a new
     // swapchain on the GUI thread — measured as 45–60 ms holds mid-entrance. The room is transparent and takes no
     // input (the mask is the card); the window settles to the card after the next glide.
+    // A panel on a screen edge gets the whole edge's length at once (its depth stays the card's): a switch to another
+    // icon on the bar lands somewhere else along it, and growing the window there was a hold in the glide.
     readonly property int headroom: 48
     function roomy(t: var): var {
         if (bare)
             return t;
+        if (sideEdge && place === "") {
+            const d = Math.max(horizontalEdge ? t.h : t.w, PanelRouter.edgeDepths[edgeKey] ?? 0);
+            // the depth grows into the screen: away from the edge the bar is on
+            if (horizontalEdge)
+                return { x: 0, y: edge === "bottom" ? t.y + t.h - d : t.y, w: sw, h: d };
+            return { x: edge === "right" ? t.x + t.w - d : t.x, y: 0, w: d, h: sh };
+        }
         const y = Math.max(0, t.y - headroom), y2 = Math.min(sh, t.y + t.h + headroom);
         return { x: t.x, y: y, w: t.w, h: Math.max(t.h, y2 - y) };
     }
+    readonly property string edgeKey: (screen?.name ?? "") + ":" + edge
     function contains(a: var, b: var): bool {
         return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
     }
     onTargetChanged: {
-        // only a panel already on screen glides; one appearing (or a bare one) takes its size at once — a
-        // window resized twice while it was being shown kept the stale size (the wallpaper browser at 432 px)
-        if (!morphReady) {
-            settle.stop();
+        if (sideEdge && place === "" && !bare)
+            PanelRouter.noteDepth(edgeKey, horizontalEdge ? target.h : target.w);
+        // hidden (about to be shown, or warm): the card's size, with headroom — free, nothing is on screen
+        if (!visible) {
             span = roomy(target);
             return;
         }
-        // still inside the window (the headroom a panel appears with): nothing to resize
-        if (!settle.running && contains(span, target))
-            return;
-        const now = { x: ax, y: ay, w: aw, h: ah };
-        span = unite(settle.running ? unite(span, now) : now, target);
-        settle.restart();
-    }
-
-    Timer {
-        id: settle
-        interval: win.morphMs + 60
-        onTriggered: win.span = win.target
+        // While it is on screen the window only grows (with the same headroom), never shrinks: each resize is a 40–60
+        // ms hold, and shrinking back after every glide made the next switch grow it again (the 51 ms frame at the end
+        // of a sweep across the bar). It takes the card's own size again while hidden.
+        if (!contains(span, target))
+            span = roomy(unite(span, target));
     }
     readonly property int pad: bare ? 0 : Math.max(card.shadowed && !attached ? Metrics.shadowPad + 6 : 0, attached ? joinRadius + 2 : 0)
     readonly property int gap: attached ? 0 : Metrics.s3
@@ -458,12 +461,14 @@ PanelWindow {
         begin()
     onVisibleChanged: {
         if (visible) {
-            settle.stop();
             span = roomy(target);
             begin();
             settleSize.restart();
         } else {
             entering = false;
+            // shown again (a warm window), it waits for its own first frame once more: the entrance starts when the
+            // window is on screen, not while it is still being mapped
+            presented = false;
         }
     }
 
@@ -490,7 +495,8 @@ PanelWindow {
             enter.stop();
             // at once, in its own material: the backdrop follows it back into the icon
             leave.start();
-        } else {
+        } else if (visible) {
+            // a close taken back while it is still on screen: it comes back from where it is
             leave.stop();
             enter.start();
         }

@@ -1025,6 +1025,7 @@ Item {
         { key: "reserve", label: "Windows keep clear of it", kind: "toggle", default: false, hint: "Bars on one edge share the room the deepest of them needs" },
         { key: "open_on_hover", label: "Icons open their panel on hover", kind: "toggle", default: false },
         { key: "hover_delay", label: "Hover before a panel opens (ms)", kind: "int", default: 0, from: 0, to: 2000, step: 25, when: { open_on_hover: [true] } },
+        { key: "hover_switch_delay", label: "Hover before another open panel switches (ms)", kind: "int", default: 110, from: 0, to: 1000, step: 10, when: { open_on_hover: [true] }, hint: "a sweep across icons opens only where it stops" },
         { key: "hover_close", label: "A hovered panel closes when the pointer leaves", kind: "toggle", default: true, when: { open_on_hover: [true] } },
         { key: "hover_highlight", label: "Components light up on hover", kind: "toggle", default: true },
         { key: "hide_delay_ms", label: "Hides this long after the pointer leaves (ms)", kind: "int", default: 350, from: 0, to: 3000, step: 50, when: { visibility: ["smart", "autohide"] } },
