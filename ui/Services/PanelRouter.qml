@@ -263,6 +263,18 @@ Singleton {
     property var rects: ({})
     // the page showing in each screen's panel (PanelContent): what a key sent over IPC reaches (`ipc panelKey`)
     property var livePages: ({})
+    // screens whose panel is opening, closing or gliding: work a page asks for that can wait (a network lookup) waits
+    // for rest, so it costs neither the first frame nor a frame of the motion (Lyrics: the shell's first HTTPS request
+    // loads the system certificates, ~17 ms on this thread, and it came inside the Control Panel's opening)
+    property var movingScreens: []
+    readonly property bool anyMoving: movingScreens.length > 0
+    function noteMoving(screenName: string, moving: bool): void {
+        const has = movingScreens.includes(screenName);
+        if (moving && !has)
+            movingScreens = movingScreens.concat([screenName]);
+        else if (!moving && has)
+            movingScreens = movingScreens.filter(s => s !== screenName);
+    }
     // the panel window's actual size per output (diagnostics: should match its card's span)
     // the deepest panel seen on each screen edge this session ("eDP-1:left" -> px): a panel window on that edge starts
     // that deep, so switching to a deeper panel there does not grow the window mid-glide (PanelSurface.roomy)

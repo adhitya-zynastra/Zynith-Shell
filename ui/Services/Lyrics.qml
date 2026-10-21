@@ -31,7 +31,8 @@ Singleton {
     property string loadedKey: ""
     property var cache: ({})
 
-    readonly property bool wanted: consumers > 0 && Media.present
+    // asked once the panel showing it is at rest (PanelRouter.anyMoving): not inside its opening
+    readonly property bool wanted: consumers > 0 && Media.present && !PanelRouter.anyMoving
     onWantedChanged: fetch()
     onKeyChanged: fetch()
     onEnabledChanged: fetch()

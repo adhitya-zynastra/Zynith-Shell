@@ -141,8 +141,11 @@ PanelWindow {
     }
     // a panel's depth is remembered once it is on screen and at rest: while a page loads it can report another size
     // for a moment (the Sound page is first the Control Panel tab's 980 px), which made every later window that deep
-    onMovingChanged: if (!moving && visible && sideEdge && place === "" && !bare)
-        PanelRouter.noteDepth(edgeKey, horizontalEdge ? target.h : target.w)
+    onMovingChanged: {
+        if (!moving && visible && sideEdge && place === "" && !bare)
+            PanelRouter.noteDepth(edgeKey, horizontalEdge ? target.h : target.w);
+        PanelRouter.noteMoving(screen?.name ?? "", moving);
+    }
     onTargetChanged: {
         // hidden (about to be shown, or warm): the card's size, with headroom — free, nothing is on screen
         if (!visible) {
@@ -194,7 +197,10 @@ PanelWindow {
         else
             PanelRouter.setJoin(joinKey, { start: startJoin === "t", end: endJoin === "t", progress: bulge / joinRadius });
     }
-    Component.onDestruction: PanelRouter.setJoin(lastJoinKey, null)
+    Component.onDestruction: {
+        PanelRouter.setJoin(lastJoinKey, null);
+        PanelRouter.noteMoving(screen?.name ?? "", false);
+    }
     readonly property int screenMargin: Metrics.s3
     readonly property real sw: screen?.width ?? 1920
     readonly property real sh: screen?.height ?? 1080
