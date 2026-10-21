@@ -16,6 +16,12 @@ struct pw_stream;
 // then a passive PipeWire monitor stream runs on its own thread and the bands are computed on the UI
 // thread at `fps`. After a second of silence the analysis stops until sound returns; at zero consumers
 // the stream and its thread are gone.
+//
+// Asleep, the analysis stops but a running output still delivers every buffer: an app holding a silent stream open
+// (a browser tab) woke the capture thread ~94 times a second to hear nothing. So when buffers keep coming while it
+// sleeps, the stream listens for kListenMs once every kListenEveryMs instead; any sound in a window wakes it fully,
+// and so does `expectSound` (a player says it is playing). A window with no buffers at all means the output went
+// idle: the stream stays on, and costs nothing until it runs again.
 class AudioSpectrum : public QObject {
     Q_OBJECT
     QML_ELEMENT
@@ -26,6 +32,7 @@ class AudioSpectrum : public QObject {
     Q_PROPERTY(int bands READ bands WRITE setBands NOTIFY bandsChanged)
     Q_PROPERTY(int fps READ fps WRITE setFps NOTIFY fpsChanged)
     Q_PROPERTY(int consumers READ consumers NOTIFY consumersChanged)
+    Q_PROPERTY(bool expectSound READ expectSound WRITE setExpectSound NOTIFY expectSoundChanged)
 
 public:
     explicit AudioSpectrum(QObject* parent = nullptr);
@@ -36,6 +43,8 @@ public:
     int bands() const { return m_bands; }
     int fps() const { return m_fps; }
     int consumers() const { return m_consumers; }
+    bool expectSound() const { return m_expectSound; }
+    void setExpectSound(bool expect);
     void setBands(int bands);
     void setFps(int fps);
 
@@ -52,9 +61,12 @@ signals:
     void bandsChanged();
     void fpsChanged();
     void consumersChanged();
+    void expectSoundChanged();
 
 private slots:
     void wake();
+    void quietBuffers();
+    void listen();
 
 private:
     void startStream();
@@ -63,6 +75,8 @@ private:
     void setActive(bool active);
     void computeBins();
     void resetState();
+    void setStreamActive(bool active);
+    void stopListening();
 
     static constexpr int kFftSize = 4096;
 
@@ -101,4 +115,11 @@ private:
     float m_sensitivity = 0.01F;
     bool m_sensInit = true;
     int m_silentFrames = 0;
+    // listening in windows while asleep (UI thread), and what the PipeWire thread saw meanwhile
+    bool m_expectSound = false;
+    bool m_streamActive = true;
+    bool m_listening = false;
+    QTimer m_listenTimer;
+    std::atomic<bool> m_quietPosted{false};
+    std::atomic<int> m_buffersSeen{0};
 };

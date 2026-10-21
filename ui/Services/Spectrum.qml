@@ -34,6 +34,14 @@ Singleton {
         AudioSpectrum.release();
     }
 
+    // a player saying it plays: the capture listens to every buffer (otherwise, asleep over a running output, it
+    // listens in windows — AudioSpectrum)
+    readonly property Binding expect: Binding {
+        target: AudioSpectrum
+        property: "expectSound"
+        value: Media.playing
+    }
+
     readonly property Binding bands: Binding {
         target: AudioSpectrum
         property: "bands"

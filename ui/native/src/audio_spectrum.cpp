@@ -29,6 +29,10 @@ constexpr float kLoudPeak = 0.05F;
 constexpr qint64 kStaleAudioMs = 250;
 // the back-off after fruitless wakes: 250 ms, doubling, at most this
 constexpr qint64 kMaxWakeBackoffMs = 4000;
+// asleep over a running output: listen this long, once every kListenEveryMs (a few buffers; sound that starts
+// between windows shows within about a second, a playing player at once)
+constexpr int kListenMs = 120;
+constexpr int kListenEveryMs = 1000;
 
 void fft(std::complex<float>* data, int n) {
     for (int i = 1, j = 0; i < n; ++i) {
@@ -87,6 +91,8 @@ AudioSpectrum::AudioSpectrum(QObject* parent)
     pw_init(nullptr, nullptr);
     m_timer.setTimerType(Qt::PreciseTimer);
     connect(&m_timer, &QTimer::timeout, this, &AudioSpectrum::tick);
+    m_listenTimer.setSingleShot(true);
+    connect(&m_listenTimer, &QTimer::timeout, this, &AudioSpectrum::listen);
     m_window.resize(kFftSize);
     for (int i = 0; i < kFftSize; ++i)
         m_window[i] = 0.5F * (1.0F - std::cos(2.0F * std::numbers::pi_v<float> * i / (kFftSize - 1)));
@@ -117,6 +123,66 @@ void AudioSpectrum::setFps(int fps) {
     emit fpsChanged();
 }
 
+void AudioSpectrum::setExpectSound(bool expect) {
+    if (expect == m_expectSound)
+        return;
+    m_expectSound = expect;
+    if (expect)
+        stopListening();
+    emit expectSoundChanged();
+}
+
+void AudioSpectrum::setStreamActive(bool active) {
+    if (m_loop == nullptr || m_stream == nullptr || active == m_streamActive)
+        return;
+    m_streamActive = active;
+    pw_thread_loop_lock(m_loop);
+    pw_stream_set_active(m_stream, active);
+    pw_thread_loop_unlock(m_loop);
+}
+
+// the stream back on for good (sound, a player playing, the output gone idle, or the end)
+void AudioSpectrum::stopListening() {
+    m_listening = false;
+    m_listenTimer.stop();
+    m_quietPosted = false;
+    setStreamActive(true);
+}
+
+// buffers keep coming while asleep: listen in windows instead
+void AudioSpectrum::quietBuffers() {
+    // already listening in windows: the flag stays set, so the buffers of each window post nothing more
+    if (m_listening)
+        return;
+    m_quietPosted = false;
+    if (m_consumers == 0 || !m_sleeping.load() || m_expectSound)
+        return;
+    m_quietPosted = true;
+    m_listening = true;
+    setStreamActive(false);
+    m_listenTimer.start(kListenEveryMs);
+}
+
+// the listen timer: opens a window (stream on), or closes one and judges what it heard
+void AudioSpectrum::listen() {
+    if (!m_listening)
+        return;
+    if (!m_streamActive) {
+        m_buffersSeen = 0;
+        setStreamActive(true);
+        m_listenTimer.start(kListenMs);
+        return;
+    }
+    if (m_buffersSeen.load() == 0) {
+        // the output went idle: nothing is delivered, so an open stream costs nothing until it runs again
+        stopListening();
+        return;
+    }
+    // buffers but no wake: still silence; listen again later
+    setStreamActive(false);
+    m_listenTimer.start(kListenEveryMs);
+}
+
 void AudioSpectrum::retain() {
     if (++m_consumers == 1)
         startStream();
@@ -127,6 +193,8 @@ void AudioSpectrum::release() {
     if (m_consumers == 0)
         return;
     if (--m_consumers == 0) {
+        m_listening = false;
+        m_listenTimer.stop();
         stopStream();
         m_timer.stop();
         resetState();
@@ -169,6 +237,8 @@ void AudioSpectrum::stopStream() {
     }
     pw_thread_loop_destroy(m_loop);
     m_loop = nullptr;
+    m_streamActive = true;
+    m_quietPosted = false;
 }
 
 void AudioSpectrum::onFormat(int rate, int channels) {
@@ -188,6 +258,7 @@ void AudioSpectrum::onProcess() {
         const int frames = static_cast<int>(d.chunk->size / sizeof(float)) / channels;
         float peak = 0.0F;
         m_lastAudioMs = QDateTime::currentMSecsSinceEpoch();
+        ++m_buffersSeen;
         if (m_sleeping.load()) {
             // asleep: only listen for the wake (no lock, no ring — the ring refills within ~40 ms of waking)
             const int samplesN = frames * channels;
@@ -213,6 +284,9 @@ void AudioSpectrum::onProcess() {
             if ((peak > kLoudPeak || now >= m_wakeNotBefore.load()) && m_sleeping.exchange(false))
                 QMetaObject::invokeMethod(this, "wake", Qt::QueuedConnection);
         }
+        // asleep and only silence arriving: ask (once) to listen in windows instead of every buffer
+        if (m_sleeping.load() && !m_quietPosted.exchange(true))
+            QMetaObject::invokeMethod(this, "quietBuffers", Qt::QueuedConnection);
     }
     pw_stream_queue_buffer(m_stream, b);
 }
@@ -220,6 +294,7 @@ void AudioSpectrum::onProcess() {
 void AudioSpectrum::wake() {
     if (m_consumers == 0)
         return;
+    stopListening();
     m_silentFrames = 0;
     m_heardSinceWake = false;
     if (!m_timer.isActive())
