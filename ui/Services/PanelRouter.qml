@@ -143,10 +143,12 @@ Singleton {
         return { origin: origin, place: "top-right" };
     }
 
-    function open(id: string, screenName: string, origin: var): void {
+    // extra: fields that come with the entry in the same assignment (transient, preview): set after it, a hover or
+    // preview panel first looked pinned for an instant, and what follows a pinned panel (the click catcher) followed
+    function open(id: string, screenName: string, origin: var, extra: var): void {
         const placed = placement(id, screenName, origin);
         origin = placed.origin;
-        set(screenName, {
+        set(screenName, Object.assign({
             id: id,
             originX: origin?.x ?? -1,
             originY: origin?.y ?? -1,
@@ -169,7 +171,7 @@ Singleton {
             itemSpan: origin?.itemSpan ?? 0,
             // when it was asked for: the panel records how long its first frame took (Diagnostics "open-latency")
             requested: Date.now()
-        });
+        }, extra ?? {}));
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,
     // gone a moment after it leaves both (the bar's hover_close_delay). A transient panel never replaces a
@@ -180,13 +182,12 @@ Singleton {
             return;
         if (cur && !cur.transient && cur.id === id)
             return;
-        open(id, screenName, origin);
-        set(screenName, Object.assign({}, openPanels[screenName], {
+        open(id, screenName, origin, {
             transient: true,
             owner: owner,
             closeDelay: closeDelay,
             closeOnLeave: closeOnLeave
-        }));
+        });
     }
     // A preview (from Settings): the panel as it is, beside the window changing it. It takes no keys and lays
     // no catcher, so clicks and typing still reach Settings; it stays until asked again (or closed).
@@ -194,8 +195,7 @@ Singleton {
         const cur = openPanels[screenName];
         if (cur && cur.id === id && cur.preview)
             return close(screenName);
-        open(id, screenName, null);
-        set(screenName, Object.assign({}, openPanels[screenName], { preview: true }));
+        open(id, screenName, null, { preview: true });
     }
     function pin(screenName: string): void {
         const cur = openPanels[screenName];
