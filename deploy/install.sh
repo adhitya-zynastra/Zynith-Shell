@@ -58,7 +58,8 @@ ln -sfn "$ROOT/ui/zynith-ui" "$BIN/zynith-ui"
 if ((want_shell)); then
     say "Native shell → $SHELL_BUILD"
     [[ -f "$SHELL_BUILD/build.ninja" ]] || meson setup "$SHELL_BUILD" "$ROOT" --buildtype=release --prefix="$PREFIX" -Dtests=enabled >/dev/null
-    nice -n 15 meson compile -C "$SHELL_BUILD" -j "$(nproc)" >/dev/null
+    # half the cores, lowest priority: a full build otherwise holds every core for minutes on the live desktop
+    nice -n 19 meson compile -C "$SHELL_BUILD" -j "$(( $(nproc) / 2 > 1 ? $(nproc) / 2 : 1 ))" >/dev/null
     if [[ -x "$PREFIX/bin/noctalia" ]] && cmp -s "$SHELL_BUILD/noctalia" "$PREFIX/bin/noctalia"; then
         echo "  installed binary is already this build"
     else
