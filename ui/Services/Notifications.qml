@@ -6,6 +6,7 @@ import Quickshell.Io
 import Quickshell.Services.Notifications
 import Zynith.Native
 import qs.Common
+import "../Common/NotificationTiming.js" as Timing
 
 // The notification server, its popups and the history. Owning org.freedesktop.Notifications is an exclusive
 // role: the server starts only when this UI owns notifications AND nobody else holds the name, so it never
@@ -152,17 +153,10 @@ Singleton {
     // the keys that arrived while the centre was open, for it to mark as new
     property var arrived: []
 
-    // what the sender asked for, or a calm default by urgency; critical stays until handled. An expiry of 0 is the
-    // sender saying "never" (the spec; -1 is "the server's default"): blueman's pairing request is one, and taken as
-    // the default it left the screen after a few seconds, BlueZ cancelled the unanswered pairing and nothing paired.
+    // what the sender asked for, or a calm default by urgency; critical, resident and never-expiring ones stay until
+    // handled (Common/NotificationTiming.js, tst_notification_timing)
     function timeoutFor(e: var): int {
-        if (e.urgency === NotificationUrgency.Critical || e.resident || e.expireTimeout === 0)
-            return 0;
-        if (e.timeoutOverride > 0)
-            return e.timeoutOverride;
-        if (e.expireTimeout > 0)
-            return Math.max(2000, Math.min(e.expireTimeout, 30000));
-        return e.urgency === NotificationUrgency.Low ? Config.notifications.popupMs * 0.7 : Config.notifications.popupMs;
+        return Timing.popupTimeout(e, Config.notifications.popupMs);
     }
 
     function plain(text: string): string {
