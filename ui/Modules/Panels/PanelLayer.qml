@@ -74,12 +74,26 @@ Scope {
 
     // Clicks outside the panel close it. A hover-opened panel has none: it closes on leaving, and a catcher
     // over the bars would take the pointer from the icon that opened it. Transparent unless the profile dims the desktop behind a panel.
+    //
+    // Kept, like the panel's window: shown and hidden with each pinned panel, the catcher was a new full-screen window
+    // every time (Quickshell destroys a hidden one), ~30 ms of every click- or key-opened panel before its first frame
+    // (warm Sound panel 82-93 ms with it, 60 without). Once a pinned panel has used it, it stays mapped for as long as
+    // the panel's window is kept (present or warm): transparent, with no input region, while nothing is pinned.
+    // Hover-only use never creates it.
+    readonly property bool catching: present && !(shown?.transient ?? false) && !(shown?.preview ?? false)
+    property bool catcherKept: false
+    onCatchingChanged: if (catching)
+        catcherKept = true
+    readonly property bool hostAlive: present || warm
+    onHostAliveChanged: if (!hostAlive)
+        catcherKept = false
+
     LazyLoader {
         active: root.present || root.warm
 
         PanelWindow {
             id: catcherWin
-            visible: root.present && !(root.shown?.transient ?? false) && !(root.shown?.preview ?? false)
+            visible: root.catching || root.catcherKept
             screen: root.modelData
             WlrLayershell.namespace: "zynith-panel-catcher"
             WlrLayershell.layer: WlrLayer.Top
@@ -91,7 +105,7 @@ Scope {
                 left: true
                 right: true
             }
-            color: ExperiencePolicy.richEffects && !root.closing ? Theme.scrim : "transparent"
+            color: root.catching && ExperiencePolicy.richEffects && !root.closing ? Theme.scrim : "transparent"
 
             // The bars are not part of it: a click on another bar icon reaches that icon, which opens its panel in
             // this surface (a morph). The catcher lay over the bars, so that click closed the panel and the hover
@@ -100,11 +114,12 @@ Scope {
             function hole(i: int): var {
                 return barRects[i] ?? [0, 0, 0, 0];
             }
+            // nothing pinned: no input at all, clicks reach what is under it
             mask: Region {
                 x: 0
                 y: 0
-                width: catcherWin.width
-                height: catcherWin.height
+                width: root.catching ? catcherWin.width : 0
+                height: root.catching ? catcherWin.height : 0
                 Region { intersection: Intersection.Subtract; x: catcherWin.hole(0)[0]; y: catcherWin.hole(0)[1]; width: catcherWin.hole(0)[2]; height: catcherWin.hole(0)[3] }
                 Region { intersection: Intersection.Subtract; x: catcherWin.hole(1)[0]; y: catcherWin.hole(1)[1]; width: catcherWin.hole(1)[2]; height: catcherWin.hole(1)[3] }
                 Region { intersection: Intersection.Subtract; x: catcherWin.hole(2)[0]; y: catcherWin.hole(2)[1]; width: catcherWin.hole(2)[2]; height: catcherWin.hole(2)[3] }
@@ -124,7 +139,8 @@ Scope {
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.AllButtons
-                onPressed: PanelRouter.close(root.screenName)
+                onPressed: if (root.catching)
+                    PanelRouter.close(root.screenName)
             }
         }
     }
