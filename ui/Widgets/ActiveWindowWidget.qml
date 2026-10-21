@@ -42,7 +42,8 @@ BarItem {
             text: root.has ? (root.win.title || root.win.appId || "") : "Desktop"
             muted: !root.has
             NumberAnimation on x {
-                running: viewport.scrolls
+                // only while the bar is on screen (as the media title's): hidden, it ran the animation clock for nobody
+                running: viewport.scrolls && (root.bar?.shown ?? 1) > 0
                 loops: Animation.Infinite
                 from: 0
                 to: -(label.implicitWidth - viewport.width + 24)
