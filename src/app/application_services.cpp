@@ -1391,7 +1391,9 @@ void Application::initSystemBusServices() {
     }
     m_configService.addReloadCallback([this]() { m_externalIpService.onConfigReload(); });
 
-    if (m_networkService != nullptr && m_networkService->supportsSecretAgent()) {
+    if (!m_configService.config().shell.networkSecretAgent) {
+      kLog.info("network secret agent off (shell.network_secret_agent): the session's own agent answers");
+    } else if (m_networkService != nullptr && m_networkService->supportsSecretAgent()) {
       try {
         m_networkSecretAgent = std::make_unique<NetworkSecretAgent>(*m_systemBus);
       } catch (const std::exception& e) {
@@ -1437,7 +1439,9 @@ void Application::initSystemBusServices() {
       m_bluetoothService.reset();
     }
 
-    if (m_bluetoothService != nullptr) {
+    if (!m_configService.config().shell.bluetoothAgent) {
+      kLog.info("bluetooth agent off (shell.bluetooth_agent): the session's own agent answers");
+    } else if (m_bluetoothService != nullptr) {
       try {
         m_bluetoothAgent = std::make_unique<BluetoothAgent>(*m_systemBus);
         m_bluetoothAgent->setRequestCallback([this,

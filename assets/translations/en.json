@@ -3214,6 +3214,14 @@
           "description": "Enable the built-in authentication agent",
           "label": "Polkit Agent"
         },
+        "bluetooth-agent": {
+          "description": "Answer Bluetooth pairing requests in the Control Center (off: the session's agent, such as blueman, asks). Applies after a restart",
+          "label": "Bluetooth Pairing Agent"
+        },
+        "network-secret-agent": {
+          "description": "Ask for Wi-Fi passwords in the Control Center (off: the session's agent, such as nm-applet, asks). Applies after a restart",
+          "label": "Wi-Fi Password Agent"
+        },
         "privacy-cam-filter-regex": {
           "description": "Regex for camera apps to ignore in privacy indicators and OSDs",
           "label": "Camera Filter Regex"

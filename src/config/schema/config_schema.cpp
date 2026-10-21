@@ -1601,6 +1601,8 @@ namespace noctalia::config::schema {
         field(&ShellConfig::setupWizardEnabled, "setup_wizard_enabled"),
         field(&ShellConfig::niriOverviewTypeToLaunchEnabled, "niri_overview_type_to_launch_enabled"),
         field(&ShellConfig::polkitAgent, "polkit_agent"),
+        field(&ShellConfig::bluetoothAgent, "bluetooth_agent"),
+        field(&ShellConfig::networkSecretAgent, "network_secret_agent"),
         enumField(&ShellConfig::passwordMaskStyle, "password_style", kPasswordMaskStyles),
         field(&ShellConfig::settingsShowAdvanced, "settings_show_advanced"),
         field(&ShellConfig::settingsWindowTranslucent, "settings_window_translucent"),

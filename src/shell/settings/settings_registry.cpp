@@ -1799,6 +1799,16 @@ namespace settings {
         ToggleSetting{cfg.shell.polkitAgent}, "auth password"
     ));
     entries.push_back(makeEntry(
+        SettingsSection::Security, "authentication", tr("settings.schema.shell.bluetooth-agent.label"),
+        tr("settings.schema.shell.bluetooth-agent.description"), {"shell", "bluetooth_agent"},
+        ToggleSetting{cfg.shell.bluetoothAgent}, "bluetooth pairing pin agent"
+    ));
+    entries.push_back(makeEntry(
+        SettingsSection::Security, "authentication", tr("settings.schema.shell.network-secret-agent.label"),
+        tr("settings.schema.shell.network-secret-agent.description"), {"shell", "network_secret_agent"},
+        ToggleSetting{cfg.shell.networkSecretAgent}, "wifi password secret agent"
+    ));
+    entries.push_back(makeEntry(
         SettingsSection::Security, "authentication", tr("settings.schema.shell.password-style.label"),
         tr("settings.schema.shell.password-style.description"), {"shell", "password_style"},
         asSegmented(enumSelect(kPasswordMaskStyles, cfg.shell.passwordMaskStyle)), "polkit lock mask"

@@ -1284,6 +1284,12 @@ struct ShellConfig {
   bool setupWizardEnabled = true;
   bool niriOverviewTypeToLaunchEnabled = false;
   bool polkitAgent = false;
+  // zynith: the BlueZ pairing agent and the NetworkManager secret agent answer only inside the native Control Center's
+  // tabs, which never open by themselves; with Zynith's panels in use their requests waited unseen until cancelled
+  // (Bluetooth pairing prompts never appeared). Off: the session's own agents (blueman, nm-applet) answer, with prompts
+  // that show. Read at start-up.
+  bool bluetoothAgent = false;
+  bool networkSecretAgent = false;
   PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::CircleFilled;
   AnimationConfig animation;
 
