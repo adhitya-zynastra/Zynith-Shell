@@ -436,6 +436,12 @@ PanelWindow {
                 win.awaitingFirstFrame = false;
                 firstFrame.stop();
                 Diagnostics.record("panel-first-frame", [Date.now() - win.awaitSince]);
+                // asked for → on screen, as the user waits for it: on a new window, or a kept one (warm)
+                if (win.entry?.requested) {
+                    const waited = [Date.now() - win.entry.requested];
+                    Diagnostics.record("open-latency:" + (win.showings === 0 ? "new-window" : "warm"), waited);
+                    Diagnostics.record("open-latency:" + (win.entry.id ?? "?"), waited);
+                }
                 win.begin();
             }
         }

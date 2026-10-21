@@ -209,6 +209,23 @@ Singleton {
         function clipboard(): void {
             PanelRouter.toggle("clipboard", root.focusedScreen(), { edge: "center" });
         }
+        // diagnostics: the launcher's own search for each prefix of a query, as typed — ms per keystroke (median of 9)
+        function benchSearch(query: string): string {
+            const out = [];
+            for (let n = 1; n <= query.length; n++) {
+                const q = query.slice(0, n), t = [];
+                for (let i = 0; i < 9; i++) {
+                    const t0 = Date.now();
+                    Launcher.search(q, 60, "");
+                    t.push(Date.now() - t0);
+                }
+                t.sort((x, y) => x - y);
+                out.push(q + " " + t[4]);
+            }
+            const t0 = Date.now();
+            Launcher.search("", 100000, "");
+            return out.join(", ") + " | browse(all) " + (Date.now() - t0);
+        }
         // what the launcher would list for a query, best first
         function apps(query: string): string {
             return Apps.search(query, 8).map(e => e.name + "  [" + e.id + "]").join("\n");

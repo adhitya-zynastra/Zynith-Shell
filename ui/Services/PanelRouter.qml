@@ -166,7 +166,9 @@ Singleton {
             barId: origin?.barId ?? "",
             reach: origin?.reach ?? -1,
             // how long the widget that opened it is along its bar (its signal mark is as wide; 0: not a widget)
-            itemSpan: origin?.itemSpan ?? 0
+            itemSpan: origin?.itemSpan ?? 0,
+            // when it was asked for: the panel records how long its first frame took (Diagnostics "open-latency")
+            requested: Date.now()
         });
     }
     // Hover-opened ("transient") panels: shown while the pointer is on what opened them or on the panel,
