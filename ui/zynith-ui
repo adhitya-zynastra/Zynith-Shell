@@ -8,6 +8,9 @@ QS=/usr/bin/quickshell
 # a crash ends the process (systemd-coredump keeps the core); Quickshell's own handler would relaunch
 # an untracked copy and open a report window
 export QS_DISABLE_CRASH_HANDLER=1
+# no depth buffer on the shell's windows (Qt Quick then orders opaque batches itself): pixel-identical here, and each
+# window's depth/stencil drops from 4 to 1 byte a pixel — about 17 MiB of GPU memory at rest, 27 with a panel open
+export QSG_NO_DEPTH_BUFFER=1
 HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 SHELL_QML="$HERE/shell.qml"
 RUN="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/zynith"
