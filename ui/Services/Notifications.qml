@@ -152,9 +152,11 @@ Singleton {
     // the keys that arrived while the centre was open, for it to mark as new
     property var arrived: []
 
-    // what the sender asked for, or a calm default by urgency; critical stays until handled
+    // what the sender asked for, or a calm default by urgency; critical stays until handled. An expiry of 0 is the
+    // sender saying "never" (the spec; -1 is "the server's default"): blueman's pairing request is one, and taken as
+    // the default it left the screen after a few seconds, BlueZ cancelled the unanswered pairing and nothing paired.
     function timeoutFor(e: var): int {
-        if (e.urgency === NotificationUrgency.Critical || e.resident)
+        if (e.urgency === NotificationUrgency.Critical || e.resident || e.expireTimeout === 0)
             return 0;
         if (e.timeoutOverride > 0)
             return e.timeoutOverride;
