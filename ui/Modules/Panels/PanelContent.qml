@@ -86,6 +86,8 @@ Item {
     readonly property string switchStyle: Config.panels?.switch ?? "morph"
     readonly property real contentScale: Math.max(0.5, Math.min(1, Config.panels?.content_scale ?? 0.94))
     property int front: 0
+    // the cross-fade between two pages runs on after the card's glide: still moving (PanelSurface.moving)
+    readonly property bool swapping: swap.running
     readonly property Item live: front === 0 ? slotA : slotB
     readonly property Item livePage: live.item
     onLivePageChanged: if (screen) {

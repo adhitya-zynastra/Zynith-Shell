@@ -363,7 +363,7 @@ PanelWindow {
     readonly property var seedRect: Emerge.seed(edge, { x: ox, y: oy }, held?.itemSpan ?? 32, { x: ax, y: ay, w: aw, h: ah })
     readonly property var shape: emerges && revealed < 0.999 ? Emerge.frame(revealed, seedRect, { x: ax, y: ay, w: aw, h: ah }, Metrics.radiusSurface, edge) : null
     // the card is moving: emerging, leaving, or gliding to another panel's size (its backdrop follows it frame by frame)
-    readonly property bool moving: visible && !bare && (revealed < 0.999 || leave.running || axGlide.running || ayGlide.running || awGlide.running || ahGlide.running)
+    readonly property bool moving: visible && !bare && (revealed < 0.999 || leave.running || axGlide.running || ayGlide.running || awGlide.running || ahGlide.running || content.swapping)
 
     // a bare panel choreographs its own pieces from `revealed`, so it gets the progress linear and longer
     NumberAnimation {
