@@ -510,8 +510,13 @@ Column {
                     }
                 }
 
+                // keyed: the rows are rebuilt whenever the time moves on (and each time the centre opens), and a
+                // plain array would build every card again
                 Repeater {
-                    model: row.stacked ? row.entries.slice(0, 1) : row.entries
+                    model: ScriptModel {
+                        values: row.stacked ? row.entries.slice(0, 1) : row.entries
+                        objectProp: "key"
+                    }
                     delegate: NotificationTile {
                         id: tile
                         required property var modelData
