@@ -11,6 +11,21 @@ import qs.Services
 Item {
     id: root
     property var settings: ({})
+
+    // one ring of the rings shape (in an Item with `r`): fixed items — a Repeater over an array built from the levels
+    // rebuilt all three rings on every spectrum update, many times a second while sound played
+    component Ring: Rectangle {
+        property real v
+        property real k
+        property color c
+        anchors.centerIn: parent
+        width: parent.width * k * (0.9 + v * 0.25)
+        height: width
+        radius: width / 2
+        color: "transparent"
+        border.width: Math.max(1.5, parent.r * 0.02)
+        border.color: Theme.alpha(c, 0.35 + v * 0.5)
+    }
     // in the editor and the picker: a still pattern stands in for silence, so it can be seen and placed
     property bool preview: false
     function opt(key: string): var {
@@ -183,18 +198,20 @@ Item {
         readonly property real mids: root.band(0.12, 0.5)
         readonly property real highs: root.band(0.5, 1)
 
-        Repeater {
-            model: [{ v: parent.bass, k: 0.5, c: root.from }, { v: parent.mids, k: 0.66, c: Theme.mix(root.from, root.to, 0.5) }, { v: parent.highs, k: 0.8, c: root.to }]
-            delegate: Rectangle {
-                required property var modelData
-                anchors.centerIn: parent
-                width: parent.width * modelData.k * (0.9 + modelData.v * 0.25)
-                height: width
-                radius: width / 2
-                color: "transparent"
-                border.width: Math.max(1.5, parent.r * 0.02)
-                border.color: Theme.alpha(modelData.c, 0.35 + modelData.v * 0.5)
-            }
+        Ring {
+            v: parent.bass
+            k: 0.5
+            c: root.from
+        }
+        Ring {
+            v: parent.mids
+            k: 0.66
+            c: Theme.mix(root.from, root.to, 0.5)
+        }
+        Ring {
+            v: parent.highs
+            k: 0.8
+            c: root.to
         }
         // radial bars round the outside
         Repeater {

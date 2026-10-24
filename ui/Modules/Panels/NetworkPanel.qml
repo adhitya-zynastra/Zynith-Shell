@@ -70,42 +70,49 @@ Column {
     readonly property var saved: others.filter(n => n.known)
     readonly property var nearby: others.filter(n => !n.known)
 
-    Repeater {
-        model: Network.wifiEnabled ? [
-            { title: "SAVED", list: root.saved },
-            { title: "NEARBY", list: root.nearby }
-        ].filter(g => g.list.length > 0) : []
-        delegate: Column {
-            id: group
-            required property var modelData
-            width: root.inner
-            spacing: Metrics.s1
-            SectionHead {
-                width: parent.width
-                title: group.modelData.title
-                Label {
-                    role: "data"
-                    tone: "faint"
-                    text: String(group.modelData.list.length)
-                }
-            }
-            Repeater {
-                model: ScriptModel {
-                    values: group.modelData.list.slice(0, 6)
-                    objectProp: "ssid"
-                }
-                delegate: ListRow {
-                    required property var modelData
-                    width: group.width
-                    icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
-                    title: modelData.ssid
-                    detail: (modelData.secured ? "Secured" : "Open") + "  ·  " + Math.round(modelData.strength * 100) + "%"
-                    trailing: modelData.busy ? "Joining…" : modelData.secured && !modelData.known ? "Password" : ""
-                    busy: modelData.busy
-                    onClicked: Network.connectTo(modelData.ssid)
-                }
+    // a group of networks (saved, nearby): fixed items, shown when they have any. A Repeater over a list of groups
+    // built from the networks rebuilt both groups and every row in them on each update — the scan's results landing
+    // mid-glide cost a 61 ms frame. The rows inside are keyed by name, so an update changes only what changed.
+    component Group: Column {
+        id: group
+        property string title
+        property var list: []
+        visible: Network.wifiEnabled && list.length > 0
+        width: root.inner
+        spacing: Metrics.s1
+        SectionHead {
+            width: parent.width
+            title: group.title
+            Label {
+                role: "data"
+                tone: "faint"
+                text: String(group.list.length)
             }
         }
+        Repeater {
+            model: ScriptModel {
+                values: group.list.slice(0, 6)
+                objectProp: "ssid"
+            }
+            delegate: ListRow {
+                required property var modelData
+                width: group.width
+                icon: modelData.strength > 0.66 ? "wifi" : modelData.strength > 0.33 ? "wifi-2" : "wifi-1"
+                title: modelData.ssid
+                detail: (modelData.secured ? "Secured" : "Open") + "  ·  " + Math.round(modelData.strength * 100) + "%"
+                trailing: modelData.busy ? "Joining…" : modelData.secured && !modelData.known ? "Password" : ""
+                busy: modelData.busy
+                onClicked: Network.connectTo(modelData.ssid)
+            }
+        }
+    }
+    Group {
+        title: "SAVED"
+        list: root.saved
+    }
+    Group {
+        title: "NEARBY"
+        list: root.nearby
     }
 
     Label {

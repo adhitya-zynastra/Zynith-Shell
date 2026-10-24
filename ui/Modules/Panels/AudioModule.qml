@@ -191,12 +191,15 @@ Flow {
                 id: groups
                 width: outputs.width
                 spacing: Metrics.s2
+                // one group per kind, always there and shown when it has outputs: filtering the kinds by the outputs
+                // rebuilt every group and row whenever any output came or went (speakers on the network do, often)
                 Repeater {
-                    model: root.kinds.filter(k => Audio.sinks.some(n => root.kindOf(n) === k.key))
+                    model: root.kinds
                     delegate: Column {
                         id: group
                         required property var modelData
                         readonly property var members: Audio.sinks.filter(n => root.kindOf(n) === group.modelData.key)
+                        visible: members.length > 0
                         // the group playing now is open; the others fold to one line until asked for
                         readonly property bool open: root.openGroups[group.modelData.key] ?? group.members.includes(Audio.sink)
                         width: groups.width
@@ -231,7 +234,10 @@ Flow {
                             }
                         }
                         Repeater {
-                            model: group.open ? group.members : []
+                            // keyed by the node: an output coming or going adds or removes its row only
+                            model: ScriptModel {
+                                values: group.open ? group.members : []
+                            }
                             delegate: ListRow {
                                 required property var modelData
                                 width: group.width
