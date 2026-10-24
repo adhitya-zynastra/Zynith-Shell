@@ -72,26 +72,50 @@ Scope {
     // window just to destroy it, a ~100 ms stall of the GUI thread in the middle of the centre's entrance
     property bool lingering: false
     property int lastCount: 0
+    // Whether the window exists: set here as popups come and go, never a binding on the list. Bound, it saw the list
+    // empty an instant before `lingering` was set, dropped the window and made a new one at once — a window torn down
+    // and built again inside the notification centre's opening glide (a 50-77 ms frame).
+    property bool holding: false
+    onLingeringChanged: if (!lingering)
+        holding = Notifications.popups.length > 0
     Connections {
         target: Notifications
         function onPopupsChanged(): void {
             const n = Notifications.popups.length;
+            if (n > 0)
+                root.holding = true;
             if (n === 0 && root.lastCount > 0) {
                 root.lingering = true;
                 linger.restart();
+            } else if (n > 0 && root.lingering) {
+                // a new one while the last were leaving: the window is live again (place and size, below)
+                root.lingering = false;
+                linger.stop();
             }
             root.lastCount = n;
         }
     }
+    // ...and it goes once no panel is moving: destroying a window blocks the GUI thread while its render thread and
+    // GL contexts are torn down (103-146 ms measured), which landed mid-glide when opening the notification centre
+    // folded a popup into it
     Timer {
         id: linger
         interval: Motion.exit + 60
-        onTriggered: root.lingering = false
+        onTriggered: if (!PanelRouter.anyMoving)
+            root.lingering = false
+    }
+    Connections {
+        target: PanelRouter
+        enabled: root.lingering && !linger.running
+        function onAnyMovingChanged(): void {
+            if (!PanelRouter.anyMoving)
+                root.lingering = false;
+        }
     }
 
     LazyLoader {
         // an island that takes notifications is where they appear instead (Services/Island)
-        active: (Notifications.popups.length > 0 || root.lingering) && !Island.takesNotifications
+        active: root.holding && !Island.takesNotifications
 
         PanelWindow {
             id: win
@@ -110,18 +134,33 @@ Scope {
                 right: root.side === "right"
             }
             margins {
-                top: Math.max(0, root.dodge("top", root.inset("top") + Config.notifications.marginY) - win.pad)
-                bottom: Math.max(0, root.dodge("bottom", root.inset("bottom") + Config.notifications.marginY) - win.pad)
-                left: root.side === "left" ? 0 : Math.max(0, root.inset("left") + Config.notifications.marginX - win.pad)
-                right: root.side === "right" ? 0 : Math.max(0, root.inset("right") + Config.notifications.marginX - win.pad)
+                top: win.shape.top
+                bottom: win.shape.bottom
+                left: win.shape.left
+                right: win.shape.right
             }
+            // While the last popups leave (folded into the notification centre as it opens, say) the window keeps the
+            // place and size it had with cards in it: moving it (the stack dodging the opening panel) and shrinking it
+            // reconfigure the layer surface on the GUI thread, inside the opening panel's glide. It goes once nothing
+            // moves (linger).
+            readonly property var placed: ({
+                    top: Math.max(0, root.dodge("top", root.inset("top") + Config.notifications.marginY) - pad),
+                    bottom: Math.max(0, root.dodge("bottom", root.inset("bottom") + Config.notifications.marginY) - pad),
+                    left: root.side === "left" ? 0 : Math.max(0, root.inset("left") + Config.notifications.marginX - pad),
+                    right: root.side === "right" ? 0 : Math.max(0, root.inset("right") + Config.notifications.marginX - pad),
+                    height: Math.max(1, list.contentHeight + waiting.height + pad * 2 + 8)
+                })
+            property var withCards: placed
+            onPlacedChanged: if (Notifications.popups.length > 0)
+                withCards = placed
+            readonly property var shape: Notifications.popups.length > 0 ? placed : withCards
             readonly property int pad: Material.shadows ? Metrics.shadowPad + 8 : 0
             // On the side the stack sits against, the window reaches the screen's edge and the margin is room inside
             // it: a card swiped that way leaves through the screen's edge. Ending short of it, the window cut a swiped
             // card off square at its own edge.
             readonly property int sideRoom: root.side === "right" ? Math.max(0, root.inset("right") + Config.notifications.marginX - pad) : root.side === "left" ? Math.max(0, root.inset("left") + Config.notifications.marginX - pad) : 0
             implicitWidth: root.cardWidth + pad * 2 + 40 + sideRoom
-            implicitHeight: Math.max(1, list.contentHeight + waiting.height + pad * 2 + 8)
+            implicitHeight: shape.height
             readonly property var state: ({ top: anchors.top, bottom: anchors.bottom, left: anchors.left, right: anchors.right, marginTop: margins.top, marginBottom: margins.bottom, marginLeft: margins.left, marginRight: margins.right, layer: Config.notifications.layer, cardWidth: root.cardWidth, height: implicitHeight, cards: list.count, screen: screen?.name ?? "" })
             onStateChanged: Ipc.report("notifications", state)
             Component.onCompleted: Ipc.report("notifications", state)
