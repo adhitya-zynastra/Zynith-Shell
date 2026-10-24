@@ -14,6 +14,8 @@ Singleton {
     // margins, size), which no capture of the surface's own pixels shows
     signal osdProbe(string kind)
     property var surfaceStates: ({})
+    // the last frame-probe recording, read out by frameChunk
+    property string frameRecording: ""
     function report(name: string, state: var): void {
         const next = Object.assign({}, surfaceStates);
         next[name] = state;
@@ -390,6 +392,22 @@ Singleton {
         }
         function stats(): string {
             return JSON.stringify(Diagnostics.summary());
+        }
+        // frame phases of the panel window and marks, recorded for ms (bounded), then read once
+        function frameArm(ms: int): void {
+            FrameProbe.arm(ms);
+        }
+        // read out in pieces: one reply of the whole recording is too large for the IPC socket
+        function frameDump(): int {
+            root.frameRecording = FrameProbe.dump();
+            return root.frameRecording.length;
+        }
+        function frameChunk(i: int): string {
+            const piece = root.frameRecording.substr(i * 65536, 65536);
+            // the last piece read: the recording is not kept
+            if ((i + 1) * 65536 >= root.frameRecording.length)
+                root.frameRecording = "";
+            return piece;
         }
         function resetStats(): void {
             Diagnostics.reset();

@@ -33,6 +33,7 @@ qt_add_qml_module(zynith_native
         src/private_store.h src/private_store.cpp
         src/spectrum_bars.h src/spectrum_bars.cpp
         src/display_config.h src/display_config.cpp
+        src/frame_probe.h src/frame_probe.cpp
 )
 
 target_include_directories(zynith_native PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
