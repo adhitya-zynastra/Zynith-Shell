@@ -1,4 +1,5 @@
 import QtQuick
+import Zynith.Native
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
@@ -426,25 +427,34 @@ PanelWindow {
     // and inside the entrance that is a jump: the drop skipped six frames of its motion. The entrance waits for
     // that frame, so the cost is a moment before the motion, never a gap in it (at most firstFrame's interval).
     property bool presented: false
+    // another surface this one appears with, still to draw its first frame (the click catcher): waited for alike
+    property bool waitFor: false
+    onWaitForChanged: if (!waitFor && awaitingFirstFrame && presented)
+        start()
     property bool awaitingFirstFrame: false
     property double awaitSince: 0
     Connections {
         target: win.presented ? null : (card.Window.window ?? null)
         function onFrameSwapped(): void {
             win.presented = true;
-            if (win.awaitingFirstFrame) {
-                win.awaitingFirstFrame = false;
-                firstFrame.stop();
-                Diagnostics.record("panel-first-frame", [Date.now() - win.awaitSince]);
-                // asked for → on screen, as the user waits for it: on a new window, or a kept one (warm)
-                if (win.entry?.requested) {
-                    const waited = [Date.now() - win.entry.requested];
-                    Diagnostics.record("open-latency:" + (win.showings === 0 ? "new-window" : "warm"), waited);
-                    Diagnostics.record("open-latency:" + (win.entry.id ?? "?"), waited);
-                }
-                win.begin();
-            }
+            if (win.awaitingFirstFrame && !win.waitFor)
+                win.start();
+            else if (win.awaitingFirstFrame)
+                firstFrame.restart(); // the other surface gets as long as this one had
         }
+    }
+    // both first frames are on screen: the entrance starts
+    function start(): void {
+        awaitingFirstFrame = false;
+        firstFrame.stop();
+        Diagnostics.record("panel-first-frame", [Date.now() - awaitSince]);
+        // asked for → moving on screen, as the user waits for it: on a new window, or a kept one (warm)
+        if (entry?.requested) {
+            const waited = [Date.now() - entry.requested];
+            Diagnostics.record("open-latency:" + (showings === 0 ? "new-window" : "warm"), waited);
+            Diagnostics.record("open-latency:" + (entry.id ?? "?"), waited);
+        }
+        begin();
     }
     Timer {
         id: firstFrame
@@ -453,13 +463,14 @@ PanelWindow {
             win.presented = true;
             win.awaitingFirstFrame = false;
             Diagnostics.record("panel-first-frame-timeout", [interval]);
-            win.begin();
+            win.begin(true);
         }
     }
-    function begin(): void {
+    // force: no more waiting for first frames (they did not come in time)
+    function begin(force): void {
         if (entering)
             return;
-        if (!presented) {
+        if (!force && (!presented || waitFor)) {
             awaitingFirstFrame = true;
             awaitSince = Date.now();
             firstFrame.restart();
@@ -526,7 +537,11 @@ PanelWindow {
         Glass {
             id: card
             // for diagnostics: the panel's own pixels (zynith-ui ipc captureBar panel@<screen> <png>)
-            Component.onCompleted: PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card
+            Component.onCompleted: {
+                PanelRouter.barItems["panel@" + (win.screen?.name ?? "")] = card;
+                // where its frames' time goes (ipc frameArm / frameDump)
+                FrameProbe.watch(card, "panel");
+            }
 
             // the card is the shape: emerging, the capsule growing into it; at rest (and gliding to another panel's
             // size), the card itself

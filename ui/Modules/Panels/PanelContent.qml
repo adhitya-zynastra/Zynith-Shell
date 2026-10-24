@@ -1,4 +1,5 @@
 import QtQuick
+import Zynith.Native
 import qs.Common
 import qs.Components
 import qs.Services
@@ -101,11 +102,12 @@ Item {
     // Pages are kept while this surface is: a switch back to one shows it as it was instead of building it in the
     // switch's first frame (25–77 ms for the heavy pages, measured). A kept page is inactive — no focus, no services
     // held — and the surface takes every page with it when it goes (on closing, or after its warm period). Bounded:
-    // past keepPages the page used longest ago goes (six: the Control Panel's own tabs), and a page may decline to be
-    // kept (trim). Measured: six kept pages, 1–11 MiB while the surface lives; nothing after.
-    readonly property int keepPages: 6
+    // four, chosen by what each costs to build again (trim). Measured against keeping the six used last and keeping
+    // none, on one fixed sequence: preparing a switch took a median 21 ms against 31 and 36, at the same memory.
+    readonly property int keepPages: 4
     property var kept: ({})      // id -> page
-    property var keptOrder: []   // ids, least recent first
+    property var keptOrder: []   // ids, least recently used first (the tie-break)
+    property var buildMs: ({})   // id -> what building it last cost (ms)
     function pageFor(id: string, slot: Item): Item {
         let p = kept[id] ?? null;
         if (!p) {
@@ -113,7 +115,9 @@ Item {
             if (!c)
                 return null;
             // built where it shows, so it starts active (as a Loader's page did)
+            const tb = Date.now();
             p = c.createObject(slot, { width: root.width });
+            buildMs[id] = Date.now() - tb;
             built = true;
             wire(p);
             kept[id] = p;
@@ -121,20 +125,25 @@ Item {
         keptOrder = keptOrder.filter(k => k !== id).concat([id]);
         return p;
     }
-    // The oldest beyond the bound goes, and so does a page that says it is not worth keeping (keepable: false — one
-    // that holds much while hidden, e.g. decoded pictures); never one on show. Only once nothing moves: a page torn
-    // down mid-glide costs a frame there (destruction is deferred to the next turn of the event loop).
+    // Past the bound the page cheapest to build again goes first (its cost measured as it was built: the dashboard
+    // 55-75 ms, a device list 12-25), so the pages that would hold a switch for frames stay; a page that declines to
+    // be kept (keepable: false — one that holds much while hidden, e.g. decoded pictures) goes at once; never one on
+    // show. Only once nothing moves: a page torn down mid-glide costs a frame there (destruction is deferred to the
+    // next turn of the event loop).
     function trim(): void {
-        let excess = keptOrder.length - keepPages;
-        for (const k of keptOrder.slice()) {
-            const q = kept[k];
-            if (q.parent === slotA || q.parent === slotB || (excess <= 0 && q.keepable !== false))
-                continue;
-            delete kept[k];
-            keptOrder = keptOrder.filter(x => x !== k);
-            excess--;
-            q.destroy();
-        }
+        const off = k => kept[k].parent !== slotA && kept[k].parent !== slotB;
+        for (const k of keptOrder.filter(k => off(k) && kept[k].keepable === false))
+            drop(k);
+        for (let c = keptOrder.filter(off); keptOrder.length > keepPages && c.length > 0; c = keptOrder.filter(off))
+            drop(c.reduce((x, y) => (buildMs[y] ?? 0) < (buildMs[x] ?? 0) ? y : x));
+    }
+    function drop(k: string): void {
+        const q = kept[k];
+        delete kept[k];
+        keptOrder = keptOrder.filter(x => x !== k);
+        if (FrameProbe.armed)
+            FrameProbe.mark("evict " + k);
+        q.destroy();
     }
     // A page going out of sight keeps the keyboard focus it had, and keys would reach it unseen. The panel takes
     // it, so a key the new page leaves goes on to the surface's own keys.
@@ -176,7 +185,11 @@ Item {
             return;
         const t0 = Date.now();
         built = false;
+        if (FrameProbe.armed)
+            FrameProbe.mark("switch " + panelId);
         change();
+        if (FrameProbe.armed)
+            FrameProbe.mark("prepared " + (built ? "built " : "kept ") + panelId);
         // diagnostics: how long a switch held the frame before its first one could be drawn — the incoming page built,
         // or a kept one brought back (`ipc stats`)
         Diagnostics.record("switch-prep:" + (built ? "built" : "kept"), [Date.now() - t0]);
@@ -305,6 +318,8 @@ Item {
             root.leaving.opacity = 1;
             root.leaving.scale = 1;
             root.leaving.x = 0;
+            if (FrameProbe.armed)
+                FrameProbe.mark("swapEnd");
             root.trim();
         }
     }

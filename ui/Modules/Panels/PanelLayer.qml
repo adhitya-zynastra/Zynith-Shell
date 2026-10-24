@@ -1,4 +1,5 @@
 import QtQuick
+import Zynith.Native
 import Quickshell
 import Quickshell.Wayland
 import qs.Common
@@ -30,6 +31,8 @@ Scope {
             Qt.callLater(() => root.mapped = root.shown !== null);
     }
     onEntryChanged: {
+        if (FrameProbe.armed)
+            FrameProbe.mark(entry ? "open " + entry.id : "close");
         if (entry) {
             // shown before the warm timer stops, or the loader sees neither for an instant and drops the window
             closing = false;
@@ -84,6 +87,10 @@ Scope {
     property bool catcherKept: false
     onCatchingChanged: if (catching)
         catcherKept = true
+    // A new catcher's first frame (its window, render thread and GL context made) came just after the panel's own
+    // first one, which starts the entrance: its ~35-50 ms on the GUI thread landed as the entrance's second frame.
+    // The entrance waits for it too (PanelSurface.waitFor); a kept catcher has drawn long since.
+    property bool catcherPresented: false
     readonly property bool hostAlive: present || warm
     onHostAliveChanged: if (!hostAlive)
         catcherKept = false
@@ -137,10 +144,18 @@ Scope {
             }
 
             MouseArea {
+                id: catcherArea
                 anchors.fill: parent
                 acceptedButtons: Qt.AllButtons
                 onPressed: if (root.catching)
                     PanelRouter.close(root.screenName)
+                Component.onDestruction: root.catcherPresented = false
+            }
+            Connections {
+                target: root.catcherPresented ? null : (catcherArea.Window.window ?? null)
+                function onFrameSwapped(): void {
+                    root.catcherPresented = true;
+                }
             }
         }
     }
@@ -153,6 +168,7 @@ Scope {
             visible: root.mapped
             screen: root.modelData
             entry: root.shown
+            waitFor: root.catching && !root.catcherPresented
             closing: root.closing
             onDismissed: root.finishClose()
         }
