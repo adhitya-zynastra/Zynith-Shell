@@ -28,6 +28,8 @@ Item {
 
     readonly property bool carousel: Config.wallpaper.layout !== "grid"
     readonly property bool bare: carousel
+    // its decoded pictures stay uploaded while it is kept (~50 MiB of GPU memory measured): built again on each visit
+    readonly property bool keepable: false
     // the most a full-size wallpaper is decoded to here: the screen
     readonly property int decodeW: Math.ceil(screen?.width ?? 1920)
     readonly property int decodeH: Math.ceil(screen?.height ?? 1080)

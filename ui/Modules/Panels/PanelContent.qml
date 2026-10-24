@@ -85,16 +85,83 @@ Item {
     readonly property string switchStyle: Config.panels?.switch ?? "morph"
     readonly property real contentScale: Math.max(0.5, Math.min(1, Config.panels?.content_scale ?? 0.94))
     property int front: 0
-    readonly property Loader live: front === 0 ? slotA : slotB
+    readonly property Item live: front === 0 ? slotA : slotB
     readonly property Item livePage: live.item
     onLivePageChanged: if (screen) {
         const m = Object.assign({}, PanelRouter.livePages);
         m[screen.name] = livePage;
         PanelRouter.livePages = m;
     }
-    readonly property Loader leaving: front === 0 ? slotB : slotA
+    readonly property Item leaving: front === 0 ? slotB : slotA
     property string idA: ""
     property string idB: ""
+    onIdAChanged: put(slotA, idA)
+    onIdBChanged: put(slotB, idB)
+
+    // Pages are kept while this surface is: a switch back to one shows it as it was instead of building it in the
+    // switch's first frame (25–77 ms for the heavy pages, measured). A kept page is inactive — no focus, no services
+    // held — and the surface takes every page with it when it goes (on closing, or after its warm period). Bounded:
+    // past keepPages the page used longest ago goes (six: the Control Panel's own tabs), and a page may decline to be
+    // kept (trim). Measured: six kept pages, 1–11 MiB while the surface lives; nothing after.
+    readonly property int keepPages: 6
+    property var kept: ({})      // id -> page
+    property var keptOrder: []   // ids, least recent first
+    function pageFor(id: string, slot: Item): Item {
+        let p = kept[id] ?? null;
+        if (!p) {
+            const c = panels[id] ?? null;
+            if (!c)
+                return null;
+            // built where it shows, so it starts active (as a Loader's page did)
+            p = c.createObject(slot, { width: root.width });
+            built = true;
+            wire(p);
+            kept[id] = p;
+        }
+        keptOrder = keptOrder.filter(k => k !== id).concat([id]);
+        return p;
+    }
+    // The oldest beyond the bound goes, and so does a page that says it is not worth keeping (keepable: false — one
+    // that holds much while hidden, e.g. decoded pictures); never one on show. Only once nothing moves: a page torn
+    // down mid-glide costs a frame there (destruction is deferred to the next turn of the event loop).
+    function trim(): void {
+        let excess = keptOrder.length - keepPages;
+        for (const k of keptOrder.slice()) {
+            const q = kept[k];
+            if (q.parent === slotA || q.parent === slotB || (excess <= 0 && q.keepable !== false))
+                continue;
+            delete kept[k];
+            keptOrder = keptOrder.filter(x => x !== k);
+            excess--;
+            q.destroy();
+        }
+    }
+    // A page going out of sight keeps the keyboard focus it had, and keys would reach it unseen. The panel takes
+    // it, so a key the new page leaves goes on to the surface's own keys.
+    function letKeysGo(page: Item): void {
+        let f = Window.activeFocusItem;
+        while (f && f !== page)
+            f = f.parent;
+        if (f)
+            root.forceActiveFocus();
+    }
+    // a slot shows a page: the one it held goes back to the kept pages
+    function put(slot: Item, id: string): void {
+        if (slot.item && slot.item !== kept[id]) {
+            letKeysGo(slot.item);
+            slot.item.parent = stash;
+        }
+        const p = id !== "" ? pageFor(id, slot) : null;
+        if (slot.item === p)
+            return;
+        if (p) {
+            const other = slot === slotA ? slotB : slotA;
+            if (other.item === p)
+                other.item = null;
+            p.parent = slot;
+        }
+        slot.item = p;
+    }
     Component.onCompleted: {
         if (idA === "" && idB === "")
             idA = panelId;
@@ -107,6 +174,16 @@ Item {
     onPanelIdChanged: {
         if ((front === 0 ? idA : idB) === panelId)
             return;
+        const t0 = Date.now();
+        built = false;
+        change();
+        // diagnostics: how long a switch held the frame before its first one could be drawn — the incoming page built,
+        // or a kept one brought back (`ipc stats`)
+        Diagnostics.record("switch-prep:" + (built ? "built" : "kept"), [Date.now() - t0]);
+        Diagnostics.record("switch-prep:" + panelId, [Date.now() - t0]);
+    }
+    property bool built: false
+    function change(): void {
         // the way the tabs travel, known before the page (and so the hero's heading) changes
         const from0 = tabIndexOf(front === 0 ? idA : idB), to0 = tabIndexOf(panelId);
         travel = tabbed && from0 >= 0 && to0 >= 0 && from0 !== to0 ? (to0 > from0 ? 1 : -1) : 0;
@@ -127,6 +204,7 @@ Item {
                 idA = panelId;
             else
                 idB = panelId;
+            trim();
             return;
         }
         // between two tabs the pages move like one strip, in the direction the tab plate travels: the new page
@@ -143,6 +221,7 @@ Item {
         else
             idA = panelId;
         front = 1 - front;
+        letKeysGo(leaving.item);
         slideOut = -dir * slideDistance;
         // between tabs the pages are frames on one strip: both stay drawn, butted together, and move as one
         live.opacity = dir !== 0 ? 1 : 0;
@@ -218,7 +297,7 @@ Item {
             }
         }
         onFinished: {
-            // the old slot lets its panel go
+            // the old slot lets its panel go (back to the kept pages)
             if (root.front === 0)
                 root.idB = "";
             else
@@ -226,6 +305,7 @@ Item {
             root.leaving.opacity = 1;
             root.leaving.scale = 1;
             root.leaving.x = 0;
+            root.trim();
         }
     }
 
@@ -251,14 +331,16 @@ Item {
     }
 
     function wire(item: Item): void {
+        item.width = Qt.binding(() => root.width);
         item.screen = Qt.binding(() => root.screen);
         item.visibleProgress = Qt.binding(() => root.visibleProgress);
         if (item.context !== undefined)
             item.context = Qt.binding(() => root.context);
         if (item.showings !== undefined)
             item.showings = Qt.binding(() => root.showings);
+        // a kept page off show is inactive, as a closed panel's is
         if (item.active !== undefined)
-            item.active = Qt.binding(() => root.active);
+            item.active = Qt.binding(() => root.active && item.parent !== stash);
         // `alone`, not `focused`: a panel may have a focused (card, row) of its own
         if (item.alone !== undefined)
             item.alone = Qt.binding(() => root.focused);
@@ -467,22 +549,25 @@ Item {
         onPicked: id => PanelRouter.switchTo(id, root.screen.name)
     }
 
-    Loader {
+    Item {
         id: slotA
+        property Item item: null
         y: root.contentTop
         width: parent.width
         transformOrigin: Item.Top
-        visible: root.idA !== ""
-        sourceComponent: root.idA !== "" ? (root.panels[root.idA] ?? null) : null
-        onLoaded: root.wire(item)
+        visible: item !== null
     }
-    Loader {
+    Item {
         id: slotB
+        property Item item: null
         y: root.contentTop
         width: parent.width
         transformOrigin: Item.Top
-        visible: root.idB !== ""
-        sourceComponent: root.idB !== "" ? (root.panels[root.idB] ?? null) : null
-        onLoaded: root.wire(item)
+        visible: item !== null
+    }
+    // the kept pages not on show
+    Item {
+        id: stash
+        visible: false
     }
 }
