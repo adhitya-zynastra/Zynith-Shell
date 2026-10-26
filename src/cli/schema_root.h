@@ -43,7 +43,8 @@ namespace noctalia::cli {
       "noctalia",
       "A sleek, customizable desktop shell crafted for Wayland",
       {},
-      "For more information and documentation, visit:\n  https://github.com/adhitya-zynastra/Zynith-Shell/tree/master/docs",
+      "For more information and documentation, visit:\n  "
+      "https://github.com/adhitya-zynastra/Zynith-Shell/tree/master/docs",
       kRootFlags,
       {},
       kRootSubcommands,

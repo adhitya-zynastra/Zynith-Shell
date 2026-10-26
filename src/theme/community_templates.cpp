@@ -28,7 +28,8 @@ namespace noctalia::theme {
   namespace {
 
     constexpr Logger kLog("community_templates");
-    // zynith: the community template catalogue was the upstream project's service; Zynith has none and makes no request.
+    // zynith: the community template catalogue was the upstream project's service; Zynith has none and makes no
+    // request.
     constexpr std::string_view kCatalogUrl;
     constexpr std::string_view kCacheMetadataFilename = ".noctalia-cache.json";
 

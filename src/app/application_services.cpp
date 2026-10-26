@@ -100,6 +100,7 @@
 #include "util/file_utils.h"
 #include "util/string_utils.h"
 #include "wayland/surface.h"
+#include "zynith/surfaces.h"
 #include "zynith/ui_events.h"
 
 #include <algorithm>
@@ -112,8 +113,6 @@
 #include <malloc.h>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include "zynith/surfaces.h"
-
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
