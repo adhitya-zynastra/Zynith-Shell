@@ -2,6 +2,7 @@
 
 #include "compositors/compositor_detect.h"
 #include "compositors/compositor_platform.h"
+#include "core/build_info.h"
 #include "core/log.h"
 #include "core/process/process.h"
 #include "i18n/i18n.h"
@@ -257,7 +258,10 @@ void SessionActionRunner::invoke(const SessionPanelActionConfig& cfg) const {
   }
   if (cfg.action == "lock_and_suspend") {
     if (!lockThenSuspendDetached()) {
-      notify::error("Noctalia", i18n::tr("session.errors.lock-title"), i18n::tr("session.errors.lock-body"));
+      notify::error(
+          noctalia::build_info::kProductName, i18n::tr("session.errors.lock-title"),
+          i18n::tr("session.errors.lock-body")
+      );
     }
     return;
   }
@@ -271,7 +275,10 @@ void SessionActionRunner::invoke(const SessionPanelActionConfig& cfg) const {
   }
   if (cfg.action == "lock") {
     if (!lock()) {
-      notify::error("Noctalia", i18n::tr("session.errors.lock-title"), i18n::tr("session.errors.lock-body"));
+      notify::error(
+          noctalia::build_info::kProductName, i18n::tr("session.errors.lock-title"),
+          i18n::tr("session.errors.lock-body")
+      );
     }
     return;
   }

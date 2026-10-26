@@ -1,6 +1,7 @@
 #include "scripting/luau_host.h"
 
 #include "compositors/compositor_platform.h"
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "core/process/process.h"
@@ -816,7 +817,7 @@ namespace {
     if (auto* host = hostForState(L)) {
       host->scriptNotifyInfo(title, body);
     } else {
-      notify::info("Noctalia", title, body);
+      notify::info(noctalia::build_info::kProductName, title, body);
     }
     return 0;
   }
@@ -828,7 +829,7 @@ namespace {
     if (auto* host = hostForState(L)) {
       host->scriptNotifyError(title, body);
     } else {
-      notify::error("Noctalia", title, body);
+      notify::error(noctalia::build_info::kProductName, title, body);
     }
     return 0;
   }
@@ -2798,7 +2799,7 @@ void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
     );
     return;
   }
-  notify::info("Noctalia", title, body);
+  notify::info(noctalia::build_info::kProductName, title, body);
 }
 
 void LuauHost::scriptNotifyError(std::string title, std::string body) {
@@ -2808,7 +2809,7 @@ void LuauHost::scriptNotifyError(std::string title, std::string body) {
     );
     return;
   }
-  notify::error("Noctalia", title, body);
+  notify::error(noctalia::build_info::kProductName, title, body);
 }
 
 bool LuauHost::scriptLoadSound(std::string name, std::string path, int callbackRef) {

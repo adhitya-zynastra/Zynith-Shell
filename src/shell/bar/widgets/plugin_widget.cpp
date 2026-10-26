@@ -1,6 +1,7 @@
 #include "shell/bar/widgets/plugin_widget.h"
 
 #include "compositors/compositor_platform.h"
+#include "core/build_info.h"
 #include "core/log.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/mpris/mpris_service.h"
@@ -850,7 +851,7 @@ void PluginWidget::reloadScript() {
   auto name = m_sourcePath.filename().string();
   if (source.empty() || !m_runtime) {
     kLog.warn("hot reload: failed to reload '{}'", name);
-    notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
+    notify::error(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
     return;
   }
 
@@ -891,5 +892,5 @@ void PluginWidget::reloadScript() {
   startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);
-  notify::info("Noctalia", i18n::tr("bar.widgets.scripted.reloaded"), name);
+  notify::info(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reloaded"), name);
 }

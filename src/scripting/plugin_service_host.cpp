@@ -1,5 +1,6 @@
 #include "scripting/plugin_service_host.h"
 
+#include "core/build_info.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
 #include "notification/notifications.h"
@@ -260,12 +261,12 @@ namespace scripting {
     auto name = service.sourcePath.filename().string();
     if (code.empty()) {
       kLog.warn("service '{}': failed to reload '{}'", service.entryId, service.sourcePath.string());
-      notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
+      notify::error(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
       return;
     }
     if (service.runtime == nullptr) {
       kLog.warn("service '{}': runtime unavailable for reload", service.entryId);
-      notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
+      notify::error(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
       return;
     }
 
@@ -274,7 +275,7 @@ namespace scripting {
     service.runtime->reload(service.sourcePath.string(), std::move(code), {});
     armTimer(service);
     kLog.info("hot reload: reloaded service '{}'", service.entryId);
-    notify::info("Noctalia", i18n::tr("bar.widgets.scripted.reloaded"), name);
+    notify::info(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reloaded"), name);
   }
 
   void PluginServiceHost::armTimer(Service& service) {

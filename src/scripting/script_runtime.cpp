@@ -1,5 +1,6 @@
 #include "scripting/script_runtime.h"
 
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
@@ -151,10 +152,10 @@ namespace scripting {
           kLog.info("{}", effect.title);
           break;
         case ScriptSideEffectKind::NotifyInfo:
-          notify::info("Noctalia", effect.title, effect.body);
+          notify::info(noctalia::build_info::kProductName, effect.title, effect.body);
           break;
         case ScriptSideEffectKind::NotifyError:
-          notify::error("Noctalia", effect.title, effect.body);
+          notify::error(noctalia::build_info::kProductName, effect.title, effect.body);
           break;
         case ScriptSideEffectKind::CopyToClipboard:
           if (clipboard == nullptr || !clipboard->copyText(effect.title, effect.body)) {
@@ -962,7 +963,10 @@ namespace scripting {
       DeferredCall::callLater([name, reason = std::move(reason)] {
         const std::string bodyKey =
             reason == "timeouts" ? "plugins.auto-disabled.body-timeouts" : "plugins.auto-disabled.body-errors";
-        notify::error("Noctalia", i18n::tr("plugins.auto-disabled.title"), i18n::tr(bodyKey, "plugin", name));
+        notify::error(
+            noctalia::build_info::kProductName, i18n::tr("plugins.auto-disabled.title"),
+            i18n::tr(bodyKey, "plugin", name)
+        );
       });
     }
 

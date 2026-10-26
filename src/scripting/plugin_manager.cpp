@@ -1,6 +1,7 @@
 #include "scripting/plugin_manager.h"
 
 #include "config/config_service.h"
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
@@ -555,7 +556,7 @@ namespace scripting {
               kOldestSupportedPluginApiVersion, kCurrentPluginApiVersion
           );
           notify::error(
-              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr(
                   "plugins.enable-failed.body-incompatible", "plugin", id, "version", pluginApiVersion, "oldest",
                   kOldestSupportedPluginApiVersion, "current", kCurrentPluginApiVersion
@@ -564,14 +565,14 @@ namespace scripting {
         } else if (timedOut) {
           kLog.warn("cannot enable '{}': export timed out", id);
           notify::error(
-              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr("plugins.enable-failed.body-timeout", "plugin", id)
           );
         } else {
           const std::string reason = error.empty() ? "export failed" : error;
           kLog.warn("cannot enable '{}': {}", id, reason);
           notify::error(
-              "Noctalia", i18n::tr("plugins.enable-failed.title"),
+              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr("plugins.enable-failed.body-error", "plugin", id, "error", reason)
           );
         }

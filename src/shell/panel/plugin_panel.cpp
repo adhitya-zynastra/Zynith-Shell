@@ -1,5 +1,6 @@
 #include "shell/panel/plugin_panel.h"
 
+#include "core/build_info.h"
 #include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "i18n/i18n.h"
@@ -513,7 +514,7 @@ void PluginPanel::reloadScript() {
   auto name = m_sourcePath.filename().string();
   if (source.empty() || m_runtime == nullptr) {
     kLog.warn("hot reload: failed to reload '{}'", name);
-    notify::error("Noctalia", i18n::tr("bar.widgets.scripted.reload-failed"), name);
+    notify::error(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
     return;
   }
 
@@ -529,5 +530,5 @@ void PluginPanel::reloadScript() {
   }
   startTickTimer();
   kLog.info("hot reload: reloaded '{}'", name);
-  notify::info("Noctalia", i18n::tr("bar.widgets.scripted.reloaded"), name);
+  notify::info(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reloaded"), name);
 }

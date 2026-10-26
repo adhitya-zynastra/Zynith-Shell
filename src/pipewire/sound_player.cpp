@@ -1,5 +1,6 @@
 #include "pipewire/sound_player.h"
 
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/log.h"
 
@@ -194,7 +195,7 @@ void SoundPlayer::playBuffer(
 
   pw_properties* props = pw_properties_new(
       PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Notification", PW_KEY_APP_NAME,
-      "Noctalia", nullptr
+      noctalia::build_info::kProductName, nullptr
   );
   active->stream = pw_stream_new_simple(m_loop, "noctalia-sound", props, &kStreamEvents, active.get());
   if (active->stream == nullptr) {

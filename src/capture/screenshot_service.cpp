@@ -4,6 +4,7 @@
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "config/config_types.h"
+#include "core/build_info.h"
 #include "core/deferred_call.h"
 #include "core/input/key_chord.h"
 #include "core/input/keybind_matcher.h"
@@ -1800,9 +1801,9 @@ ScreenshotService::makeScreenshotPath(const OutputOptions& options, const std::s
 }
 
 void ScreenshotService::notifySaved(const std::filesystem::path& path) {
-  m_notifications.addInternal("Noctalia", "Screenshot saved", path.string());
+  m_notifications.addInternal(noctalia::build_info::kProductName, "Screenshot saved", path.string());
 }
 
 void ScreenshotService::notifyError(const std::string& message) {
-  m_notifications.addInternal("Noctalia", "Screenshot failed", message, Urgency::Critical);
+  m_notifications.addInternal(noctalia::build_info::kProductName, "Screenshot failed", message, Urgency::Critical);
 }
