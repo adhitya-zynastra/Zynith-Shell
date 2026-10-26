@@ -1,4 +1,4 @@
-# Noctalia configuration: all settings at their defaults.
+# The Zynith native shell's configuration: all settings at their defaults.
 # Copy to ~/.config/noctalia/config.toml and edit what you need.
 # Most changes are hot-reloaded via inotify; startup-only settings are noted inline.
 
@@ -482,10 +482,10 @@ enabled = false
 
 [hooks]
 
-# started           = "notify-send 'Noctalia' 'Shell started'"
+# started           = "notify-send 'Zynith' 'Shell started'"
 # wallpaper_changed = []
 # colors_changed    = []
-# theme_mode_changed = "notify-send 'Noctalia' \"Theme mode: $NOCTALIA_THEME_MODE\""
+# theme_mode_changed = "notify-send 'Zynith' \"Theme mode: $NOCTALIA_THEME_MODE\""
 # session_locked    = []
 # session_unlocked  = []
 # logging_out       = []
