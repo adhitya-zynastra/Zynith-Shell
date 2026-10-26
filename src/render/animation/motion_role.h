@@ -18,7 +18,7 @@
 // The role set was derived from what the shell actually animated before roles existed (72 call
 // sites, grouped by duration and curve), then extended only where the motion evidence required it:
 // ContentReveal/ContentDismiss for surface-first, content-second staging, and spring models for
-// elements that can be retargeted mid-flight. See 02_Architecture/design/motion-language.md.
+// elements that can be retargeted mid-flight.
 namespace motion {
 
   enum class Role : std::uint8_t {

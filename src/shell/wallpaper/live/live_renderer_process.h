@@ -2,8 +2,8 @@
 
 // zynith: supervises the one live-wallpaper renderer process.
 //
-// Why exactly one: a live wallpaper is a full GPU renderer. Measured on a test laptop (integrated GPU,
-// 1920x1200, 30 fps): a scene wallpaper is ~225 MB RSS and ~5 % of a core, a 4K video ~360 MB and ~80 %
+// Why exactly one: a live wallpaper is a full GPU renderer. Measured on an integrated GPU
+// (1920x1200, 30 fps): a scene wallpaper is ~225 MB RSS and ~5 % of a core, a 4K video ~360 MB and ~80 %
 // (software decode), a web wallpaper 10 processes, ~1.3 GB and ~100 %. Two of them overlapping during a
 // switch would double that for no visible benefit, so the controller always stops the old renderer, waits
 // for it to exit, and only then starts the next.

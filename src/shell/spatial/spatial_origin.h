@@ -16,7 +16,7 @@
 // panel opened by a keyboard shortcut has no widget to grow from and uses its placement's default.
 //
 // The functions over these types live in spatial_model.h; this header is types only, so requests can
-// carry an origin without pulling in the rest of the model. See 02_Architecture/design/spatial-model.md.
+// carry an origin without pulling in the rest of the model.
 namespace shell::spatial {
 
   // What summoned a surface.

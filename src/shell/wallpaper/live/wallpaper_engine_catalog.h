@@ -16,7 +16,7 @@
 //        -> <library>/steamapps/common/wallpaper_engine/assets          (the shared engine assets)
 //
 // and hands linux-wallpaperengine the resolved absolute item folder plus an explicit --assets-dir. The
-// renderer reads the files in place; nothing is ever copied (45+ GB on a test machine).
+// renderer reads the files in place; nothing is ever copied (a library can be tens of GB).
 
 #include "shell/wallpaper/live/live_wallpaper_types.h"
 
@@ -41,7 +41,7 @@ namespace live::wallpaper_engine {
   [[nodiscard]] std::vector<std::string> parseLibraryFolderPaths(std::string_view vdfText);
 
   // Parses one project.json (UTF-8, optional BOM). `id` is the item's folder name — the Workshop id —
-  // which is authoritative (253 of 560 items on a test machine carry no "workshopid" field at all).
+  // which is authoritative (many items carry no "workshopid" field at all).
   // Returns nullopt only for unreadable JSON; unknown types come back as ItemKind::Unsupported.
   [[nodiscard]] std::optional<Item>
   parseProject(std::string_view jsonText, std::string_view id, const std::filesystem::path& directory);

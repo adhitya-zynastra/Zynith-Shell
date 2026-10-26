@@ -14,7 +14,6 @@
 //
 // Relationship to Style: Style's numeric constants remain the storage and stay valid for existing code;
 // tokens name them, add the steps Style lacked (spacing above 16, icon containers) and give each a role.
-// See 02_Architecture/design/design-tokens.md.
 namespace ui::tokens {
 
   // ---- spacing ---------------------------------------------------------------------------------------

@@ -299,7 +299,7 @@ TestCase {
         compare(M.cornerRadii({ edge: "top", thickness: 39, radius: 0, radius_bottom_left: 48 }, { w: 300, h: 39 }, 1, null), [0, 0, 0, 19.5]);
     }
     function test_flowing_into_the_edge_squares_only_the_edge_corners() {
-        // one tested rail: top edge, right end, flows into the edge; top right 48 can only ever be square
+        // a rail: top edge, right end, flows into the edge; top right 48 can only ever be square
         const rail = { edge: "top", anchor: "end", thickness: 39, margin: 0, concave_edge_corners: true, radius: 0, radius_top_right: 48, radius_bottom_left: 48 };
         compare(M.cornerRadii(rail, { w: 300, h: 39 }, 1, null), [0, 0, 0, 19.5]);
         compare(M.squaredCorners(rail), [0, 1], "Settings is told which corners are square, and why");

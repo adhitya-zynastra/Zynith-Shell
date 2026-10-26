@@ -29,7 +29,7 @@ enum class LayerShellLayer : std::uint32_t;
 // This is a model over the existing owners, not a new authority: materials come from shell::glass
 // (the single owner of fill/tint/blur/border, ADR-0016) and shadows from the keys that already own
 // them ([shell.panel].shadow, [shell].popup_shadows, a bar's or the dock's own `shadow`). Nothing here is
-// a setting. See 02_Architecture/design/surface-hierarchy.md.
+// a setting.
 namespace shell::surface {
 
   enum class Role : std::uint8_t { Scene, Atmosphere, Frame, Surface, Embedded, Overlay, Floating, Count };

@@ -4,11 +4,10 @@
 //
 // Discovery reads each installed item's project.json on a worker thread (never on the UI thread) and keeps
 // the catalog in memory for the shell's lifetime; a later refresh(false) only re-walks when a Workshop
-// content folder's mtime changed (subscribing/unsubscribing adds/removes a folder there). Measured on the
-// owner's 560-item library: see docs 03_Performance/benchmarks/live-wallpaper.md.
+// content folder's mtime changed (subscribing/unsubscribing adds/removes a folder there).
 //
-// Previews are the author's own preview image inside the Workshop folder (preview.jpg/.gif/.png — present
-// for all 560 items on a test machine). They are handed to the shell's ThumbnailService as-is, which
+// Previews are the author's own preview image inside the Workshop folder (preview.jpg/.gif/.png, which Workshop
+// items normally carry). They are handed to the shell's ThumbnailService as-is, which
 // decodes them on its workers and persists a small WebP per size in ~/.cache/noctalia/thumbnails, keyed by
 // path + size + mtime: so nothing is re-decoded until Steam actually updates the item, and no live renderer
 // is ever launched just to produce a thumbnail.
