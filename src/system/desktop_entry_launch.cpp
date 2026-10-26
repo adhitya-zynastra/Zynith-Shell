@@ -181,7 +181,7 @@ namespace {
     static std::once_flag warnOnce;
     std::call_once(warnOnce, [] {
       kLog.warn(
-          "launch_apps_as_systemd_services is enabled but Noctalia is not running under the systemd user "
+          "launch_apps_as_systemd_services is enabled but the shell is not running under the systemd user "
           "manager (no uwsm or systemd user service); launching apps directly"
       );
     });

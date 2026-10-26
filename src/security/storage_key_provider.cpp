@@ -245,7 +245,7 @@ namespace security {
     auto key = std::make_shared<SecureKey>(std::move(*generated));
     SecureBuffer storedValue(key->bytes());
     m_operation = m_secretStore.store(
-        kStorageMasterKeyId, std::move(storedValue), "Noctalia encrypted storage key",
+        kStorageMasterKeyId, std::move(storedValue), "Zynith encrypted storage key",
         [this, key = std::move(key)](SecretStoreStatus status) mutable {
           if (status == SecretStoreStatus::Success) {
             activateKey(std::move(*key));

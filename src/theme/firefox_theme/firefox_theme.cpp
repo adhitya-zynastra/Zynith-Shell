@@ -262,7 +262,7 @@ namespace noctalia::theme {
 
       const nlohmann::json body = {
           {"name", std::string(kManifestName)},
-          {"description", "Noctalia Firefox theme native messaging host"},
+          {"description", "Zynith Firefox theme native messaging host"},
           {"path", path.string()},
           {"type", "stdio"},
           {"allowed_extensions", nlohmann::json::array({std::string(kExtensionId)})},

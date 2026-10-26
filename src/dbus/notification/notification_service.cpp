@@ -538,5 +538,5 @@ void NotificationService::emitActivationToken(uint32_t id, const std::string& ac
 }
 
 std::tuple<std::string, std::string, std::string, std::string> NotificationService::onGetServerInformation() {
-  return {"noctalia", "noctalia-dev", NOCTALIA_VERSION, "1.2"};
+  return {"Zynith", "Zynith", NOCTALIA_VERSION, "1.2"};
 }

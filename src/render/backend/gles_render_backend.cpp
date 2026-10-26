@@ -161,7 +161,7 @@ void main() {
     if (!missing.empty()) {
       throw std::runtime_error(
           std::format(
-              R"(GPU driver is missing OpenGL ES features Noctalia requires: {} [renderer="{}" version="{}"])", missing,
+              R"(GPU driver is missing OpenGL ES features Zynith requires: {} [renderer="{}" version="{}"])", missing,
               safeCString(reinterpret_cast<const char*>(glGetString(GL_RENDERER))),
               safeCString(reinterpret_cast<const char*>(glGetString(GL_VERSION)))
           )
