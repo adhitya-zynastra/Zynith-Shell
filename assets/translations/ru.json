@@ -740,7 +740,7 @@
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending-manual": "Файлы подготовлены. Запустите в терминале: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Или задайте shell.greeter_sync.privilege_command (например, ghostty -e pkexec) и повторите синхронизацию.",
       "greeter-sync-success": "Внешний вид синхронизирован. Изменения вступят в силу на следующем экране входа.",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Это сочетание клавиш принимает одну клавишу без модификаторов.",
       "keybind-invalid-printable": "Печатные клавиши (буквы, цифры, символы) требуют модификатор, например Ctrl или Alt.",
       "keybind-invalid-super": "Клавишу Super/Windows нельзя использовать в сочетаниях клавиш командной строки.",
@@ -1409,7 +1409,7 @@
         "update": "Обновить"
       },
       "store": {
-        "add": "Добавить в Noctalia",
+        "add": "Добавить в Zynith",
         "categories": "Категории",
         "category-all": "Все",
         "empty": "Плагины не найдены",
@@ -1904,7 +1904,7 @@
             "label": "При выключении"
           },
           "started": {
-            "description": "Команда для запуска после запуска Noctalia",
+            "description": "Команда для запуска после запуска Zynith",
             "label": "При запуске"
           },
           "theme-mode-changed": {
@@ -2450,7 +2450,7 @@
           "label": "Авто-Синхронизация Greeter"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Запускать приложения в отдельных службах systemd, чтобы они не использовали cgroup Noctalia",
+          "description": "Запускать приложения в отдельных службах systemd, чтобы они не использовали cgroup Zynith",
           "label": "Запускать приложения как службы systemd"
         },
         "niri-overview-type-to-launch": {
@@ -3217,7 +3217,7 @@
       "export-config": "Экспортировать конфигурацию…",
       "export-config-saved": "Экспорт конфигурации сохранён.",
       "filter-overridden": "Измененные",
-      "native-title": "Настройки Noctalia",
+      "native-title": "Настройки Zynith",
       "no-results": "Настройки не найдены",
       "no-results-hint": "Попробуйте другое имя параметра или ключ конфигурации.",
       "reset-page": "Сбросить страницу",
@@ -3238,7 +3238,7 @@
     "no-wallpaper-selected": "Обои не выбраны",
     "select-wallpaper": "Выбрать обои",
     "subtitle": "Несколько быстрых вариантов для начала.",
-    "title": "Добро пожаловать в Noctalia",
+    "title": "Добро пожаловать в Zynith",
     "wallpaper": "Обои",
     "wallpaper-scheme": "Схема обоев"
   },

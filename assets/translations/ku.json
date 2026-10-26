@@ -461,8 +461,8 @@
       "battery-device": "Amûrê betariyê",
       "battery-low-title": "Betarî kêm e",
       "calendar": "Salname",
-      "greeter-sync": "Silavkarê Noctalia",
-      "keybind-app": "Noctalia"
+      "greeter-sync": "Silavkarê Zynith",
+      "keybind-app": "Zynith"
     }
   },
   "osd": {
@@ -875,7 +875,7 @@
         "update": "Rojane bike"
       },
       "store": {
-        "add": "Tevlî Noctalia bike",
+        "add": "Tevlî Zynith bike",
         "categories": "Beş",
         "category-all": "Hemû",
         "title": "Markêta pêvekan"

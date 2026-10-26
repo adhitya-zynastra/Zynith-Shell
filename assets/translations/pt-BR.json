@@ -766,14 +766,14 @@
       "calendar-google-connect-start-failed": "Não foi possível iniciar a autorização do Google. Verifique sua conexão de rede e tente novamente.",
       "calendar-google-connect-start-http": "Não foi possível iniciar a autorização do Google. O agente OAuth retornou HTTP {status}.",
       "calendar-google-connect-timeout": "A autorização do Google expirou. Reinicie a conexão quando estiver pronto para fazer login.",
-      "config-migration-body": "Atualize {path} no arquivo fonte. Noctalia está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
+      "config-migration-body": "Atualize {path} no arquivo fonte. Zynith está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
       "config-migration-title": "Atualiação de configuração necessária",
       "dbus-disabled": "Notificações DBus desabilitadas",
       "desktop-widgets-editor": "Editor de Widget",
       "desktop-widgets-editor-enabled": "O editor de widgets da área de trabalho está ligado. Mude para um espaço de trabalho vazio para que as janelas abertas não cubram o editor.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Sincronizando aparência para o greeter. Se um diálogo de autorização aparecer, aprove-o; autorização sem senha segue políticas do sistema.",
-      "greeter-sync-pending-console": "Sincronizando aparência para o greeter. Se autorização é necessária, aprove o diálogo polkit no Noctalia, em um TTY ou em um console.",
+      "greeter-sync-pending-console": "Sincronizando aparência para o greeter. Se autorização é necessária, aprove o diálogo polkit no Zynith, em um TTY ou em um console.",
       "greeter-sync-pending-legacy": "Sincronizando através do utilitário legado. Aprovação do administrador é necessária.",
       "greeter-sync-pending-manual": "Os arquivos estão preparados para a sincronização legada autenticada. Execute o auxiliar de aplicação posicional em um terminal, mantendo o NOCTALIA_GREETER_STATE_DIR caso utilize um caminho personalizado, ou configure o shell.greeter_sync.privilege_command e sincronize novamente.",
       "greeter-sync-pending-manual-pkexec": "Sincronizando aparência para o greeter. Se autorização de administrador for necessária e não for apresentado um diálogo solicitando, execute em um terminal: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\".",
@@ -781,7 +781,7 @@
       "greeter-sync-timeout": "A sincronização do Greeter ainda está aguardando autorização. Verifique se há um prompt do polkit em um TTY ou console, habilite o agente polkit nas configurações de Segurança ou execute o pkexec manualmente.",
       "greeter-sync-timeout-manual": "A sincronização legada do Greeter ainda precisa da autorização. Execute o auxiliar de aplicação posicional em um terminal e preserve NOCTALIA_GREETER_STATE_DIR se você utiliza um caminho personalizado.",
       "greeter-sync-timeout-manual-pkexec": "Sincronização com o greeter continua necessitando autorização. Execute em um terminal: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Este atalho aceita uma única tecla sem modificadores.",
       "keybind-invalid-printable": "Teclas imprimíveis (letras, números, símbolos) requerem uma tecla modificadora como Ctrl ou Alt.",
       "keybind-invalid-super": "A tecla Super/Windows não pode ser usada em atalhos de teclado do shell.",
@@ -853,7 +853,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "O plugin {plugin} requer a versão {version} da API de plugins; este Noctalia suporta as APIs {oldest}–{current}",
+      "body-incompatible": "O plugin {plugin} requer a versão {version} da API de plugins; este Zynith suporta as APIs {oldest}–{current}",
       "body-timeout": "A instalação do {plugin} demorou muito.",
       "title": "Plugin não habilitado"
     }
@@ -1523,7 +1523,7 @@
         "deprecated": "Obsoleto",
         "empty": "Nenhum plugin habilitado.",
         "held-back": "versão mais antiga",
-        "held-back-hint": "v{version} requer a API de plugins {required}; este Noctalia suporta até {current}. Atualize o Noctalia para obtê-la.",
+        "held-back-hint": "v{version} requer a API de plugins {required}; este Zynith suporta até {current}. Atualize o Zynith para obtê-la.",
         "incompatible-plugin-api": "APi de plugin incoompatível",
         "remove": "Remover plugin",
         "requires": "Requer: {dependencies}",
@@ -1565,15 +1565,15 @@
         "update": "Atualizar fonte"
       },
       "store": {
-        "add": "Adicionar ao Noctalia",
+        "add": "Adicionar ao Zynith",
         "back-to-catalog": "Voltar ao catálogo de plugins",
         "categories": "Categoria",
         "category-all": "Todos",
         "empty": "Não foram encontrados plugins",
         "held-back": "Versão mais antiga",
-        "held-back-hint": "Instala a v{version} para a API de plugins {resolved}. A versão mais recente v{latest} requer a API de plugins {latestRequired}; este Noctalia suporta até {current}.",
+        "held-back-hint": "Instala a v{version} para a API de plugins {resolved}. A versão mais recente v{latest} requer a API de plugins {latestRequired}; este Zynith suporta até {current}.",
         "incompatible": "Incompatível",
-        "incompatible-hint": "Requer a API de plugins {required}; este Noctalia suporta {oldest}–{current}.",
+        "incompatible-hint": "Requer a API de plugins {required}; este Zynith suporta {oldest}–{current}.",
         "installed": "Instalado",
         "loading": "Carregando catálogo...",
         "no-readme": "Nenhuma descrição disponível.",
@@ -1681,7 +1681,7 @@
           "label": "Preto Puro"
         },
         "shell-theme-mode": {
-          "description": "Fixar modo Claro ou Escuro do Noctalia; Seguir mantém em sincronia com o Modo do Tema",
+          "description": "Fixar modo Claro ou Escuro do Zynith; Seguir mantém em sincronia com o Modo do Tema",
           "label": "Modo do Tema do Shell"
         },
         "theme-mode": {
@@ -2119,7 +2119,7 @@
             "label": "Ao Desligar"
           },
           "started": {
-            "description": "Comando para executar após o Noctalia iniciar",
+            "description": "Comando para executar após o Zynith iniciar",
             "label": "Ao Iniciar"
           },
           "theme-mode-changed": {
@@ -2883,9 +2883,9 @@
           "label": "Rótulos de Layouts de Teclado"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Executa aplicativos em serviços systemd separados para que não compartilhem o cgroup do Noctalia",
+          "description": "Executa aplicativos em serviços systemd separados para que não compartilhem o cgroup do Zynith",
           "label": "Iniciar Apps como Serviços do Systemd",
-          "requires-systemd-session": "Requer que o Noctalia seja executado como um serviço de usuário do systemd (uwsm ou uma unidade de usuário do systemd)"
+          "requires-systemd-session": "Requer que o Zynith seja executado como um serviço de usuário do systemd (uwsm ou uma unidade de usuário do systemd)"
         },
         "launch-apps-custom-command": {
           "description": "Envolve apps iniciados pelo launcher, dock e taskbar; substitui $CMD pelo comando original",
@@ -3528,7 +3528,7 @@
             "label": "Invocar a ação mais recente de notificação"
           },
           "notification-show": {
-            "description": "Mostrar uma notificação interna de Noctalia",
+            "description": "Mostrar uma notificação interna de Zynith",
             "label": "Mostrar uma notificação"
           },
           "osd-disable": {
@@ -4435,8 +4435,8 @@
       "export-config": "Exportar Config...",
       "export-config-saved": "Exportação de configuração salva.",
       "filter-overridden": "Sobrescrito",
-      "legacy-config-warning": "Configurações Legadas: {issue}. Edite esta entrada na fonte; Noctalia está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
-      "native-title": "Configurações do Noctalia",
+      "legacy-config-warning": "Configurações Legadas: {issue}. Edite esta entrada na fonte; Zynith está aplicando está substituição só temporariamente. Execute nocatlia config validade para listar cada mudança necessária.",
+      "native-title": "Configurações do Zynith",
       "no-results": "Nenhuma configuração encontrada",
       "no-results-hint": "Tente um nome diferente de configuração ou uma tecla de config.",
       "offline-mode-notice": {
@@ -4472,7 +4472,7 @@
     "no-wallpaper-selected": "Nenhum papel de parede selecionado",
     "select-wallpaper": "Selecione papel de parede",
     "subtitle": "Algumas escolhas rápidas para os primeiros passos",
-    "title": "Seja Bem-Vindo ao Noctalia",
+    "title": "Seja Bem-Vindo ao Zynith",
     "wallpaper": "Papel de parede",
     "wallpaper-scheme": "Esquema do Papel de Parede"
   },

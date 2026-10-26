@@ -753,12 +753,12 @@
       "desktop-widgets-editor-enabled": "L’éditeur de widgets de bureau est activé. Basculez sur un espace de travail vide pour ne pas superposer des fenêtres sur l'éditeur.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "En attente de l'approbation de l'administrateur pour écrire dans le greeter.",
-      "greeter-sync-pending-console": "En attente de l'autorisation de l'administrateur. Accepte la demande polkit dans Noctalia, sur un TTY ou une console, ou exécute pkexec manuellement.",
+      "greeter-sync-pending-console": "En attente de l'autorisation de l'administrateur. Accepte la demande polkit dans Zynith, sur un TTY ou une console, ou exécute pkexec manuellement.",
       "greeter-sync-pending-manual": "Les fichiers sont prêts. Exécute cette commande dans un terminal : pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Tu peux aussi définir shell.greeter_sync.privilege_command (par exemple ghostty -e pkexec), puis relancer la synchronisation.",
       "greeter-sync-success": "Apparence synchronisée. Les modifications s’appliqueront au prochain écran de connexion.",
       "greeter-sync-timeout": "La synchronisation du greeter est toujours en attente de l'autorisation de l'administrateur. Vérifie si une demande polkit est affichée sur un TTY ou une console, active le polkit agent dans les paramètres de sécurité, ou exécute pkexec manuellement.",
       "greeter-sync-timeout-manual": "La synchronisation du greeter nécessite toujours l'autorisation de l'administrateur. Exécute cette commande dans un terminal : pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Ce raccourci accepte une seule touche sans modificateur.",
       "keybind-invalid-printable": "Les touches imprimables (lettres, chiffres, symboles) nécessitent un modificateur tel que Ctrl ou Alt.",
       "keybind-invalid-super": "La touche Super/Windows ne peut pas être utilisée dans les raccourcis du shell.",
@@ -830,7 +830,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} nécessite Noctalia {version} ou une version plus récente.",
+      "body-incompatible": "{plugin} nécessite Zynith {version} ou une version plus récente.",
       "body-timeout": "L'installation de {plugin} a pris trop de temps.",
       "title": "Plugin désactivé"
     }
@@ -1479,7 +1479,7 @@
         "update": "Mettre à jour la source"
       },
       "store": {
-        "add": "Ajoute à Noctalia",
+        "add": "Ajoute à Zynith",
         "categories": "Catégories",
         "category-all": "Tout",
         "empty": "Aucun plugin trouvé",
@@ -1978,7 +1978,7 @@
             "label": "Lors de l’arrêt du système"
           },
           "started": {
-            "description": "Commande à exécuter après le démarrage de Noctalia",
+            "description": "Commande à exécuter après le démarrage de Zynith",
             "label": "Après le démarrage"
           },
           "theme-mode-changed": {
@@ -2599,7 +2599,7 @@
           "label": "Commande avec privilèges pour la synchronisation du greeter"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Lance les applications dans des services systemd distincts afin qu’elles ne partagent pas le même cgroup que Noctalia",
+          "description": "Lance les applications dans des services systemd distincts afin qu’elles ne partagent pas le même cgroup que Zynith",
           "label": "Lancer les applications comme services systemd"
         },
         "launch-apps-custom-command": {
@@ -3212,7 +3212,7 @@
     },
     "window": {
       "export-config": "Exporter la configuration...",
-      "native-title": "Paramètres Noctalia",
+      "native-title": "Paramètres Zynith",
       "no-results": "Pas de paramètre trouvé",
       "offline-mode-notice": {
         "template-store": "Les téléchargements des modèles de la communauté ne vont pas fonctionner. ",
@@ -3234,7 +3234,7 @@
     "no-wallpaper-selected": "Pas de fond d'écran sélectionné",
     "select-wallpaper": "Choisir un fond d'écran",
     "subtitle": "Quelques options avant de commencer.",
-    "title": "Bienvenue sur Noctalia",
+    "title": "Bienvenue sur Zynith",
     "wallpaper": "Fond d'écran",
     "wallpaper-scheme": "Schéma de fond d’écran"
   },

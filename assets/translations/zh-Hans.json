@@ -766,14 +766,14 @@
       "calendar-google-connect-start-failed": "无法启动 Google 授权。请检查网络连接并重试。",
       "calendar-google-connect-start-http": "无法启动 Google 授权。OAuth 代理返回了 HTTP {status}。",
       "calendar-google-connect-timeout": "Google 授权超时。准备好登录时，请重新发起连接。",
-      "config-migration-body": "请在源配置文件中更新 {path}。Noctalia 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
+      "config-migration-body": "请在源配置文件中更新 {path}。Zynith 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
       "config-migration-title": "需要更新配置",
       "dbus-disabled": "DBus 通知已禁用",
       "desktop-widgets-editor": "桌面小组件编辑器",
       "desktop-widgets-editor-enabled": "桌面小组件编辑器已开启。请切换至空工作区，避免打开的窗口遮挡编辑器。",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "正在将外观同步到 Greeter。如果出现管理员授权提示，请予以确认；免密码授权由系统策略决定。",
-      "greeter-sync-pending-console": "正在将外观同步到 Greeter。如果需要授权，请在 Noctalia、TTY 或控制台中确认 polkit 提示。",
+      "greeter-sync-pending-console": "正在将外观同步到 Greeter。如果需要授权，请在 Zynith、TTY 或控制台中确认 polkit 提示。",
       "greeter-sync-pending-legacy": "正在通过需要身份验证的旧版辅助程序同步。需要管理员授权。",
       "greeter-sync-pending-manual": "同步文件已暂存，等待通过身份验证的旧版同步。请在终端运行接受位置参数的同步辅助程序；如果使用自定义路径，请保留 NOCTALIA_GREETER_STATE_DIR，或配置 shell.greeter_sync.privilege_command 后重新同步。",
       "greeter-sync-pending-manual-pkexec": "正在将外观同步到 Greeter。如果需要管理员授权但未出现提示，请在终端运行：pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"。",
@@ -781,7 +781,7 @@
       "greeter-sync-timeout": "Greeter 同步仍在等待授权。请检查 TTY 或控制台中的 polkit 提示，在“安全”设置中启用 polkit 代理，或手动运行 pkexec。",
       "greeter-sync-timeout-manual": "通过身份验证的旧版同步仍需要管理员授权。请在终端运行接受位置参数的同步辅助程序；如果使用自定义路径，请保留 NOCTALIA_GREETER_STATE_DIR。",
       "greeter-sync-timeout-manual-pkexec": "Greeter 同步仍需要授权。请在终端运行：pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "该快捷键仅接受不带修饰键的单键。",
       "keybind-invalid-printable": "字母、数字和符号键需要配合 Ctrl 或 Alt 等修饰键使用。",
       "keybind-invalid-super": "Super/Windows 键无法用于 Shell 快捷键。",
@@ -853,7 +853,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}：{error}",
-      "body-incompatible": "{plugin} 面向插件 API  {version}；当前 Noctalia 仅支持 API  {oldest}–{current}。",
+      "body-incompatible": "{plugin} 面向插件 API  {version}；当前 Zynith 仅支持 API  {oldest}–{current}。",
       "body-timeout": "{plugin} 安装耗时过长。",
       "title": "插件启用失败"
     }
@@ -1523,7 +1523,7 @@
         "deprecated": "已弃用",
         "empty": "未启用任何插件。",
         "held-back": "较旧版本",
-        "held-back-hint": "v{version} 需要插件 API {required}；当前 Noctalia 最高仅支持 API {current}。请升级 Noctalia 以获取该版本。",
+        "held-back-hint": "v{version} 需要插件 API {required}；当前 Zynith 最高仅支持 API {current}。请升级 Zynith 以获取该版本。",
         "incompatible-plugin-api": "插件 API 不兼容",
         "remove": "移除插件",
         "requires": "依赖：{dependencies}",
@@ -1565,15 +1565,15 @@
         "update": "更新源"
       },
       "store": {
-        "add": "添加到 Noctalia",
+        "add": "添加到 Zynith",
         "back-to-catalog": "返回插件目录",
         "categories": "类别",
         "category-all": "全部",
         "empty": "未找到插件",
         "held-back": "较旧版本",
-        "held-back-hint": "当前兼容版本为 v{version}（插件 API {resolved}）。最新版本 v{latest} 需要插件 API {latestRequired}；当前 Noctalia 最高仅支持 API {current}。",
+        "held-back-hint": "当前兼容版本为 v{version}（插件 API {resolved}）。最新版本 v{latest} 需要插件 API {latestRequired}；当前 Zynith 最高仅支持 API {current}。",
         "incompatible": "不兼容",
-        "incompatible-hint": "需要插件 API {required}；当前 Noctalia 仅支持 API {oldest}–{current}。",
+        "incompatible-hint": "需要插件 API {required}；当前 Zynith 仅支持 API {oldest}–{current}。",
         "installed": "已安装",
         "loading": "正在加载目录…",
         "no-readme": "没有可用的描述。",
@@ -1681,7 +1681,7 @@
           "label": "纯黑"
         },
         "shell-theme-mode": {
-          "description": "固定 Noctalia 的浅色或深色模式；选择“跟随”则与主题模式保持同步",
+          "description": "固定 Zynith 的浅色或深色模式；选择“跟随”则与主题模式保持同步",
           "label": "Shell 主题模式"
         },
         "theme-mode": {
@@ -2119,7 +2119,7 @@
             "label": "关机时"
           },
           "started": {
-            "description": "Noctalia 启动后执行的命令",
+            "description": "Zynith 启动后执行的命令",
             "label": "启动时"
           },
           "theme-mode-changed": {
@@ -2883,9 +2883,9 @@
           "label": "键盘布局标签"
         },
         "launch-apps-as-systemd-services": {
-          "description": "将应用程序作为独立的 systemd 服务启动，避免与 Noctalia 共享同一 cgroup",
+          "description": "将应用程序作为独立的 systemd 服务启动，避免与 Zynith 共享同一 cgroup",
           "label": "作为 systemd 服务启动应用",
-          "requires-systemd-session": "需要将 Noctalia 作为 systemd 用户服务运行（使用 uwsm 或 systemd 用户单元）"
+          "requires-systemd-session": "需要将 Zynith 作为 systemd 用户服务运行（使用 uwsm 或 systemd 用户单元）"
         },
         "launch-apps-custom-command": {
           "description": "包装从启动器、Dock 和任务栏启动的应用；$CMD 会被替换为原命令",
@@ -3528,7 +3528,7 @@
             "label": "执行最新通知操作"
           },
           "notification-show": {
-            "description": "显示 Noctalia 内部通知",
+            "description": "显示 Zynith 内部通知",
             "label": "显示通知"
           },
           "osd-disable": {
@@ -4435,8 +4435,8 @@
       "export-config": "导出配置…",
       "export-config-saved": "配置导出已保存。",
       "filter-overridden": "已覆盖",
-      "legacy-config-warning": "旧版配置：{issue}。请修改源配置项。Noctalia 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
-      "native-title": "Noctalia 设置",
+      "legacy-config-warning": "旧版配置：{issue}。请修改源配置项。Zynith 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
+      "native-title": "Zynith 设置",
       "no-results": "未找到相关设置",
       "no-results-hint": "请尝试使用其他设置名称或配置键。",
       "offline-mode-notice": {
@@ -4472,7 +4472,7 @@
     "no-wallpaper-selected": "未选择壁纸",
     "select-wallpaper": "选择壁纸",
     "subtitle": "简单几步，快速上手。",
-    "title": "欢迎使用 Noctalia",
+    "title": "欢迎使用 Zynith",
     "wallpaper": "壁纸",
     "wallpaper-scheme": "壁纸方案"
   },

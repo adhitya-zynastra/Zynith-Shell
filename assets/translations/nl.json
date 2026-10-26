@@ -694,7 +694,7 @@
       "desktop-widgets-editor-enabled": "Widget-editor voor bureaublad staat aan. Schakel over naar een lege werkruimte om de editor-overlay te zien.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-success": "Uiterlijk gesynchroniseerd. Wijzigingen worden toegepast bij het volgende aanmeldingsscherm.",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Deze sneltoets accepteert een enkele toets zonder modificatietoetsen.",
       "keybind-invalid-printable": "Drukbare toetsen (letters, cijfers, symbolen) vereisen een modificatietoets zoals Ctrl of Alt.",
       "keybind-invalid-super": "De Super-/Windows-toets kan niet worden gebruikt in shell-sneltoetsen.",
@@ -1676,7 +1676,7 @@
             "label": "Bij uitschakelen"
           },
           "started": {
-            "description": "Commando om uit te voeren nadat Noctalia start",
+            "description": "Commando om uit te voeren nadat Zynith start",
             "label": "Bij opstarten"
           },
           "theme-mode-changed": {
@@ -2158,7 +2158,7 @@
           "label": "Datumnotatie"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Start applicaties in aparte systemd-diensten zodat ze Noctalia's cgroup niet delen",
+          "description": "Start applicaties in aparte systemd-diensten zodat ze Zynith's cgroup niet delen",
           "label": "Apps starten als systemd-diensten"
         },
         "niri-overview-type-to-launch": {
@@ -2892,7 +2892,7 @@
     "window": {
       "export-config": "Configuratie exporteren…",
       "export-config-saved": "Configuratie-export opgeslagen.",
-      "native-title": "Noctalia Instellingen",
+      "native-title": "Zynith Instellingen",
       "no-results": "Geen instellingen gevonden",
       "no-results-hint": "Probeer een andere instellingsnaam of configuratiesleutel.",
       "reset-page": "Pagina herstellen",
@@ -2913,7 +2913,7 @@
     "no-wallpaper-selected": "Geen bureaubladachtergrond geselecteerd",
     "select-wallpaper": "Selecteer bureaubladachtergrond",
     "subtitle": "Een paar snelle keuzes om aan de slag te gaan.",
-    "title": "Welkom bij Noctalia",
+    "title": "Welkom bij Zynith",
     "wallpaper": "Bureaubladachtergrond",
     "wallpaper-scheme": "Achtergrondschema"
   },

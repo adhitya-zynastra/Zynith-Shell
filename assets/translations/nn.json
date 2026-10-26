@@ -745,19 +745,19 @@
       "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå etter nettverktilkoplinga og prøv å nyo.",
       "calendar-google-connect-start-http": "Kunne ikkje byrja Google-sanninga. OAuth-handsamaren svara med HTTP {status}.",
       "calendar-google-connect-timeout": "Google-sanning gjekk ut. Byrja koplinga å nyo når du vil skriva deg inn.",
-      "config-migration-body": "Oppdater {path} i brunnfila. Noctalia legg til dette utbytet berre mellombels. Køyr noctalia config validate for å sjå alle dei naudsynlege brigda.",
+      "config-migration-body": "Oppdater {path} i brunnfila. Zynith legg til dette utbytet berre mellombels. Køyr noctalia config validate for å sjå alle dei naudsynlege brigda.",
       "config-migration-title": "Tilmåtinga krev oppdatering",
       "dbus-disabled": "DBus-varsel avslegne",
       "desktop-widgets-editor": "Nøytelbrigdar",
       "desktop-widgets-editor-enabled": "Skrivebordsnøytelbrigdaren er på. Gå til eit tomt arbeidsrom slik at opne ruter ikkje ligg over brigdaren.",
-      "greeter-sync": "Noctaliahelsar",
+      "greeter-sync": "Zynithhelsar",
       "greeter-sync-pending": "Ventar på stjornargodkjenning for å skriva til helsaren.",
-      "greeter-sync-pending-console": "Ventar på stjornargodkjenning. Godkjenn polkit-meldinga i Noctalia, i ein TTY eller konsoll, eller køyr pkexec sjølv.",
+      "greeter-sync-pending-console": "Ventar på stjornargodkjenning. Godkjenn polkit-meldinga i Zynith, i ein TTY eller konsoll, eller køyr pkexec sjølv.",
       "greeter-sync-pending-manual": "Filene ventar. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Eller set shell.greeter_sync.privilege_command (til dømes ghostty -e pkexec) og synkroniser å nyo.",
       "greeter-sync-success": "Utsjånad synkronisert. Brigde viser neste gong du skriv deg inn.",
       "greeter-sync-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
       "greeter-sync-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Snarvegen godtek éin knapp utan hjelpeknappar.",
       "keybind-invalid-printable": "Skrivande knappar (bokstavar, tal, teikn) krev ein hjelpeknapp som Ctrl eller Alt.",
       "keybind-invalid-super": "Du kan ikkje bruka Superknappen/Windowsknappen i skalsnarvegar.",
@@ -829,7 +829,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} vil ha plugin API {version}; denne Noctalia stør API {oldest} – {current}",
+      "body-incompatible": "{plugin} vil ha plugin API {version}; denne Zynith stør API {oldest} – {current}",
       "body-timeout": "{plugin} tok for lang tid til å installera.",
       "title": "Utviding ikkje påslegen"
     }
@@ -920,7 +920,7 @@
       "save": "Lagra",
       "save-connect": "Lagra og kopla til",
       "save-error": "Kunne ikkje lagra kalenderkonto.",
-      "secret-cleanup-error": "Noctalia kunne ikkje lagra kontoen, og kunne ikkje skipa innskrivingsdata på lykelringen opp att eller retta opp i han. Prøv atter når du har låst opp Løyndomstenesta.",
+      "secret-cleanup-error": "Zynith kunne ikkje lagra kontoen, og kunne ikkje skipa innskrivingsdata på lykelringen opp att eller retta opp i han. Prøv atter når du har låst opp Løyndomstenesta.",
       "secret-service-cancelled": "Leieteksten for Løyndomstenesta vart avbroten. Prøv att når du er klar til å låsa henne opp.",
       "secret-service-error": "Fekk ikkje tilgang til kalenderinnskrivingsdata i Løyndomstenesta. Prøv att.",
       "secret-service-locked": "Kalenderinnskrivingsdata er låste eller tilgang vart neitta. Lås opp Løyndomstenesta og prøv att.",
@@ -1118,7 +1118,7 @@
       },
       "reset-page": "Kunne ikkje nullstille sume innstillingar.",
       "support-report": "Kunne ikkje lagra støtterapport.",
-      "sync-greeter": "Kunne ikkje synkronisera utsjånad med Noctaliahelsaren.",
+      "sync-greeter": "Kunne ikkje synkronisera utsjånad med Zynithhelsaren.",
       "sync-greeter-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
       "sync-greeter-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
@@ -1479,7 +1479,7 @@
         "deprecated": "utgått",
         "empty": "Fann ingen utvidingar. Legg til brunn, eller sjå etter nettverket.",
         "held-back": "eldre utgåve",
-        "held-back-hint": "v{version} krev utvidings-API {required}; denne Noctalia stør opp til {current}. Få ei nyare Noctalia for å få henne.",
+        "held-back-hint": "v{version} krev utvidings-API {required}; denne Zynith stør opp til {current}. Få ei nyare Zynith for å få henne.",
         "incompatible-plugin-api": "usemjande utvidings-API",
         "remove": "Sletta utviding",
         "requires": "Krev: {dependencies}",
@@ -1521,15 +1521,15 @@
         "update": "Oppdater brunn"
       },
       "store": {
-        "add": "Legg til i Noctalia",
+        "add": "Legg til i Zynith",
         "back-to-catalog": "Attende til utvidingskatalogen",
         "categories": "Klasser",
         "category-all": "Alle",
         "empty": "Ingen utvidingar funne",
         "held-back": "Eldre utgåve",
-        "held-back-hint": "Installerer v{version} for utvidings-API {resolved}. Den nyaste v{latest} krev utvidings-API {latestRequired}; denne Noctalia stør opp til {current}.",
+        "held-back-hint": "Installerer v{version} for utvidings-API {resolved}. Den nyaste v{latest} krev utvidings-API {latestRequired}; denne Zynith stør opp til {current}.",
         "incompatible": "Usemjande",
-        "incompatible-hint": "Krev utvidings-API {required}; denne Noctalia stør {oldest} – {current}.",
+        "incompatible-hint": "Krev utvidings-API {required}; denne Zynith stør {oldest} – {current}.",
         "loading": "Lastar inn katalog ...",
         "no-readme": "Ingen skildring tilgjengeleg.",
         "open-page": "Opna utvidingssida på noctalia.dev",
@@ -1620,7 +1620,7 @@
           "label": "Mål"
         },
         "palette-source": {
-          "description": "Kvar Noctalia tek letpaletten frå",
+          "description": "Kvar Zynith tek letpaletten frå",
           "label": "Palettbrunn"
         },
         "popup-borders": {
@@ -2066,7 +2066,7 @@
             "label": "Ved avslåing"
           },
           "started": {
-            "description": "Kommandoen som køyrer etter Noctalia byrjar",
+            "description": "Kommandoen som køyrer etter Zynith byrjar",
             "label": "Ved byrjing"
           },
           "theme-mode-changed": {
@@ -2509,7 +2509,7 @@
         "calendar-credentials": {
           "button": "Prøv att",
           "description-cancelled": "Leietekst til løyndomstenesta vart avbroten; prøv att når du er klar",
-          "description-error": "Noctalia kunne ikkje finna innskrivingsdata til kalenderen gjennom Løyndomstenesta",
+          "description-error": "Zynith kunne ikkje finna innskrivingsdata til kalenderen gjennom Løyndomstenesta",
           "description-locked": "Innskrivingsdata til kalenderen er låste eller tilgang var neitta; lås opp Løyndomstenesta og prøv att",
           "description-migration": "Innskrivingsdata til kalenderen i berr tekst ventar på å flytta inn til Løyndomstenesta; dei vert ikkje bruka til kalendersynkronisering",
           "description-opening": "Innskrivingsdata til kalenderen vert opna gjennom Løyndomstenesta",
@@ -2539,12 +2539,12 @@
         "calendar-storage": {
           "button": "Prøv att",
           "description-cancelled": "Leieteksten for kryptert lagring vart avbroten; kalenderarrangement er tilgjengelege berre for denne øykta",
-          "description-error": "Noctalia kunne ikkje opna eller lagra det krypterte mellomlageret for kalenderarrangement",
+          "description-error": "Zynith kunne ikkje opna eller lagra det krypterte mellomlageret for kalenderarrangement",
           "description-locked": "Kryptert lagring er låst eller tilgang neitta; ordna tilgang og prøv att",
           "description-migration": "Mellomlageret for kalenderarrangement i berr tekst ventar på kryptering; det held seg fram til flyttinga har vellukka",
           "description-missing-key": "Lykelen for mellomlagring av kalenderarrangement vantar; innskrivingsdata brukar anna lagring (filer i mellomlageret er berga)",
           "description-opening": "Det krypterte mellomlageret for kalenderarrangement opnar",
-          "description-recovery": "Noctalia kunne ikkje sanna mellomlageret for kalenderarrangement eller det er skadt, prøv att med attoppskipa og rett lykel eller nullstill privat lagring",
+          "description-recovery": "Zynith kunne ikkje sanna mellomlageret for kalenderarrangement eller det er skadt, prøv att med attoppskipa og rett lykel eller nullstill privat lagring",
           "description-unavailable": "Ingen tilgjengelege Løyndomstenestegjevarar; kalenderarrangement held seg tilgjengelege berre for denne øykta",
           "label": "Lager for kalenderarrangement"
         },
@@ -2788,12 +2788,12 @@
         "clipboard-storage": {
           "button": "Prøv att",
           "description-cancelled": "Leieteksten for Løyndomstenesta vart avbroten; tavlehistorikken er tilgjengeleg berre for denne øykta",
-          "description-error": "Noctalia kunne ikkje opna eller lagra kryptert tavlehistorikk ",
+          "description-error": "Zynith kunne ikkje opna eller lagra kryptert tavlehistorikk ",
           "description-locked": "Lykellagring for tavla er låst eller tilgang neitta; ordna tilgang og prøv att",
           "description-migration": "Tavlehistorikk i berr tekst ventar på kryptering; filer no er berga fram til flytting er vellukka",
           "description-missing-key": "Den tilmåta kryptolagringslykelen vantar; tavlehistorikken no er berga",
           "description-opening": "Kryptert tavlehistorikk opnar",
-          "description-recovery": "Noctalia kunne ikkje sanna tavlehistorikk eller han er skadd; prøv att med attoppskipa og rett lykel, eller nullstill privat lagring",
+          "description-recovery": "Zynith kunne ikkje sanna tavlehistorikk eller han er skadd; prøv att med attoppskipa og rett lykel, eller nullstill privat lagring",
           "description-unavailable": "Ingen Løyndomstenestegjevar er tilgjengeleg; tavlehistorikk er tilgjengeleg berre for denne øykta",
           "label": "Tavlehistorikklagring"
         },
@@ -2818,9 +2818,9 @@
           "label": "Knappefjøloppsettsnamn"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Køyrer applikasjonar i serskilde systemd-tenester slik at dei ikkje dela cgroup med Noctalia",
+          "description": "Køyrer applikasjonar i serskilde systemd-tenester slik at dei ikkje dela cgroup med Zynith",
           "label": "Køyr appar som systemd-tenester",
-          "requires-systemd-session": "Krev at Noctalia køyrer som systemd-brukartenesta (uwsm eller systemd brukareining)"
+          "requires-systemd-session": "Krev at Zynith køyrer som systemd-brukartenesta (uwsm eller systemd brukareining)"
         },
         "launch-apps-custom-command": {
           "description": "Ballar inn appar som køyrer frå veljaren, festepunktet og oppgåvelina; byter ut $CMD med den opphavlege kommandoen.",
@@ -3016,8 +3016,8 @@
         },
         "sync-greeter": {
           "button": "Synkroniser no",
-          "description": "Rita av bakgrunnsbiletet og leter til Noctaliahelsar (krev stjornargodkjenning)",
-          "label": "Noctaliahelsar"
+          "description": "Rita av bakgrunnsbiletet og leter til Zynithhelsar (krev stjornargodkjenning)",
+          "label": "Zynithhelsar"
         },
         "telemetry": {
           "description": "Sender ein liten anonym oppstartsping med utgåve, OS, kompositor, skjermoppløysingar, minne og grensesnitttilhøve",
@@ -3168,7 +3168,7 @@
       "button-confirm": "Stadfest nullstilling",
       "description": "Sletta lagra tavlehistorikk og kalenderarrangement i all æve, og opna privat lagring å nyo (ei tilmåta lykelfil vert aldri brigda)",
       "error-delete": "Nokre filer i privat lagring kunne ikkje slettast. Lagringslykene var berga.",
-      "error-key": "Filer i privat lagring var sletta, men Noctalia kunne ikkje opna trygg lagring å nyo. Ordna tilgang og prøv att.",
+      "error-key": "Filer i privat lagring var sletta, men Zynith kunne ikkje opna trygg lagring å nyo. Ordna tilgang og prøv att.",
       "label": "Berga privat lagring",
       "success": "Privat lagring vellukka med nullstilling"
     },
@@ -3469,7 +3469,7 @@
           "label": "Del etter arbeidsrom"
         },
         "group-single-icon-per-app": {
-          "description": "Når Noctalia delar etter arbeidsrom med merke, slå saman mange ruter frå same appen til eitt merke og eit tal.",
+          "description": "Når Zynith delar etter arbeidsrom med merke, slå saman mange ruter frå same appen til eitt merke og eit tal.",
           "label": "Eit merke for kvar app"
         },
         "height": {
@@ -3489,7 +3489,7 @@
           "label": "Gøym artist"
         },
         "hide-empty-workspaces": {
-          "description": "Når Noctalia delar etter arbeidsrom, ikkje tak med piller utan køyrande ruter i lista på oppgåvelina.",
+          "description": "Når Zynith delar etter arbeidsrom, ikkje tak med piller utan køyrande ruter i lista på oppgåvelina.",
           "label": "Gøym tome arbeidsrom"
         },
         "hide-inactive": {
@@ -3883,15 +3883,15 @@
       "export-config": "Før ut tilmåting ...",
       "export-config-saved": "Tilmåtingsutførsle lagra.",
       "filter-overridden": "Overstyrt",
-      "legacy-config-warning": "Utdatert innstilling: {issue}. Brigda på dette brunnoppslag; Noctalia legg til dette utbytet berre mellombels. Køyr nocatlia config validate for å sjå alle dei naudsynlege brigda.",
-      "native-title": "Noctalia-innstillingar",
+      "legacy-config-warning": "Utdatert innstilling: {issue}. Brigda på dette brunnoppslag; Zynith legg til dette utbytet berre mellombels. Køyr nocatlia config validate for å sjå alle dei naudsynlege brigda.",
+      "native-title": "Zynith-innstillingar",
       "no-results": "Ingen innstillingar funne",
       "no-results-hint": "Prøv med eit anna innstillingsnamn eller config-lykel.",
       "offline-mode-notice": {
         "appearance": "Nedlasta palettar frå samfunnet kjem ikkje til å verka.",
         "calendar-account": "Kalenderfinning og synkronisering kjem ikkje til å verka.",
         "disable-hint": "Slå av avnetes-modus i Tryggleik.",
-        "launcher": "Noctalia kjem ikkje til å kunna henta valutakurs.",
+        "launcher": "Zynith kjem ikkje til å kunna henta valutakurs.",
         "location": "Vêr og stadfinning kjem ikkje til å verka.",
         "plugin-store": "Utvidingskatalogen og -nedlasting kjem ikkje til å verka.",
         "plugins": "HTTP-spurnader frå utvidingar kjem ikkje til å verka. Git-brunnar kan oppdatera enno.",
@@ -3920,7 +3920,7 @@
     "no-wallpaper-selected": "Du har ikkje valt eit bakgrunnsbilete",
     "select-wallpaper": "Vel eit bakgrunnsbilete",
     "subtitle": "Nokre snøggval for å hjelpa deg taka til.",
-    "title": "Velkomen åt Noctalia!",
+    "title": "Velkomen åt Zynith!",
     "wallpaper": "Bakgrunnsbilete",
     "wallpaper-scheme": "Bakgrunnsbilete letmønster"
   },

@@ -743,12 +743,12 @@
       "desktop-widgets-editor-enabled": "Az asztali widget-szerkesztő be van kapcsolva. Válts egy üres munkaterületre, hogy lásd a szerkesztőfelületet.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Várakozás a rendszergazda jóváhagyására a „greeter” fájlba történő íráshoz.",
-      "greeter-sync-pending-console": "A rendszergazda jóváhagyására vár. Hagyd jóvá a polkit felugró ablakot a Noctalia-ban, TTY-n vagy konzolon, vagy futtasd manuálisan a pkexec parancsot.",
+      "greeter-sync-pending-console": "A rendszergazda jóváhagyására vár. Hagyd jóvá a polkit felugró ablakot a Zynith-ban, TTY-n vagy konzolon, vagy futtasd manuálisan a pkexec parancsot.",
       "greeter-sync-pending-manual": "A fájlok elő vannak készítve. Futtasd a terminálban: pkexec noctalia-greeter-apply-appearance „$XDG_RUNTIME_DIR/noctalia-greeter-sync” vagy állítsd be a shell.greeter_sync.privilege_command értéket (például ghostty -e pkexec), majd hajtsd végre újra a szinkronizálást.",
       "greeter-sync-success": "Megjelenés szinkronizálva. A változások a következő bejelentkezési képernyőn lépnek érvénybe.",
       "greeter-sync-timeout": "A Greeter szinkronizálása még mindig a rendszergazda jóváhagyására vár. Ellenőrizd, megjelenik-e a polkit parancssor a TTY-n vagy a konzolon, engedélyezd a polkit ügynököt a Biztonsági beállításokban, vagy futtasd manuálisan a pkexec parancsot.",
       "greeter-sync-timeout-manual": "A Greeter szinkronizálásához továbbra is rendszergazdai jóváhagyás szükséges. Futtasd a terminálban: pkexec noctalia-greeter-apply-appearance „$XDG_RUNTIME_DIR/noctalia-greeter-sync”",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Ez a gyorsbillentyű egyetlen billentyűt fogad el módosítók nélkül.",
       "keybind-invalid-printable": "A nyomtatható billentyűk (betűk, számok, szimbólumok) módosító billentyűt igényelnek, mint például a Ctrl vagy az Alt.",
       "keybind-invalid-super": "A Super/Windows billentyű nem használható shell gyorsbillentyűkben.",
@@ -820,7 +820,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "A {plugin} a plugin API {version} verzióját célozza meg. Ez a Noctalia az API {oldest}–{current} verzióit támogatja.",
+      "body-incompatible": "A {plugin} a plugin API {version} verzióját célozza meg. Ez a Zynith az API {oldest}–{current} verzióit támogatja.",
       "body-timeout": "A {plugin} telepítése túl sokáig tartott.",
       "title": "Bővítmény nincs engedélyezve"
     }
@@ -2021,7 +2021,7 @@
             "label": "Leállításkor"
           },
           "started": {
-            "description": "Parancs, ami a Noctalia indulása után lefut",
+            "description": "Parancs, ami a Zynith indulása után lefut",
             "label": "Indításkor"
           },
           "theme-mode-changed": {
@@ -2729,9 +2729,9 @@
           "label": "Greeter szinkronizálási jogosultsági parancs"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Alkalmazásokat indít külön systemd szolgáltatásokban, hogy ne osszák meg Noctalia cgroupját",
+          "description": "Alkalmazásokat indít külön systemd szolgáltatásokban, hogy ne osszák meg Zynith cgroupját",
           "label": "Alkalmazások indítása systemd szolgáltatásként",
-          "requires-systemd-session": "Szükséges, hogy a Noctalia systemd-felhasználói szolgáltatásként (uwsm vagy systemd-felhasználói egység) fusson"
+          "requires-systemd-session": "Szükséges, hogy a Zynith systemd-felhasználói szolgáltatásként (uwsm vagy systemd-felhasználói egység) fusson"
         },
         "launch-apps-custom-command": {
           "description": "A programindítóból, a dokkból és a tálcáról elindított alkalmazásokat fogja közre; a $CMD-t az eredeti parancsra cseréli",
@@ -3698,7 +3698,7 @@
       "export-config-saved": "Konfiguráció exportálása mentve.",
       "filter-overridden": "Felülírva",
       "legacy-config-warning": "A régi konfiguráció átvitel alatt áll a memóriában: {issue}. Futtasd a noctalia beállítások érvényesítése parancsot a szükséges változtatásokhoz.",
-      "native-title": "Noctalia Beállítások",
+      "native-title": "Zynith Beállítások",
       "no-results": "Nincsenek beállítások",
       "no-results-hint": "Próbálj meg egy másik beállításnevet vagy konfigurációs kulcsot.",
       "reset-page": "Oldal visszaállítása",

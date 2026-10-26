@@ -865,14 +865,14 @@
       "calendar-google-connect-start-failed": "Could not start Google authorization. Check your network connection and try again.",
       "calendar-google-connect-start-http": "Could not start Google authorization. The OAuth broker returned HTTP {status}.",
       "calendar-google-connect-timeout": "Google authorization timed out. Start the connection again when you are ready to sign in.",
-      "config-migration-body": "Update {path} in the source file. Noctalia is applying this replacement only temporarily. Run noctalia config validate to list every required change.",
+      "config-migration-body": "Update {path} in the source file. Zynith is applying this replacement only temporarily. Run noctalia config validate to list every required change.",
       "config-migration-title": "Configuration update needed",
       "dbus-disabled": "DBus notifications disabled",
       "desktop-widgets-editor": "Widget editor",
       "desktop-widgets-editor-enabled": "Desktop widget editor is on. Switch to an empty workspace so open windows do not cover the editor.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Syncing appearance to the greeter. If an administrator prompt appears, approve it; passwordless authorization follows system policy.",
-      "greeter-sync-pending-console": "Syncing appearance to the greeter. If authorization is required, approve the polkit prompt in Noctalia, on a TTY, or on a console.",
+      "greeter-sync-pending-console": "Syncing appearance to the greeter. If authorization is required, approve the polkit prompt in Zynith, on a TTY, or on a console.",
       "greeter-sync-pending-legacy": "Syncing through the authenticated legacy helper. Administrator approval is required.",
       "greeter-sync-pending-manual": "Files are staged for authenticated legacy sync. Run the positional apply helper in a terminal, preserving NOCTALIA_GREETER_STATE_DIR if you use a custom path, or configure shell.greeter_sync.privilege_command and sync again.",
       "greeter-sync-pending-manual-pkexec": "Syncing appearance to the greeter. If administrator authorization is required and no prompt appears, run in a terminal: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\".",
@@ -880,7 +880,7 @@
       "greeter-sync-timeout": "Greeter sync is still waiting for authorization. Check a TTY or console for a polkit prompt, enable the polkit agent in Security settings, or run pkexec manually.",
       "greeter-sync-timeout-manual": "Authenticated legacy sync still needs administrator approval. Run the positional apply helper in a terminal and preserve NOCTALIA_GREETER_STATE_DIR if you use a custom path.",
       "greeter-sync-timeout-manual-pkexec": "Greeter sync still needs authorization. Run in a terminal: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "This shortcut accepts a single key without modifiers.",
       "keybind-invalid-printable": "Printable keys (letters, numbers, symbols) require a modifier such as Ctrl or Alt.",
       "keybind-invalid-super": "The Super/Windows key cannot be used in shell keybinds.",
@@ -958,7 +958,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} targets plugin API {version}; this Noctalia supports API {oldest}–{current}.",
+      "body-incompatible": "{plugin} targets plugin API {version}; this Zynith supports API {oldest}–{current}.",
       "body-timeout": "{plugin} took too long to install.",
       "title": "Plugin not enabled"
     }
@@ -1675,7 +1675,7 @@
         "deprecated": "deprecated",
         "empty": "No enabled plugins.",
         "held-back": "older version",
-        "held-back-hint": "v{version} needs plugin API {required}; this Noctalia supports up to {current}. Upgrade Noctalia to get it.",
+        "held-back-hint": "v{version} needs plugin API {required}; this Zynith supports up to {current}. Upgrade Zynith to get it.",
         "incompatible-plugin-api": "incompatible plugin API",
         "remove": "Remove plugin",
         "requires": "Requires: {dependencies}",
@@ -1717,15 +1717,15 @@
         "update": "Update source"
       },
       "store": {
-        "add": "Add to Noctalia",
+        "add": "Add to Zynith",
         "back-to-catalog": "Back to the plugin catalog",
         "categories": "Categories",
         "category-all": "All",
         "empty": "No plugins found",
         "held-back": "Older version",
-        "held-back-hint": "Installs v{version} for plugin API {resolved}. The newest v{latest} needs plugin API {latestRequired}; this Noctalia supports up to {current}.",
+        "held-back-hint": "Installs v{version} for plugin API {resolved}. The newest v{latest} needs plugin API {latestRequired}; this Zynith supports up to {current}.",
         "incompatible": "Incompatible",
-        "incompatible-hint": "Needs plugin API {required}; this Noctalia supports {oldest}–{current}.",
+        "incompatible-hint": "Needs plugin API {required}; this Zynith supports {oldest}–{current}.",
         "installed": "Installed",
         "loading": "Loading catalog…",
         "no-readme": "No description available.",
@@ -1833,7 +1833,7 @@
           "label": "Pure Black"
         },
         "shell-theme-mode": {
-          "description": "Pin Noctalia's own light or dark mode; Follow keeps it in sync with Theme Mode",
+          "description": "Pin Zynith's own light or dark mode; Follow keeps it in sync with Theme Mode",
           "label": "Shell Theme Mode"
         },
         "theme-mode": {
@@ -2300,7 +2300,7 @@
             "label": "On Shutdown"
           },
           "started": {
-            "description": "Command to run after Noctalia starts",
+            "description": "Command to run after Zynith starts",
             "label": "On Started"
           },
           "theme-mode-changed": {
@@ -3089,9 +3089,9 @@
           "label": "Keyboard Layout Labels"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Launches applications in separate systemd services so they don't share Noctalia's cgroup",
+          "description": "Launches applications in separate systemd services so they don't share Zynith's cgroup",
           "label": "Launch Apps as systemd Services",
-          "requires-systemd-session": "Requires Noctalia to run as a systemd user service (uwsm or a systemd user unit)"
+          "requires-systemd-session": "Requires Zynith to run as a systemd user service (uwsm or a systemd user unit)"
         },
         "launch-apps-custom-command": {
           "description": "Wraps apps launched from the launcher, dock, and taskbar; substitutes $CMD with the original command",
@@ -3842,7 +3842,7 @@
             "label": "Invoke latest notification action"
           },
           "notification-show": {
-            "description": "Show an internal Noctalia notification",
+            "description": "Show an internal Zynith notification",
             "label": "Show a notification"
           },
           "osd-disable": {
@@ -4753,8 +4753,8 @@
       "export-config": "Export Config…",
       "export-config-saved": "Config export saved.",
       "filter-overridden": "Overridden",
-      "legacy-config-warning": "Legacy setting: {issue}. Edit this source entry; Noctalia is applying the replacement only temporarily. Run noctalia config validate to list every required change.",
-      "native-title": "Noctalia Settings",
+      "legacy-config-warning": "Legacy setting: {issue}. Edit this source entry; Zynith is applying the replacement only temporarily. Run noctalia config validate to list every required change.",
+      "native-title": "Zynith Settings",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",
       "offline-mode-notice": {
@@ -4790,7 +4790,7 @@
     "no-wallpaper-selected": "No wallpaper selected",
     "select-wallpaper": "Select Wallpaper",
     "subtitle": "A few quick choices to get you started.",
-    "title": "Welcome to Noctalia",
+    "title": "Welcome to Zynith",
     "wallpaper": "Wallpaper",
     "wallpaper-scheme": "Wallpaper Scheme"
   },

@@ -747,19 +747,19 @@
       "calendar-google-connect-start-failed": "No s'ha pogut iniciar l'autorització de Google. Comprova la connexió de xarxa i torna-ho a provar.",
       "calendar-google-connect-start-http": "No s'ha pogut iniciar l'autorització de Google. El broker OAuth ha retornat HTTP {status}.",
       "calendar-google-connect-timeout": "L'autorització de Google ha superat el temps d'espera. Torna a iniciar la connexió quan estiguis preparat per iniciar sessió.",
-      "config-migration-body": "Actualitza {path} al fitxer font. Noctalia només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
+      "config-migration-body": "Actualitza {path} al fitxer font. Zynith només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
       "config-migration-title": "Cal actualitzar la configuració",
       "dbus-disabled": "Notificacions DBus desactivades",
       "desktop-widgets-editor": "Editor de widgets",
       "desktop-widgets-editor-enabled": "L'editor de ginys d'escriptori està activat. Canvia a un espai de treball buit perquè les finestres obertes no cobreixin l'editor.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Esperant l'aprovació de l'administrador per escriure al greeter.",
-      "greeter-sync-pending-console": "Esperant l'aprovació de l'administrador. Aprova la sol·licitud de polkit a Noctalia, en una TTY o consola, o executa pkexec manualment.",
+      "greeter-sync-pending-console": "Esperant l'aprovació de l'administrador. Aprova la sol·licitud de polkit a Zynith, en una TTY o consola, o executa pkexec manualment.",
       "greeter-sync-pending-manual": "Els fitxers estan preparats. Executa en un terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". O bé configura shell.greeter_sync.privilege_command (per exemple ghostty -e pkexec) i torna a sincronitzar.",
       "greeter-sync-success": "Aparença sincronitzada. Els canvis s'apliquen a la següent pantalla d'inici de sessió.",
       "greeter-sync-timeout": "La sincronització del greeter encara espera l'aprovació de l'administrador. Comprova si hi ha una sol·licitud de polkit en una TTY o consola, activa l'agent de polkit a Configuració de seguretat, o executa pkexec manualment.",
       "greeter-sync-timeout-manual": "La sincronització del greeter encara necessita l'aprovació de l'administrador. Executa en un terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Aquesta drecera accepta una sola tecla sense modificadors.",
       "keybind-invalid-printable": "Les tecles imprimibles (lletres, números, símbols) requereixen un modificador com Ctrl o Alt.",
       "keybind-invalid-super": "La tecla Super/Windows no es pot utilitzar a les dreceres del shell.",
@@ -831,7 +831,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} utilitza l'API de connectors {version}; aquesta versió de Noctalia admet l'API {oldest}–{current}.",
+      "body-incompatible": "{plugin} utilitza l'API de connectors {version}; aquesta versió de Zynith admet l'API {oldest}–{current}.",
       "body-timeout": "{plugin} ha trigat massa a instal·lar-se.",
       "title": "Connector no activat"
     }
@@ -1483,7 +1483,7 @@
         "deprecated": "obsolet",
         "empty": "Cap connector activat.",
         "held-back": "versió anterior",
-        "held-back-hint": "v{version} necessita l'API de connectors {required}; aquesta versió de Noctalia admet fins a {current}. Actualitza Noctalia per obtenir-la.",
+        "held-back-hint": "v{version} necessita l'API de connectors {required}; aquesta versió de Zynith admet fins a {current}. Actualitza Zynith per obtenir-la.",
         "incompatible-plugin-api": "API de connectors incompatible",
         "remove": "Elimina el connector",
         "requires": "Requereix: {dependencies}",
@@ -1525,15 +1525,15 @@
         "update": "Actualitza la font"
       },
       "store": {
-        "add": "Afegeix a Noctalia",
+        "add": "Afegeix a Zynith",
         "back-to-catalog": "Torna al catàleg de connectors",
         "categories": "Categories",
         "category-all": "Totes",
         "empty": "No s'ha trobat cap connector",
         "held-back": "Versió anterior",
-        "held-back-hint": "Instal·la la v{version} per a l'API de connectors {resolved}. La més recent, v{latest}, necessita l'API de connectors {latestRequired}; aquesta versió de Noctalia admet fins a {current}.",
+        "held-back-hint": "Instal·la la v{version} per a l'API de connectors {resolved}. La més recent, v{latest}, necessita l'API de connectors {latestRequired}; aquesta versió de Zynith admet fins a {current}.",
         "incompatible": "Incompatible",
-        "incompatible-hint": "Necessita l'API de connectors {required}; aquesta versió de Noctalia admet {oldest}–{current}.",
+        "incompatible-hint": "Necessita l'API de connectors {required}; aquesta versió de Zynith admet {oldest}–{current}.",
         "loading": "Carregant el catàleg…",
         "no-readme": "No hi ha cap descripció disponible.",
         "open-page": "Obre la pàgina del connector a noctalia.dev",
@@ -2070,7 +2070,7 @@
             "label": "En apagar"
           },
           "started": {
-            "description": "Ordre a executar després que el Noctalia s'iniciï",
+            "description": "Ordre a executar després que el Zynith s'iniciï",
             "label": "En iniciar"
           },
           "theme-mode-changed": {
@@ -2830,9 +2830,9 @@
           "label": "Etiquetes de disposició del teclat"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Llança aplicacions en serveis systemd separats perquè no comparteixin el cgroup del Noctalia",
+          "description": "Llança aplicacions en serveis systemd separats perquè no comparteixin el cgroup del Zynith",
           "label": "Llança aplicacions com a serveis systemd",
-          "requires-systemd-session": "Requereix que Noctalia s'executi com un servei d'usuari de systemd (uwsm o una unitat d'usuari de systemd)"
+          "requires-systemd-session": "Requereix que Zynith s'executi com un servei d'usuari de systemd (uwsm o una unitat d'usuari de systemd)"
         },
         "launch-apps-custom-command": {
           "description": "Envolta les aplicacions iniciades des del llançador, el dock i la barra de tasques; substitueix $CMD per l'ordre original",
@@ -3912,8 +3912,8 @@
       "export-config": "Exporta la configuració…",
       "export-config-saved": "Exportació de la configuració desada.",
       "filter-overridden": "Sobreescrit",
-      "legacy-config-warning": "Configuració obsoleta: {issue}. Edita aquesta entrada font; Noctalia només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
-      "native-title": "Configuració del Noctalia",
+      "legacy-config-warning": "Configuració obsoleta: {issue}. Edita aquesta entrada font; Zynith només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
+      "native-title": "Configuració del Zynith",
       "no-results": "No s'han trobat paràmetres",
       "no-results-hint": "Prova amb un nom de paràmetre o una clau de configuració diferent.",
       "offline-mode-notice": {
@@ -3949,7 +3949,7 @@
     "no-wallpaper-selected": "No s'ha seleccionat cap fons de pantalla",
     "select-wallpaper": "Selecciona un fons de pantalla",
     "subtitle": "Unes quantes opcions ràpides per començar.",
-    "title": "Benvingut al Noctalia",
+    "title": "Benvingut al Zynith",
     "wallpaper": "Fons de pantalla",
     "wallpaper-scheme": "Esquema del fons de pantalla"
   },

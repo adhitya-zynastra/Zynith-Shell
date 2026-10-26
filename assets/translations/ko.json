@@ -762,19 +762,19 @@
       "calendar-google-connect-start-failed": "Google 인증을 시작할 수 없습니다. 네트워크 연결을 확인하고 다시 시도하세요.",
       "calendar-google-connect-start-http": "Google 인증을 시작할 수 없습니다. OAuth 브로커가 HTTP {status}를 반환했습니다.",
       "calendar-google-connect-timeout": "Google 인증 시간이 초과되었습니다. 다시 시도하세요.",
-      "config-migration-body": "소스 파일에서 {path}를 업데이트하세요.  Noctalia는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요",
+      "config-migration-body": "소스 파일에서 {path}를 업데이트하세요.  Zynith는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요",
       "config-migration-title": "설정 업데이트 필요",
       "dbus-disabled": "DBus 알림 비활성화됨",
       "desktop-widgets-editor": "위젯 편집기",
       "desktop-widgets-editor-enabled": "데스크톱 위젯 편집기가 켜져 있습니다. 빈 작업 공간으로 전환하여 편집기 오버레이를 확인하세요.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Greeter에 쓰기 위한 관리자 승인을 기다리는 중입니다.",
-      "greeter-sync-pending-console": "관리자 승인을 기다리는 중입니다. Noctalia 또는 TTY/콘솔에서 polkit 프롬프트를 승인하거나 pkexec를 수동으로 실행하세요.",
+      "greeter-sync-pending-console": "관리자 승인을 기다리는 중입니다. Zynith 또는 TTY/콘솔에서 polkit 프롬프트를 승인하거나 pkexec를 수동으로 실행하세요.",
       "greeter-sync-pending-manual": "파일이 준비되었습니다. 터미널에서 실행하세요: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". 또는 shell.greeter_sync.privilege_command를 설정하고 (예: ghostty -e pkexec) 다시 동기화하세요.",
       "greeter-sync-success": "모양이 동기화되었습니다. 변경 사항은 다음 로그인 화면에서 적용됩니다.",
       "greeter-sync-timeout": "Greeter 동기화가 관리자 승인을 기다리고 있습니다. TTY나 콘솔에서 polkit 프롬프트를 확인하거나, 보안 설정에서 polkit 에이전트를 활성화하거나, pkexec를 수동으로 실행하세요.",
       "greeter-sync-timeout-manual": "Greeter 동기화에 여전히 관리자 승인이 필요합니다. 터미널에서 실행하세요: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "이 단축키는 수정자 키 없이 단일 키만 허용합니다.",
       "keybind-invalid-printable": "인쇄 가능한 키(문자, 숫자, 기호)는 Ctrl 또는 Alt와 같은 수정자 키가 필요합니다.",
       "keybind-invalid-super": "Super/Windows 키는 쉘 단축키에 사용할 수 없습니다.",
@@ -846,7 +846,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin}이(가) 플러그인 API {version}을 대상으로 합니다. 이 Noctalia는 API {oldest}–{current}을 지원합니다.",
+      "body-incompatible": "{plugin}이(가) 플러그인 API {version}을 대상으로 합니다. 이 Zynith는 API {oldest}–{current}을 지원합니다.",
       "body-timeout": "{plugin}을 설치하는 데 너무 오래 걸렸습니다.",
       "title": "플러그인이 활성화되지 않음"
     }
@@ -1501,7 +1501,7 @@
         "deprecated": "더 이상 사용되지 않음",
         "empty": "활성화된 플러그인 없음.",
         "held-back": "이전 버전",
-        "held-back-hint": "v{version}에는 플러그인 API {required}이(가) 필요합니다. 현재 Noctalia는 최대 {current}까지만 지원합니다. Noctalia를 업그레이드하여 API를 받으세요.",
+        "held-back-hint": "v{version}에는 플러그인 API {required}이(가) 필요합니다. 현재 Zynith는 최대 {current}까지만 지원합니다. Zynith를 업그레이드하여 API를 받으세요.",
         "incompatible-plugin-api": "호환되지 않는 플러그인 API",
         "remove": "플러그인 제거",
         "requires": "필요: {dependencies}",
@@ -1543,15 +1543,15 @@
         "update": "소스 업데이트"
       },
       "store": {
-        "add": "Noctalia에 추가",
+        "add": "Zynith에 추가",
         "back-to-catalog": "플러그인 목록으로 돌아가기",
         "categories": "카테고리",
         "category-all": "모두",
         "empty": "플러그인을 찾을 수 없음",
         "held-back": "이전 버전",
-        "held-back-hint": "플러그인 API {resolved}(으)로 v{version}을(를) 설치합니다. 가장 최신 버전인 v{latest}에는 플러그인 API {latestRequired}이(가) 필요하지만, 현재 이 Noctalia는 최대 {current}까지 지원합니다.",
+        "held-back-hint": "플러그인 API {resolved}(으)로 v{version}을(를) 설치합니다. 가장 최신 버전인 v{latest}에는 플러그인 API {latestRequired}이(가) 필요하지만, 현재 이 Zynith는 최대 {current}까지 지원합니다.",
         "incompatible": "호환되지 않음",
-        "incompatible-hint": "필수 플러그인 API 버전이 누락되었습니다. 이 Noctalia 버전은 {oldest}부터 {current}까지 지원합니다.",
+        "incompatible-hint": "필수 플러그인 API 버전이 누락되었습니다. 이 Zynith 버전은 {oldest}부터 {current}까지 지원합니다.",
         "loading": "카탈로그 불러오는 중…",
         "no-readme": "설명 없음.",
         "open-page": "noctalia.dev에서 플러그인 페이지 열기",
@@ -2091,7 +2091,7 @@
             "label": "종료 시"
           },
           "started": {
-            "description": "Noctalia 시작 후 실행할 명령어",
+            "description": "Zynith 시작 후 실행할 명령어",
             "label": "시작 시"
           },
           "theme-mode-changed": {
@@ -2837,9 +2837,9 @@
           "label": "키보드 레이아웃 라벨"
         },
         "launch-apps-as-systemd-services": {
-          "description": "앱을 별도의 systemd 서비스에서 실행하여 Noctalia의 cgroup을 공유하지 않도록 합니다",
+          "description": "앱을 별도의 systemd 서비스에서 실행하여 Zynith의 cgroup을 공유하지 않도록 합니다",
           "label": "앱을 systemd 서비스로 실행",
-          "requires-systemd-session": "Noctalia가 systemd 사용자 서비스 (uwsm 또는 systemd 사용자 유닛)로 실행되어야 합니다"
+          "requires-systemd-session": "Zynith가 systemd 사용자 서비스 (uwsm 또는 systemd 사용자 유닛)로 실행되어야 합니다"
         },
         "launch-apps-custom-command": {
           "description": "런처, 독 및 태스크바에서 실행되는 앱을 감쌉니다. $CMD를 원래 명령어로 대체합니다",
@@ -3908,8 +3908,8 @@
       "export-config": "설정 내보내기…",
       "export-config-saved": "설정 내보내기가 저장되었습니다.",
       "filter-overridden": "재정의됨",
-      "legacy-config-warning": "레거시 설정: {issue}. 소스 항목을 수정하세요. Noctalia는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요.",
-      "native-title": "Noctalia 설정",
+      "legacy-config-warning": "레거시 설정: {issue}. 소스 항목을 수정하세요. Zynith는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요.",
+      "native-title": "Zynith 설정",
       "no-results": "설정을 찾을 수 없음",
       "no-results-hint": "다른 설정 이름이나 설정 키를 시도해 보세요.",
       "offline-mode-notice": {
@@ -3945,7 +3945,7 @@
     "no-wallpaper-selected": "배경 화면이 선택되지 않음",
     "select-wallpaper": "배경 화면 선택",
     "subtitle": "시작을 위한 몇 가지 빠른 선택.",
-    "title": "Noctalia에 오신 것을 환영합니다",
+    "title": "Zynith에 오신 것을 환영합니다",
     "wallpaper": "배경 화면",
     "wallpaper-scheme": "배경 화면 방식"
   },

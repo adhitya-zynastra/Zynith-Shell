@@ -767,14 +767,14 @@
       "dbus-disabled": "Thông báo DBus đã tắt",
       "desktop-widgets-editor": "Trình chỉnh sửa tiện ích",
       "desktop-widgets-editor-enabled": "Trình chỉnh sửa tiện ích màn hình nền đang bật. Chuyển sang một không gian làm việc trống để xem Overlay trình chỉnh sửa.",
-      "greeter-sync": "Noctalia Màn hình chào",
+      "greeter-sync": "Zynith Màn hình chào",
       "greeter-sync-pending": "Đang chờ quyền quản trị viên để viết vào greeter.",
       "greeter-sync-pending-console": "Đang chờ quyền quản trị viên. Chấp thuận ở thông báo polkit, trong TTY hoặc chạy pkexec thủ công.",
       "greeter-sync-pending-manual": "Đã chuẩn bị tệp. Hãy chạy câu lệnh sau trong terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Hoặc đặt shell.greeter_sync.privilege_command (ví dụ như ghostty -e pkexec) và đồng bộ hóa lần nữa.",
       "greeter-sync-success": "Đã đồng bộ giao diện. Các thay đổi sẽ áp dụng vào màn hình đăng nhập tiếp theo.",
       "greeter-sync-timeout": "Đồng bộ hóa màn hình chào vẫn đang chờ quyền phê duyệt của quản trị viên. Hãy kiểm tra TTY hoặc bảng điều khiển để tìm yêu cầu từ polkit, bật tác nhân polkit trong phần cài đặt Bảo mật hoặc tự chạy pkexec thủ công.",
       "greeter-sync-timeout-manual": "Đồng bộ hóa màn hình chào vẫn cần quyền phê duyệt của quản trị viên. Hãy chạy lệnh sau trong Terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Phím tắt này nhận một phím không kèm phím bổ trợ.",
       "keybind-invalid-printable": "Các phím ký tự (chữ cái, số, ký hiệu) cần một phím bổ trợ như Ctrl hoặc Alt.",
       "keybind-invalid-super": "Không thể dùng phím Super/Windows trong các phím tắt của shell.",
@@ -846,7 +846,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} yêu cầu Noctalia phiên bản {version} trở lên.",
+      "body-incompatible": "{plugin} yêu cầu Zynith phiên bản {version} trở lên.",
       "body-timeout": "{plugin} mất quá nhiều thời gian để cài đặt.",
       "title": "Plugin chưa được bật"
     }
@@ -1533,7 +1533,7 @@
         "update": "Cập nhật"
       },
       "store": {
-        "add": "Thêm vào Noctalia",
+        "add": "Thêm vào Zynith",
         "categories": "Danh mục",
         "category-all": "Tất cả",
         "empty": "Không tìm thấy plugin",
@@ -1576,7 +1576,7 @@
           "label": "Màu biểu tượng ứng dụng"
         },
         "app-icon-colorize": {
-          "description": "Đổi màu biểu tượng ứng dụng trên toàn bộ Noctalia để phù hợp với bảng màu đang hoạt động",
+          "description": "Đổi màu biểu tượng ứng dụng trên toàn bộ Zynith để phù hợp với bảng màu đang hoạt động",
           "label": "Tô màu biểu tượng ứng dụng"
         },
         "builtin-palette": {
@@ -2071,7 +2071,7 @@
             "label": "Khi tắt máy"
           },
           "started": {
-            "description": "Lệnh để chạy sau khi Noctalia khởi động",
+            "description": "Lệnh để chạy sau khi Zynith khởi động",
             "label": "Khi khởi động"
           },
           "theme-mode-changed": {
@@ -2243,7 +2243,7 @@
           "label": "Vị trí màn hình"
         },
         "scale": {
-          "description": "Điều chỉnh kích thước các Toast thông báo theo tỷ lệ giao diện người dùng của Noctalia",
+          "description": "Điều chỉnh kích thước các Toast thông báo theo tỷ lệ giao diện người dùng của Zynith",
           "label": "Kích thước"
         },
         "show-actions": {
@@ -2664,7 +2664,7 @@
           "label": "Lệnh cấp quyền cho đồng bộ màn hình chào"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Khởi chạy ứng dụng trong các dịch vụ systemd riêng biệt để chúng không chia sẻ cgroup của Noctalia",
+          "description": "Khởi chạy ứng dụng trong các dịch vụ systemd riêng biệt để chúng không chia sẻ cgroup của Zynith",
           "label": "Khởi chạy ứng dụng dưới dạng dịch vụ systemd"
         },
         "launch-apps-custom-command": {
@@ -2761,7 +2761,7 @@
           "label": "Vị trí dọc"
         },
         "osd-scale": {
-          "description": "Điều chỉnh tỷ lệ các OSD pop-up theo tỷ lệ giao diện người dùng của Noctalia (1.0 sẽ giữ kích thước mặc định)",
+          "description": "Điều chỉnh tỷ lệ các OSD pop-up theo tỷ lệ giao diện người dùng của Zynith (1.0 sẽ giữ kích thước mặc định)",
           "label": "Tỷ lệ"
         },
         "password-style": {
@@ -2830,14 +2830,14 @@
         "sync-greeter": {
           "button": "Đồng bộ ngay",
           "description": "Sao chép hình nền và màu sắc hiện tại vào Noctalia Greeter (yêu cầu sự chấp thuận của quản trị viên)",
-          "label": "Trình chào mừng Noctalia"
+          "label": "Trình chào mừng Zynith"
         },
         "telemetry": {
           "description": "Gửi một ping khởi động nhỏ, ẩn danh với phiên bản, OS, trình tổng hợp, độ phân giải màn hình, RAM và tỉ lệ UI",
           "label": "Ping khởi động ẩn danh"
         },
         "time-format": {
-          "description": "Định dạng thời gian mặc định cho giao diện Noctalia khi không có cài đặt riêng",
+          "description": "Định dạng thời gian mặc định cho giao diện Zynith khi không có cài đặt riêng",
           "label": "Định dạng thời gian"
         }
       },
@@ -2847,7 +2847,7 @@
           "label": "{device} Ngưỡng cảnh báo"
         },
         "battery-warning-threshold": {
-          "description": "Mức phần trăm pin hệ thống mà khi đạt đến hoặc thấp hơn, Noctalia sẽ gửi thông báo pin yếu và các Widget pin sẽ hiển thị màu cảnh báo; đặt 0 để tắt.",
+          "description": "Mức phần trăm pin hệ thống mà khi đạt đến hoặc thấp hơn, Zynith sẽ gửi thông báo pin yếu và các Widget pin sẽ hiển thị màu cảnh báo; đặt 0 để tắt.",
           "label": "Ngưỡng cảnh báo pin"
         }
       },
@@ -3520,7 +3520,7 @@
     "window": {
       "export-config": "Xuất cấu hình…",
       "export-config-saved": "Xuất cấu hình đã lưu.",
-      "native-title": "Cài đặt Noctalia",
+      "native-title": "Cài đặt Zynith",
       "no-results": "Không tìm thấy cài đặt nào",
       "no-results-hint": "Thử một tên cài đặt hoặc khóa cấu hình khác.",
       "reset-page": "Đặt lại trang",
@@ -3541,7 +3541,7 @@
     "no-wallpaper-selected": "Chưa chọn hình nền",
     "select-wallpaper": "Chọn hình nền",
     "subtitle": "Một vài lựa chọn nhanh để bạn bắt đầu.",
-    "title": "Chào mừng đến với Noctalia",
+    "title": "Chào mừng đến với Zynith",
     "wallpaper": "Hình nền",
     "wallpaper-scheme": "Chế độ hình nền"
   },

@@ -750,10 +750,10 @@
       "dbus-disabled": "Сповіщення DBus вимкнено",
       "desktop-widgets-editor": "Редактор віджетів",
       "desktop-widgets-editor-enabled": "Редактор віджетів робочого столу увімкнено. Перейдіть на порожній робочий простір, щоб побачити оверлей редактора.",
-      "greeter-sync": "Noctalia Привітання",
+      "greeter-sync": "Zynith Привітання",
       "greeter-sync-pending": "Адміністратор має схвалити запис налаштувань для вітального екрану",
       "greeter-sync-success": "Оформлення синхронізовано. Зміни будуть застосовані при наступному екрані входу.",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Це поєднання клавіш приймає одну клавішу без модифікаторів.",
       "keybind-invalid-printable": "Клавіші з друкованими символами (літери, цифри тощо) працюватимуть лише з модифікатором, як-от Ctrl або Alt.",
       "keybind-invalid-super": "Клавіша Super/Windows не може бути використана у прив'язках клавіш оболонки.",
@@ -1449,7 +1449,7 @@
         "update": "Оновити джерело"
       },
       "store": {
-        "add": "Додати до Noctalia",
+        "add": "Додати до Zynith",
         "categories": "Категорії",
         "category-all": "Усі",
         "empty": "Додатки не знайдені.",
@@ -1864,7 +1864,7 @@
             "label": "При вимкненні"
           },
           "started": {
-            "description": "Команда для запуску після старту Noctalia",
+            "description": "Команда для запуску після старту Zynith",
             "label": "При запуску"
           },
           "theme-mode-changed": {
@@ -2373,7 +2373,7 @@
           "description": "Автоматично синхронізувати вигляд вітального екрана, щоразу як змінюється тло, колірна палітра або стиль оформлення."
         },
         "launch-apps-as-systemd-services": {
-          "description": "Запускає програми в окремих службах systemd, щоб вони не ділили cgroup Noctalia",
+          "description": "Запускає програми в окремих службах systemd, щоб вони не ділили cgroup Zynith",
           "label": "Запускати програми як служби systemd"
         },
         "niri-overview-type-to-launch": {
@@ -2514,8 +2514,8 @@
         },
         "sync-greeter": {
           "button": "Синхронізувати зараз",
-          "description": "Застосувати поточне тло й колірну палітру до вітального екрану Noctalia (потрібні права адміністратора)",
-          "label": "Noctalia Привітання"
+          "description": "Застосувати поточне тло й колірну палітру до вітального екрану Zynith (потрібні права адміністратора)",
+          "label": "Zynith Привітання"
         },
         "telemetry": {
           "description": "Надсилає невеликий анонімний стартовий пінг з версією, OS, композитором, роздільною здатністю монітора, RAM та UI scale",
@@ -3101,7 +3101,7 @@
       "export-config": "Експортувати конфігурацію…",
       "export-config-saved": "Конфігурацію експортовано.",
       "filter-overridden": "Змінені",
-      "native-title": "Параметри Noctalia",
+      "native-title": "Параметри Zynith",
       "no-results": "Параметр не знайдено",
       "no-results-hint": "Спробуйте іншу назву налаштування або config key.",
       "offline-mode-notice": {
@@ -3125,7 +3125,7 @@
     "no-wallpaper-selected": "Тло екрана не вибрано.",
     "select-wallpaper": "Виберіть тло екрана.",
     "subtitle": "Кілька швидких варіантів для початку.",
-    "title": "Ласкаво просимо до Noctalia",
+    "title": "Ласкаво просимо до Zynith",
     "wallpaper": "Шпалери",
     "wallpaper-scheme": "Схема генерування палітри"
   },

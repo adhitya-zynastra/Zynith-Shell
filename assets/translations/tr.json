@@ -746,19 +746,19 @@
       "calendar-google-connect-start-failed": "Google yetkilendirmesi başlatılamadı. Ağ bağlantınızı kontrol edin ve tekrar deneyin.",
       "calendar-google-connect-start-http": "Google yetkilendirmesi başlatılamadı. OAuth aracısı HTTP {status} döndürdü.",
       "calendar-google-connect-timeout": "Google yetkilendirmesi zaman aşımına uğradı. Oturum açmaya hazır olduğunuzda bağlantıyı tekrar başlatın.",
-      "config-migration-body": "Kaynak dosyadaki {path} konumunu güncelleyin. Noctalia bu değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
+      "config-migration-body": "Kaynak dosyadaki {path} konumunu güncelleyin. Zynith bu değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
       "config-migration-title": "Yapılandırma güncellemesi gerekiyor",
       "dbus-disabled": "DBus bildirimleri devre dışı",
       "desktop-widgets-editor": "Bileşen düzenleyici",
       "desktop-widgets-editor-enabled": "Masaüstü bileşen düzenleyicisi açık. Açık pencerelerin düzenleyiciyi kapatmaması için boş bir çalışma alanına geçin.",
-      "greeter-sync": "Noctalia Karşılama Ekranı",
+      "greeter-sync": "Zynith Karşılama Ekranı",
       "greeter-sync-pending": "Karşılama ekranına yazmak için yönetici onayı bekleniyor.",
-      "greeter-sync-pending-console": "Yönetici onayı bekleniyor. Noctalia içindeki, bir TTY veya konsoldaki polkit istemini onaylayın ya da pkexec'i manuel olarak çalıştırın.",
+      "greeter-sync-pending-console": "Yönetici onayı bekleniyor. Zynith içindeki, bir TTY veya konsoldaki polkit istemini onaylayın ya da pkexec'i manuel olarak çalıştırın.",
       "greeter-sync-pending-manual": "Dosyalar hazırlandı. Terminalde çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Veya shell.greeter_sync.privilege_command (örneğin ghostty -e pkexec) ayarlayıp tekrar senkronize edin.",
       "greeter-sync-success": "Görünüm senkronize edildi. Değişiklikler bir sonraki giriş ekranında uygulanacak.",
       "greeter-sync-timeout": "Karşılama ekranı senkronizasyonu hâlâ yönetici onayı bekliyor. Polkit istemi için bir TTY veya konsolu kontrol edin, Güvenlik ayarlarında polkit aracısını etkinleştirin veya pkexec'i manuel olarak çalıştırın.",
       "greeter-sync-timeout-manual": "Karşılama ekranı senkronizasyonu hâlâ yönetici onayı gerektiriyor. Terminalde şunu çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Bu kısayol, değiştirici olmadan yalnızca tek bir tuş kabul eder.",
       "keybind-invalid-printable": "Yazdırılabilir tuşlar (harfler, sayılar, semboller) Ctrl veya Alt gibi bir değiştirici tuş gerektirir.",
       "keybind-invalid-super": "Super/Windows tuşu sistem tuş atamalarında kullanılamaz.",
@@ -830,7 +830,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin}, {version} eklenti API'yını hedefliyor; bu Noctalia {oldest}–{current} API'larını destekliyor.",
+      "body-incompatible": "{plugin}, {version} eklenti API'yını hedefliyor; bu Zynith {oldest}–{current} API'larını destekliyor.",
       "body-timeout": "{plugin} yüklemesi zaman aşımına uğradı.",
       "title": "Eklenti devre dışı"
     }
@@ -1119,7 +1119,7 @@
       },
       "reset-page": "Bazı ayarlar sıfırlanamadı.",
       "support-report": "Destek raporu kaydedilemedi.",
-      "sync-greeter": "Görünüm, Noctalia Karşılama Ekranı ile senkronize edilemedi.",
+      "sync-greeter": "Görünüm, Zynith Karşılama Ekranı ile senkronize edilemedi.",
       "sync-greeter-timeout": "Karşılama ekranı senkronizasyonu hala yönetici onayı bekliyor. TTY veya konsoldaki polkit onayını kontrol edin, Güvenlik ayarlarından polkit aracını etkinleştirin veya pkexec komutunu manuel olarak çalıştırın.",
       "sync-greeter-timeout-manual": "Karşılama ekranı senkronizasyonu hala yönetici onayına ihtiyaç duyuyor. Terminalde şu komutu çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
@@ -1480,7 +1480,7 @@
         "deprecated": "kullanımdan kaldırıldı",
         "empty": "Etkin eklenti yok.",
         "held-back": "eski sürüm",
-        "held-back-hint": "v{version} sürümü {required} eklenti API'sine ihtiyaç duyuyor; Noctalia sürümünüz en fazla {current} destekliyor. Yüklemek için Noctalia'yı güncelleyin.",
+        "held-back-hint": "v{version} sürümü {required} eklenti API'sine ihtiyaç duyuyor; Zynith sürümünüz en fazla {current} destekliyor. Yüklemek için Zynith'yı güncelleyin.",
         "incompatible-plugin-api": "uyumsuz eklenti API'si",
         "remove": "Eklentiyi kaldır",
         "requires": "Gereksinimler: {dependencies}",
@@ -1522,15 +1522,15 @@
         "update": "Kaynağı güncelle"
       },
       "store": {
-        "add": "Noctalia'ya Ekle",
+        "add": "Zynith'ya Ekle",
         "back-to-catalog": "Eklenti kataloğuna dön",
         "categories": "Kategoriler",
         "category-all": "Tümü",
         "empty": "Eklenti bulunamadı",
         "held-back": "Eski sürüm",
-        "held-back-hint": "Eklenti API'si {resolved} için v{version} kuruluyor. En yeni v{latest} sürümü, eklenti API'si {latestRequired} gerektirir; Noctalia sürümünüz en fazla {current} destekliyor.",
+        "held-back-hint": "Eklenti API'si {resolved} için v{version} kuruluyor. En yeni v{latest} sürümü, eklenti API'si {latestRequired} gerektirir; Zynith sürümünüz en fazla {current} destekliyor.",
         "incompatible": "Uyumsuz",
-        "incompatible-hint": "Eklenti API'si {required} gerektirir; Noctalia sürümünüz {oldest}–{current} arasını destekliyor.",
+        "incompatible-hint": "Eklenti API'si {required} gerektirir; Zynith sürümünüz {oldest}–{current} arasını destekliyor.",
         "loading": "Katalog yükleniyor...",
         "no-readme": "Açıklama mevcut değil.",
         "open-page": "Eklentinin sayfasını noctalia.dev'de aç",
@@ -2067,7 +2067,7 @@
             "label": "Sistem Kapanırken"
           },
           "started": {
-            "description": "Noctalia başladıktan sonra çalıştırılacak komut",
+            "description": "Zynith başladıktan sonra çalıştırılacak komut",
             "label": "Başlangıçta"
           },
           "theme-mode-changed": {
@@ -2823,9 +2823,9 @@
           "label": "Klavye Düzeni Etiketleri"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Uygulamaları Noctalia'nın cgroup'unu paylaşmamaları için ayrı systemd servisleri olarak başlatır",
+          "description": "Uygulamaları Zynith'nın cgroup'unu paylaşmamaları için ayrı systemd servisleri olarak başlatır",
           "label": "Uygulamaları systemd Servisi Olarak Başlat",
-          "requires-systemd-session": "Noctalia'nın bir systemd kullanıcı servisi olarak çalışmasını gerektirir (uwsm veya systemd kullanıcı birimi)"
+          "requires-systemd-session": "Zynith'nın bir systemd kullanıcı servisi olarak çalışmasını gerektirir (uwsm veya systemd kullanıcı birimi)"
         },
         "launch-apps-custom-command": {
           "description": "Başlatıcıdan, rıhtımdan ve görev çubuğundan başlatılan uygulamaları sarar; $CMD'yi orijinal komutla değiştirir.",
@@ -3021,8 +3021,8 @@
         },
         "sync-greeter": {
           "button": "Şimdi Senkronize Et",
-          "description": "Geçerli duvar kağıdını ve renkleri Noctalia Karşılayıcısına (Greeter) kopyala (yönetici izni gerektirir)",
-          "label": "Noctalia Karşılayıcısı"
+          "description": "Geçerli duvar kağıdını ve renkleri Zynith Karşılayıcısına (Greeter) kopyala (yönetici izni gerektirir)",
+          "label": "Zynith Karşılayıcısı"
         },
         "telemetry": {
           "description": "Sürüm, işletim sistemi, görüntü sunucusu, monitör çözünürlükleri, RAM ve arayüz ölçeği bilgilerini içeren küçük bir anonim başlangıç isteği gönderir",
@@ -3893,8 +3893,8 @@
       "export-config": "Yapılandırmayı Dışa Aktar...",
       "export-config-saved": "Yapılandırma dışa aktarımı kaydedildi.",
       "filter-overridden": "Üzerine yazıldı",
-      "legacy-config-warning": "Eski ayar: {issue}. Bu kaynak girişini düzenleyin; Noctalia değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
-      "native-title": "Noctalia Ayarları",
+      "legacy-config-warning": "Eski ayar: {issue}. Bu kaynak girişini düzenleyin; Zynith değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
+      "native-title": "Zynith Ayarları",
       "no-results": "Ayar bulunamadı",
       "no-results-hint": "Farklı bir ayar veya yapılandırma adı girin.",
       "offline-mode-notice": {
@@ -3930,7 +3930,7 @@
     "no-wallpaper-selected": "Duvar kağıdı seçilmedi",
     "select-wallpaper": "Duvar Kağıdı Seç",
     "subtitle": "Başlamanız için birkaç hızlı seçenek.",
-    "title": "Noctalia'ya Hoş Geldiniz",
+    "title": "Zynith'ya Hoş Geldiniz",
     "wallpaper": "Duvar Kağıdı",
     "wallpaper-scheme": "Duvar Kağıdı Şeması"
   },

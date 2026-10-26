@@ -766,14 +766,14 @@
       "calendar-google-connect-start-failed": "تعذر بدء مصادقة Google. تحقق من اتصال الشبكة وحاول مجدداً.",
       "calendar-google-connect-start-http": "تعذر بدء مصادقة Google. أعاد وسيط OAuth الخطأ HTTP {status}.",
       "calendar-google-connect-timeout": "انتهت مهلة مصادقة Google. ابدأ الاتصال مجدداً عندما تكون مستعداً للتسجيل.",
-      "config-migration-body": "حدّث {path} في الملف المصدر. يطبّق Noctalia هذا الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
+      "config-migration-body": "حدّث {path} في الملف المصدر. يطبّق Zynith هذا الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
       "config-migration-title": "يلزم تحديث الإعدادات",
       "dbus-disabled": "إشعارات D-Bus معطلة",
       "desktop-widgets-editor": "محرر ودجت",
       "desktop-widgets-editor-enabled": "محرر ودجات سطح المكتب مفعّل. انتقل إلى مساحة عمل فارغة حتى لا تغطي النوافذ المفتوحة المحرر.",
       "greeter-sync": "مزامنة شاشة الدخول",
       "greeter-sync-pending": "مزامنة المظهر مع شاشة الترحيب. إذا ظهرت مطالبة من المسؤول، فقم بالموافقة عليها؛ حيث تتبع عملية المصادقة بدون كلمة مرور سياسة النظام.",
-      "greeter-sync-pending-console": "مزامنة الهوية مع برنامج الترحيب. إذا كانت هناك حاجة إلى تفويض، فقم بالموافقة على موجه polkit في Noctalia أو على TTY أو على وحدة التحكم.",
+      "greeter-sync-pending-console": "مزامنة الهوية مع برنامج الترحيب. إذا كانت هناك حاجة إلى تفويض، فقم بالموافقة على موجه polkit في Zynith أو على TTY أو على وحدة التحكم.",
       "greeter-sync-pending-legacy": "المزامنة من خلال أداة المساعدة القديمة التي تتطلب المصادقة. يلزم الحصول على موافقة المسؤول.",
       "greeter-sync-pending-manual": "يتم تجهيز الملفات للمزامنة القديمة التي تتطلب المصادقة. قم بتشغيل الأداة المساعدة «apply» في محطة طرفية، مع الحفاظ على NOCTALIA_GREETER_STATE_DIR إذا كنت تستخدم مسارًا مخصصًا، أو قم بتكوين shell.greeter_sync.privilege_command ثم أعد المزامنة.",
       "greeter-sync-pending-manual-pkexec": "مزامنة المظهر مع شاشة الترحيب. إذا كانت هناك حاجة إلى تفويض من المسؤول ولم تظهر أي مطالبة، فقم بتشغيل الأمر التالي في محطة طرفية: pkexec noctalia-greeter-apply-appearance --sync ”/run/user/$(id -u)/noctalia-greeter-sync“.",
@@ -781,7 +781,7 @@
       "greeter-sync-timeout": "لا تزال عملية مزامنة Greeter في انتظار الحصول على التفويض. تحقق من وجود موجه polkit على جهاز TTY أو وحدة التحكم، أو قم بتمكين وكيل polkit في إعدادات الأمان، أو قم بتشغيل pkexec يدويًّا.",
       "greeter-sync-timeout-manual": "لا تزال عملية المزامنة القديمة المصادق عليها تتطلب موافقة المسؤول. قم بتشغيل أداة المساعدة «positional apply» في نافذة الأوامر واحتفظ بـ NOCTALIA_GREETER_STATE_DIR إذا كنت تستخدم مسارًا مخصصًا.",
       "greeter-sync-timeout-manual-pkexec": "لا تزال عملية مزامنة Greeter بحاجة إلى ترخيص. قم بتشغيل الأمر التالي في محطة الأوامر: pkexec noctalia-greeter-apply-appearance --sync ”/run/user/$(id -u)/noctalia-greeter-sync“",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "يقبل هذا الاختصار مفتاحاً واحداً بدون معدّلات.",
       "keybind-invalid-printable": "المفاتيح القابلة للطباعة (أحرف، أرقام، رموز) تتطلب معدّلاً مثل Ctrl أو Alt.",
       "keybind-invalid-super": "لا يمكن استخدام مفتاح Super/Windows في اختصارات الغلاف (واجهة الأوامر).",
@@ -853,7 +853,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} يستهدف واجهة API للإضافات {version}؛ يدعم هذا الإصدار من Noctalia واجهة API من {oldest} إلى {current}.",
+      "body-incompatible": "{plugin} يستهدف واجهة API للإضافات {version}؛ يدعم هذا الإصدار من Zynith واجهة API من {oldest} إلى {current}.",
       "body-timeout": "استغرق تثبيت {plugin} وقتاً طويلاً.",
       "title": "لم يتم تفعيل الإضافة"
     }
@@ -1522,7 +1522,7 @@
         "deprecated": "مهجور",
         "empty": "لا توجد إضافات مفعّلة.",
         "held-back": "إصدار أقدم",
-        "held-back-hint": "يحتاج v{version} إلى واجهة API للإضافات {required}؛ هذا الإصدار من Noctalia يدعم حتى {current}. قم بترقية Noctalia للحصول عليه.",
+        "held-back-hint": "يحتاج v{version} إلى واجهة API للإضافات {required}؛ هذا الإصدار من Zynith يدعم حتى {current}. قم بترقية Zynith للحصول عليه.",
         "incompatible-plugin-api": "واجهة API للإضافات غير متوافقة",
         "remove": "إزالة الإضافة",
         "requires": "يتطلب: {dependencies}",
@@ -1564,15 +1564,15 @@
         "update": "تحديث"
       },
       "store": {
-        "add": "إضافة إلى Noctalia",
+        "add": "إضافة إلى Zynith",
         "back-to-catalog": "العودة إلى كتالوج الإضافات",
         "categories": "الفئات",
         "category-all": "الكل",
         "empty": "لم يتم العثور على إضافات",
         "held-back": "إصدار أقدم",
-        "held-back-hint": "يثبّت v{version} لواجهة API للإضافات {resolved}. يتطلب أحدث إصدار v{latest} واجهة API للإضافات {latestRequired}؛ ويدعم هذا الإصدار من Noctalia حتى {current}.",
+        "held-back-hint": "يثبّت v{version} لواجهة API للإضافات {resolved}. يتطلب أحدث إصدار v{latest} واجهة API للإضافات {latestRequired}؛ ويدعم هذا الإصدار من Zynith حتى {current}.",
         "incompatible": "غير متوافق",
-        "incompatible-hint": "يتطلب واجهة API للإضافات {required}؛ ويدعم هذا الإصدار من Noctalia من {oldest} إلى {current}.",
+        "incompatible-hint": "يتطلب واجهة API للإضافات {required}؛ ويدعم هذا الإصدار من Zynith من {oldest} إلى {current}.",
         "installed": "مثبت",
         "loading": "جاري تحميل الكتالوج...",
         "no-readme": "لا يوجد وصف متاح.",
@@ -2118,7 +2118,7 @@
             "label": "عند إيقاف التشغيل"
           },
           "started": {
-            "description": "أمر للتشغيل بعد بدء Noctalia",
+            "description": "أمر للتشغيل بعد بدء Zynith",
             "label": "عند البدء"
           },
           "theme-mode-changed": {
@@ -2878,9 +2878,9 @@
           "label": "تسميات تخطيطات لوحة المفاتيح"
         },
         "launch-apps-as-systemd-services": {
-          "description": "تشغيل التطبيقات كخدمات systemd منفصلة لتفادي مشاركة مجموعات Noctalia",
+          "description": "تشغيل التطبيقات كخدمات systemd منفصلة لتفادي مشاركة مجموعات Zynith",
           "label": "تشغيل التطبيقات كخدمات systemd",
-          "requires-systemd-session": "يتطلب تشغيل Noctalia كخدمة مستخدم systemd (uwsm أو وحدة مستخدم systemd)"
+          "requires-systemd-session": "يتطلب تشغيل Zynith كخدمة مستخدم systemd (uwsm أو وحدة مستخدم systemd)"
         },
         "launch-apps-custom-command": {
           "description": "أمر مخصص بواسطة مشغل التطبيقات، يستبدل $CMD بالأمر الأصلي.",
@@ -4062,8 +4062,8 @@
       "export-config": "تصدير الإعدادات…",
       "export-config-saved": "تم حفظ تصدير الإعدادات.",
       "filter-overridden": "تم تجاوزه",
-      "legacy-config-warning": "إعداد قديم: {issue}. عدّل هذا الإدخال في المصدر؛ يطبّق Noctalia الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
-      "native-title": "إعدادات Noctalia",
+      "legacy-config-warning": "إعداد قديم: {issue}. عدّل هذا الإدخال في المصدر؛ يطبّق Zynith الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
+      "native-title": "إعدادات Zynith",
       "no-results": "لم يتم العثور على إعدادات",
       "no-results-hint": "جرب البحث باسم إعداد آخر أو مفتاح تهيئة مختلف.",
       "offline-mode-notice": {
@@ -4099,7 +4099,7 @@
     "no-wallpaper-selected": "لم يتم تحديد خلفية",
     "select-wallpaper": "اختر خلفية",
     "subtitle": "بضع خيارات سريعة لمساعدتك على البدء.",
-    "title": "مرحبًا بك في Noctalia",
+    "title": "مرحبًا بك في Zynith",
     "wallpaper": "خلفية الشاشة",
     "wallpaper-scheme": "مخطط ألوان الخلفية"
   },

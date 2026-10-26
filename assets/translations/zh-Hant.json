@@ -720,13 +720,13 @@
       "dbus-disabled": "DBus 通知已停用",
       "desktop-widgets-editor": "桌面小工具編輯器",
       "desktop-widgets-editor-enabled": "桌面小工具編輯器已開啟。請切換至空閒桌面，避免開啟的視窗遮擋編輯器。",
-      "greeter-sync": "Noctalia 登入介面",
+      "greeter-sync": "Zynith 登入介面",
       "greeter-sync-pending": "正在等待系統管理員授權寫入登入介面配置",
-      "greeter-sync-pending-console": "正在等待系統管理員授權。請在 Noctalia 的 Polkit 視窗、終端機或控制台中授權執行，或手動執行 pkexec。",
+      "greeter-sync-pending-console": "正在等待系統管理員授權。請在 Zynith 的 Polkit 視窗、終端機或控制台中授權執行，或手動執行 pkexec。",
       "greeter-sync-success": "外觀已同步。變更將在下次登入時生效。",
       "greeter-sync-timeout": "登入介面仍在等待系統管理員授權。請檢查終端機或控制台中 Polkit 提示，在\"安全\"設定中啟用 Polkit 代理，或手動執行 pkexec。",
       "greeter-sync-timeout-manual": "登入介面同步仍需要系統管理員授權。請在終端機中執行：pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "此快捷鍵僅接受單一按鍵，不可與修飾鍵(Ctrl, Alt或Super等)並用。",
       "keybind-invalid-printable": "字母、數字及符號健需要配合修飾鍵 ( Ctrl 或是 Alt ) 使用。",
       "keybind-invalid-super": "Super/Windows 鍵無法用於 Shell 快捷鍵。",
@@ -798,7 +798,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}：{error}",
-      "body-incompatible": "{plugin} 目標擴充套件 API {version}；當前 Noctalia 僅支援 API {oldest}-{current}。",
+      "body-incompatible": "{plugin} 目標擴充套件 API {version}；當前 Zynith 僅支援 API {oldest}-{current}。",
       "body-timeout": "{plugin} 安裝耗時過長。",
       "title": "擴充套件啟用失敗"
     }
@@ -989,7 +989,7 @@
       },
       "reset-page": "部分設定重置失敗。",
       "support-report": "診斷報告儲存失敗。",
-      "sync-greeter": "無法將外觀同步至 Noctalia 登入介面。",
+      "sync-greeter": "無法將外觀同步至 Zynith 登入介面。",
       "sync-greeter-timeout": "登入介面仍在等待系統管理員授權。請檢查終端機或控制台中 Polkit 提示，在\"安全\"設定中啟用 Polkit 代理，或手動執行 pkexec。",
       "sync-greeter-timeout-manual": "登入介面同步仍需要系統管理員授權。請在終端機中執行：pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {

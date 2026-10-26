@@ -690,12 +690,12 @@
       "desktop-widgets-editor-enabled": "O editor de widgets do escritorio está activado. Cambia a un espazo de traballo baleiro para ver a capa do editor.",
       "greeter-sync": "Noctalia Greeter",
       "greeter-sync-pending": "Agardando pola aprobación do administrador para escribir no Greeter.",
-      "greeter-sync-pending-console": "Agardando pola aprobación do administrador. Aproba a solicitude de polkit en Noctalia, nunha TTY ou consola, ou executa pkexec manualmente.",
+      "greeter-sync-pending-console": "Agardando pola aprobación do administrador. Aproba a solicitude de polkit en Zynith, nunha TTY ou consola, ou executa pkexec manualmente.",
       "greeter-sync-pending-manual": "Os ficheiros están preparados. Executa nun terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Ou configura shell.greeter_sync.privilege_command (por exemplo ghostty -e pkexec) e sincroniza de novo.",
       "greeter-sync-success": "A aparencia sincronizouse. Os cambios aplicaranse na próxima pantalla de inicio de sesión.",
       "greeter-sync-timeout": "A sincronización do Greeter segue agardando pola aprobación do administrador. Revisa se hai unha solicitude de polkit nunha TTY ou consola, activa o axente de polkit nos axustes de Seguridade ou executa pkexec manualmente.",
       "greeter-sync-timeout-manual": "A sincronización do Greeter segue precisando aprobación do administrador. Executa nun terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
-      "keybind-app": "Noctalia",
+      "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Este atallo acepta unha soa tecla sen modificadores.",
       "keybind-invalid-printable": "As teclas imprimibles (letras, números e símbolos) requiren un modificador como Ctrl ou Alt.",
       "keybind-invalid-super": "A tecla Super/Windows non se pode usar nos atallos da shell.",
@@ -767,7 +767,7 @@
     },
     "enable-failed": {
       "body-error": "{plugin}: {error}",
-      "body-incompatible": "{plugin} require Noctalia {version} ou unha versión máis recente.",
+      "body-incompatible": "{plugin} require Zynith {version} ou unha versión máis recente.",
       "body-timeout": "{plugin} tardou demasiado en instalarse.",
       "title": "Plugin non activado"
     }
@@ -1411,7 +1411,7 @@
         "update": "Actualizar"
       },
       "store": {
-        "add": "Engadir a Noctalia",
+        "add": "Engadir a Zynith",
         "categories": "Categorías",
         "category-all": "Todos",
         "empty": "Non se atoparon complementos",
@@ -1908,7 +1908,7 @@
             "label": "Ao apagar"
           },
           "started": {
-            "description": "Comando que se executa despois de iniciar Noctalia",
+            "description": "Comando que se executa despois de iniciar Zynith",
             "label": "Ao iniciar"
           },
           "theme-mode-changed": {
@@ -2489,7 +2489,7 @@
           "label": "Comando privilexiado de sincronización do Greeter"
         },
         "launch-apps-as-systemd-services": {
-          "description": "Lanza aplicacións en servizos systemd separados para que non compartan o cgroup de Noctalia",
+          "description": "Lanza aplicacións en servizos systemd separados para que non compartan o cgroup de Zynith",
           "label": "Lanzar aplicacións como servizos systemd"
         },
         "launch-apps-custom-command": {
@@ -3350,7 +3350,7 @@
       "export-config": "Exportar configuración…",
       "export-config-saved": "Exportación da configuración gardada.",
       "legacy-config-warning": "A configuración antiga estase migrando na memoria: {issue}. Executa noctalia config validate para ver todos os cambios requiridos.",
-      "native-title": "Axustes de Noctalia",
+      "native-title": "Axustes de Zynith",
       "no-results": "Non se atoparon axustes",
       "no-results-hint": "Proba cun nome de axuste ou key de configuración diferente.",
       "reset-page": "Restablecer páxina",
@@ -3372,7 +3372,7 @@
     "no-wallpaper-selected": "Non hai ningún fondo de pantalla seleccionado",
     "select-wallpaper": "Seleccionar fondo de pantalla",
     "subtitle": "Unhas poucas opcións rápidas para empezar.",
-    "title": "Benvid@ a Noctalia",
+    "title": "Benvid@ a Zynith",
     "wallpaper": "Fondo de pantalla",
     "wallpaper-scheme": "Esquema do fondo de pantalla"
   },
