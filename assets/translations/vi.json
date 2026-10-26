@@ -762,7 +762,7 @@
       "calendar-google-connect-start-failed": "Không thể bắt đầu ủy quyền Google. Vui lòng kiểm tra kết nối mạng và thử lại.",
       "calendar-google-connect-start-http": "Không thể bắt đầu ủy quyền Google. Trình môi giới OAuth đã trả về HTTP {status}.",
       "calendar-google-connect-timeout": "Thời gian ủy quyền Google đã hết. Hãy bắt đầu lại kết nối khi bạn sẵn sàng đăng nhập.",
-      "config-migration-body": "Cấu hình cũ, bao gồm {path}, đang được chuyển đổi tạm thời trong bộ nhớ. Hãy cập nhật cấu hình gốc; Cài đặt và noctalia config validate sẽ hiển thị cấu hình thay thế cần dùng.",
+      "config-migration-body": "Cấu hình cũ, bao gồm {path}, đang được chuyển đổi tạm thời trong bộ nhớ. Hãy cập nhật cấu hình gốc; Cài đặt và zynith-shell config validate sẽ hiển thị cấu hình thay thế cần dùng.",
       "config-migration-title": "Cần cập nhật cấu hình",
       "dbus-disabled": "Thông báo DBus đã tắt",
       "desktop-widgets-editor": "Trình chỉnh sửa tiện ích",
@@ -1511,8 +1511,8 @@
         },
         "kind-label": "Loại",
         "location-label": "Vị trí",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Mã nguồn",
         "name-placeholder": "my-plugins",
         "precedence-hint": "Nguồn nằm thấp hơn sẽ ghi đè nguồn nằm cao hơn khi cả hai cung cấp cùng một plugin.",
@@ -1530,7 +1530,6 @@
         "incompatible": "Không phù hợp",
         "loading": "Đang tải danh mục...",
         "no-readme": "Không có mô tả",
-        "open-page": "Mở trang plugin tại noctalia.dev",
         "open-source": "Mở repo nguồn plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Tìm plugins...",
@@ -1589,7 +1588,7 @@
           "label": "Độ bo góc"
         },
         "custom-palette": {
-          "description": "Chọn bảng màu từ ~/.config/noctalia/palettes/",
+          "description": "Chọn bảng màu từ ~/.config/zynith-shell/palettes/",
           "label": "Bảng màu tùy chỉnh",
           "search-placeholder": "Tìm kiếm bảng màu tùy chỉnh..."
         },
@@ -2440,10 +2439,6 @@
           "description": "Thành phố hoặc địa chỉ để định vị, được sử dụng khi tắt tự động định vị",
           "label": "Địa chỉ",
           "placeholder": "Thành phố, Quốc gia"
-        },
-        "location-auto-locate": {
-          "description": "Tự động phát hiện vị trí của bạn từ địa chỉ IP",
-          "label": "Tự động định vị (IP)"
         },
         "longitude": {
           "description": "Kinh độ thủ công cho lịch mặt trời mọc/lặn, được sử dụng khi tính năng tự động định vị và địa chỉ bị tắt",

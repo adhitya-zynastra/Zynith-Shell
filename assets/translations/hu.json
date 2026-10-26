@@ -736,7 +736,7 @@
       "calendar-google-connect-start-failed": "Nem sikerült elindítani a Google-hitelesítést. Ellenőrizd a hálózati kapcsolatodat, majd próbáld újra.",
       "calendar-google-connect-start-http": "Nem sikerült elindítani a Google-hitelesítést. Az OAuth bróker HTTP {status} kóddal tért vissza.",
       "calendar-google-connect-timeout": "A Google-hitelesítés túllépte az időkorlátot. Indítsd újra a kapcsolódást, amikor készen állsz a bejelentkezésre.",
-      "config-migration-body": "A régi konfiguráció átvitel alatt áll a memóriában, beleértve a {path} elemet is. Frissítsd a forráskonfigurációt. A „Beállítások” menüpont és a noctalia beállítások érvényesítése megmutatja, mit kell kicserélni.",
+      "config-migration-body": "A régi konfiguráció átvitel alatt áll a memóriában, beleértve a {path} elemet is. Frissítsd a forráskonfigurációt. A „Beállítások” menüpont és a zynith-shell beállítások érvényesítése megmutatja, mit kell kicserélni.",
       "config-migration-title": "A beállítások frissítésére van szükség",
       "dbus-disabled": "D-Bus értesítések letiltva",
       "desktop-widgets-editor": "Widget-szerkesztő",
@@ -1475,8 +1475,8 @@
         },
         "kind-label": "Típus",
         "location-label": "Hely",
-        "location-placeholder-git": "https://github.com/én/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/én/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Forrásazonosító",
         "name-placeholder": "saját-bővítmények",
         "precedence-hint": "Az alacsonyabb szintű források felülírják a magasabb szintűeket, ha ugyanazt a bővítményt kínálják",
@@ -1493,7 +1493,6 @@
         "incompatible": "Nem kompatibilis",
         "loading": "A katalógus betöltése...",
         "no-readme": "Nincs elérhető leírás.",
-        "open-page": "A bővítmény a noctalia.dev oldalon történő megnyitása",
         "open-source": "A bővítmény forráskód-tárának megnyitása",
         "results-count": "{count} bővítmény",
         "search-placeholder": "Bővítmények keresése…",
@@ -1543,7 +1542,7 @@
           "label": "Sarokkerekítés"
         },
         "custom-palette": {
-          "description": "Válassz egy palettát a ~/.config/noctalia/palettes/ mappából",
+          "description": "Válassz egy palettát a ~/.config/zynith-shell/palettes/ mappából",
           "label": "Egyéni paletta",
           "search-placeholder": "Egyéni paletták keresése…"
         },
@@ -2018,7 +2017,7 @@
             "label": "Témamód megváltozásakor"
           },
           "wallpaper-changed": {
-            "description": "A háttérkép váltásakor futtatandó parancs; megadja a NOCTALIA_WALLPAPER_PATH és a\nNOCTALIA_WALLPAPER_CONNECTOR változókat",
+            "description": "A háttérkép váltásakor futtatandó parancs; megadja a ZYNITH_WALLPAPER_PATH és a\nZYNITH_WALLPAPER_CONNECTOR változókat",
             "label": "Háttérkép változásakor"
           },
           "wifi-disabled": {
@@ -2488,10 +2487,6 @@
           "label": "Cím",
           "placeholder": "Város, Ország"
         },
-        "location-auto-locate": {
-          "description": "Tartózkodási helyed automatikus meghatározása a noctalia.dev által az IP-címed alapján",
-          "label": "Automatikus helymeghatározás (IP)"
-        },
         "longitude": {
           "description": "Kézi hosszúsági fok a napkelte/napnyugta ütemezéshez, akkor használatos, ha az automatikus helymeghatározás és cím ki van kapcsolva",
           "label": "Hosszúság"
@@ -2705,10 +2700,6 @@
         "date-format": {
           "description": "Alapértelmezett dátumformátum a shell UI-hoz, saját beállítás nélkül",
           "label": "Dátumformátum"
-        },
-        "external-ip": {
-          "description": "Határozza meg a kapcsolat nyilvános WAN-IP-címét (az api.noctalia.dev oldalon keresztül), és jelenítse meg azt a Vezérlőközpont Hálózat fülén",
-          "label": "WAN-IP megjelenítése"
         },
         "launch-apps-as-systemd-services": {
           "description": "Alkalmazásokat indít külön systemd szolgáltatásokban, hogy ne osszák meg Zynith cgroupját",
@@ -3674,7 +3665,7 @@
       "export-config": "Konfiguráció exportálása…",
       "export-config-saved": "Konfiguráció exportálása mentve.",
       "filter-overridden": "Felülírva",
-      "legacy-config-warning": "A régi konfiguráció átvitel alatt áll a memóriában: {issue}. Futtasd a noctalia beállítások érvényesítése parancsot a szükséges változtatásokhoz.",
+      "legacy-config-warning": "A régi konfiguráció átvitel alatt áll a memóriában: {issue}. Futtasd a zynith-shell beállítások érvényesítése parancsot a szükséges változtatásokhoz.",
       "native-title": "Zynith Beállítások",
       "no-results": "Nincsenek beállítások",
       "no-results-hint": "Próbálj meg egy másik beállításnevet vagy konfigurációs kulcsot.",

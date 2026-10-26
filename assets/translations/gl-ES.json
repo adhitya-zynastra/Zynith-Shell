@@ -683,7 +683,7 @@
       "calendar-google-connect-start-failed": "Non se puido iniciar a autorización de Google. Revisa a conexión de rede e téntao de novo.",
       "calendar-google-connect-start-http": "Non se puido iniciar a autorización de Google. O broker OAuth devolveu HTTP {status}.",
       "calendar-google-connect-timeout": "A autorización de Google esgotou o tempo de espera. Inicia a conexión de novo cando esteas listo para iniciar sesión.",
-      "config-migration-body": "A configuración antiga estase migrando na memoria, incluído {path}. Actualiza a configuración de orixe; Configuración e noctalia config validate mostran a substitución requirida.",
+      "config-migration-body": "A configuración antiga estase migrando na memoria, incluído {path}. Actualiza a configuración de orixe; Configuración e zynith-shell config validate mostran a substitución requirida.",
       "config-migration-title": "Cómpre actualizar a configuración",
       "dbus-disabled": "Notificacións DBus desactivadas",
       "desktop-widgets-editor": "Editor de widgets do escritorio",
@@ -1389,8 +1389,8 @@
         },
         "kind-label": "Tipo",
         "location-label": "Localización",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID da orixe",
         "name-placeholder": "my-plugins",
         "precedence-hint": "As orixes de abaixo substitúen as de arriba cando ofrecen o mesmo complemento.",
@@ -1454,7 +1454,7 @@
           "label": "Redondez dos cantos"
         },
         "custom-palette": {
-          "description": "Escolle unha paleta de ~/.config/noctalia/palettes/",
+          "description": "Escolle unha paleta de ~/.config/zynith-shell/palettes/",
           "label": "Paleta personalizada",
           "search-placeholder": "Buscar paletas personalizadas..."
         },
@@ -1905,7 +1905,7 @@
             "label": "Ao cambiar o modo do tema"
           },
           "wallpaper-changed": {
-            "description": "Comando que se executa cando cambia o fondo de pantalla; fornece NOCTALIA_WALLPAPER_PATH e NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Comando que se executa cando cambia o fondo de pantalla; fornece ZYNITH_WALLPAPER_PATH e ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Ao cambiar o fondo de pantalla"
           },
           "wifi-disabled": {
@@ -2263,10 +2263,6 @@
           "label": "Enderezo",
           "placeholder": "Cidade, país"
         },
-        "location-auto-locate": {
-          "description": "Detecta automaticamente a túa localización desde o teu enderezo IP mediante noctalia.dev",
-          "label": "Localización automática (IP)"
-        },
         "longitude": {
           "description": "Lonxitude manual para o horario de orto/ocaso, usada cando a localización automática e o enderezo están desactivados",
           "label": "Lonxitude"
@@ -2464,10 +2460,6 @@
         "date-format": {
           "description": "Formato de data predeterminado para a interface da shell sen axuste propio",
           "label": "Formato de data"
-        },
-        "external-ip": {
-          "description": "Resolver o IP WAN público da conexión (mediante api.noctalia.dev) e mostralo na pestana de rede do Centro de control",
-          "label": "Mostrar IP WAN"
         },
         "launch-apps-as-systemd-services": {
           "description": "Lanza aplicacións en servizos systemd separados para que non compartan o cgroup de Zynith",
@@ -3325,7 +3317,7 @@
     "window": {
       "export-config": "Exportar configuración…",
       "export-config-saved": "Exportación da configuración gardada.",
-      "legacy-config-warning": "A configuración antiga estase migrando na memoria: {issue}. Executa noctalia config validate para ver todos os cambios requiridos.",
+      "legacy-config-warning": "A configuración antiga estase migrando na memoria: {issue}. Executa zynith-shell config validate para ver todos os cambios requiridos.",
       "native-title": "Axustes de Zynith",
       "no-results": "Non se atoparon axustes",
       "no-results-hint": "Proba cun nome de axuste ou key de configuración diferente.",

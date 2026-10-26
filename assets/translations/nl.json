@@ -1264,8 +1264,8 @@
         },
         "kind-label": "Soort",
         "location-label": "Locatie",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Naam",
         "name-placeholder": "mijn-plugins",
         "remove": "Verwijder bron",
@@ -1306,7 +1306,7 @@
           "label": "Hoekronding"
         },
         "custom-palette": {
-          "description": "Kies een palet uit ~/.config/noctalia/palettes/",
+          "description": "Kies een palet uit ~/.config/zynith-shell/palettes/",
           "label": "Aangepast palet",
           "search-placeholder": "Aangepaste paletten zoeken..."
         },
@@ -1962,10 +1962,6 @@
           "description": "Stad of adres om te lokaliseren, gebruikt wanneer auto-locate uitgeschakeld is",
           "label": "Adres",
           "placeholder": "Stad, Land"
-        },
-        "location-auto-locate": {
-          "description": "Detecteer je locatie automatisch op basis van je IP-adres",
-          "label": "Automatisch lokaliseren (IP)"
         },
         "longitude": {
           "description": "Handmatige lengtegraad voor het zonsopkomst-/zonsondergangschema, gebruikt wanneer auto-locate en adres uitgeschakeld zijn",

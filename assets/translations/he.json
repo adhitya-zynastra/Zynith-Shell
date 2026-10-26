@@ -764,7 +764,7 @@
       "calendar-google-connect-start-failed": "לא ניתן היה להתחיל את אימות Google. נא לבדוק את חיבור הרשת ולנסות שוב.",
       "calendar-google-connect-start-http": "לא ניתן להתחיל את אימות Google. מתווך ה-OAuth החזיר HTTP {status}.",
       "calendar-google-connect-timeout": "פג תוקף האישור של Google. התחל את החיבור מחדש כשתהיה מוכן להתחבר.",
-      "config-migration-body": "יש לעדכן את {path} בקובץ המקור. Zynith מיישמת החלפה זו באופן זמני בלבד. יש להריץ את noctalia config validate כדי להציג רשימה של כל השינויים הנדרשים.",
+      "config-migration-body": "יש לעדכן את {path} בקובץ המקור. Zynith מיישמת החלפה זו באופן זמני בלבד. יש להריץ את zynith-shell config validate כדי להציג רשימה של כל השינויים הנדרשים.",
       "config-migration-title": "נדרש עדכון תצורה",
       "dbus-disabled": "התראות DBus מושבתות",
       "desktop-widgets-editor": "עורך וידג'טים",
@@ -1527,8 +1527,8 @@
         },
         "kind-label": "סוג",
         "location-label": "מיקום",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "מזהה מקור",
         "name-placeholder": "הפלאגינים שלי",
         "precedence-hint": "מקורות נמוכים יותר דורסים את הגבוהים יותר כאשר הם מציעים את אותו התוסף.",
@@ -1549,7 +1549,6 @@
         "incompatible-hint": "נדרש API תוספים {required}; ‏Zynith תומך ב־{oldest}–{current}.",
         "loading": "טוען קטלוג…",
         "no-readme": "אין תיאור זמין.",
-        "open-page": "פתח את דף התוסף ב-noctalia.dev",
         "open-source": "פתח את מאגר המקור של התוסף",
         "results-count": "{count} תוספים",
         "search-placeholder": "חיפוש תוספים…",
@@ -1609,7 +1608,7 @@
           "label": "עיגול פינות"
         },
         "custom-palette": {
-          "description": "בחר פלטה מ-~/.config/noctalia/palettes/",
+          "description": "בחר פלטה מ-~/.config/zynith-shell/palettes/",
           "label": "פלטת צבעים מותאמת אישית",
           "search-placeholder": "חיפוש פלטות מותאמות אישית…"
         },
@@ -2095,7 +2094,7 @@
             "label": "בעת שינוי מצב העיצוב"
           },
           "wallpaper-changed": {
-            "description": "פקודה להרצה בעת שינוי הרקע; מספקת את המשתנים NOCTALIA_WALLPAPER_PATH ו־NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "פקודה להרצה בעת שינוי הרקע; מספקת את המשתנים ZYNITH_WALLPAPER_PATH ו־ZYNITH_WALLPAPER_CONNECTOR",
             "label": "בעת שינוי טפט"
           },
           "wifi-disabled": {
@@ -2607,10 +2606,6 @@
           "label": "כתובת",
           "placeholder": "עיר, מדינה"
         },
-        "location-auto-locate": {
-          "description": "זיהוי המיקום שלך באופן אוטומטי מכתובת ה-IP שלך דרך noctalia.dev",
-          "label": "איתור אוטומטי (IP)"
-        },
         "longitude": {
           "description": "קו אורך ידני עבור לוח הזמנים של זריחה/שקיעה, בשימוש כאשר איתור אוטומטי וכתובת כבויים",
           "label": "קו אורך"
@@ -2829,10 +2824,6 @@
         "date-format": {
           "description": "פורמט תאריך ברירת מחדל עבור ממשק ה-shell ללא הגדרה משלו",
           "label": "פורמט תאריך"
-        },
-        "external-ip": {
-          "description": "בצע רזולוציה לכתובת ה-WAN הציבורית של החיבור (דרך api.noctalia.dev) והצג אותה בלשונית הרשת של ה-Control Center",
-          "label": "הצג כתובת WAN IP"
         },
         "keyboard-layout-custom-labels": {
           "description": "מפה שמות של פריסות מקלדת לתוויות המשמשות ברחבי ה-shell",
@@ -3924,7 +3915,7 @@
       "export-config": "ייצוא הגדרה…",
       "export-config-saved": "ייצוא ה-Config נשמר.",
       "filter-overridden": "עוקף",
-      "legacy-config-warning": "הגדרה מיושנת: {issue}. ערוך את רשומת המקור הזו; Zynith מחילה את ההחלפה באופן זמני בלבד. הרץ noctalia config validate כדי להציג את כל השינויים הנדרשים.",
+      "legacy-config-warning": "הגדרה מיושנת: {issue}. ערוך את רשומת המקור הזו; Zynith מחילה את ההחלפה באופן זמני בלבד. הרץ zynith-shell config validate כדי להציג את כל השינויים הנדרשים.",
       "native-title": "הגדרות Zynith",
       "no-results": "לא נמצאו הגדרות",
       "no-results-hint": "נסה שם הגדרה או מפתח תצורה אחר.",

@@ -1457,8 +1457,8 @@
         },
         "kind-label": "Type",
         "location-label": "Localisation",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Identifiant de la source",
         "name-placeholder": "my-plugins",
         "precedence-hint": "Les sources de priorité inférieure remplacent les sources de priorité supérieure lorsqu'elles proposent le même plugin.",
@@ -1475,7 +1475,6 @@
         "incompatible": "Incompatible",
         "loading": "Chargement du catalogue...",
         "no-readme": "Pas de description disponible...",
-        "open-page": "Ouvrir la page du plugin sur noctalia.dev",
         "open-source": "Ouvrir le dépôt source du plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Recherche plugins...",
@@ -1531,7 +1530,7 @@
           "label": "Arrondi des coins"
         },
         "custom-palette": {
-          "description": "Choisir une palette depuis ~/.config/noctalia/palettes/",
+          "description": "Choisir une palette depuis ~/.config/zynith-shell/palettes/",
           "label": "Palette personnalisée",
           "search-placeholder": "Chercher des palettes personnalisées..."
         },
@@ -1975,7 +1974,7 @@
             "label": "Lors du changement de mode du thème"
           },
           "wallpaper-changed": {
-            "description": "Commande à exécuter lorsque le fond d’écran change;  fourni NOCTALIA_WALLPAPER_PATH et NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Commande à exécuter lorsque le fond d’écran change;  fourni ZYNITH_WALLPAPER_PATH et ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Lors du changement de fond d’écran"
           },
           "wifi-disabled": {
@@ -2371,10 +2370,6 @@
           "description": "Ville ou adresse utilisée pour la localisation lorsque la détection automatique est désactivée",
           "label": "Adresse",
           "placeholder": "Ville, Pays"
-        },
-        "location-auto-locate": {
-          "description": "Détecte vote position automatiquement à partir de votre adresse IP via noctalia.dev",
-          "label": "Localisation automatique (IP)"
         },
         "longitude": {
           "description": "Longitude manuelle pour le calcul du lever et du coucher du soleil, utilisée lorsque la localisation automatique et l’adresse sont désactivées",

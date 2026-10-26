@@ -746,7 +746,7 @@
       "calendar-google-connect-start-failed": "Google yetkilendirmesi başlatılamadı. Ağ bağlantınızı kontrol edin ve tekrar deneyin.",
       "calendar-google-connect-start-http": "Google yetkilendirmesi başlatılamadı. OAuth aracısı HTTP {status} döndürdü.",
       "calendar-google-connect-timeout": "Google yetkilendirmesi zaman aşımına uğradı. Oturum açmaya hazır olduğunuzda bağlantıyı tekrar başlatın.",
-      "config-migration-body": "Kaynak dosyadaki {path} konumunu güncelleyin. Zynith bu değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
+      "config-migration-body": "Kaynak dosyadaki {path} konumunu güncelleyin. Zynith bu değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için zynith-shell config validate komutunu çalıştırın.",
       "config-migration-title": "Yapılandırma güncellemesi gerekiyor",
       "dbus-disabled": "DBus bildirimleri devre dışı",
       "desktop-widgets-editor": "Bileşen düzenleyici",
@@ -1500,8 +1500,8 @@
         },
         "kind-label": "Tür",
         "location-label": "Konum",
-        "location-placeholder-git": "https://github.com/ben/noctalia-eklentilerim",
-        "location-placeholder-path": "~/dev/noctalia-eklentilerim",
+        "location-placeholder-git": "https://github.com/ben/zynith-shell-eklentilerim",
+        "location-placeholder-path": "~/dev/zynith-shell-eklentilerim",
         "name-label": "Kaynak ID'si",
         "name-placeholder": "eklentilerim",
         "precedence-hint": "Aynı eklentiyi sunduklarında alt sıradaki kaynaklar üst sıradakileri ezer.",
@@ -1522,7 +1522,6 @@
         "incompatible-hint": "Eklenti API'si {required} gerektirir; Zynith sürümünüz {oldest}–{current} arasını destekliyor.",
         "loading": "Katalog yükleniyor...",
         "no-readme": "Açıklama mevcut değil.",
-        "open-page": "Eklentinin sayfasını noctalia.dev'de aç",
         "open-source": "Eklentinin kaynak kod deposunu aç",
         "results-count": "{count} eklenti",
         "search-placeholder": "Eklentilerde ara...",
@@ -1582,7 +1581,7 @@
           "label": "Köşe Yuvarlaklığı"
         },
         "custom-palette": {
-          "description": "~/.config/noctalia/palettes/ klasöründen özel bir palet seç",
+          "description": "~/.config/zynith-shell/palettes/ klasöründen özel bir palet seç",
           "label": "Özel Palet",
           "search-placeholder": "Özel paletlerde ara..."
         },
@@ -2064,7 +2063,7 @@
             "label": "Tema Modu Değiştiğinde"
           },
           "wallpaper-changed": {
-            "description": "Duvar kağıdı değiştiğinde çalıştırılacak komut; ortam değişkeni olarak NOCTALIA_WALLPAPER_PATH ve NOCTALIA_WALLPAPER_CONNECTOR sağlar",
+            "description": "Duvar kağıdı değiştiğinde çalıştırılacak komut; ortam değişkeni olarak ZYNITH_WALLPAPER_PATH ve ZYNITH_WALLPAPER_CONNECTOR sağlar",
             "label": "Duvar Kağıdı Değiştiğinde"
           },
           "wifi-disabled": {
@@ -2572,10 +2571,6 @@
           "label": "Adres",
           "placeholder": "Şehir, Ülke"
         },
-        "location-auto-locate": {
-          "description": "noctalia.dev aracılığıyla konumu IP üzerinden otomatik olarak tespit et",
-          "label": "Otomatik-Konumlandır (IP)"
-        },
         "longitude": {
           "description": "Gün doğumu/gün batımı programı için manuel boylam, Otomatik-Konumlandır ve adres kapalıyken kullanılır",
           "label": "Boylam"
@@ -2794,10 +2789,6 @@
         "date-format": {
           "description": "Kendi özel ayarı olmayan kabuk arayüzleri için varsayılan tarih biçimi",
           "label": "Tarih Biçimi"
-        },
-        "external-ip": {
-          "description": "Bağlantının genel WAN IP adresini çözümle (api.noctalia.dev üzerinden) ve Kontrol Merkezi ağ sekmesinde göster",
-          "label": "WAN IP'yi Göster"
         },
         "keyboard-layout-custom-labels": {
           "description": "Klavye düzeni isimlerini arayüzde kullanılacak etiketlerle eşleştir",
@@ -3869,7 +3860,7 @@
       "export-config": "Yapılandırmayı Dışa Aktar...",
       "export-config-saved": "Yapılandırma dışa aktarımı kaydedildi.",
       "filter-overridden": "Üzerine yazıldı",
-      "legacy-config-warning": "Eski ayar: {issue}. Bu kaynak girişini düzenleyin; Zynith değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için noctalia config validate komutunu çalıştırın.",
+      "legacy-config-warning": "Eski ayar: {issue}. Bu kaynak girişini düzenleyin; Zynith değişimi sadece geçici olarak uyguluyor. Gerekli tüm değişiklikleri listelemek için zynith-shell config validate komutunu çalıştırın.",
       "native-title": "Zynith Ayarları",
       "no-results": "Ayar bulunamadı",
       "no-results-hint": "Farklı bir ayar veya yapılandırma adı girin.",

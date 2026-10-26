@@ -1206,8 +1206,8 @@
         },
         "kind-label": "Rodzaj",
         "location-label": "Lokalizacja",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID Źródła",
         "name-placeholder": "moje-wtyczki",
         "remove": "Usuń źródło",
@@ -1247,7 +1247,7 @@
           "label": "Zaokrąglenie narożników"
         },
         "custom-palette": {
-          "description": "Wybierz paletę z ~/.config/noctalia/palettes/",
+          "description": "Wybierz paletę z ~/.config/zynith-shell/palettes/",
           "label": "Niestandardowa paleta",
           "search-placeholder": "Szukaj niestandardowych palet…"
         },
@@ -1618,7 +1618,7 @@
             "label": "Przy zmianie motywu"
           },
           "wallpaper-changed": {
-            "description": "Polecenie do uruchomienia gdy zmienia się tapeta; dostarcza NOCTALIA_WALLPAPER_PATH oraz NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Polecenie do uruchomienia gdy zmienia się tapeta; dostarcza ZYNITH_WALLPAPER_PATH oraz ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Przy zmianie tapety"
           },
           "wifi-disabled": {
@@ -1882,10 +1882,6 @@
           "description": "Miasto lub adres do zlokalizowania, używany gdy auto-lokalizacja jest wyłączona",
           "label": "Adres",
           "placeholder": "Miasto, Kraj"
-        },
-        "location-auto-locate": {
-          "description": "Wykryj swoją lokalizację automatycznie na podstawie twojego adresu IP za pomocą serwisu noctalia.dev",
-          "label": "Auto-lokalizacja (IP)"
         },
         "longitude": {
           "description": "Ręczna długość geograficzna dla harmonogramu wschodu/zachodu słońca, używana gdy auto-lokalizacja i adres są wyłączone",

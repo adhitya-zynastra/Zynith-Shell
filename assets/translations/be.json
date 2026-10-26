@@ -763,7 +763,7 @@
       "calendar-google-connect-start-failed": "Не ўдалося запусціць аўтарызацыю Google. Праверце ваша злучэнне з сеткай і паспрабуйце яшчэ раз.",
       "calendar-google-connect-start-http": "Не ўдалося запусціць аўтарызацыю Google. Брокер OAuth вярнуў код HTTP {status}.",
       "calendar-google-connect-timeout": "Скончыўся час чакання аўтарызацыі Google. Пачніце падлучэнне яшчэ раз, калі будзеце гатовыя ўвайсці.",
-      "config-migration-body": "Абнавіце {path} у зыходным файле. Zynith толькі тэрмінова прымяняе гэтую замену. Выканайце noctalia config validate, каб убачыць усе патрэбныя змены.",
+      "config-migration-body": "Абнавіце {path} у зыходным файле. Zynith толькі тэрмінова прымяняе гэтую замену. Выканайце zynith-shell config validate, каб убачыць усе патрэбныя змены.",
       "config-migration-title": "Патрабуецца абнаўленне канфігурацыі",
       "dbus-disabled": "Апавяшчэнні DBus выключаныя",
       "desktop-widgets-editor": "Рэдактар віджэтаў",
@@ -1526,8 +1526,8 @@
         },
         "kind-label": "Тып",
         "location-label": "Месцазнаходжанне",
-        "location-placeholder-git": "https://github.com/ja/ubudovy-noctalia",
-        "location-placeholder-path": "~/dev/ubudovy-noctalia",
+        "location-placeholder-git": "https://github.com/ja/ubudovy-zynith-shell",
+        "location-placeholder-path": "~/dev/ubudovy-zynith-shell",
         "name-label": "ID крыніцы",
         "name-placeholder": "maje-ubudovy",
         "precedence-hint": "Крыніцы ніжэй перавызначаюць крыніцы вышэй, калі ёсць аднолькавыя ўбудовы.",
@@ -1548,7 +1548,6 @@
         "incompatible-hint": "Патрабуе API {required}; ваша Zynith падтрымлівае API {oldest}–{current}.",
         "loading": "Загрузка каталога…",
         "no-readme": "Апісання няма",
-        "open-page": "Адкрыць старонку ўбудовы на noctalia.dev",
         "open-source": "Адкрыць рэпазіторый убудовы",
         "results-count": "{count} убудовы(-оў)",
         "search-placeholder": "Шукаць убудовы…",
@@ -1608,7 +1607,7 @@
           "label": "Скругленасць кутоў"
         },
         "custom-palette": {
-          "description": "Выберыце палітру з ~/.config/noctalia/palettes/",
+          "description": "Выберыце палітру з ~/.config/zynith-shell/palettes/",
           "label": "Уласная палітра",
           "search-placeholder": "Шукаць карыстальніцкія палітры…"
         },

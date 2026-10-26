@@ -1328,8 +1328,8 @@
         },
         "kind-label": "Typ",
         "location-label": "Umístění",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID zdroje",
         "name-placeholder": "moje-pluginy",
         "precedence-hint": "Zdroje níže přepisují zdroje výše, pokud nabízejí stejný plugin.",
@@ -1382,7 +1382,7 @@
           "label": "Zaoblení rohů"
         },
         "custom-palette": {
-          "description": "Vybrat paletu z ~/.config/noctalia/palettes/",
+          "description": "Vybrat paletu z ~/.config/zynith-shell/palettes/",
           "label": "Vlastní paleta",
           "search-placeholder": "Hledat vlastní palety..."
         },
@@ -1808,7 +1808,7 @@
             "label": "Při změně režimu motivu"
           },
           "wallpaper-changed": {
-            "description": "Příkaz spuštěný při změně tapety; poskytuje NOCTALIA_WALLPAPER_PATH a NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Příkaz spuštěný při změně tapety; poskytuje ZYNITH_WALLPAPER_PATH a ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Při změně tapety"
           },
           "wifi-disabled": {
@@ -2153,10 +2153,6 @@
           "description": "Město nebo adresa k lokalizaci, použije se, když je auto-lokalizace vypnutá",
           "label": "Adresa",
           "placeholder": "Město, Země"
-        },
-        "location-auto-locate": {
-          "description": "Automaticky zjistit vaši polohu z IP adresy přes noctalia.dev",
-          "label": "Automatická lokalizace (IP)"
         },
         "longitude": {
           "description": "Ruční zeměpisná délka pro plán východu/západu slunce, použije se, když jsou auto-lokalizace a adresa vypnuté",

@@ -766,7 +766,7 @@
       "calendar-google-connect-start-failed": "无法启动 Google 授权。请检查网络连接并重试。",
       "calendar-google-connect-start-http": "无法启动 Google 授权。OAuth 代理返回了 HTTP {status}。",
       "calendar-google-connect-timeout": "Google 授权超时。准备好登录时，请重新发起连接。",
-      "config-migration-body": "请在源配置文件中更新 {path}。Zynith 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
+      "config-migration-body": "请在源配置文件中更新 {path}。Zynith 仅在内存中临时兼容。执行 zynith-shell config validate 命令查看所有必需的更改。",
       "config-migration-title": "需要更新配置",
       "dbus-disabled": "DBus 通知已禁用",
       "desktop-widgets-editor": "桌面小组件编辑器",
@@ -1539,8 +1539,8 @@
         },
         "kind-label": "类型",
         "location-label": "位置",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "源 ID",
         "name-placeholder": "my-plugins",
         "precedence-hint": "若多个源提供同一插件，列表中靠下的源将覆盖靠上的源。",
@@ -1562,7 +1562,6 @@
         "installed": "已安装",
         "loading": "正在加载目录…",
         "no-readme": "没有可用的描述。",
-        "open-page": "在 noctalia.dev 上打开插件页面",
         "open-source": "打开插件源码仓库",
         "results-count": "共 {count} 个插件",
         "search-placeholder": "搜索插件…",
@@ -1622,7 +1621,7 @@
           "label": "圆角缩放"
         },
         "custom-palette": {
-          "description": "从 ~/.config/noctalia/palettes/ 中选择配色方案",
+          "description": "从 ~/.config/zynith-shell/palettes/ 中选择配色方案",
           "label": "自定义配色方案",
           "search-placeholder": "搜索自定义配色方案…"
         },
@@ -2112,7 +2111,7 @@
             "label": "主题模式切换时"
           },
           "wallpaper-changed": {
-            "description": "壁纸改变时执行的命令；可使用 NOCTALIA_WALLPAPER_PATH 和 NOCTALIA_WALLPAPER_CONNECTOR 环境变量",
+            "description": "壁纸改变时执行的命令；可使用 ZYNITH_WALLPAPER_PATH 和 ZYNITH_WALLPAPER_CONNECTOR 环境变量",
             "label": "壁纸改变时"
           },
           "wifi-disabled": {
@@ -2628,10 +2627,6 @@
           "label": "地址",
           "placeholder": "城市, 国家"
         },
-        "location-auto-locate": {
-          "description": "根据 IP 地址自动定位，通过 noctalia.dev 查询",
-          "label": "自动定位（IP）"
-        },
         "longitude": {
           "description": "用于日出/日落时间表的经度，禁用自动定位且未设置地址时使用",
           "label": "经度"
@@ -2850,10 +2845,6 @@
         "date-format": {
           "description": "Shell UI 的默认日期格式",
           "label": "日期格式"
-        },
-        "external-ip": {
-          "description": "解析当前连接的公网 WAN IP（通过 api.noctalia.dev），并显示在控制中心的网络选项卡中",
-          "label": "显示 WAN IP"
         },
         "keyboard-layout-custom-labels": {
           "description": "将键盘布局名称映射为 Shell 使用的标签",
@@ -3560,7 +3551,7 @@
             "label": "切换设置"
           },
           "settings-open-plugin": {
-            "description": "打开设置窗口并显示插件设置（如 noctalia/notes）",
+            "description": "打开设置窗口并显示插件设置（如 zynith-shell/notes）",
             "label": "打开插件设置"
           },
           "settings-open-widget": {
@@ -4403,7 +4394,7 @@
       "export-config": "导出配置…",
       "export-config-saved": "配置导出已保存。",
       "filter-overridden": "已覆盖",
-      "legacy-config-warning": "旧版配置：{issue}。请修改源配置项。Zynith 仅在内存中临时兼容。执行 noctalia config validate 命令查看所有必需的更改。",
+      "legacy-config-warning": "旧版配置：{issue}。请修改源配置项。Zynith 仅在内存中临时兼容。执行 zynith-shell config validate 命令查看所有必需的更改。",
       "native-title": "Zynith 设置",
       "no-results": "未找到相关设置",
       "no-results-hint": "请尝试使用其他设置名称或配置键。",

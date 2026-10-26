@@ -1392,8 +1392,8 @@
         },
         "kind-label": "Тип",
         "location-label": "Местоположение",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID источника",
         "name-placeholder": "my-plugins",
         "precedence-hint": "Источники, расположенные ниже, имеют приоритет над высшими при совпадении плагинов.",
@@ -1410,7 +1410,6 @@
         "incompatible": "Несовместим",
         "loading": "Загрузка каталога...",
         "no-readme": "Описание недоступно",
-        "open-page": "Открыть страницу плагина на noctalia.dev",
         "open-source": "Открыть репозиторий исходного кода плагина",
         "results-count": "{count} плагинов",
         "search-placeholder": "Поиск плагинов...",
@@ -1456,7 +1455,7 @@
           "label": "Скругление углов"
         },
         "custom-palette": {
-          "description": "Выберите палитру из ~/.config/noctalia/palettes/",
+          "description": "Выберите палитру из ~/.config/zynith-shell/palettes/",
           "label": "Пользовательская палитра",
           "search-placeholder": "Поиск пользовательских палитр..."
         },
@@ -2244,10 +2243,6 @@
           "description": "Город или адрес для поиска, используется, когда автоопределение местоположения отключено",
           "label": "Адрес",
           "placeholder": "Город, страна"
-        },
-        "location-auto-locate": {
-          "description": "Автоматически определять местоположение по IP-адресу",
-          "label": "Автоматическое определение местоположения (IP)"
         },
         "longitude": {
           "description": "Долгота вручную для расписания восхода и заката, используется, когда автоопределение местоположения и адрес отключены",

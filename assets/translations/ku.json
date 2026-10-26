@@ -864,8 +864,8 @@
           "path": "Rêgeh"
         },
         "kind-label": "Kind",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Çavkaniya NB",
         "remove": "Çavkaniyê rake",
         "save": "Tomar bike",

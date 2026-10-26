@@ -1436,8 +1436,8 @@
         },
         "kind-label": "Тип",
         "location-label": "Адреса",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Ідентифікатор джерела",
         "save": "Зберегти",
         "title": "Джерела",
@@ -1450,7 +1450,6 @@
         "empty": "Додатки не знайдені.",
         "loading": "Триває завантаження каталогу…",
         "no-readme": "Немає доступного опису.",
-        "open-page": "Відкрити сторінку додатка на noctalia.dev",
         "open-source": "Відкрити репозиторій із початковим кодом додатка",
         "results-count": "Доступно додатків: {count}",
         "search-placeholder": "Введіть назву додатка…",
@@ -1490,7 +1489,7 @@
           "label": "Закруглення кутів"
         },
         "custom-palette": {
-          "description": "Виберіть палітру з ~/.config/noctalia/palettes/",
+          "description": "Виберіть палітру з ~/.config/zynith-shell/palettes/",
           "label": "Користувацька палітра",
           "search-placeholder": "Пошук власних палітр..."
         },
@@ -2163,10 +2162,6 @@
           "description": "Місто або адреса для визначення місцезнаходження, використовується, коли автовизначення вимкнено",
           "label": "Адреса",
           "placeholder": "Місто, Країна"
-        },
-        "location-auto-locate": {
-          "description": "Визначати ваше місцеперебування автоматично за IP-адресою через сайт noctalia.dev",
-          "label": "Автовизначення (IP)"
         },
         "longitude": {
           "description": "Ручна довгота для розкладу сходу/заходу сонця, використовується, коли автовизначення місцезнаходження та адреса вимкнені",

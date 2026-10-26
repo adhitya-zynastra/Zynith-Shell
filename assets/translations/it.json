@@ -766,7 +766,7 @@
       "calendar-google-connect-start-failed": "Impossibile avviare l'autorizzazione Google. Controlla la connessione di rete e riprova.",
       "calendar-google-connect-start-http": "Impossibile avviare l'autorizzazione Google. Il broker OAuth ha restituito HTTP {status}.",
       "calendar-google-connect-timeout": "Autorizzazione Google scaduta. Avvia di nuovo la connessione quando sei pronto ad accedere.",
-      "config-migration-body": "Aggiorna {path} nel source file. Zynith applica questa sostituzione solo temporaneamente. Esegui noctalia config validate per elencare tutte le modifiche richieste.",
+      "config-migration-body": "Aggiorna {path} nel source file. Zynith applica questa sostituzione solo temporaneamente. Esegui zynith-shell config validate per elencare tutte le modifiche richieste.",
       "config-migration-title": "È necessario l'aggiornamento della configurazione",
       "dbus-disabled": "Notifiche DBus disabilitate",
       "desktop-widgets-editor": "Editor widget",
@@ -1539,8 +1539,8 @@
         },
         "kind-label": "Tipo",
         "location-label": "Indirizzo",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID sorgente",
         "name-placeholder": "miei-plugin",
         "precedence-hint": "Sorgenti inferiori prevalgono su quelle in alto se offrono lo stesso plugin.",
@@ -1562,7 +1562,6 @@
         "installed": "Installato",
         "loading": "Caricamento catalogo...",
         "no-readme": "Nessuna descrizione disponibile.",
-        "open-page": "Apri la pagina plugin su noctalia.dev",
         "open-source": "Apri il repository dei sorgenti dei plugin",
         "results-count": "{count} plugin",
         "search-placeholder": "Ricerca plugin...",
@@ -1622,7 +1621,7 @@
           "label": "Arrotondamento angoli"
         },
         "custom-palette": {
-          "description": "Scegli una palette da ~/.config/noctalia/palettes/",
+          "description": "Scegli una palette da ~/.config/zynith-shell/palettes/",
           "label": "Palette personalizzata",
           "search-placeholder": "Cerca palette personalizzate..."
         },
@@ -2112,7 +2111,7 @@
             "label": "Al cambio modalità tema"
           },
           "wallpaper-changed": {
-            "description": "Comando da eseguire quando cambia lo sfondo; fornisce NOCTALIA_WALLPAPER_PATH e NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Comando da eseguire quando cambia lo sfondo; fornisce ZYNITH_WALLPAPER_PATH e ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Al cambio sfondo"
           },
           "wifi-disabled": {
@@ -2628,10 +2627,6 @@
           "label": "Indirizzo",
           "placeholder": "Città, Paese"
         },
-        "location-auto-locate": {
-          "description": "Rileva automaticamente la tua posizione in base al tuo indirizzo IP via noctalia.dev",
-          "label": "Localizzazione automatica (IP)"
-        },
         "longitude": {
           "description": "Longitudine manuale per la programmazione alba/tramonto, usata quando auto-locate e indirizzo sono disattivati",
           "label": "Longitudine"
@@ -2850,10 +2845,6 @@
         "date-format": {
           "description": "Formato data predefinito per la shell UI senza impostazione propria",
           "label": "Formato data"
-        },
-        "external-ip": {
-          "description": "Risolvi l'IP WAN pubblico della connessione (tramite api.noctalia.dev) e mostralo nella scheda rete del Control Center",
-          "label": "Mostra IP WAN"
         },
         "keyboard-layout-custom-labels": {
           "description": "Mappa i nomi dei layout di tastiera sulle etichette utilizzate in tutta la shell",
@@ -3560,7 +3551,7 @@
             "label": "Apri impostazioni"
           },
           "settings-open-plugin": {
-            "description": "Apri la finestra delle impostazioni del plugin (ad esempio, noctalia/notes)",
+            "description": "Apri la finestra delle impostazioni del plugin (ad esempio, zynith-shell/notes)",
             "label": "Apri le impostazioni del plugin"
           },
           "settings-open-widget": {
@@ -4403,7 +4394,7 @@
       "export-config": "Esporta configurazione...",
       "export-config-saved": "Esportazione configurazione salvata.",
       "filter-overridden": "Sovrascritto",
-      "legacy-config-warning": "Impostazione legacy: {issue}. Modifica questa voce; Zynith applica la sostituzione solo temporaneamente. Esegui noctalia config validate per elencare tutte le modifiche richieste.",
+      "legacy-config-warning": "Impostazione legacy: {issue}. Modifica questa voce; Zynith applica la sostituzione solo temporaneamente. Esegui zynith-shell config validate per elencare tutte le modifiche richieste.",
       "native-title": "Impostazioni Zynith",
       "no-results": "Nessuna impostazione trovata",
       "no-results-hint": "Prova un nome impostazione o una chiave configurazione diversa.",

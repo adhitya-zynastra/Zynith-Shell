@@ -762,7 +762,7 @@
       "calendar-google-connect-start-failed": "Google 인증을 시작할 수 없습니다. 네트워크 연결을 확인하고 다시 시도하세요.",
       "calendar-google-connect-start-http": "Google 인증을 시작할 수 없습니다. OAuth 브로커가 HTTP {status}를 반환했습니다.",
       "calendar-google-connect-timeout": "Google 인증 시간이 초과되었습니다. 다시 시도하세요.",
-      "config-migration-body": "소스 파일에서 {path}를 업데이트하세요.  Zynith는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요",
+      "config-migration-body": "소스 파일에서 {path}를 업데이트하세요.  Zynith는 변경 사항을 일시적으로 적용하고 있습니다. zynith-shell config validate를 실행하여 필요한 변경 사항을 확인하세요",
       "config-migration-title": "설정 업데이트 필요",
       "dbus-disabled": "DBus 알림 비활성화됨",
       "desktop-widgets-editor": "위젯 편집기",
@@ -1521,8 +1521,8 @@
         },
         "kind-label": "종류",
         "location-label": "위치",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "소스 ID",
         "name-placeholder": "내 플러그인",
         "precedence-hint": "낮은 소스가 같은 플러그인을 제공할 때 높은 소스보다 우선합니다.",
@@ -1543,7 +1543,6 @@
         "incompatible-hint": "필수 플러그인 API 버전이 누락되었습니다. 이 Zynith 버전은 {oldest}부터 {current}까지 지원합니다.",
         "loading": "카탈로그 불러오는 중…",
         "no-readme": "설명 없음.",
-        "open-page": "noctalia.dev에서 플러그인 페이지 열기",
         "open-source": "플러그인 소스 저장소 열기",
         "results-count": "{count}개 플러그인",
         "search-placeholder": "플러그인 검색…",
@@ -1603,7 +1602,7 @@
           "label": "모서리 둥글기"
         },
         "custom-palette": {
-          "description": "~/.config/noctalia/palettes/에서 팔레트 선택",
+          "description": "~/.config/zynith-shell/palettes/에서 팔레트 선택",
           "label": "사용자 팔레트",
           "search-placeholder": "사용자 팔레트 검색…"
         },
@@ -2088,7 +2087,7 @@
             "label": "테마 모드 변경 시"
           },
           "wallpaper-changed": {
-            "description": "배경 화면이 변경될 때 실행할 명령어. NOCTALIA_WALLPAPER_PATH 및 NOCTALIA_WALLPAPER_CONNECTOR를 제공합니다",
+            "description": "배경 화면이 변경될 때 실행할 명령어. ZYNITH_WALLPAPER_PATH 및 ZYNITH_WALLPAPER_CONNECTOR를 제공합니다",
             "label": "배경 화면 변경 시"
           },
           "wifi-disabled": {
@@ -2587,10 +2586,6 @@
           "label": "주소",
           "placeholder": "도시, 국가"
         },
-        "location-auto-locate": {
-          "description": "noctalia.dev를 통해 IP 주소에서 자동으로 위치 감지",
-          "label": "자동 위치 감지 (IP)"
-        },
         "longitude": {
           "description": "일출/일몰 일정의 수동 경도. 자동 위치 감지 및 주소가 꺼져 있을 때 사용됩니다",
           "label": "경도"
@@ -2809,10 +2804,6 @@
         "date-format": {
           "description": "자체 설정이 없는 쉘 UI의 기본 날짜 형식",
           "label": "날짜 형식"
-        },
-        "external-ip": {
-          "description": "연결의 공개 WAN IP를 확인하고 (api.noctalia.dev를 통해) 제어 센터 네트워크 탭에 표시",
-          "label": "WAN IP 표시"
         },
         "keyboard-layout-custom-labels": {
           "label": "키보드 레이아웃 라벨"
@@ -3884,7 +3875,7 @@
       "export-config": "설정 내보내기…",
       "export-config-saved": "설정 내보내기가 저장되었습니다.",
       "filter-overridden": "재정의됨",
-      "legacy-config-warning": "레거시 설정: {issue}. 소스 항목을 수정하세요. Zynith는 변경 사항을 일시적으로 적용하고 있습니다. noctalia config validate를 실행하여 필요한 변경 사항을 확인하세요.",
+      "legacy-config-warning": "레거시 설정: {issue}. 소스 항목을 수정하세요. Zynith는 변경 사항을 일시적으로 적용하고 있습니다. zynith-shell config validate를 실행하여 필요한 변경 사항을 확인하세요.",
       "native-title": "Zynith 설정",
       "no-results": "설정을 찾을 수 없음",
       "no-results-hint": "다른 설정 이름이나 설정 키를 시도해 보세요.",

@@ -766,7 +766,7 @@
       "calendar-google-connect-start-failed": "تعذر بدء مصادقة Google. تحقق من اتصال الشبكة وحاول مجدداً.",
       "calendar-google-connect-start-http": "تعذر بدء مصادقة Google. أعاد وسيط OAuth الخطأ HTTP {status}.",
       "calendar-google-connect-timeout": "انتهت مهلة مصادقة Google. ابدأ الاتصال مجدداً عندما تكون مستعداً للتسجيل.",
-      "config-migration-body": "حدّث {path} في الملف المصدر. يطبّق Zynith هذا الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
+      "config-migration-body": "حدّث {path} في الملف المصدر. يطبّق Zynith هذا الاستبدال مؤقتاً فقط. شغّل zynith-shell config validate لعرض جميع التغييرات المطلوبة.",
       "config-migration-title": "يلزم تحديث الإعدادات",
       "dbus-disabled": "إشعارات D-Bus معطلة",
       "desktop-widgets-editor": "محرر ودجت",
@@ -1166,7 +1166,7 @@
         "name-label": "الاسم",
         "name-placeholder": "سلوك الخمول",
         "resume-command-label": "أمر الاستئناف",
-        "resume-command-placeholder": "noctalia:dpms-on",
+        "resume-command-placeholder": "zynith-shell:dpms-on",
         "summary": "{name} · {seconds} ثانية",
         "summary-disabled-timeout": "{name} · المهلة معطلة",
         "timeout-label": "ثواني المهلة",
@@ -1539,8 +1539,8 @@
         },
         "kind-label": "النوع",
         "location-label": "الموقع",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "معرّف المصدر",
         "name-placeholder": "إضافاتي",
         "precedence-hint": "المصادر الأدنى تتجاوز الأعلى عندما تقدم نفس الإضافة.",
@@ -1562,7 +1562,6 @@
         "installed": "مثبت",
         "loading": "جاري تحميل الكتالوج...",
         "no-readme": "لا يوجد وصف متاح.",
-        "open-page": "فتح صفحة الإضافة على noctalia.dev",
         "open-source": "فتح مستودع مصدر الإضافة",
         "results-count": "{count} إضافة",
         "search-placeholder": "البحث في الإضافات...",
@@ -1622,7 +1621,7 @@
           "label": "انحناء الزوايا"
         },
         "custom-palette": {
-          "description": "اختر لوحة ألوان من ~/.config/noctalia/palettes/",
+          "description": "اختر لوحة ألوان من ~/.config/zynith-shell/palettes/",
           "label": "لوحة ألوان مخصصة",
           "search-placeholder": "البحث في لوحات الألوان المخصصة..."
         },
@@ -1666,7 +1665,7 @@
           "label": "أسود خالص"
         },
         "shell-theme-mode": {
-          "description": "قم بتثبيت الوضع الفاتح أو الداكن الخاص بـ noctalia ؛ وتطبيق المتابعة يحافظ على تزامنه مع وضع السمة",
+          "description": "قم بتثبيت الوضع الفاتح أو الداكن الخاص بـ zynith-shell ؛ وتطبيق المتابعة يحافظ على تزامنه مع وضع السمة",
           "label": "Shell Theme Mode"
         },
         "theme-mode": {
@@ -2624,10 +2623,6 @@
           "label": "العنوان",
           "placeholder": "المدينة، الدولة"
         },
-        "location-auto-locate": {
-          "description": "تحديد الموقع تلقائياً من IP عبر noctalia.dev",
-          "label": "التحديد التلقائي للموقع (بروتوكول الإنترنت)"
-        },
         "longitude": {
           "description": "خط الطول اليدوي لجداول الشروق والغروب",
           "label": "خط الطول"
@@ -2846,10 +2841,6 @@
         "date-format": {
           "description": "صيغة التاريخ الافتراضية لواجهة الغلاف",
           "label": "صيغة التاريخ"
-        },
-        "external-ip": {
-          "description": "حل عنوان WAN العام للاتصال (عبر api.noctalia.dev) وإظهاره في علامة تبويب الشبكة في مركز التحكم",
-          "label": "إظهار عنوان WAN"
         },
         "keyboard-layout-custom-labels": {
           "description": "ربط أسماء تخطيطات لوحة المفاتيح بالتسميات المستخدمة في الواجهة",
@@ -4035,7 +4026,7 @@
       "export-config": "تصدير الإعدادات…",
       "export-config-saved": "تم حفظ تصدير الإعدادات.",
       "filter-overridden": "تم تجاوزه",
-      "legacy-config-warning": "إعداد قديم: {issue}. عدّل هذا الإدخال في المصدر؛ يطبّق Zynith الاستبدال مؤقتاً فقط. شغّل noctalia config validate لعرض جميع التغييرات المطلوبة.",
+      "legacy-config-warning": "إعداد قديم: {issue}. عدّل هذا الإدخال في المصدر؛ يطبّق Zynith الاستبدال مؤقتاً فقط. شغّل zynith-shell config validate لعرض جميع التغييرات المطلوبة.",
       "native-title": "إعدادات Zynith",
       "no-results": "لم يتم العثور على إعدادات",
       "no-results-hint": "جرب البحث باسم إعداد آخر أو مفتاح تهيئة مختلف.",

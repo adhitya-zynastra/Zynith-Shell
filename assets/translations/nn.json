@@ -745,7 +745,7 @@
       "calendar-google-connect-start-failed": "Kunne ikkje byrja Google-sanninga. Sjå etter nettverktilkoplinga og prøv å nyo.",
       "calendar-google-connect-start-http": "Kunne ikkje byrja Google-sanninga. OAuth-handsamaren svara med HTTP {status}.",
       "calendar-google-connect-timeout": "Google-sanning gjekk ut. Byrja koplinga å nyo når du vil skriva deg inn.",
-      "config-migration-body": "Oppdater {path} i brunnfila. Zynith legg til dette utbytet berre mellombels. Køyr noctalia config validate for å sjå alle dei naudsynlege brigda.",
+      "config-migration-body": "Oppdater {path} i brunnfila. Zynith legg til dette utbytet berre mellombels. Køyr zynith-shell config validate for å sjå alle dei naudsynlege brigda.",
       "config-migration-title": "Tilmåtinga krev oppdatering",
       "dbus-disabled": "DBus-varsel avslegne",
       "desktop-widgets-editor": "Nøytelbrigdar",
@@ -1499,8 +1499,8 @@
         },
         "kind-label": "Slag",
         "location-label": "Stad",
-        "location-placeholder-git": "https://github.com/me/noctalia-utvidingar",
-        "location-placeholder-path": "~/dev/noctalia-utvidingar",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-utvidingar",
+        "location-placeholder-path": "~/dev/zynith-shell-utvidingar",
         "name-label": "Brunn-ID",
         "name-placeholder": "utvidingane-mine",
         "precedence-hint": "Brunnar lægre ned på lista overstyrer høgre brunnar når dei båe byd på same utvidinga.",
@@ -1521,7 +1521,6 @@
         "incompatible-hint": "Krev utvidings-API {required}; denne Zynith stør {oldest} – {current}.",
         "loading": "Lastar inn katalog ...",
         "no-readme": "Ingen skildring tilgjengeleg.",
-        "open-page": "Opna utvidingssida på noctalia.dev",
         "open-source": "Opna kodelageret for utvidinga",
         "results-count": "{count} utvidingar",
         "search-placeholder": "Leita i utvidingar ...",
@@ -1581,7 +1580,7 @@
           "label": "Rundingsgrad på hyrno"
         },
         "custom-palette": {
-          "description": "Vel ein palett frå ~/.config/noctalia/palettes/",
+          "description": "Vel ein palett frå ~/.config/zynith-shell/palettes/",
           "label": "Sjølvvald palett",
           "search-placeholder": "Leita i sjølvvalde palettar ..."
         },
@@ -2063,7 +2062,7 @@
             "label": "Ved brigda hammodus"
           },
           "wallpaper-changed": {
-            "description": "Kommandoen som køyrer når bakgrunnsbiletet brigdar; gjev NOCTALIA_WALLPAPER_PATH og NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Kommandoen som køyrer når bakgrunnsbiletet brigdar; gjev ZYNITH_WALLPAPER_PATH og ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Ved nytt bakgrunnsbilete"
           },
           "wifi-disabled": {
@@ -2567,10 +2566,6 @@
           "label": "Adresse",
           "placeholder": "By, Land"
         },
-        "location-auto-locate": {
-          "description": "Finn staden din automatisk ut frå IP-adressa di med noctalia.dev",
-          "label": "Finn-stad (IP)"
-        },
         "longitude": {
           "description": "Lengdegrad for solerennings- / solegladstid, bruka når finn-stad og addresse er avslegne",
           "label": "Lengdegrad"
@@ -2789,10 +2784,6 @@
         "date-format": {
           "description": "Standard datoformattering for skalgrensesnittet utan eigen innstilling",
           "label": "Datoformattering"
-        },
-        "external-ip": {
-          "description": "Finn den offentlege WAN IP-adressa til oppkoplinga (med api.noctalia.dev) og vis henne i nettverksfana i Styreromet",
-          "label": "Vis WAN IP"
         },
         "keyboard-layout-custom-labels": {
           "description": "Gjev merkelappar til knappefjøloppsett som vert bruka gjennom skalet",

@@ -865,7 +865,7 @@
       "calendar-google-connect-start-failed": "Could not start Google authorization. Check your network connection and try again.",
       "calendar-google-connect-start-http": "Could not start Google authorization. The OAuth broker returned HTTP {status}.",
       "calendar-google-connect-timeout": "Google authorization timed out. Start the connection again when you are ready to sign in.",
-      "config-migration-body": "Update {path} in the source file. Zynith is applying this replacement only temporarily. Run noctalia config validate to list every required change.",
+      "config-migration-body": "Update {path} in the source file. Zynith is applying this replacement only temporarily. Run zynith-shell config validate to list every required change.",
       "config-migration-title": "Configuration update needed",
       "dbus-disabled": "DBus notifications disabled",
       "desktop-widgets-editor": "Widget editor",
@@ -1714,7 +1714,6 @@
         "installed": "Installed",
         "loading": "Loading catalog…",
         "no-readme": "No description available.",
-        "open-page": "Open plugin page on noctalia.dev",
         "open-source": "Open plugin source repository",
         "results-count": "{count} plugins",
         "search-placeholder": "Search plugins…",
@@ -1774,7 +1773,7 @@
           "label": "Corner Roundness"
         },
         "custom-palette": {
-          "description": "Choose a palette from ~/.config/noctalia/palettes/",
+          "description": "Choose a palette from ~/.config/zynith-shell/palettes/",
           "label": "Custom Palette",
           "search-placeholder": "Search custom palettes…"
         },
@@ -2293,7 +2292,7 @@
             "label": "On Theme Mode Changed"
           },
           "wallpaper-changed": {
-            "description": "Command to run when the wallpaper changes; provides NOCTALIA_WALLPAPER_PATH and NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Command to run when the wallpaper changes; provides ZYNITH_WALLPAPER_PATH and ZYNITH_WALLPAPER_CONNECTOR",
             "label": "On Wallpaper Changed"
           },
           "wifi-disabled": {
@@ -2829,10 +2828,6 @@
           "label": "Address",
           "placeholder": "City, Country"
         },
-        "location-auto-locate": {
-          "description": "Detect your location automatically from your IP address via noctalia.dev",
-          "label": "Auto-Locate (IP)"
-        },
         "longitude": {
           "description": "Manual longitude for the sunrise/sunset schedule, used when no city is set",
           "label": "Longitude"
@@ -3056,10 +3051,6 @@
         "date-format": {
           "description": "Default date format for shell UI without its own setting",
           "label": "Date Format"
-        },
-        "external-ip": {
-          "description": "Resolve the connection's public WAN IP (via api.noctalia.dev) and show it in the Control Center network tab",
-          "label": "Show WAN IP"
         },
         "keyboard-layout-custom-labels": {
           "description": "Map keyboard layout names to labels used throughout the shell",
@@ -3878,7 +3869,7 @@
             "label": "Open settings"
           },
           "settings-open-plugin": {
-            "description": "Open the settings window at a plugin's settings (e.g. noctalia/notes)",
+            "description": "Open the settings window at a plugin's settings (e.g. zynith-shell/notes)",
             "label": "Open plugin settings"
           },
           "settings-open-widget": {
@@ -4721,7 +4712,7 @@
       "export-config": "Export Config…",
       "export-config-saved": "Config export saved.",
       "filter-overridden": "Overridden",
-      "legacy-config-warning": "Legacy setting: {issue}. Edit this source entry; Zynith is applying the replacement only temporarily. Run noctalia config validate to list every required change.",
+      "legacy-config-warning": "Legacy setting: {issue}. Edit this source entry; Zynith is applying the replacement only temporarily. Run zynith-shell config validate to list every required change.",
       "native-title": "Zynith Settings",
       "no-results": "No settings found",
       "no-results-hint": "Try a different setting name or config key.",

@@ -747,7 +747,7 @@
       "calendar-google-connect-start-failed": "No s'ha pogut iniciar l'autorització de Google. Comprova la connexió de xarxa i torna-ho a provar.",
       "calendar-google-connect-start-http": "No s'ha pogut iniciar l'autorització de Google. El broker OAuth ha retornat HTTP {status}.",
       "calendar-google-connect-timeout": "L'autorització de Google ha superat el temps d'espera. Torna a iniciar la connexió quan estiguis preparat per iniciar sessió.",
-      "config-migration-body": "Actualitza {path} al fitxer font. Zynith només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
+      "config-migration-body": "Actualitza {path} al fitxer font. Zynith només aplica aquest canvi temporalment. Executa zynith-shell config validate per veure tots els canvis necessaris.",
       "config-migration-title": "Cal actualitzar la configuració",
       "dbus-disabled": "Notificacions DBus desactivades",
       "desktop-widgets-editor": "Editor de widgets",
@@ -1503,8 +1503,8 @@
         },
         "kind-label": "Tipus",
         "location-label": "Ubicació",
-        "location-placeholder-git": "https://github.com/jo/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/jo/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID de la font",
         "name-placeholder": "els-meus-plugins",
         "precedence-hint": "Les fonts inferiors substitueixen les superiors quan ofereixen el mateix connector.",
@@ -1525,7 +1525,6 @@
         "incompatible-hint": "Necessita l'API de connectors {required}; aquesta versió de Zynith admet {oldest}–{current}.",
         "loading": "Carregant el catàleg…",
         "no-readme": "No hi ha cap descripció disponible.",
-        "open-page": "Obre la pàgina del connector a noctalia.dev",
         "open-source": "Obre el repositori del codi font del connector",
         "results-count": "{count} connectors",
         "search-placeholder": "Cerca connectors…",
@@ -1585,7 +1584,7 @@
           "label": "Arrodoniment de cantonades"
         },
         "custom-palette": {
-          "description": "Tria una paleta de ~/.config/noctalia/palettes/",
+          "description": "Tria una paleta de ~/.config/zynith-shell/palettes/",
           "label": "Paleta personalitzada",
           "search-placeholder": "Cerca paletes personalitzades…"
         },
@@ -2067,7 +2066,7 @@
             "label": "En canviar el mode del tema"
           },
           "wallpaper-changed": {
-            "description": "Ordre a executar quan canvia el fons de pantalla; proporciona NOCTALIA_WALLPAPER_PATH i NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Ordre a executar quan canvia el fons de pantalla; proporciona ZYNITH_WALLPAPER_PATH i ZYNITH_WALLPAPER_CONNECTOR",
             "label": "En canviar el fons de pantalla"
           },
           "wifi-disabled": {
@@ -2579,10 +2578,6 @@
           "label": "Adreça",
           "placeholder": "Ciutat, País"
         },
-        "location-auto-locate": {
-          "description": "Detecta la teva ubicació automàticament a partir de la teva adreça IP mitjançant noctalia.dev",
-          "label": "Auto-localització (IP)"
-        },
         "longitude": {
           "description": "Longitud manual per a l'horari de sortida/posta de sol, utilitzat quan auto-locate i adreça estan desactivats",
           "label": "Longitud"
@@ -2801,10 +2796,6 @@
         "date-format": {
           "description": "Format de data per defecte per a la interfície del shell sense la seva pròpia configuració",
           "label": "Format de data"
-        },
-        "external-ip": {
-          "description": "Resol la IP WAN pública de la connexió (mitjançant api.noctalia.dev) i mostra-la a la pestanya de xarxa del Centre de control",
-          "label": "Mostra la IP WAN"
         },
         "keyboard-layout-custom-labels": {
           "description": "Assigna noms de disposició de teclat a etiquetes utilitzades a tot el shell",
@@ -3888,7 +3879,7 @@
       "export-config": "Exporta la configuració…",
       "export-config-saved": "Exportació de la configuració desada.",
       "filter-overridden": "Sobreescrit",
-      "legacy-config-warning": "Configuració obsoleta: {issue}. Edita aquesta entrada font; Zynith només aplica aquest canvi temporalment. Executa noctalia config validate per veure tots els canvis necessaris.",
+      "legacy-config-warning": "Configuració obsoleta: {issue}. Edita aquesta entrada font; Zynith només aplica aquest canvi temporalment. Executa zynith-shell config validate per veure tots els canvis necessaris.",
       "native-title": "Configuració del Zynith",
       "no-results": "No s'han trobat paràmetres",
       "no-results-hint": "Prova amb un nom de paràmetre o una clau de configuració diferent.",

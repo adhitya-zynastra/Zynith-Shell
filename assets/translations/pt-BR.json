@@ -1539,8 +1539,8 @@
         },
         "kind-label": "Tipo",
         "location-label": "Localização",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "ID da Fonte",
         "name-placeholder": "meus-plugins",
         "precedence-hint": "As fontes de nível inferior têm prioridade sobre as de nível superior quando oferecem o mesmo plug-in.",
@@ -1562,7 +1562,6 @@
         "installed": "Instalado",
         "loading": "Carregando catálogo...",
         "no-readme": "Nenhuma descrição disponível.",
-        "open-page": "Abrir página de plugin em noctalia.dev",
         "open-source": "Abrir repositório fonte de plugin",
         "results-count": "{count} plugins",
         "search-placeholder": "Pesquisar plugins...",
@@ -1622,7 +1621,7 @@
           "label": "Arredondamento dos Cantos"
         },
         "custom-palette": {
-          "description": "Escolha uma paleta em ~/.config/noctalia/palettes/",
+          "description": "Escolha uma paleta em ~/.config/zynith-shell/palettes/",
           "label": "Paleta Personalizada",
           "search-placeholder": "Procurar paletas personalizadas..."
         },
@@ -2112,7 +2111,7 @@
             "label": "Ao Mudar o Modo do Tema"
           },
           "wallpaper-changed": {
-            "description": "Comando para executar quando o papel de parede mudar; fornece NOCTALIA_WALLPAPER_PATH e NOCTALIA_WALLPAPER_CONNECTOR",
+            "description": "Comando para executar quando o papel de parede mudar; fornece ZYNITH_WALLPAPER_PATH e ZYNITH_WALLPAPER_CONNECTOR",
             "label": "Ao Mudar o Papel de Parede"
           },
           "wifi-disabled": {
@@ -2628,10 +2627,6 @@
           "label": "Endereço",
           "placeholder": "Cidade, País"
         },
-        "location-auto-locate": {
-          "description": "Detectar sua localização automaticamente a partir do seu endereço IP",
-          "label": "Localização Automática (IP)"
-        },
         "longitude": {
           "description": "Longitude manual para a programação de nascer/pôr do sol, usada quando auto-localizar e endereço estão desabilitados",
           "label": "Longitude"
@@ -2850,10 +2845,6 @@
         "date-format": {
           "description": "Formato de data padrão para a interface do usuário do shell sem configuração própria",
           "label": "Formato da Data"
-        },
-        "external-ip": {
-          "description": "Determinar o IP público da WAN da conexão (por meio de api.noctalia.dev) e exibi-lo na guia “Rede” da Central de Controle",
-          "label": "Mostrar IP da WAN"
         },
         "keyboard-layout-custom-labels": {
           "description": "Mapear nomes de layout de teclado usados pelo shell",
@@ -3560,7 +3551,7 @@
             "label": "Abrir configurações"
           },
           "settings-open-plugin": {
-            "description": "Abrir a janela de configurações na configuração de um plugin (ex.: noctalia/notes)",
+            "description": "Abrir a janela de configurações na configuração de um plugin (ex.: zynith-shell/notes)",
             "label": "Abrir configurações de plugin"
           },
           "settings-open-widget": {

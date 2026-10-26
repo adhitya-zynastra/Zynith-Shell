@@ -764,7 +764,7 @@
       "calendar-google-connect-start-failed": "Die Google-Autorisierung konnte nicht gestartet werden. Überprüfe deine Netzwerkverbindung und versuche es erneut.",
       "calendar-google-connect-start-http": "Die Google-Autorisierung konnte nicht gestartet werden. Der OAuth-Broker gab HTTP {status} zurück.",
       "calendar-google-connect-timeout": "Bei der Google-Autorisierung ist eine Zeitüberschreitung aufgetreten. Starte die Verbindung erneut, wenn du bereit bist, dich anzumelden.",
-      "config-migration-body": "Aktualisiere {path} in der Quelldatei. Zynith wendet diesen Ersatz nur vorübergehend an. Führe noctalia config validate aus, um alle erforderlichen Änderungen aufzulisten.",
+      "config-migration-body": "Aktualisiere {path} in der Quelldatei. Zynith wendet diesen Ersatz nur vorübergehend an. Führe zynith-shell config validate aus, um alle erforderlichen Änderungen aufzulisten.",
       "config-migration-title": "Konfigurationsupdate erforderlich",
       "dbus-disabled": "DBus-Benachrichtigungen deaktiviert",
       "desktop-widgets-editor": "Widget-Editor",
@@ -1527,8 +1527,8 @@
         },
         "kind-label": "Typ",
         "location-label": "Speicherort",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-shell-plugins",
+        "location-placeholder-path": "~/dev/zynith-shell-plugins",
         "name-label": "Quell-ID",
         "name-placeholder": "my-plugins",
         "precedence-hint": "Niedrigere Quellen überschreiben höhere, wenn sie dasselbe Plugin anbieten.",
@@ -1549,7 +1549,6 @@
         "incompatible-hint": "Benötigt Plugin-API {required}; diese Zynith-Version unterstützt {oldest}–{current}.",
         "loading": "Katalog wird geladen…",
         "no-readme": "Keine Beschreibung vorhanden.",
-        "open-page": "Plugin-Seite auf noctalia.dev öffnen",
         "open-source": "Quell-Repository des Plugins öffnen",
         "results-count": "{count} Plugins",
         "search-placeholder": "Suche Plugins…",
@@ -1609,7 +1608,7 @@
           "label": "Eckenrundung"
         },
         "custom-palette": {
-          "description": "Wähle eine Palette aus ~/.config/noctalia/palettes/",
+          "description": "Wähle eine Palette aus ~/.config/zynith-shell/palettes/",
           "label": "Benutzerdefinierte Palette",
           "search-placeholder": "Benutzerdefinierte Paletten suchen…"
         },
@@ -2095,7 +2094,7 @@
             "label": "Beim Wechsel des Theme-Modus"
           },
           "wallpaper-changed": {
-            "description": "Befehl, der ausgeführt wird, wenn sich das Hintergrundbild ändert; stellt NOCTALIA_WALLPAPER_PATH und NOCTALIA_WALLPAPER_CONNECTOR bereit",
+            "description": "Befehl, der ausgeführt wird, wenn sich das Hintergrundbild ändert; stellt ZYNITH_WALLPAPER_PATH und ZYNITH_WALLPAPER_CONNECTOR bereit",
             "label": "Beim Wechsel des Hintergrundbilds"
           },
           "wifi-disabled": {
@@ -2607,10 +2606,6 @@
           "label": "Adresse",
           "placeholder": "Stadt, Land"
         },
-        "location-auto-locate": {
-          "description": "Erkenne deinen Standort automatisch anhand deiner IP-Adresse via noctalia.dev",
-          "label": "Auto-Lokalisierung (IP)"
-        },
         "longitude": {
           "description": "Manueller Längengrad für den Sonnenaufgangs-/Sonnenuntergangszeitplan, verwendet wenn Auto-Lokalisierung und Adresse deaktiviert sind",
           "label": "Längengrad"
@@ -2829,10 +2824,6 @@
         "date-format": {
           "description": "Standarddatumsformat für die Shell-UI ohne eigene Einstellung",
           "label": "Datumsformat"
-        },
-        "external-ip": {
-          "description": "Löse die öffentliche WAN-IP der Verbindung auf (über api.noctalia.dev) und zeige sie im Netzwerk-Tab des Kontrollzentrums an",
-          "label": "WAN-IP anzeigen"
         },
         "keyboard-layout-custom-labels": {
           "description": "Weise Tastaturlayout-Namen Beschriftungen zu, die in der gesamten Shell verwendet werden",
@@ -3924,7 +3915,7 @@
       "export-config": "Konfiguration exportieren…",
       "export-config-saved": "Konfigurationsexport gespeichert.",
       "filter-overridden": "Überschrieben",
-      "legacy-config-warning": "Veraltete Einstellung: {issue}. Bearbeite diesen Quelleintrag; Zynith wendet den Ersatz nur vorübergehend an. Führe noctalia config validate aus, um alle erforderlichen Änderungen aufzulisten.",
+      "legacy-config-warning": "Veraltete Einstellung: {issue}. Bearbeite diesen Quelleintrag; Zynith wendet den Ersatz nur vorübergehend an. Führe zynith-shell config validate aus, um alle erforderlichen Änderungen aufzulisten.",
       "native-title": "Zynith-Einstellungen",
       "no-results": "Keine Einstellungen gefunden",
       "no-results-hint": "Versuche einen anderen Einstellungsnamen oder Konfigurationsschlüssel.",
