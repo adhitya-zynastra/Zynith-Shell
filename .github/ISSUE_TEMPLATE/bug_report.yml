@@ -1,26 +1,23 @@
-name: Bug Report
-description: Report a bug or regression in Noctalia
-title: "[BUG] "
+name: Bug report
+description: Something in Zynith does not work as it should
 labels: ["bug"]
 
 body:
   - type: checkboxes
-    id: submission-checklist
+    id: checklist
     attributes:
-      label: Submission checklist
-      description: Please confirm the following before submitting.
+      label: Before you report
       options:
-        - label: I have searched existing issues and confirmed this is not a duplicate.
+        - label: I searched the existing issues and this is not a duplicate.
           required: true
-        - label: I am using the latest available version of Noctalia.
+        - label: I removed passwords, tokens and other private data from the logs I attach.
           required: true
 
   - type: textarea
     id: description
     attributes:
-      label: Bug description
-      description: A clear and concise description of the issue.
-      placeholder: Describe the problem...
+      label: What happened
+      description: What you saw, and what you expected instead.
     validations:
       required: true
 
@@ -28,112 +25,39 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Steps required to reproduce the issue.
       placeholder: |
-        1. Open ...
-        2. Click ...
-        3. Observe ...
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected behavior
-      description: What did you expect to happen?
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual behavior
-      description: What actually happened?
-    validations:
-      required: true
-
-  - type: textarea
-    id: logs
-    attributes:
-      label: Logs / error output
-      description: |
-        Paste any relevant logs, terminal output, or stack traces here.
-
-        If Noctalia crashed, include the complete output from the terminal where it was started, if available. Do not
-        paste only `Segmentation fault`; that does not include the useful diagnostic output.
-
-        If a maintainer asks for an ASan report, follow the [ASan crash-report instructions](https://github.com/noctalia-dev/noctalia/blob/main/CONTRIBUTING.md#asan-crash-reports).
-
-        Examples:
-        - journalctl output
-        - terminal errors
-        - crash logs
-
-        Large outputs can be wrapped in a `<details>` block.
-      render: text
-
-  - type: input
-    id: noctalia-version
-    attributes:
-      label: Noctalia version
-      description: Enter the version shown by Noctalia, or the commit hash if you are running a development build.
-      placeholder: "v5.x.x (commit hash)"
+        1. Open …
+        2. …
     validations:
       required: true
 
   - type: dropdown
-    id: compositor
+    id: install
     attributes:
-      label: Compositor
-      description: Select the compositor where the issue occurs.
+      label: How Zynith is installed
       options:
-        - Niri
-        - Hyprland
-        - Sway
-        - Scroll
-        - Labwc
-        - Mango
-        - Other
-    validations:
-      required: true
-
-  - type: dropdown
-    id: distribution
-    attributes:
-      label: Distribution
-      description: Select the Linux distribution family where the issue occurs.
-      options:
-        - Arch-based
-        - Fedora-based
-        - Debian-based
-        - Gentoo-based
-        - NixOS
-        - openSUSE-based
-        - Void
-        - Other
+        - Zynith ISO (Fedora-based)
+        - RPM packages (packaging/rpm)
+        - From source (deploy/install.sh)
     validations:
       required: true
 
   - type: textarea
     id: environment
     attributes:
-      label: Environment information
+      label: Versions and hardware
       description: |
-        Please provide relevant system information:
-
-        If you selected `Other` for distribution and/or compositor, please specify the exact one(s) here.
-        - Installation method: e.g. AUR, source build, Nix
-        - GPU: e.g. AMD RX 7800 XT (amdgpu)
-      placeholder: |
-        Installation method: e.g. AUR, source build, Nix
-        GPU: e.g. AMD RX 7800 XT (amdgpu)
+        The output of: `cat /usr/share/zynith/release 2>/dev/null || git describe --always`,
+        `rpm -q niri quickshell`, `cat /etc/fedora-release`, and your GPU (`lspci -k | grep -A3 -E "VGA|3D"`).
       render: text
     validations:
       required: true
 
   - type: textarea
-    id: additional
+    id: logs
     attributes:
-      label: Additional context
+      label: Logs
       description: |
-        Add any other context, screenshots, or relevant information here.
+        `zynith-ui log` (the UI), `journalctl --user -b | grep -i -E "noctalia|zynith|niri"` (the shell and the
+        compositor). For a crash: `coredumpctl info` for the crashed process.
+      render: text

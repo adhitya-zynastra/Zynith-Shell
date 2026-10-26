@@ -1,303 +1,118 @@
-Contributing
-===
+# Contributing to Zynith
 
-This file collects contributor-facing details for Noctalia: design goals, stack notes, code style, source layout,
-runtime asset behavior, and debugging helpers.
+Thank you for your interest in Zynith. This guide covers setting up a development environment, the conventions the
+code follows, how to test a change and how to propose it.
 
-For dependencies and normal build commands, start with [BUILDING.md](BUILDING.md).
+Zynith is pre-release software: interfaces and configuration can still change, and larger changes are best
+discussed in an issue before you write them.
 
-Before contributing, read our [ethos](https://noctalia.dev/ethos) to understand the values and philosophy guiding the
-project.
+## Development setup
 
-## Design Principles
+Zynith is developed on **Fedora 44** with **niri 26.04** and **Quickshell 0.3.1**.
 
-- Direct Wayland + OpenGL ES only -- no toolkit overhead
-- Minimal scene graph, domain-specific to shell UI
-- Packaging should work across all major Linux distros: Arch, NixOS, Fedora, Gentoo, Debian, Void, OpenSuse
-
-## Stack
-
-Direct project dependencies are listed below; transitive dependencies are owned by their providing system packages.
-
-| Layer | Library |
-|-------|---------|
-| Wayland core | `libwayland-client`, `wayland-scanner`, `wayland-protocols` |
-| Surfaces | `xdg-shell`, `zwlr-layer-shell-v1` |
-| Multi-monitor | `zxdg-output-unstable-v1` |
-| Active window metadata | `zwlr-foreign-toplevel-management-unstable-v1` |
-| Workspaces | `ext-workspace-v1`, `dwl-ipc-unstable-v2` |
-| Clipboard | `ext-data-control-v1`, `wlr-data-control-unstable-v1` |
-| Activation | `xdg-activation-v1` |
-| Lockscreen | `ext-session-lock-v1` |
-| Idle | `ext-idle-notify-v1`, `idle-inhibit-unstable-v1` |
-| Cursor | `wp-cursor-shape-v1` |
-| Keyboard | `xkbcommon` |
-| Rendering | `EGL`, `OpenGL ES 2.0+`, `wayland-egl` (`libepoxy` fallback) |
-| Dynamic loading | `libdl` when provided separately by the platform |
-| Text | `cairo`, `cairo-ft`, `pango`, `pangocairo`, `pangoft2`, `harfbuzz`, `freetype2`, `fontconfig` |
-| Images | `Wuffs` (vendored), `stb_image_resize2`, `stb_image_write`, `libwebp`, `libjxl`, `libjxl_threads`, `librsvg` |
-| IPC and service runtime | `sdbus-c++`, `glib-2.0`, `gobject-2.0`, `gio-2.0` |
-| Audio | `libpipewire-0.3`, `wireplumber-0.5`, `libsndfile` |
-| Authentication | `PAM`, `polkit-agent-1`, `polkit-gobject-1` |
-| Credentials and encryption | `libsecret-1`, `libsodium` |
-| HTTP | `libcurl` |
-| XML | `libxml2` |
-| Calendar data | `libical` |
-| Config | `tomlplusplus` |
-| JSON | `nlohmann/json` |
-| Markdown | `md4c` |
-| Fuzzy matching | `fzy` (vendored) |
-| Math expressions | `libqalculate` |
-| Scripting | `Luau` (vendored) |
-| Theme generation | Material Color Utilities (vendored) |
-| Memory allocation | `jemalloc` (optional) |
-
-## Runtime Assets
-
-`meson install` installs the binary and shipped assets separately using the normal prefix layout:
-
-```text
-/usr/local/bin/noctalia
-/usr/local/share/noctalia/assets/...
+```sh
+git clone https://github.com/adhitya-zynastra/Zynith-Shell.git zynith && cd zynith
+sudo dnf builddep packaging/rpm/zynith.spec        # every build dependency, from the spec
 ```
 
-With a different Meson `prefix`/`datadir`, the same structure is preserved under that prefix.
+Quickshell 0.3.1 is newer than Fedora 44's `quickshell` package; install it from the
+[errornointernet/quickshell](https://copr.fedorainfracloud.org/coprs/errornointernet/quickshell/) COPR, which is the
+build Zynith is tested against.
 
-Noctalia needs the `assets/` tree at runtime. Copying only the bare `noctalia` binary is not enough.
+Build and install for your user (nothing is written outside your home, and no configuration is touched):
 
-Portable bundle layouts are also supported:
-
-```text
-bundle/
-  noctalia
-  assets/
+```sh
+deploy/install.sh --check          # what is installed, from where
+deploy/install.sh --shell          # build the UI plugin and the native shell, install them under ~/.local
+deploy/install.sh --shell --restart
 ```
 
-```text
-bundle/
-  bin/noctalia
-  share/noctalia/assets/
+[`docs/development/building.md`](docs/development/building.md) explains the layout, how Zynith is started from niri,
+and how to run the UI from your working tree with live reloading.
+
+## Where things are
+
+| Path | What |
+|---|---|
+| `src/` | the native shell (C++23, meson) |
+| `ui/` | the Zynith UI (QML for Quickshell), its C++ plugin in `ui/native/` (cmake), and `ui/zynith-ui` |
+| `tests/` | native shell tests (meson) |
+| `ui/tools/tests/` | QML test suites |
+| `assets/` | the native shell's assets: translations, templates, fonts, sounds |
+| `deploy/` | the per-user install path |
+| `packaging/` | RPM packaging, the session and its default configuration, the live-image setup |
+| `iso/` | the Fedora-based live/install image |
+| `docs/` | developer documentation |
+
+[`docs/development/architecture.md`](docs/development/architecture.md) describes how the pieces fit together.
+
+## Tests
+
+Run the tests that cover what you changed, and say which you ran in your pull request.
+
+```sh
+# QML suites (offscreen; tst_display_session needs a nested niri and is skipped here)
+cd ui && for t in tools/tests/tst_*.qml; do
+  case $t in *bar_store*|*display_session*) continue;; esac
+  QT_QPA_PLATFORM=offscreen /usr/lib64/qt6/bin/qmltestrunner -import ../build/ui-native/qml -import tools/tests/stubs -input $t
+done
+bash tools/tests/run-store-tests.sh
+
+# native shell
+meson test -C build/shell --num-processes 2
 ```
 
-Runtime asset lookup order:
+One native test, `upower_charge_limit_integration`, fails on current Fedora and is a known, recorded failure; any other
+failure is a regression. [`docs/development/testing.md`](docs/development/testing.md) has the details.
 
-1. `NOCTALIA_ASSETS_DIR`
-2. `assets/` next to the executable
-3. `assets/` one level above the executable
-4. install-style `../share/noctalia/assets` relative to the executable
-5. the compiled install path from Meson (`<prefix>/<datadir>/noctalia/assets`)
-6. the source-tree `assets/` directory as a development fallback
+## Conventions
 
-An asset root is only accepted if it contains the expected shipped files such as `emoji.json`, `fonts/noctalia-tabler.ttf`,
-`templates/builtin.toml`, and `translations/en.json`.
-
-## Code Style
-
-This project uses [clang-format](https://clang.llvm.org/docs/ClangFormat.html) for formatting. Run `just format`
-before committing.
-
-For editor integration, `just configure` creates a root `compile_commands.json` symlink to the selected Meson build
-directory. Run `just configure`, `just configure release`, or `just configure asan` for the build mode you want clangd
-to use.
-
-The repo also includes `lefthook.yml`. Run `lefthook install` to install the pre-commit hook; it runs `just format`
-before commits and refreshes the git index for tracked formatting changes.
-
-Do not use em dashes (—) or double hyphens (--) as sentence punctuation, in code, comments, documentation, or commit
-messages. Use a comma, colon, semicolon, or parentheses instead.
-
-## Pull Request Template
-
-Pull request descriptions are checked automatically when they are opened, edited, reopened, or marked ready for
-review. Keep the `## Summary`, `## Motivation`, `## Type of Change`, `## Testing`, and `## Checklist` headings and the
-Checklist wording from [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md). The remaining sections
-are context only: fill them in, leave them empty, or delete them. In Type of Change, keep only the lines that apply.
-
-Draft pull requests may leave checkboxes incomplete. Before marking a pull request ready for review, select at least one
-change type and check every item in the Checklist section. A pull request that is missing required template structure
-is commented on and converted back to a draft; add the missing content and mark it ready for review to run the check
-again. The check never closes a pull request.
-
-### Naming Conventions
+**C++** is formatted with clang-format (`just format`; `lefthook install` runs it before each commit). Naming:
 
 | | Convention | Example |
 |---|---|---|
-| Files | snake_case | `widget_factory.cpp` |
-| Directories | snake_case | `shell/bar/widgets/` |
-| Types / Classes | PascalCase | `WidgetFactory` |
-| Functions / Methods | camelCase | `createWidget()` |
-| Variables / Parameters | camelCase | `busName` |
+| Files, directories | snake_case | `widget_factory.cpp`, `shell/bar/widgets/` |
+| Types, classes | PascalCase | `WidgetFactory` |
+| Functions, methods, variables | camelCase | `createWidget()`, `busName` |
 | Private members | m_camelCase | `m_changeCallback` |
-| Macros / Enum values | SCREAMING_SNAKE_CASE | `MAX_SIZE` |
+| Macros, enum values | SCREAMING_SNAKE_CASE | `MAX_SIZE` |
 
-D-Bus wire-protocol string literals, such as `player["bus_name"]`, stay snake_case because they are wire names, not
-C++ identifiers.
+D-Bus wire names stay as the protocol defines them.
 
-## Translations
+**QML** follows the existing files: one owner per piece of state (a `Services/` singleton), pure logic in tested
+`Common/*.js` modules, and no polling — work is driven by events and stops when nothing is on screen.
 
-Noctalia translations are managed through [Noctalia Translate](https://i18n.noctalia.dev/projects/noctalia). The JSON
-files in `assets/translations/` are exported from that workflow, with `assets/translations/en.json` acting as the
-source catalog for new strings.
+**Names.** The product is Zynith. Several of the native shell's identifiers keep their historical name for
+compatibility — the `noctalia` command, `~/.config/noctalia/` and `~/.local/state/noctalia/`, the C++ namespace and
+D-Bus names such as `dev.noctalia.Debug`. Do not rename them in passing; a rename needs a migration and is its own
+change.
 
-When a code, UI, settings, or documentation change needs a new user-facing string, add or update the English string in
-`assets/translations/en.json` only. Do not machine translate strings, copy English into other locales, or include broad
-updates to non-English translation files in a normal feature or bug-fix PR. The translation team handles those locale
-updates through the translation app.
+**Strings.** New user-facing strings of the native shell go in `assets/translations/en.json` only; run
+`python3 tools/i18n-check.py` after adding or renaming keys.
 
-Only edit non-English translation files when the PR is explicitly about translation tooling, an import/export sync, or a
-maintainer has asked for that specific locale change.
+**Performance.** Zynith treats resource use as a feature. A change that adds work while the desktop is idle, or adds a
+frame-time cost to an animation, should say what it costs and how that was measured.
 
-After adding or renaming translation keys, run:
+## Commits and pull requests
 
-```sh
-python3 tools/i18n-check.py
-```
+- Small, focused commits with short messages: a subject line and, if needed, a few lines of why.
+- No generated or build output in commits (`build/` is ignored).
+- Never commit secrets, personal paths or machine-specific configuration.
+- Fill in the pull request template; describe how you tested the change and on what hardware.
 
-## Project Layout
+## Debugging the native shell
 
-```text
-src/
-  main.cpp          Entry point
-  app/              Application bootstrap, main loop, poll sources
-  auth/             PAM and fingerprint authentication
-  calendar/         CalDAV, Google Calendar, iCalendar parsing, polling
-  capture/          Screenshots, screencopy capture, region overlay
-  compositors/      Compositor detection, runtime adapters, workspace/output/keyboard backends
-  config/           Configuration schema, validation, hot reload, state store, overrides
-    schema/         Typed config schema engine
-  core/             Logging, timers, process helpers, resource paths, shared utilities
-  dbus/             Session/system bus wrappers and service integrations
-    accounts/       AccountsService user metadata
-    bluetooth/      BlueZ service and pairing agent
-    idle/           Screensaver D-Bus service
-    logind/         logind integration
-    modem/          ModemManager cellular integration
-    mpris/          Media player integration and artwork cache
-    network/        NetworkManager, wpa_supplicant, and secret agent integration
-    notification/   Desktop notification D-Bus service
-    polkit/         Polkit authentication agent
-    power/          power-profiles-daemon integration
-    tray/           StatusNotifierItem watcher/host
-    upower/         Battery and power device integration
-  debug/            Debug D-Bus service
-  hooks/            User hook state and hook manager
-  i18n/             Translation catalog and language tag handling
-  idle/             Idle manager, inhibitor, grace overlay
-  ipc/              IPC client/service and CLI command parsing
-  launcher/         Launcher providers (apps, emoji, calculator, sessions, windows, plugins)
-  net/              HTTP client, URI parsing, URL opening
-  notification/     Notification model, manager, filtering, history
-  pipewire/         PipeWire audio service, sound playback, spectrum analyzer
-  render/
-    animation/      Animation manager, easing, motion settings
-    backend/        GLES render backend, framebuffers, texture manager
-    core/           Render data types, image decoders/encoders, texture caches
-    programs/       GLES shader programs
-    scene/          Scene graph nodes and pointer input dispatch
-    text/           Cairo/Pango text and glyph rendering
-  scripting/        Luau plugin runtime, manifests, registry, source management, bindings
-  shell/
-    backdrop/       Backdrop layer surfaces
-    bar/            Bar surface, instance, widget base/factory
-      widgets/      Bar widget implementations
-    clipboard/      Clipboard history panel and paste helpers
-    control_center/ Control center panel, tabs, shortcut registry
-    desktop/        Desktop widget host, factory, layout, editor support
-      widgets/      Desktop widget implementations
-    dock/           Dock surface, model, pinned apps, context menu
-    greeter/        Greeter appearance sync
-    launcher/       Launcher panel
-    lockscreen/     Session lock surfaces and lockscreen widgets
-    notification/   Notification toasts
-    osd/            On-screen display overlays
-    overview/       Overview capture helpers
-    panel/          Panel base, manager, attached-panel context
-    polkit/         Polkit prompt panel
-    screen_corners/ Screen corner overlays
-    session/        Session panel and action runners
-    settings/       Settings window, setting controls, registries, popups
-    setup_wizard/   First-run setup wizard
-    surface/        Shared shell surface geometry and shadow helpers
-    switcher/       Window switcher UI
-    tooltip/        Tooltip manager
-    tray/           Tray drawer and D-Bus menu UI
-    wallpaper/      Wallpaper surfaces, paths, picker panel
-    widgets_editor/ Background widget editor
-  system/           Desktop entries, brightness, weather, location, system monitor, hardware services
-  theme/            Palette generation, templates, theme service, template application
-  time/             Time service and polling
-  ui/
-    controls/       Reusable controls (Button, Input, Label, Select, Slider, Box, ...)
-    dialogs/        File, color, and glyph picker dialogs
-    visuals/        Shared visualizer controls
-  util/             Generic helpers
-  wayland/          Wayland connection, seats, surfaces, clipboard, toplevels, text input
-    hyprland/       Hyprland-specific Wayland protocol helpers
-assets/
-  fonts/            Bundled Noctalia Tabler and UI fonts
-  sounds/           Notification and UI sounds
-  templates/        Built-in theme templates
-  translations/     Exported translation catalogs
-protocols/          Vendored Wayland protocol XML files
-tests/              Unit tests and config validation fixtures
-tools/              Developer and translation helper scripts
-nix/                Nix package, module, and dev shell definitions
-third_party/
-  wuffs/          Raster image decoding (vendored)
-  fzy/            Fuzzy matching (vendored)
-  luau/           Plugin scripting runtime (vendored)
-  material_color_utilities/ Material Design color generation (vendored)
-```
-
-
-## Debugging
-
-All debug commands use the `dev.noctalia.Debug` D-Bus service, available at runtime.
+The native shell exposes a debug D-Bus service at runtime:
 
 ```sh
-# Enable verbose debug logs
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs true
-
-# Disable verbose debug logs
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.SetVerboseLogs false
-
-# Check current verbose log state
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.GetVerboseLogs
-
-# Emit an internal notification (app_name, summary, body, timeout_ms, urgency 0-2)
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug --method dev.noctalia.Debug.EmitInternalNotification "Noctalia" "Test" "Hello from debug" 5000 1
+gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug \
+  --method dev.noctalia.Debug.SetVerboseLogs true
 ```
 
-### Crash output
+`zynith-ui log` prints the UI's log; `zynith-ui native status` and `zynith-ui status` show what is running. When
+reporting a crash, include the full terminal output or the `coredumpctl` backtrace, not only "Segmentation fault".
 
-When reporting a crash, include the complete terminal output from the process if it is available. Do not paste only
-`Segmentation fault`; that line does not contain a useful stack trace or the error context.
+## Licence
 
-### ASan crash reports
-
-AddressSanitizer (ASan) can find memory errors that a normal build reports only as a crash. It requires a temporary
-source build; it does not replace the Noctalia package you already use.
-
-Install the source-build dependencies for your distribution using the commands in
-[BUILDING.md](BUILDING.md#dependencies), then clone the repository:
-
-```sh
-git clone https://github.com/noctalia-dev/noctalia.git
-cd noctalia
-```
-
-Stop the Noctalia instance started by your compositor, then configure and build ASan:
-
-```sh
-just configure asan && just build asan
-```
-
-Start the ASan binary in the foreground and save its output:
-
-```sh
-ASAN_OPTIONS=log_path=/tmp/noctalia-asan ./build-asan/noctalia 2>&1 | tee noctalia-asan-terminal.log
-```
-
-Reproduce the crash once. If Noctalia does not exit, press `Ctrl+C`. Attach both `noctalia-asan-terminal.log` and every
-`/tmp/noctalia-asan.*` file to the GitHub issue. The files in `/tmp` preserve the ASan report if the crash takes down
-the terminal. If the build or startup fails, attach that complete output instead.
+By contributing you agree that your contribution is licensed under the GNU General Public License v3.0 only, the
+licence of this project.

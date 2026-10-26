@@ -1,12 +1,20 @@
 # Credits
 
-Noctalia is made possible by the incredible work of many open-source projects and contributors.
+Zynith is made possible by many open-source projects and their contributors.
 
-## Design & Branding
+## Origins
 
-- **MrDowntempo** — Creator of the Noctalia Owl and moon logo
-- **[SaberJ2X](https://www.reddit.com/user/SaberJ64/)** — Creator of Talia, the Noctalia mascot
-- **[Tabler Icons](https://tabler.io/icons)** — Icon set used throughout the shell
+- **[Noctalia](https://github.com/noctalia-dev/noctalia)** by noctalia-dev and its contributors — Zynith's native shell
+  began as a fork of Noctalia 5.1.0 (MIT; notice kept in [`LICENSES/Noctalia-MIT.txt`](LICENSES/Noctalia-MIT.txt)).
+  Much of the native shell's design and code comes from that work.
+- **[niri](https://github.com/YaLTeR/niri)** — the compositor Zynith runs on (GPL-3.0).
+- **[Quickshell](https://quickshell.org/)** — the QML toolkit the Zynith UI is written in (LGPL-3.0 / GPL-3.0).
+
+## Design
+
+- **[Tabler Icons](https://tabler.io/icons)** — the icon set used throughout the shell (MIT)
+- **[Inter](https://rsms.me/inter/)**, **[Space Grotesk](https://github.com/floriankarsten/space-grotesk)** and
+  **[Sora](https://github.com/sora-xor/sora-font)** — the UI's fonts (SIL Open Font License 1.1, `ui/assets/fonts/OFL.txt`)
 - **[Riyan Resdian on Noun Project](https://thenounproject.com/creator/yaicon/)** — Plug icon
 
 ## Audio Assets
@@ -58,7 +66,7 @@ Bundled in `third_party/` and built from source:
 
 ## System Integration
 
-External tools Noctalia integrates with at runtime when present:
+External tools the native shell integrates with at runtime when present:
 
 - **[ddcutil](https://www.ddcutil.com/)** — External display brightness control
 
@@ -66,7 +74,7 @@ External tools Noctalia integrates with at runtime when present:
 
 - The **Wayland** community for building the future of Linux desktop graphics
 - The **Niri**, **Hyprland**, **Sway**, **Labwc**, and **MangoWC** teams for their excellent Wayland compositors
-- All the contributors and users who have helped make Noctalia better
+- Noctalia's contributors and users, whose work the native shell builds on
 
 ## License
 
