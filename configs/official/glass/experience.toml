@@ -1,0 +1,3 @@
+# Spend in proportion to power: full effects when plugged in, less on battery, least with power saver.
+efficiency = "auto"
+ease_effects = true

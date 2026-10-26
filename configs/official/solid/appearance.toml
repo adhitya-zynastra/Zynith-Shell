@@ -1,0 +1,6 @@
+# Zynith Solid — opaque surfaces with defined edges: calm, legible, nothing behind them shows through.
+surface_style = "solid"
+border = "defined"
+radius = 1.0
+tint = 0.2
+contrast = "standard"

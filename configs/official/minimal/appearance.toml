@@ -1,0 +1,5 @@
+# Zynith Minimal — the least work per frame: opaque surfaces, no borders, tighter corners.
+surface_style = "solid"
+border = "none"
+radius = 0.75
+tint = 0.15

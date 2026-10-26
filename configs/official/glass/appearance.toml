@@ -1,0 +1,6 @@
+# Zynith Glass — clear, tinted glass that lets the wallpaper through; the default look.
+surface_style = "glass"
+glass_strength = 0.5
+border = "subtle"
+radius = 1.0
+tint = 0.35

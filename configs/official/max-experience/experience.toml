@@ -1,0 +1,3 @@
+# Full effects when plugged in, and keep blur and shadows on battery too.
+efficiency = "auto"
+ease_effects = false

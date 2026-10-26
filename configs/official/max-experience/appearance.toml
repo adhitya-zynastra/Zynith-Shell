@@ -1,0 +1,7 @@
+# Zynith Max Experience — frosted surfaces blurred by the compositor, stronger material, rounder shapes.
+# For capable GPUs; costs more power than the other configurations.
+surface_style = "blur"
+blur_strength = 0.85
+border = "defined"
+radius = 1.2
+tint = 0.45

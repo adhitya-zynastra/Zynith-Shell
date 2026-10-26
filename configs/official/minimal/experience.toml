@@ -1,0 +1,3 @@
+# Spend little even when plugged in; blur and shadows pause whenever power is short.
+efficiency = "save"
+ease_effects = true
