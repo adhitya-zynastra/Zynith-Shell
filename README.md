@@ -1,151 +1,161 @@
-> **Zynith** — this tree is Zynith, built on Noctalia. Start with [`ZYNITH.md`](ZYNITH.md): the map of the project, how to build, install and test it, and what lives where.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/zynith-logo-on-dark.png">
+    <img src="assets/branding/zynith-logo-on-light.png" alt="Zynith" width="460">
+  </picture>
+</p>
 
-# Noctalia
-
-Noctalia is a native Wayland desktop shell for people who want a polished, configurable Linux desktop without stitching
-together a separate bar, launcher, notification daemon, lock screen, wallpaper tool, and settings UI.
-
-It provides the shell layer around your compositor: bars, widgets, dock, launcher, control center, notifications,
-wallpaper, lock screen, session actions, clipboard history, OSDs, tray integration, and desktop widgets. The project is
-built directly on Wayland and OpenGL ES with no Qt or GTK dependency, so the UI, rendering, configuration, and IPC model
-are designed as one cohesive shell instead of a collection of unrelated panels and scripts.
-
-<p><br/></p>
+<p align="center"><em>For the pursuit of elegance and freedom.</em></p>
 
 <p align="center">
-  <img src="https://assets.noctalia.dev/noctalia-logo.svg?v=2" alt="Noctalia Logo" style="width: 192px" />
+  A desktop shell for the <a href="https://github.com/YaLTeR/niri">niri</a> Wayland compositor: bars, panels,
+  notifications, a launcher and a Settings app, in one calm design language.
 </p>
 
 <p align="center">
-  <a href="https://docs.noctalia.dev/noctalia/getting-started/installation/">
-    <img
-      src="https://img.shields.io/badge/Install_Noctalia-FFF59B?style=for-the-badge&labelColor=FFF59B"
-      alt="Install Noctalia"
-      style="height: 50px"
-    />
-  </a>
+  <a href="#download-zynith">Download</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#official-configurations">Configurations</a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
-<p><br/></p>
+---
 
-<p align="center">
-  <a href="https://github.com/noctalia-dev/noctalia/commits">
-    <img src="https://img.shields.io/github/last-commit/noctalia-dev/noctalia?style=for-the-badge&labelColor=FFF59B&color=FFF59B&logo=git&logoColor=070722&label=commit" alt="Last commit" />
-  </a>
-  <a href="https://github.com/noctalia-dev/noctalia/stargazers">
-    <img src="https://img.shields.io/github/stars/noctalia-dev/noctalia?style=for-the-badge&labelColor=FFF59B&color=FFF59B&logo=github&logoColor=070722" alt="GitHub stars" />
-  </a>
-  <a href="https://docs.noctalia.dev">
-    <img src="https://img.shields.io/badge/docs-FFF59B?style=for-the-badge&logo=gitbook&logoColor=070722&labelColor=FFF59B" alt="Documentation" />
-  </a>
-  <a href="https://discord.noctalia.dev">
-    <img src="https://img.shields.io/badge/discord-FFF59B?style=for-the-badge&labelColor=FFF59B&logo=discord&logoColor=070722" alt="Discord" />
-  </a>
-</p>
+Zynith turns niri into a complete desktop. Every surface — bars, the Zynith Island, the Control Panel, the launcher,
+notifications, on-screen displays, desktop widgets, the lock screen — follows one set of materials, motion and type,
+and everything is configured from one Settings app.
 
-## Why Noctalia?
+- **Calm and coherent.** Glass, solid or frosted surfaces; motion that is measured, not guessed.
+- **Cheap to run.** Nothing polls; surfaces that are not on screen do no work; the desktop spends less on battery and
+  with power saver on.
+- **Yours to shape.** Bars on any edge, a visual bar editor, curated official configurations, and plain TOML files
+  underneath.
+- **Private by default.** No telemetry, no accounts, and no network requests unless you turn a feature on
+  ([what is sent, and when](SECURITY.md#network-services)).
 
-Most Wayland setups leave the desktop shell to a stack of small tools: one bar, another launcher, another notification
-daemon, a lock screen, a wallpaper daemon, scripts for session actions, and separate config formats for each piece. That
-can be flexible, but it also makes a complete desktop feel fragile and hard to keep visually consistent.
+> **Status: pre-release, 0.1.0 in development.** Zynith is usable day to day on Fedora 44, but configuration may still
+> change between versions and the ISO is not yet validated for installation. There is no stable release yet.
 
-Noctalia solves that by providing one configurable shell layer that owns the common desktop surfaces and services while
-still fitting into compositor-driven Wayland workflows. It is meant for users who want the control of a custom desktop
-environment with fewer moving parts and a consistent UI.
+## Download Zynith
 
-To understand the values and philosophy guiding the project, read our [ethos](https://noctalia.dev/ethos).
+| Path | For | State |
+|---|---|---|
+| [The Zynith ISO](#the-zynith-iso) | a new machine, or trying Zynith in a virtual machine | **experimental — not yet recommended for installation** |
+| [Packages on Fedora + niri](#existing-fedora--niri-users) | an existing Fedora 44 installation | built from source; no package repository yet |
+| [From source](#from-source-for-developers) | developers | supported |
 
-## What It Includes
+Zynith supports **Fedora Linux 44 on x86_64**, with niri 26.04 and Quickshell 0.3.1.
 
-- Multi-monitor bars with configurable widgets, taskbar, workspaces, system tray, media, network, battery, brightness,
-  weather, clipboard, and custom script-backed widgets.
-- Dock, launcher, control center, notification toasts/history, wallpaper picker, OSD overlays, lock screen, session
-  panel, and desktop widgets.
-- TOML configuration with hot reload, GUI-managed overrides, theme/palette support, template application, and IPC for
-  runtime control.
-- Direct Wayland integration for layer-shell, session lock, idle behavior, clipboard, foreign toplevels, workspaces,
-  fractional scaling, and compositor-specific workspace backends where needed.
+### The Zynith ISO
 
-## Wayland Compositor Support
+A live and installable Fedora 44 image with niri and Zynith, installed with Fedora's own installer (Anaconda), which
+asks before changing any disk. **No ISO has been published yet.** It is built from this repository and is being
+validated in virtual machines; see the [validation status](docs/development/iso.md#validation-status).
 
-Noctalia supports Wayland compositors that provide the layer-shell protocols it needs for shell surfaces. Workspace
-integration works through compositor-native backends where needed, or through `ext-workspace-v1` on compositors that
-implement it.
+```sh
+iso/build-iso.sh                 # needs rootless podman and QEMU/KVM; about 40 GB free space
+iso/test-vm.sh live              # boot it in a virtual machine, without installing anything
+sha256sum -c build/release/iso/zynith-*.iso.sha256
+```
 
-Current compositor integrations include Niri, Hyprland, Sway, Scroll, Mango, Labwc, Triad, dwl, and other compatible
-Wayland compositors. Other compositors may run Noctalia but can have reduced workspace, window, output, or
-session-action integration depending on the protocols and IPC they expose.
+[The ISO](docs/development/iso.md) explains verifying a download, writing a USB stick, testing safely, installing,
+recovery and hardware notes.
 
-## Scope
+### Existing Fedora + niri users
 
-Noctalia is a desktop shell, not a full desktop environment. It provides the visual and service layer around your
-Wayland compositor: bars, panels, launcher, notifications, dock, lock screen, idle behavior, OSDs, theming, wallpapers,
-desktop widgets, and multi-monitor shell surfaces.
+```sh
+packaging/rpm/build-rpms.sh      # builds the packages in a Fedora 44 container
+sudo dnf install build/release/repo/{zynith-desktop,zynith-ui,zynith-shell,quickshell,cpptrace}-*.rpm
+```
 
-Window management, tiling, file management, removable-drive mounting, printers management and screen mirroring/casting
-belong to the compositor, dedicated desktop applications, or system services.
+Then choose the **Zynith** session at the login screen. Your existing files are never replaced; see
+[Packaging](docs/development/packaging.md).
 
-Display/login greeter support lives in the separate [Noctalia Greeter](https://github.com/noctalia-dev/noctalia-greeter)
-project. Noctalia may integrate with those pieces when useful, but it does not replace them.
+### From source (for developers)
 
-The plugin system is available for user-installed extensions. Features that are useful to some users but not essential
-to the core shell can live there: extra bar widgets, launcher providers, desktop widgets, panels, shortcuts, background
-services, compositor-specific extras, hardware-specific controls, and third-party service integrations.
+```sh
+git clone https://github.com/adhitya-zynastra/Zynith-Shell.git zynith && cd zynith
+deploy/install.sh --shell        # builds and installs into your home directory only
+```
 
-## Build from source
+[Building and running](docs/development/building.md) covers the requirements, starting Zynith from niri and
+recovering a session that does not start.
 
-Source dependencies, distro-specific package commands, build modes, and install layouts live in
-[BUILDING.md](BUILDING.md).
+## Features
 
-## Configuration
+| Feature | What it does | State |
+|---|---|---|
+| **Bars** | any number, on any edge; a visual editor and ready-made layouts | stable |
+| **Zynith Island** | a bar component that takes the shape of what is happening | stable |
+| **Control Panel** | media, audio, network, Bluetooth, power, calendar and weather; per-icon panels from the bar | stable |
+| **Launcher** | applications, calculator, emoji, windows, wallpapers and power actions | stable |
+| **Notifications** | popups and a notification centre, grouped, with do-not-disturb and inline replies | stable |
+| **On-screen displays** | volume, brightness and other keys | stable |
+| **Desktop widgets** | clock, media, weather, visualiser and more, placed with an editor | stable |
+| **Lock screen** | PAM authentication, the same design language | stable |
+| **Materials and profiles** | Glass, Solid and Blur surfaces; less work on battery and power saver | stable |
+| **Settings** | one app for every option, with live previews | stable |
+| **Live (animated) wallpapers** | need a separately built renderer, not packaged | experimental |
+| **Native shell plugins** | Luau plugins from sources you add | experimental |
+| **The Zynith ISO** | live and installable Fedora 44 image | experimental |
 
-A ready-to-use starting config with all defaults is at [example.toml](example.toml). The full configuration reference
-lives in the [documentation site](https://docs.noctalia.dev/noctalia/). The source MDX files are in
-[`docs/user/`](docs/user/); sync them to a local docs checkout with `tools/sync-docs.sh`.
+"Stable" means it is used every day and covered by tests where it can be; Zynith as a whole is pre-release.
+[Using Zynith](docs/user/using.md) lists the key bindings and how each part works.
 
-## Contributing
+## Official configurations
 
-Developer notes, architecture overview, code style, project layout, and debugging commands live in
-[CONTRIBUTING.md](CONTRIBUTING.md).
+Four curated starting points for how Zynith looks and how much it spends:
 
-Bug reports, fixes, documentation updates, themes, and configuration examples are welcome. For general help and design
-discussion, join the community on [Discord](https://discord.noctalia.dev).
+| | Look | Resource use |
+|---|---|---|
+| **Zynith Glass** | clear, tinted glass; the default | follows power |
+| **Zynith Solid** | opaque surfaces, defined edges | follows power |
+| **Zynith Minimal** | opaque, borderless, short motion | saves even when plugged in |
+| **Zynith Max Experience** | frosted, compositor-blurred surfaces | keeps effects on battery; needs a capable GPU |
 
-## Credits
+```sh
+zynith-config list
+zynith-config show minimal       # preview the change
+zynith-config apply minimal      # only the keys it sets change; your files are backed up first
+zynith-config restore            # undo
+```
 
-Thank you to the [contributors](https://github.com/noctalia-dev/noctalia/graphs/contributors) and community
-members who test Noctalia, report issues, share configurations, and help shape the project.
+From a source checkout, run `configs/official/zynith-config.py` in place of `zynith-config`.
 
-## Donations
+They live in [`configs/official/`](configs/official/); [Configuring Zynith](docs/user/configuring.md) explains them
+and every configuration file.
 
-Donations are appreciated but completely optional.
+## How it is built
 
-<p>
-  <a href="https://www.buymeacoffee.com/noctalia">
-    <img src="https://img.shields.io/badge/Buy_Me_a_Coffee-FFF59B?style=for-the-badge&logo=buymeacoffee&logoColor=070722&labelColor=FFF59B" alt="Buy Me a Coffee">
-  </a>
-  <a href="https://ko-fi.com/noctaliadev">
-    <img src="https://img.shields.io/badge/Ko--fi-FFF59B?style=for-the-badge&logo=kofi&logoColor=070722&labelColor=FFF59B" alt="Ko-fi">
-  </a>
-</p>
+| Part | Role | Technology |
+|---|---|---|
+| **niri** | compositor and window manager (unmodified) | Rust, Wayland |
+| **Zynith UI** ([`ui/`](ui/)) | everything you see and touch | Quickshell (QML) and a C++ plugin |
+| **Native shell** ([`src/`](src/)) | services, lock screen, wallpaper, theme engine, IPC | C++23, Wayland, OpenGL ES |
+| **zynith-ui** | starts and supervises both, routes key bindings | bash |
 
-## License
+More in [Architecture](docs/development/architecture.md).
 
-Zynith is licensed under the GNU General Public License v3.0 (GPL-3.0-only); see [LICENSE](LICENSE).
+## Documentation
 
-It is built on Noctalia (Copyright (c) 2026 noctalia-dev), which is MIT-licensed. Noctalia's license notice is kept
-unchanged in [LICENSES/Noctalia-MIT.txt](LICENSES/Noctalia-MIT.txt). Vendored code under `third_party/` and assets
-under `assets/` and `ui/assets/` keep their own licenses, stored beside them.
+- **Users:** [using](docs/user/using.md) · [configuring](docs/user/configuring.md) ·
+  [troubleshooting](docs/user/troubleshooting.md) · [the ISO](docs/development/iso.md)
+- **Developers:** [architecture](docs/development/architecture.md) · [building](docs/development/building.md) ·
+  [testing](docs/development/testing.md) · [packaging](docs/development/packaging.md) ·
+  [releases](docs/development/releases.md)
 
-## Packaging
+## Contributing and support
 
-Distro packaging notes (description, deps, install layout, Meson options) live in
-[PACKAGING.md](PACKAGING.md).
+Bug reports and contributions are welcome — read [CONTRIBUTING](CONTRIBUTING.md) first. Help: [SUPPORT](SUPPORT.md).
+Security problems: [SECURITY](SECURITY.md), never a public issue. Everyone taking part follows the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Star History
+## Licence and credits
 
-<p align="center">
-  <a href="https://github.com/noctalia-dev/noctalia/stargazers">
-    <img src="https://api.noctalia.dev/stars" alt="Star History" />
-  </a>
-</p>
+Zynith is free software under the **GNU General Public License v3.0 only** ([`LICENSE`](LICENSE)).
+
+The native shell began as a fork of [Noctalia](https://github.com/noctalia-dev/noctalia) 5.1.0 (MIT; its notice is
+kept in [`LICENSES/`](LICENSES/)), and is developed as part of Zynith. Vendored code in [`third_party/`](third_party/)
+keeps its own licences. The UI's fonts (Inter, Space Grotesk, Sora) are under the SIL Open Font License; icons are
+Tabler Icons (MIT). See [CREDITS](CREDITS.md).
