@@ -55,7 +55,6 @@ private:
   void onConfigReload();
   void notifyChanged();
   void requestRefresh();
-  void startGeolocate();
   void startAddressGeocode();
   void handleResponse(const std::filesystem::path& path, bool autoLocated, bool success, std::uint64_t serial);
   void clearResolved();

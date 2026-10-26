@@ -1280,6 +1280,7 @@ struct ShellConfig {
   std::string panelAnchorBar;
   /// Resolve and show the connection's external (WAN) IP in the Control Center network tab.
   bool externalIpEnabled = false;
+  /// Accepted so existing configurations keep validating; Zynith sends no telemetry and ignores it.
   bool telemetryEnabled = false;
   bool setupWizardEnabled = true;
   bool niriOverviewTypeToLaunchEnabled = false;
@@ -1752,7 +1753,7 @@ struct ThemeConfig {
   struct TemplatesConfig {
     bool enableBuiltinTemplates = true;
     std::vector<std::string> builtinIds;
-    bool enableCommunityTemplates = true;
+    bool enableCommunityTemplates = false;
     std::vector<std::string> communityIds;
     std::vector<TemplateColorConfig> customColors;
     std::vector<UserTemplateConfig> userTemplates;

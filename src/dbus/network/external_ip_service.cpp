@@ -33,8 +33,9 @@ bool ExternalIpService::enabled() const {
   if (m_config == nullptr) {
     return false;
   }
-  const auto& shell = m_config->config().shell;
-  return shell.externalIpEnabled && !shell.offlineMode;
+  // zynith: the lookup went to the upstream project's service; Zynith has none, so the address is never looked up and
+  // the option is accepted but has no effect.
+  return false;
 }
 
 void ExternalIpService::onNetworkChanged() { sync(); }
@@ -107,7 +108,7 @@ void ExternalIpService::probeNow() {
   const std::string key = wanProbeKey(s);
   const std::weak_ptr<int> alive = m_lifetime;
   HttpRequest req;
-  req.url = "https://api.noctalia.dev/ip";
+  req.url = {};
   // A pooled keep-alive connection predating a VPN/route change would answer
   // via the old path and report the stale address.
   req.freshConnection = true;

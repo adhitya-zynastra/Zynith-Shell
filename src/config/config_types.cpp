@@ -56,16 +56,9 @@ std::vector<ShortcutConfig> defaultControlCenterShortcuts() {
   };
 }
 
-std::vector<PluginSourceConfig> defaultPluginSources() {
-  return {
-      {.kind = PluginSourceKind::Git,
-       .name = "official",
-       .location = "https://github.com/noctalia-dev/official-plugins"},
-      {.kind = PluginSourceKind::Git,
-       .name = "community",
-       .location = "https://github.com/noctalia-dev/community-plugins"},
-  };
-}
+// zynith: no built-in plugin sources. The upstream project's catalogues are not Zynith's to offer, and a source is
+// third-party code that runs inside the shell; users add the sources they trust.
+std::vector<PluginSourceConfig> defaultPluginSources() { return {}; }
 
 bool isDefaultPluginSourceName(std::string_view name) {
   const auto sources = defaultPluginSources();
@@ -79,8 +72,10 @@ bool sourceInAutoUpdateScope(const PluginSourceConfig& source, PluginAutoUpdateM
   if (mode == PluginAutoUpdateMode::All || mode == PluginAutoUpdateMode::Notify) {
     return true; // Notify checks every enabled source; it never installs (PluginManager::updateAutoUpdateScope)
   }
-  const auto official = defaultPluginSources()[0];
-  return source.name == official.name && source.location == official.location;
+  // Official: only the built-in sources, and there are none
+  return std::ranges::any_of(defaultPluginSources(), [&](const PluginSourceConfig& builtin) {
+    return source.name == builtin.name && source.location == builtin.location;
+  });
 }
 
 bool isValidPluginSourceName(std::string_view name) {

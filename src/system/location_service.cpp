@@ -66,9 +66,9 @@ void LocationService::initialize() {
 
 void LocationService::addChangeCallback(ChangeCallback callback) { m_callbacks.push_back(std::move(callback)); }
 
-bool LocationService::networkResolutionConfigured() const noexcept {
-  return m_config.autoLocate || !m_config.address.empty();
-}
+// zynith: only a typed address is looked up. Locating from the IP address went to the upstream project's service;
+// `auto_locate` is accepted but has no effect (set an address or coordinates instead).
+bool LocationService::networkResolutionConfigured() const noexcept { return !m_config.address.empty(); }
 
 bool LocationService::resolving() const noexcept { return networkResolutionConfigured() && !m_resolved; }
 
@@ -133,10 +133,6 @@ void LocationService::tick() {
   }
   m_refreshQueued = false;
 
-  if (m_config.autoLocate) {
-    startGeolocate();
-    return;
-  }
   if (!m_resolved || m_resolvedAutoLocate || m_resolvedAddress != m_config.address) {
     startAddressGeocode();
     return;
@@ -177,22 +173,14 @@ void LocationService::requestRefresh() {
   m_nextRefreshAt = Clock::time_point{};
 }
 
-void LocationService::startGeolocate() {
-  std::error_code ec;
-  std::filesystem::create_directories(transportCacheDir(), ec);
-  const auto path = transportCacheDir() / "geolocate.json";
-  const std::uint64_t serial = ++m_requestSerial;
-  m_requestKind = RequestKind::Geolocate;
-  m_httpClient.download("https://api.noctalia.dev/geolocate", path, [this, path, serial](bool success) {
-    handleResponse(path, true, success, serial);
-  });
-}
-
 void LocationService::startAddressGeocode() {
   std::error_code ec;
   std::filesystem::create_directories(transportCacheDir(), ec);
   const auto path = transportCacheDir() / "geocode.json";
-  const std::string url = "https://api.noctalia.dev/geocode?city=" + StringUtils::urlEncode(m_config.address);
+  // Open-Meteo's geocoding API (the weather's provider): the place name only, no key, no account
+  const std::string place = StringUtils::trim(m_config.address.substr(0, m_config.address.find(',')));
+  const std::string url =
+      "https://geocoding-api.open-meteo.com/v1/search?count=1&format=json&name=" + StringUtils::urlEncode(place);
   const std::uint64_t serial = ++m_requestSerial;
   m_requestKind = RequestKind::GeocodeAddress;
   m_httpClient.download(url, path, [this, path, serial](bool success) {
@@ -219,10 +207,14 @@ void LocationService::handleResponse(
 
   try {
     std::ifstream file(path);
-    const auto json = nlohmann::json::parse(file);
-    const double latitude = readNumber(json, "lat");
-    const double longitude = readNumber(json, "lng");
-    const std::string name = autoLocated ? readString(json, "city") : readString(json, "name");
+    const auto response = nlohmann::json::parse(file);
+    if (!response.contains("results") || !response["results"].is_array() || response["results"].empty()) {
+      throw std::runtime_error("no place matches the address");
+    }
+    const auto& json = response["results"][0];
+    const double latitude = readNumber(json, "latitude");
+    const double longitude = readNumber(json, "longitude");
+    const std::string name = readString(json, "name");
     const std::string country = readString(json, "country");
 
     m_latitude = latitude;

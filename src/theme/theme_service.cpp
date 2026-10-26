@@ -375,6 +375,11 @@ namespace noctalia::theme {
     std::error_code ec;
     std::filesystem::create_directories(cachePath.parent_path(), ec);
     const std::string url = communityPaletteDownloadUrl(name);
+    if (url.empty()) {
+      kLog.warn("community palette '{}' is not in {} and cannot be downloaded", name, cachePath.parent_path().string());
+      m_inflightCommunityName.clear();
+      return;
+    }
     kLog.info("fetching community palette '{}' from {}", name, url);
     m_httpClient.download(url, cachePath, [this, name, cachePath](bool success) {
       if (m_inflightCommunityName == name) {

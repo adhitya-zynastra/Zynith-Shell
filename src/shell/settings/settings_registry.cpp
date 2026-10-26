@@ -1782,16 +1782,6 @@ namespace settings {
         ToggleSetting{cfg.shell.offlineMode}, "network http fetch download"
     ));
     entries.push_back(makeEntry(
-        SettingsSection::Security, "network", tr("settings.schema.shell.external-ip.label"),
-        tr("settings.schema.shell.external-ip.description"), {"shell", "external_ip_enabled"},
-        ToggleSetting{cfg.shell.externalIpEnabled}, "wan external ip public address network resolve"
-    ));
-    entries.push_back(makeEntry(
-        SettingsSection::Security, "network", tr("settings.schema.shell.telemetry.label"),
-        tr("settings.schema.shell.telemetry.description"), {"shell", "telemetry_enabled"},
-        ToggleSetting{cfg.shell.telemetryEnabled}, "analytics ping privacy"
-    ));
-    entries.push_back(makeEntry(
         SettingsSection::Security, "authentication", tr("settings.schema.shell.polkit-agent.label"),
         tr("settings.schema.shell.polkit-agent.description"), {"shell", "polkit_agent"},
         ToggleSetting{cfg.shell.polkitAgent}, "auth password"
@@ -2652,12 +2642,8 @@ namespace settings {
     }
 
     // Location: single source of "where am I"; shared by weather, night light, and theme auto mode.
-    entries.push_back(makeEntry(
-        SettingsSection::Location, "location", tr("settings.schema.services.location-auto-locate.label"),
-        tr("settings.schema.services.location-auto-locate.description"), {"location", "auto_locate"},
-        ToggleSetting{cfg.location.autoLocate}, "location ip geolocate gps coordinate"
-    ));
-    const SettingVisibility autoLocateOff = [](const Config& c) { return !c.location.autoLocate; };
+    // zynith: no IP-based auto-location (it used the upstream project's service); an address or coordinates
+    const SettingVisibility autoLocateOff = [](const Config&) { return true; };
     {
       auto e = makeEntry(
           SettingsSection::Location, "location", tr("settings.schema.services.location-address.label"),

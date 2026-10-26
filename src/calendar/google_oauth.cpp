@@ -9,7 +9,9 @@ namespace calendar {
 
   namespace {
     constexpr Logger kLog("calendar-oauth");
-    constexpr const char* kBrokerBase = "https://api.noctalia.dev/v1/calendar/oauth/google";
+    // zynith: Google sign-in went through the upstream project's OAuth broker (which holds its client secret). Zynith
+    // has no broker, so Google accounts cannot be connected; CalDAV accounts are unaffected.
+    constexpr const char* kBrokerBase = "";
 
     std::chrono::system_clock::time_point expiryFromUnix(std::int64_t seconds) {
       return std::chrono::system_clock::time_point{std::chrono::seconds{seconds}};
@@ -19,6 +21,11 @@ namespace calendar {
   GoogleOAuthBroker::GoogleOAuthBroker(HttpClient& http) : m_http(http) {}
 
   void GoogleOAuthBroker::start(std::function<void(bool, StartResult)> cb) {
+    if (*kBrokerBase == '\0') {
+      kLog.warn("Google Calendar sign-in is not available in Zynith; use a CalDAV account");
+      cb(false, StartResult{});
+      return;
+    }
     HttpRequest req;
     req.method = "POST";
     req.url = std::string(kBrokerBase) + "/start";
@@ -51,6 +58,10 @@ namespace calendar {
   }
 
   void GoogleOAuthBroker::poll(const std::string& pollToken, std::function<void(PollStatus, OAuthTokens)> cb) {
+    if (*kBrokerBase == '\0') {
+      cb(PollStatus::Error, {});
+      return;
+    }
     HttpRequest req;
     req.method = "GET";
     req.url = std::string(kBrokerBase) + "/result";
@@ -88,6 +99,10 @@ namespace calendar {
   }
 
   void GoogleOAuthBroker::refresh(const std::string& refreshToken, std::function<void(bool, bool, OAuthTokens)> cb) {
+    if (*kBrokerBase == '\0') {
+      cb(false, true, {});
+      return;
+    }
     HttpRequest req;
     req.method = "POST";
     req.url = std::string(kBrokerBase) + "/refresh";

@@ -526,7 +526,7 @@
         }
       },
       "location-unavailable": "Location unavailable",
-      "no-location-body": "Add your address or enable auto-locate in Location settings.",
+      "no-location-body": "Add your city or coordinates in Location settings.",
       "no-location-title": "No location set",
       "refreshing": "Refreshing weather…",
       "waiting": "Waiting for weather data"
@@ -1706,8 +1706,8 @@
         },
         "kind-label": "Kind",
         "location-label": "Location",
-        "location-placeholder-git": "https://github.com/me/noctalia-plugins",
-        "location-placeholder-path": "~/dev/noctalia-plugins",
+        "location-placeholder-git": "https://github.com/me/zynith-plugins",
+        "location-placeholder-path": "~/dev/zynith-plugins",
         "name-label": "Source ID",
         "name-placeholder": "my-plugins",
         "precedence-hint": "Lower sources override higher ones when they offer the same plugin.",
@@ -1780,7 +1780,7 @@
           "label": "Card Borders"
         },
         "community-palette": {
-          "description": "Choose a palette from the community catalog",
+          "description": "A palette already in the community palette cache; Zynith has no catalogue to download from",
           "label": "Community Palette",
           "search-placeholder": "Search palettes…"
         },
@@ -2769,7 +2769,7 @@
         },
         "calendar-add": {
           "button": "Add Account",
-          "description": "Add iCloud, CalDAV, Google accounts, or an ICS URL",
+          "description": "Add iCloud or CalDAV accounts, or an ICS URL",
           "label": "Calendar Accounts"
         },
         "calendar-credentials": {
@@ -2836,11 +2836,11 @@
           "label": "Force Night Light"
         },
         "latitude": {
-          "description": "Manual latitude for the sunrise/sunset schedule, used when auto-locate and address are off",
+          "description": "Manual latitude for the sunrise/sunset schedule, used when no city is set",
           "label": "Latitude"
         },
         "location-address": {
-          "description": "City or address to locate, used when auto-locate is off",
+          "description": "City to locate, looked up with Open-Meteo (the place name is sent, nothing else)",
           "label": "Address",
           "placeholder": "City, Country"
         },
@@ -2849,7 +2849,7 @@
           "label": "Auto-Locate (IP)"
         },
         "longitude": {
-          "description": "Manual longitude for the sunrise/sunset schedule, used when auto-locate and address are off",
+          "description": "Manual longitude for the sunrise/sunset schedule, used when no city is set",
           "label": "Longitude"
         },
         "minimum-brightness": {
@@ -3349,7 +3349,7 @@
           "label": "Enable Built-In Templates"
         },
         "enable-community-templates": {
-          "description": "Download and apply templates from the community catalog",
+          "description": "Zynith has no community template catalogue; this has no effect",
           "label": "Enable Community Templates"
         }
       },
@@ -4765,7 +4765,7 @@
         "location": "Weather and location lookups will not work.",
         "plugin-store": "Remote plugin catalog and download requests will not work.",
         "plugins": "Plugin HTTP requests will not work. Git sources can still update.",
-        "security": "External IP lookup and telemetry will not work.",
+        "security": "Network lookups will not work.",
         "services": "Calendar account sync will not work.",
         "template-store": "Community template downloads will not work.",
         "templates": "Community template downloads and updates will not work.",

@@ -23,8 +23,10 @@ namespace noctalia::theme {
   namespace {
 
     constexpr Logger kLog("community_palettes");
-    constexpr std::string_view kCatalogUrl = "https://api.noctalia.dev/palettes";
-    constexpr std::string_view kPaletteUrlBase = "https://api.noctalia.dev/palette";
+    // zynith: the community palette catalogue was the upstream project's service; Zynith has none and makes no request.
+    // Palettes already in the cache directory keep working.
+    constexpr std::string_view kCatalogUrl;
+    constexpr std::string_view kPaletteUrlBase;
 
     std::filesystem::path catalogCachePath() { return communityPaletteCacheDir() / ".catalog" / "palettes.json"; }
 
@@ -127,6 +129,9 @@ namespace noctalia::theme {
     std::error_code ec;
     std::filesystem::create_directories(path.parent_path(), ec);
 
+    if (kCatalogUrl.empty()) {
+      return;
+    }
     m_httpClient.download(kCatalogUrl, path, [this, generation, path](bool success) {
       if (generation != m_generation) {
         return;
@@ -170,6 +175,9 @@ namespace noctalia::theme {
   }
 
   std::string communityPaletteDownloadUrl(std::string_view name) {
+    if (kPaletteUrlBase.empty()) {
+      return {};
+    }
     return std::string(kPaletteUrlBase) + "/" + StringUtils::urlEncode(name);
   }
 
