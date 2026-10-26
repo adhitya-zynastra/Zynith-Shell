@@ -479,7 +479,7 @@ Singleton {
     function chime(e: var): void {
         if (!(Config.notifications.sound ?? true) || (dnd && !e.bypassDnd) || e.urgency === NotificationUrgency.Low)
             return;
-        Quickshell.execDetached(["pw-play", "--volume", String(Config.notifications.soundVolume ?? 0.6), Paths.home + "/.local/share/zynith/sounds/notification.wav"]);
+        Quickshell.execDetached(["pw-play", "--volume", String(Config.notifications.soundVolume ?? 0.6), Paths.sounds + "/notification.wav"]);
     }
 
     LazyLoader {

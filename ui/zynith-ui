@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args...]
+# zynith-ui start|stop|restart|status|log|version|build|settings [route]|ipc <method> [args...]
 # Runs the Quickshell UI beside the native shell. Always the packaged Quickshell (/usr/bin), never a
 # stray build earlier on PATH.
 set -euo pipefail
@@ -18,8 +18,22 @@ PIDFILE="$RUN/ui.pid"
 LOG="$RUN/ui.log"
 NATIVE_SRC="$HERE/native"
 NATIVE_BUILD="${ZYNITH_NATIVE_BUILD:-$HERE/../build/ui-native}"
+# Installed from a package (/usr/share/zynith/ui: no sources beside it, the plugin in Qt's own qml directory, a VERSION
+# file) or run from this source tree (builds its plugin, versions itself from git, falls back to the last commit).
+if [[ -d "$NATIVE_SRC" ]]; then PACKAGED=0; else PACKAGED=1; fi
+version() {
+    if ((PACKAGED)); then cat "$HERE/VERSION" 2>/dev/null || echo unknown
+    else git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev; fi
+}
+# UI sounds: the user's own set if there is one, else the installed ones (read by the UI as ZYNITH_SOUNDS)
+if [[ -f "$HOME/.local/share/zynith/sounds/notification.wav" ]]; then
+    export ZYNITH_SOUNDS="$HOME/.local/share/zynith/sounds"
+elif [[ -d /usr/share/zynith/sounds ]]; then
+    export ZYNITH_SOUNDS=/usr/share/zynith/sounds
+fi
 
 build_native() {
+    ((PACKAGED)) && return 0
     local plugin="$NATIVE_BUILD/qml/Zynith/Native/libzynith_nativeplugin.so"
     # nothing to do when the plugin is newer than every native source (keeps start fast)
     if [[ -f "$plugin" && -z "$(find "$NATIVE_SRC" -newer "$plugin" -type f -print -quit)" ]]; then
@@ -35,7 +49,7 @@ pid=""
 # launch(shell.qml): start Quickshell on that config, record its pid and path
 launch() {
     local qml="$1"
-    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+    ZYNITH_VERSION="$(version)" \
         QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
         setsid -f "$QS" -p "$qml" >"$LOG" 2>&1 </dev/null
     pid=""
@@ -62,6 +76,8 @@ load_state() {
 # seconds of starting, it stops trying and says so, rather than spin.
 NATIVE_BIN="$HOME/.local/opt/noctalia/bin/noctalia"
 [[ -x "$NATIVE_BIN" ]] || NATIVE_BIN="$(command -v noctalia || true)"
+# the UI talks to the same binary (Paths.core)
+export ZYNITH_NATIVE="$NATIVE_BIN"
 NATIVE_SUP="$RUN/native.supervisor"
 NATIVE_PID="$RUN/native.pid"
 NATIVE_STOP="$RUN/native.stop"
@@ -173,7 +189,7 @@ launch_child() {
     # would pass for this one's
     : >"$LOG"
     # MALLOC_ARENA_MAX: every render thread would otherwise get a malloc arena of its own (measured: -14 MB idle)
-    ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+    ZYNITH_VERSION="$(version)" \
         QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
         MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-2}" \
         "$QS" -p "$qml" >>"$LOG" 2>&1 </dev/null &
@@ -195,7 +211,7 @@ supervise_ui() {
         state="$(load_state)"
         # a working copy that does not load must not leave the desktop without its UI: the last commit runs
         # instead, from a snapshot, until the working copy is fixed
-        if [[ "$state" == failed ]]; then
+        if [[ "$state" == failed ]] && ((!PACKAGED)); then
             kill "$pid" 2>/dev/null || true
             wait "$pid" 2>/dev/null || true
             cp "$LOG" "$RUN/ui-failed.log"
@@ -281,13 +297,14 @@ restart)
 build) build_native && echo "built $NATIVE_BUILD" ;;
 status) running && echo "running ($(cat "$PIDFILE"))" || echo "not running" ;;
 log) sed 's/\x1b\[[0-9;]*m//g' "$LOG" ;;
+version) echo "Zynith $(version) ($( ((PACKAGED)) && echo "installed in $HERE" || echo "source tree $HERE"))" ;;
 settings)
     build_native
     route="${2:-home}"
     if pgrep -f "^$QS -p $HERE/settings.qml\$" >/dev/null; then
         exec "$QS" -p "$HERE/settings.qml" ipc call settings open "$route"
     fi
-    ZYNITH_SETTINGS_ROUTE="$route" ZYNITH_VERSION="$(git -C "$HERE" describe --always --dirty 2>/dev/null || echo dev)" \
+    ZYNITH_SETTINGS_ROUTE="$route" ZYNITH_VERSION="$(version)" \
         QML_IMPORT_PATH="$NATIVE_BUILD/qml${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}" \
         setsid -f "$QS" -p "$HERE/settings.qml" >"$RUN/settings.log" 2>&1 </dev/null
     echo "settings: $route"
@@ -299,7 +316,7 @@ cmd)
     if [[ -S "$RUN/ui.sock" ]] && printf '%s\n' "$*" | socat -t 1 - "UNIX-CONNECT:$RUN/ui.sock" >/dev/null 2>&1; then
         exit 0
     fi
-    N="$HOME/.local/opt/noctalia/bin/noctalia"
+    N="$NATIVE_BIN"
     case "${1:-}" in
     launcher) [[ "${2:-}" == ":" ]] && exec "$N" msg panel-toggle launcher /emo || exec "$N" msg panel-toggle launcher ;;
     clipboard | wallpaper | session) exec "$N" msg panel-toggle "$1" ;;
@@ -309,5 +326,5 @@ cmd)
     desktop-edit) exec "$N" msg desktop-widgets-toggle-edit ;;
     esac
     ;;
-*) echo "usage: zynith-ui start|stop|restart|status|log|build|settings [route]|ipc <method> [args]|cmd <command> [args]" >&2; exit 2 ;;
+*) echo "usage: zynith-ui start|stop|restart|status|log|version|build|settings [route]|ipc <method> [args]|cmd <command> [args]" >&2; exit 2 ;;
 esac

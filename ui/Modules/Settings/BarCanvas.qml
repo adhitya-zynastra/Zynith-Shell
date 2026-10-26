@@ -31,7 +31,7 @@ Item {
     property var live: ({})
     Process {
         id: ask
-        command: [Quickshell.env("HOME") + "/.local/bin/zynith-ui", "ipc", "bars"]
+        command: [Paths.uiScript, "ipc", "bars"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
