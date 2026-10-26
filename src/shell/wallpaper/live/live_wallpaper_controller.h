@@ -8,7 +8,7 @@
 //                                   ├──► Wallpaper             static backend (hand-over of the outputs)
 //                                   └──► ConfigService         state.toml persistence · palette source
 //
-// Ownership model. Static mode: Zynith's own wallpaper surfaces (noctalia-wallpaper) own every output.
+// Ownership model. Static mode: Zynith's own wallpaper surfaces (zynith-shell-wallpaper) own every output.
 // Live mode: the renderer owns them and the static surfaces are torn down through
 // Wallpaper::setOutputExternallyManaged() — the hook upstream built for external wallpaper sources — so two
 // surfaces never fight over the background layer and the static textures are freed while hidden.

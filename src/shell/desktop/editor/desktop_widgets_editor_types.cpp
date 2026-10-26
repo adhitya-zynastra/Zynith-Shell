@@ -3,7 +3,7 @@
 DesktopWidgetsEditorProfile DesktopWidgetsEditorProfile::desktop() {
   return DesktopWidgetsEditorProfile{
       .logSection = "desktop",
-      .layerNamespace = "noctalia-desktop-widgets-editor",
+      .layerNamespace = "zynith-shell-desktop-widgets-editor",
       .widgetIdPrefix = "desktop-widget-",
       .titleKey = "desktop-widgets.editor.title",
       .showLockscreenLoginPreview = false,
@@ -13,7 +13,7 @@ DesktopWidgetsEditorProfile DesktopWidgetsEditorProfile::desktop() {
 DesktopWidgetsEditorProfile DesktopWidgetsEditorProfile::lockscreen() {
   return DesktopWidgetsEditorProfile{
       .logSection = "lockscreen",
-      .layerNamespace = "noctalia-lockscreen-widgets-editor",
+      .layerNamespace = "zynith-shell-lockscreen-widgets-editor",
       .widgetIdPrefix = "lockscreen-widget-",
       .titleKey = "desktop-widgets.editor.title-lockscreen",
       .showLockscreenLoginPreview = true,

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <tuple>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -421,4 +421,4 @@ namespace noctalia::theme {
     return terminal;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

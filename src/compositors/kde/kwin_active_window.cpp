@@ -17,10 +17,10 @@ namespace {
 
   constexpr Logger kLog("kwin_active_window");
 
-  const sdbus::ServiceName kBusName{"dev.noctalia.KWinActiveWindow"};
-  const sdbus::ObjectPath kObjectPath{"/dev/noctalia/KWinActiveWindow"};
-  constexpr auto kInterface = "dev.noctalia.KWinActiveWindow";
-  constexpr auto kScriptLabel = "noctalia-active-window";
+  const sdbus::ServiceName kBusName{"dev.zynith.KWinActiveWindow"};
+  const sdbus::ObjectPath kObjectPath{"/dev/zynith/KWinActiveWindow"};
+  constexpr auto kInterface = "dev.zynith.KWinActiveWindow";
+  constexpr auto kScriptLabel = "zynith-shell-active-window";
 
   const sdbus::ServiceName kKwinBusName{"org.kde.KWin"};
   const sdbus::ObjectPath kKwinPath{"/KWin"};
@@ -32,9 +32,9 @@ namespace {
   constexpr char kFieldSeparator = '\x1e';
 
   constexpr std::string_view kScriptSource = R"js(
-const BUS = "dev.noctalia.KWinActiveWindow";
-const PATH = "/dev/noctalia/KWinActiveWindow";
-const IFACE = "dev.noctalia.KWinActiveWindow";
+const BUS = "dev.zynith.KWinActiveWindow";
+const PATH = "/dev/zynith/KWinActiveWindow";
+const IFACE = "dev.zynith.KWinActiveWindow";
 const RECORD_SEP = "\x1F";
 const FIELD_SEP = "\x1e";
 
@@ -58,17 +58,17 @@ function notify(window) {
     const resourceClass = window.resourceClass || "";
     callDBus(BUS, PATH, IFACE, "notifyActiveWindow", caption, resourceClass, windowUuid(window));
   } catch (error) {
-    print("noctalia-active-window notify failed: " + error);
+    print("zynith-shell-active-window notify failed: " + error);
   }
 }
 
-function isNoctaliaShellSurface(window) {
+function isZynithShellSurface(window) {
   const resourceClass = (window.resourceClass || "").toLowerCase();
-  if (resourceClass === "noctalia") {
+  if (resourceClass === "zynith-shell") {
     return true;
   }
   const caption = (window.caption || "").toLowerCase();
-  return caption === "noctalia" && resourceClass === "";
+  return caption === "zynith-shell" && resourceClass === "";
 }
 
 function shouldTrack(window) {
@@ -87,7 +87,7 @@ function shouldTrack(window) {
   if (window.dialog || window.splash || window.utility || window.dropdownMenu || window.popupMenu) {
     return false;
   }
-  if (isNoctaliaShellSurface(window)) {
+  if (isZynithShellSurface(window)) {
     return false;
   }
   return true;
@@ -176,7 +176,7 @@ function syncWindows() {
     }
     callDBus(BUS, PATH, IFACE, "notifyWindowList", rows.join(RECORD_SEP));
   } catch (error) {
-    print("noctalia-active-window sync failed: " + error);
+    print("zynith-shell-active-window sync failed: " + error);
   }
 }
 
@@ -257,12 +257,12 @@ syncWindows();
     return parts;
   }
 
-  [[nodiscard]] bool isNoctaliaShellSurface(const std::string& appId, const std::string& title) {
+  [[nodiscard]] bool isZynithShellSurface(const std::string& appId, const std::string& title) {
     const std::string appLower = StringUtils::toLower(appId);
-    if (appLower == "noctalia") {
+    if (appLower == "zynith-shell") {
       return true;
     }
-    if (appLower.empty() && StringUtils::toLower(title) == "noctalia") {
+    if (appLower.empty() && StringUtils::toLower(title) == "zynith-shell") {
       return true;
     }
     return false;
@@ -343,7 +343,7 @@ namespace compositors::kde {
     ids.reserve(m_trackedWindows.size());
     for (const auto& window : m_trackedWindows) {
       if (window.appId.empty()
-          || isNoctaliaShellSurface(window.appId, window.title)
+          || isZynithShellSurface(window.appId, window.title)
           || !seen.insert(window.appId).second) {
         continue;
       }
@@ -358,7 +358,7 @@ namespace compositors::kde {
     matched.reserve(m_trackedWindows.size());
     std::uint64_t order = 0;
     for (const auto& window : m_trackedWindows) {
-      if (window.appId.empty() || isNoctaliaShellSurface(window.appId, window.title)) {
+      if (window.appId.empty() || isZynithShellSurface(window.appId, window.title)) {
         continue;
       }
       std::string appLower = window.appId;
@@ -390,7 +390,7 @@ namespace compositors::kde {
       }
       const std::string title = StringUtils::windowTitleSingleLine(window.title);
       const std::string appId = window.appId;
-      if (appId.empty() || isNoctaliaShellSurface(appId, title)) {
+      if (appId.empty() || isZynithShellSurface(appId, title)) {
         continue;
       }
       if (window.desktopIds.empty()) {
@@ -504,7 +504,7 @@ for (const window of workspace.windowList()) {{
         jsStringLiteral(uuid), jsStringLiteral(appId), jsStringLiteral(title), warpPointer ? "true" : "false"
     );
 
-    const std::string label = std::format("noctalia-activate-{}", ++m_transientScriptSerial);
+    const std::string label = std::format("zynith-shell-activate-{}", ++m_transientScriptSerial);
     if (!runTransientScript(script, label)) {
       kLog.warn(R"(failed to activate kde window class="{}" title="{}")", appId, title);
     }
@@ -541,7 +541,7 @@ for (const window of workspace.windowList()) {{
         jsStringLiteral(uuid), jsStringLiteral(appId), jsStringLiteral(title)
     );
 
-    const std::string label = std::format("noctalia-close-{}", ++m_transientScriptSerial);
+    const std::string label = std::format("zynith-shell-close-{}", ++m_transientScriptSerial);
     if (!runTransientScript(script, label)) {
       kLog.warn(R"(failed to close kde window class="{}" title="{}")", appId, title);
     }
@@ -689,7 +689,7 @@ for (const window of workspace.windowList()) {{
     } else {
       const std::string title = StringUtils::windowTitleSingleLine(caption);
       const std::string& appId = resourceClass;
-      if (isNoctaliaShellSurface(appId, title)) {
+      if (isZynithShellSurface(appId, title)) {
         return;
       }
       std::string identifier;
@@ -745,7 +745,7 @@ for (const window of workspace.windowList()) {{
       if (window.uuid.empty() && window.appId.empty()) {
         continue;
       }
-      if (isNoctaliaShellSurface(window.appId, window.title)) {
+      if (isZynithShellSurface(window.appId, window.title)) {
         continue;
       }
       next.push_back(std::move(window));

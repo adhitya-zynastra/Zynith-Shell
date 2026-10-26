@@ -21,7 +21,7 @@ namespace {
 } // namespace
 
 int main() {
-  const auto root = std::filesystem::temp_directory_path() / ("noctalia-path-browse-" + std::to_string(::getpid()));
+  const auto root = std::filesystem::temp_directory_path() / ("zynith-shell-path-browse-" + std::to_string(::getpid()));
   const auto directory = root / "notes";
   const auto file = directory / "config.toml";
   std::filesystem::create_directories(directory);

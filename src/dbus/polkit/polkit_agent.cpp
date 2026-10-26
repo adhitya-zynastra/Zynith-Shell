@@ -29,7 +29,7 @@
 namespace {
 
   constexpr Logger kLog("polkit");
-  constexpr auto kAgentObjectPath = "/org/noctalia/PolkitAuthenticationAgent";
+  constexpr auto kAgentObjectPath = "/org/zynith-shell/PolkitAuthenticationAgent";
 
   // GObject dispatches these signal/vfunc callbacks through libffi (g_cclosure_marshal_generic),
   // so a C++ exception escaping one would unwind across the C ABI and call std::terminate. Run the
@@ -172,7 +172,7 @@ namespace {
 // signatures are defined by libpolkit-agent.
 // NOLINTBEGIN(readability-identifier-naming)
 
-using NoctaliaPolkitListener = struct _NoctaliaPolkitListener {
+using ZynithPolkitListener = struct _ZynithPolkitListener {
   PolkitAgentListener parent_instance;
   void* owner = nullptr;
   InitiateCallback initiate = nullptr;
@@ -180,42 +180,42 @@ using NoctaliaPolkitListener = struct _NoctaliaPolkitListener {
   gpointer registration_handle = nullptr;
 };
 
-using NoctaliaPolkitListenerClass = struct _NoctaliaPolkitListenerClass {
+using ZynithPolkitListenerClass = struct _ZynithPolkitListenerClass {
   PolkitAgentListenerClass parent_class;
 };
 
-static void noctalia_polkit_listener_initiate_authentication(
+static void zynith_polkit_listener_initiate_authentication(
     PolkitAgentListener* listener, const gchar* action_id, const gchar* message, const gchar* icon_name,
     PolkitDetails* /*details*/, const gchar* cookie, GList* identities, GCancellable* cancellable,
     GAsyncReadyCallback callback, gpointer user_data
 ) noexcept;
-static gboolean noctalia_polkit_listener_initiate_authentication_finish(
+static gboolean zynith_polkit_listener_initiate_authentication_finish(
     PolkitAgentListener* listener, GAsyncResult* result, GError** error
 );
-static void noctalia_polkit_request_cancelled(GCancellable* cancellable, gpointer user_data) noexcept;
+static void zynith_polkit_request_cancelled(GCancellable* cancellable, gpointer user_data) noexcept;
 
-G_DEFINE_TYPE(NoctaliaPolkitListener, noctalia_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
+G_DEFINE_TYPE(ZynithPolkitListener, zynith_polkit_listener, POLKIT_AGENT_TYPE_LISTENER)
 
-static void noctalia_polkit_listener_init(NoctaliaPolkitListener* self) {
+static void zynith_polkit_listener_init(ZynithPolkitListener* self) {
   self->owner = nullptr;
   self->initiate = nullptr;
   self->cancel = nullptr;
   self->registration_handle = nullptr;
 }
 
-static void noctalia_polkit_listener_class_init(NoctaliaPolkitListenerClass* klass) {
+static void zynith_polkit_listener_class_init(ZynithPolkitListenerClass* klass) {
   auto* listenerClass = POLKIT_AGENT_LISTENER_CLASS(klass);
-  listenerClass->initiate_authentication = noctalia_polkit_listener_initiate_authentication;
-  listenerClass->initiate_authentication_finish = noctalia_polkit_listener_initiate_authentication_finish;
+  listenerClass->initiate_authentication = zynith_polkit_listener_initiate_authentication;
+  listenerClass->initiate_authentication_finish = zynith_polkit_listener_initiate_authentication_finish;
 }
 
-static void noctalia_polkit_listener_initiate_authentication(
+static void zynith_polkit_listener_initiate_authentication(
     PolkitAgentListener* listener, const gchar* action_id, const gchar* message, const gchar* icon_name,
     PolkitDetails* /*details*/, const gchar* cookie, GList* identities, GCancellable* cancellable,
     GAsyncReadyCallback callback, gpointer user_data
 ) noexcept {
   guardPolkitCallback("initiate_authentication", [&]() {
-    auto* self = reinterpret_cast<NoctaliaPolkitListener*>(listener);
+    auto* self = reinterpret_cast<ZynithPolkitListener*>(listener);
     auto request = std::make_unique<InternalAuthRequest>();
     request->actionId = action_id != nullptr ? action_id : "";
     request->message = message != nullptr ? message : "";
@@ -239,7 +239,7 @@ static void noctalia_polkit_listener_initiate_authentication(
 
     if (cancellable != nullptr) {
       request->cancelHandlerId =
-          g_cancellable_connect(cancellable, G_CALLBACK(noctalia_polkit_request_cancelled), request.get(), nullptr);
+          g_cancellable_connect(cancellable, G_CALLBACK(zynith_polkit_request_cancelled), request.get(), nullptr);
     }
 
     if (self->initiate == nullptr || self->owner == nullptr) {
@@ -250,18 +250,18 @@ static void noctalia_polkit_listener_initiate_authentication(
   });
 }
 
-static gboolean noctalia_polkit_listener_initiate_authentication_finish(
+static gboolean zynith_polkit_listener_initiate_authentication_finish(
     PolkitAgentListener* /*listener*/, GAsyncResult* result, GError** error
 ) {
   return g_task_propagate_boolean(G_TASK(result), error);
 }
 
-static void noctalia_polkit_request_cancelled(GCancellable* /*cancellable*/, gpointer user_data) noexcept {
+static void zynith_polkit_request_cancelled(GCancellable* /*cancellable*/, gpointer user_data) noexcept {
   guardPolkitCallback("request_cancelled", [&]() {
     auto* request = static_cast<InternalAuthRequest*>(user_data);
     request->cancelHandlerId = 0;
     auto* source = G_IS_TASK(request->task) ? g_task_get_source_object(request->task) : nullptr;
-    auto* listener = source != nullptr ? reinterpret_cast<NoctaliaPolkitListener*>(source) : nullptr;
+    auto* listener = source != nullptr ? reinterpret_cast<ZynithPolkitListener*>(source) : nullptr;
     if (listener != nullptr && listener->cancel != nullptr && listener->owner != nullptr) {
       listener->cancel(listener->owner, request);
     }
@@ -273,7 +273,7 @@ static void noctalia_polkit_request_cancelled(GCancellable* /*cancellable*/, gpo
 struct PolkitAgent::Impl {
   StateCallback stateCallback;
   ReadyCallback readyCallback;
-  NoctaliaPolkitListener* listener = nullptr;
+  ZynithPolkitListener* listener = nullptr;
   PolkitAgentSession* session = nullptr;
   GMainContext* context = nullptr;
   GCancellable* registerCancellable = nullptr;
@@ -295,7 +295,7 @@ struct PolkitAgent::Impl {
   mutable int glibPollTimeoutMs = -1;
 
   Impl() : context(g_main_context_default()) {
-    listener = static_cast<NoctaliaPolkitListener*>(g_object_new(noctalia_polkit_listener_get_type(), nullptr));
+    listener = static_cast<ZynithPolkitListener*>(g_object_new(zynith_polkit_listener_get_type(), nullptr));
     listener->owner = this;
     listener->initiate = &Impl::initiateBridge;
     listener->cancel = &Impl::cancelBridge;

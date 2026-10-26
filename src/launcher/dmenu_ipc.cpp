@@ -38,7 +38,7 @@ DmenuIpcService::~DmenuIpcService() {
 }
 
 bool DmenuIpcService::start() {
-  const auto socketPath = noctalia::launcher::resolveDmenuSocketPath();
+  const auto socketPath = zynith::launcher::resolveDmenuSocketPath();
   m_socketPath = socketPath.path;
   if (m_socketPath.empty()) {
     kLog.warn("disabled: {}", socketPath.error);

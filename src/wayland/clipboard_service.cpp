@@ -27,8 +27,8 @@
 
 namespace {
 
-  constexpr std::size_t kMinHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMinEntries);
-  constexpr std::size_t kMaxHistoryMaxEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryMaxEntries);
+  constexpr std::size_t kMinHistoryMaxEntries = static_cast<std::size_t>(zynith::config::kClipboardHistoryMinEntries);
+  constexpr std::size_t kMaxHistoryMaxEntries = static_cast<std::size_t>(zynith::config::kClipboardHistoryMaxEntries);
   // Sized against the per-entry image limit rather than against text: at 64 MiB,
   // two full-screen screenshots filled the entire budget and evicted every text
   // entry behind them.
@@ -1958,7 +1958,7 @@ std::string ClipboardService::stateDirectory() {
   if (!dir.empty()) {
     return dir + "/clipboard";
   }
-  return "/tmp/noctalia-clipboard";
+  return "/tmp/zynith-shell-clipboard";
 }
 
 std::string ClipboardService::manifestPath() { return stateDirectory() + "/index.enc"; }

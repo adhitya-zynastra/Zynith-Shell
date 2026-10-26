@@ -812,7 +812,7 @@ std::string LiveWallpaperController::statusJson() const {
 // ── IPC ─────────────────────────────────────────────────────────────────────
 
 void LiveWallpaperController::registerIpc(IpcService& ipc) {
-  namespace msg = noctalia::cli::msg;
+  namespace msg = zynith::cli::msg;
   const auto firstToken = [](const std::string& args) {
     const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
     return tokens.empty() ? std::string() : std::string(tokens.front());

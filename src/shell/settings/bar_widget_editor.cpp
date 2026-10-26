@@ -117,13 +117,13 @@ namespace settings {
     void addGestureActionRows(
         Flex& panel, const BarWidgetEditorContext& ctx, const SettingEntry& entry,
         const WidgetSettingStringMap& defaults, const WidgetSettingStringMap& configured,
-        noctalia::bar::GestureMask reserved
+        zynith::bar::GestureMask reserved
     ) {
-      for (const auto gesture : noctalia::bar::allGestures()) {
+      for (const auto gesture : zynith::bar::allGestures()) {
         if (reserved.contains(gesture)) {
           continue;
         }
-        const std::string key(noctalia::bar::gestureConfigKey(gesture));
+        const std::string key(zynith::bar::gestureConfigKey(gesture));
         std::vector<std::string> path = entry.path;
         path.push_back(key);
 
@@ -132,7 +132,7 @@ namespace settings {
 
         SettingEntry rowEntry = entry;
         rowEntry.path = path;
-        rowEntry.title = i18n::tr(std::string(noctalia::bar::gestureLabelKey(gesture)));
+        rowEntry.title = i18n::tr(std::string(zynith::bar::gestureLabelKey(gesture)));
         rowEntry.subtitle.clear();
 
         GestureActionSetting setting{
@@ -1593,7 +1593,7 @@ namespace settings {
             }
             auto body = ui::column({.align = FlexAlign::Stretch});
             addGestureActionRows(
-                *body, ctx, entry, defaults, configured, noctalia::bar::reservedGesturesForType(widgetType)
+                *body, ctx, entry, defaults, configured, zynith::bar::reservedGesturesForType(widgetType)
             );
             panel->addChild(makeGestureActionsSection(ctx, widgetName, std::move(body), visibleSpecs > 0));
             break;
@@ -2000,16 +2000,16 @@ namespace settings {
             std::vector<std::vector<std::string>> resetPaths;
             const auto widgetIt = ctx.config.widgets.find(widgetName);
             const WidgetConfig* widgetCfg = widgetIt != ctx.config.widgets.end() ? &widgetIt->second : nullptr;
-            const noctalia::bar::GestureMask reserved = noctalia::bar::reservedGesturesForType(widgetType);
+            const zynith::bar::GestureMask reserved = zynith::bar::reservedGesturesForType(widgetType);
             auto specs = widgetSettingSpecs(widgetType, widgetCfg, ctx.config.shell.fontFamily);
             for (const auto& spec : specs) {
               if (spec.schema.key == "actions") {
-                for (const auto gesture : noctalia::bar::allGestures()) {
+                for (const auto gesture : zynith::bar::allGestures()) {
                   if (reserved.contains(gesture)) {
                     continue;
                   }
                   std::vector<std::string> gesturePath = {
-                      "widget", widgetName, "actions", std::string(noctalia::bar::gestureConfigKey(gesture))
+                      "widget", widgetName, "actions", std::string(zynith::bar::gestureConfigKey(gesture))
                   };
                   if (ctx.configService->hasEffectiveOverride(gesturePath)) {
                     resetPaths.push_back(std::move(gesturePath));

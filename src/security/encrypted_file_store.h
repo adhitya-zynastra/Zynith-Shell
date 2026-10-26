@@ -12,7 +12,7 @@
 
 namespace security {
 
-  // V1 envelope: "NOCTALIAENC1" | version | algorithm | nonce | ciphertext and tag.
+  // V1 envelope: "ZYNITHENC1" | version | algorithm | nonce | ciphertext and tag.
   inline constexpr std::array<std::uint8_t, 12> EncryptedFileMagic = {
       'N', 'O', 'C', 'T', 'A', 'L', 'I', 'A', 'E', 'N', 'C', '1',
   };

@@ -17,7 +17,7 @@ namespace {
 
   std::filesystem::path uniqueTestDir() {
     const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
-    return std::filesystem::temp_directory_path() / ("noctalia-state-store-test-" + std::to_string(now));
+    return std::filesystem::temp_directory_path() / ("zynith-shell-state-store-test-" + std::to_string(now));
   }
 
   constexpr std::filesystem::perms fileModeMask() {

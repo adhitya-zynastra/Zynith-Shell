@@ -51,7 +51,7 @@ namespace scripting {
     bool updateAvailable = false;
     // The source's newest version targets an unsupported plugin API, so an older release
     // is installed instead. `latestVersion` / `latestPluginApiVersion` describe that
-    // newest version, so the UI can name what a Noctalia upgrade would unlock.
+    // newest version, so the UI can name what a Zynith upgrade would unlock.
     bool heldBack = false;
     std::string latestVersion;
     std::uint32_t latestPluginApiVersion = 0;

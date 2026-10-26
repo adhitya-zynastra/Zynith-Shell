@@ -10,7 +10,7 @@
 #include <system_error>
 #include <utility>
 
-namespace noctalia::config {
+namespace zynith::config {
 
   namespace {
 
@@ -191,4 +191,4 @@ namespace noctalia::config {
     return out;
   }
 
-} // namespace noctalia::config
+} // namespace zynith::config

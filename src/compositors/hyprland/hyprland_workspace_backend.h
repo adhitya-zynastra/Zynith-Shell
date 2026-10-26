@@ -56,7 +56,7 @@ public:
 private:
   enum class IpcSchema {
     Unknown,
-    // TODO: Remove LegacyId after Noctalia drops support for Hyprland v0.56.2 and older.
+    // TODO: Remove LegacyId after Zynith drops support for Hyprland v0.56.2 and older.
     LegacyId,
     StableIdentity,
   };

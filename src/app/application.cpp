@@ -107,7 +107,7 @@
 #include <malloc.h>
 #include <sstream>
 #include <unistd.h>
-#ifdef NOCTALIA_USE_JEMALLOC
+#ifdef ZYNITH_USE_JEMALLOC
 #include <jemalloc/jemalloc.h>
 #endif
 #include <optional>
@@ -115,9 +115,9 @@
 #include <string_view>
 #include <utility>
 
-#ifdef NOCTALIA_USE_JEMALLOC
-#define NOCTALIA_STRINGIFY_HELPER(x) #x
-#define NOCTALIA_STRINGIFY(x) NOCTALIA_STRINGIFY_HELPER(x)
+#ifdef ZYNITH_USE_JEMALLOC
+#define ZYNITH_STRINGIFY_HELPER(x) #x
+#define ZYNITH_STRINGIFY(x) ZYNITH_STRINGIFY_HELPER(x)
 #endif
 
 std::atomic<bool> Application::s_shutdownRequested{false};
@@ -190,7 +190,7 @@ Application::~Application() {
   FileDialog::setPresenter(nullptr);
   m_settingsWindow.shutdownDialogPresenter();
   // m_systemMonitor is declared after the plugin hosts, so it is destroyed first; drop the script
-  // API's pointer to it here, while both are still alive, or a plugin that used noctalia.cpuCores
+  // API's pointer to it here, while both are still alive, or a plugin that used zynith.cpuCores
   // releases its reference through a dangling pointer as its host is torn down.
   m_scriptApi.setSystemMonitor(nullptr);
   TooltipManager::instance().shutdown();
@@ -204,7 +204,7 @@ Application::~Application() {
 void Application::run(std::function<void()> startupReadyCallback) {
   initLogFile();
   initLogLevelFromEnvironment();
-  kLog.info("noctalia {}", noctalia::build_info::displayVersion());
+  kLog.info("zynith-shell {}", zynith::build_info::displayVersion());
   // zynith: startup accounting — how long the process existed before run() (dynamic loading, static
   // initialisers, the Application constructor). /proc/self/stat field 22 is the start time in clock ticks.
   {
@@ -243,7 +243,7 @@ void Application::run(std::function<void()> startupReadyCallback) {
   runStartupPhase("initUi", [this]() { initUi(); });
   runStartupPhase("initPluginServices", [this]() {
     // Outputs are enumerated by now (wallpaper created its surfaces in initUi); refresh
-    // the script-visible output snapshot before any service/panel reads noctalia.outputs().
+    // the script-visible output snapshot before any service/panel reads zynith.outputs().
     if (m_syncScriptApiOutputs) {
       m_syncScriptApiOutputs();
     }
@@ -291,7 +291,7 @@ void Application::run(std::function<void()> startupReadyCallback) {
         list += (list.empty() ? "" : ", ") + item;
       }
       notify::info(
-          noctalia::build_info::kProductName, i18n::tr("notifications.internal.plugin-updates-title"),
+          zynith::build_info::kProductName, i18n::tr("notifications.internal.plugin-updates-title"),
           i18n::tr("notifications.internal.plugin-updates-body", "source", sourceName, "plugins", list)
       );
     });
@@ -307,10 +307,10 @@ void Application::run(std::function<void()> startupReadyCallback) {
 
 #ifdef __GLIBC__
   runStartupPhase("allocator_trim", []() {
-#ifdef NOCTALIA_USE_JEMALLOC
+#ifdef ZYNITH_USE_JEMALLOC
     // jemalloc exports no malloc_trim; purge unused pages in every arena.
     const int purgeResult =
-        mallctl("arena." NOCTALIA_STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
+        mallctl("arena." ZYNITH_STRINGIFY(MALLCTL_ARENAS_ALL) ".purge", nullptr, nullptr, nullptr, 0);
     if (purgeResult != 0) {
       kLog.warn("failed to purge jemalloc arenas: {}", std::strerror(purgeResult));
     }

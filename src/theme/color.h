@@ -4,7 +4,7 @@
 #include <string>
 #include <tuple>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   // Minimal RGB colour (0-255 per channel) with hex/HSL/ARGB conversions. The
   // custom schemes operate in HSL space via this type; the M3 schemes go
@@ -41,4 +41,4 @@ namespace noctalia::theme {
   // force lightness to `lTarget`.
   Color adjustSurface(const Color& base, double sMax, double lTarget);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

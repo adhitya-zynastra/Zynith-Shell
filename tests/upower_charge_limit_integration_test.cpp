@@ -42,7 +42,7 @@ namespace {
       object
           ->addVTable(
               sdbus::registerProperty("NativePath").withGetter([this]() { return this->nativePath; }),
-              sdbus::registerProperty("Vendor").withGetter([]() { return std::string{"Noctalia Test"}; }),
+              sdbus::registerProperty("Vendor").withGetter([]() { return std::string{"Zynith Test"}; }),
               sdbus::registerProperty("Model").withGetter([this]() { return this->model; }),
               sdbus::registerProperty("Serial").withGetter([this]() { return this->nativePath; }),
               sdbus::registerProperty("Type").withGetter([]() { return std::uint32_t{2}; }),
@@ -222,7 +222,7 @@ namespace {
       const std::string path = "/org/freedesktop/UPower/devices/battery_" + id;
       batteries.push_back(
           std::make_unique<FakeBattery>(
-              *connection, path, "NOCTALIA_TEST_" + id, std::move(model), powerSupply, registerChargeMethod,
+              *connection, path, "ZYNITH_TEST_" + id, std::move(model), powerSupply, registerChargeMethod,
               unregisterBeforeFirstIntrospection
           )
       );

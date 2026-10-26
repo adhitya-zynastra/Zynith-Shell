@@ -41,11 +41,11 @@ namespace {
 
 int main() {
   const std::filesystem::path root =
-      std::filesystem::temp_directory_path() / ("noctalia-override-mutation-" + std::to_string(::getpid()));
+      std::filesystem::temp_directory_path() / ("zynith-shell-override-mutation-" + std::to_string(::getpid()));
   std::filesystem::remove_all(root);
-  writeFile(root / "config" / "noctalia" / "config.toml", "\n");
+  writeFile(root / "config" / "zynith-shell" / "config.toml", "\n");
 
-  ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
+  ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
   ::setenv("XDG_STATE_HOME", (root / "state").c_str(), 1);
 
   const std::vector<std::string> typePath{"calendar", "account", "feed", "type"};
@@ -69,7 +69,7 @@ int main() {
     // `path` is required, so both edits belong to the same commit.
     std::vector<std::pair<std::vector<std::string>, ConfigOverrideValue>> switchToVdir;
     switchToVdir.emplace_back(typePath, std::string("vdir"));
-    switchToVdir.emplace_back(vdirPath, std::string("/tmp/noctalia-vdir-mutation-test"));
+    switchToVdir.emplace_back(vdirPath, std::string("/tmp/zynith-shell-vdir-mutation-test"));
     expect(config.mutateOverrides(switchToVdir, {serverUrlPath}, nullptr), "provider switch writes");
 
     expect(reloads == 1, "provider switch reaches the config exactly once");
@@ -81,7 +81,7 @@ int main() {
     expect(account != nullptr, "account survives the switch");
     if (account != nullptr) {
       expect(account->type == "vdir", "account type is vdir");
-      expect(account->path == "/tmp/noctalia-vdir-mutation-test", "account path is set");
+      expect(account->path == "/tmp/zynith-shell-vdir-mutation-test", "account path is set");
       expect(account->serverUrl.empty(), "account server_url is cleared");
     }
 

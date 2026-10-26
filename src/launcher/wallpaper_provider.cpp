@@ -64,7 +64,7 @@ namespace {
 } // namespace
 
 WallpaperProvider::WallpaperProvider(
-    ConfigService* config, WaylandConnection* wayland, noctalia::theme::ThemeService* themeService
+    ConfigService* config, WaylandConnection* wayland, zynith::theme::ThemeService* themeService
 )
     : m_config(config), m_wayland(wayland), m_themeService(themeService) {}
 

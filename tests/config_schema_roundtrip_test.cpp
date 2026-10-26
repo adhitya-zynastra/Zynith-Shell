@@ -27,7 +27,7 @@
 #include <sstream>
 #include <string>
 
-using namespace noctalia::config::schema;
+using namespace zynith::config::schema;
 
 namespace {
 
@@ -145,7 +145,7 @@ location = "https://example.invalid/bad"
   }
 
   void checkPluginIdValidation() {
-    const std::string valid[] = {"noctalia/screen_recorder", "me/hello", "Team/repo_2", "a/b.c-d"};
+    const std::string valid[] = {"zynith-shell/screen_recorder", "me/hello", "Team/repo_2", "a/b.c-d"};
     for (const auto& id : valid) {
       if (!scripting::isValidPluginId(id)) {
         fail("plugins: rejected valid plugin id " + id);
@@ -170,7 +170,7 @@ location = "https://example.invalid/bad"
     // shapes that must not slip through are the near-misses: no colon, extra colons,
     // and an empty or malformed entry segment.
     const std::string validEntries[] = {
-        "noctalia/screen_recorder:widget", "me/hello:a", "Team/repo_2:entry-1", "a/b.c-d:e.f"
+        "zynith-shell/screen_recorder:widget", "me/hello:a", "Team/repo_2:entry-1", "a/b.c-d:e.f"
     };
     for (const auto& id : validEntries) {
       if (!scripting::isValidPluginEntryId(id)) {
@@ -434,7 +434,7 @@ location = "https://example.invalid/bad"
          "user",
          {"personal"},
          CalendarCredentialSource::File,
-         "/run/agenix/noctalia-caldav"},
+         "/run/agenix/zynith-shell-caldav"},
     };
     // Explicit chords so write→read round-trips (empty would emit defaults instead).
     c.keybinds.validate = {*parseKeyChordSpec("Return")};
@@ -477,7 +477,7 @@ location = "https://example.invalid/bad"
     c.shell.clipboardHistoryMaxEntries = 80;
     c.shell.clipboardAutoPaste = ClipboardAutoPasteMode::CtrlV;
     c.storage.keySource = StorageKeySource::File;
-    c.storage.keyFile = "/run/agenix/noctalia-storage-key";
+    c.storage.keyFile = "/run/agenix/zynith-shell-storage-key";
     c.shell.avatarPath = "/home/u/face.png";
     c.shell.settingsWindowTranslucent = true;
     c.shell.animation.speed = 1.5F;
@@ -558,11 +558,9 @@ location = "https://example.invalid/bad"
     // pluginSettings is not part of pluginsSchema ([plugin_settings] is its own root
     // key), so the section round-trip covers sources + enabled + auto_update only.
     c.plugins.sources = {
-        {.kind = PluginSourceKind::Git,
-         .name = "official",
-         .location = "https://github.com/noctalia-dev/official-plugins"},
+        {.kind = PluginSourceKind::Git, .name = "official", .location = "https://example.invalid/official-plugins"},
     };
-    c.plugins.enabled = {"noctalia/notes"};
+    c.plugins.enabled = {"zynith-shell/notes"};
     c.plugins.autoUpdate = PluginAutoUpdateMode::None; // non-default (default is Notify) so the round-trip exercises it
 
     c.bars = {makeProbeBar()};
@@ -686,13 +684,14 @@ location = "https://example.invalid/bad"
   }
 
   void checkAutoUpdateScopeSelection() {
-    // The official scope matches by name AND location: a user-added source that
-    // reuses the "official" name is not the official source.
+    // zynith: there are no built-in plugin sources, so the official scope is always empty; a user-added source that
+    // reuses the "official" name is never treated as built in.
+    if (!defaultPluginSources().empty()) {
+      fail("plugins: there must be no built-in plugin sources");
+    }
     const std::vector<PluginSourceConfig> sources = {
-        defaultPluginSources()[0], // the official source
-        {.kind = PluginSourceKind::Git,
-         .name = "community",
-         .location = "https://github.com/noctalia-dev/community-plugins"},
+        {.kind = PluginSourceKind::Git, .name = "official", .location = "https://example.invalid/official-plugins"},
+        {.kind = PluginSourceKind::Git, .name = "community", .location = "https://example.invalid/community-plugins"},
         {.kind = PluginSourceKind::Git,
          .name = "disabled",
          .location = "https://example.invalid/disabled",
@@ -717,18 +716,16 @@ location = "https://example.invalid/bad"
       }
     };
     expectLocations("defaults", sources, PluginAutoUpdateMode::None, {});
-    expectLocations(
-        "defaults", sources, PluginAutoUpdateMode::Official, {"https://github.com/noctalia-dev/official-plugins"}
-    );
+    expectLocations("defaults", sources, PluginAutoUpdateMode::Official, {});
     // Every enabled git source; disabled and path sources stay out.
     expectLocations(
         "defaults", sources, PluginAutoUpdateMode::All,
-        {"https://github.com/noctalia-dev/official-plugins", "https://github.com/noctalia-dev/community-plugins"}
+        {"https://example.invalid/official-plugins", "https://example.invalid/community-plugins"}
     );
     // Notify checks the same sources as All (it never installs: PluginManager passes apply = false).
     expectLocations(
         "defaults", sources, PluginAutoUpdateMode::Notify,
-        {"https://github.com/noctalia-dev/official-plugins", "https://github.com/noctalia-dev/community-plugins"}
+        {"https://example.invalid/official-plugins", "https://example.invalid/community-plugins"}
     );
     if (PluginsConfig{}.autoUpdate != PluginAutoUpdateMode::Notify) {
       fail("plugins.auto_update default must be notify-only");
@@ -738,14 +735,12 @@ location = "https://example.invalid/bad"
     // check must keep it out of the official scope.
     const std::vector<PluginSourceConfig> untrustedOfficial = {
         {.kind = PluginSourceKind::Git, .name = "official", .location = "https://example.invalid/untrusted"},
-        {.kind = PluginSourceKind::Git,
-         .name = "community",
-         .location = "https://github.com/noctalia-dev/community-plugins"},
+        {.kind = PluginSourceKind::Git, .name = "community", .location = "https://example.invalid/community-plugins"},
     };
     expectLocations("untrustedOfficial", untrustedOfficial, PluginAutoUpdateMode::Official, {});
     expectLocations(
         "untrustedOfficial", untrustedOfficial, PluginAutoUpdateMode::All,
-        {"https://example.invalid/untrusted", "https://github.com/noctalia-dev/community-plugins"}
+        {"https://example.invalid/untrusted", "https://example.invalid/community-plugins"}
     );
   }
 
@@ -760,7 +755,7 @@ location = "https://example.invalid/bad"
 [[source]]
 name = "official"
 kind = "git"
-location = "https://github.com/noctalia-dev/official-plugins"
+location = "https://example.invalid/official-plugins"
 
 [[source]]
 name = "official"
@@ -769,7 +764,7 @@ location = "https://example.invalid/untrusted"
 )");
     if (!erroredOnSource(legitDiag)
         || legitPlugins.sources.size() != 1
-        || legitPlugins.sources[0].location != "https://github.com/noctalia-dev/official-plugins") {
+        || legitPlugins.sources[0].location != "https://example.invalid/official-plugins") {
       fail("plugins.source: duplicate names must error and keep the first entry");
     }
   }
@@ -790,7 +785,7 @@ provider = "custom"
 server_url = "https://dav.example.com/"
 username = "user"
 credential_source = "file"
-password_file = "/run/agenix/noctalia-caldav"
+password_file = "/run/agenix/zynith-shell-caldav"
 )");
     if (valid.hasErrors()) {
       fail("calendar: valid file credential source was rejected");
@@ -813,7 +808,7 @@ type = "caldav"
 provider = "icloud"
 username = "user"
 credential_source = "secret-service"
-password_file = "/run/agenix/noctalia-caldav"
+password_file = "/run/agenix/zynith-shell-caldav"
 )");
     if (!conflictingFile.hasErrors()) {
       fail("calendar: secret-service credential source accepted password_file");
@@ -872,7 +867,7 @@ credential_source = "automatic"
 
     const Diagnostics valid = parse(R"(
 key_source = "file"
-key_file = "/run/agenix/noctalia-storage-key"
+key_file = "/run/agenix/zynith-shell-storage-key"
 )");
     if (valid.hasErrors()) {
       fail("storage: valid file key source was rejected");
@@ -887,7 +882,7 @@ key_source = "file"
 
     const Diagnostics conflictingFile = parse(R"(
 key_source = "secret-service"
-key_file = "/run/agenix/noctalia-storage-key"
+key_file = "/run/agenix/zynith-shell-storage-key"
 )");
     if (!conflictingFile.hasErrors()) {
       fail("storage: secret-service key source accepted key_file");
@@ -895,7 +890,7 @@ key_file = "/run/agenix/noctalia-storage-key"
 
     const Diagnostics relativeFile = parse(R"(
 key_source = "file"
-key_file = "noctalia-storage-key"
+key_file = "zynith-shell-storage-key"
 )");
     if (!relativeFile.hasErrors()) {
       fail("storage: file key source accepted a relative key_file");

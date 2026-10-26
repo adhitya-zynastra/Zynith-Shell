@@ -29,7 +29,7 @@ namespace {
 int main() {
   bool ok = true;
 
-  const std::string socketPath = "/tmp/noctalia-niri-workspace-test-" + std::to_string(getpid()) + ".sock";
+  const std::string socketPath = "/tmp/zynith-shell-niri-workspace-test-" + std::to_string(getpid()) + ".sock";
   ::unlink(socketPath.c_str());
 
   const int listener = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);

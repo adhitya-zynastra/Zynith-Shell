@@ -10,7 +10,7 @@
 // on execve(), so every application the shell launches keeps its own core-dump behaviour, and nothing system-wide
 // changes. Consequences of a non-dumpable process: no core file, no ptrace attach by the same user (gdb -p), and
 // /proc/<pid>/{fd,maps,environ,...} become root-owned — which is why the shell reports its own resources over IPC
-// (`noctalia msg status`). Crashes stay diagnosable through installCrashBacktrace().
+// (`zynith-shell msg status`). Crashes stay diagnosable through installCrashBacktrace().
 //
 // For a debugging session, ZYNITH_ALLOW_COREDUMP=1 in the shell's environment skips the restriction.
 namespace security {
@@ -21,7 +21,7 @@ namespace security {
 
   // Fatal-signal handlers (SEGV, BUS, FPE, ILL, ABRT) that write the signal and a backtrace to the log file and
   // stderr, then re-raise with the default action. Uses an alternate signal stack so a stack overflow still reports.
-  // Frames of the executable print as offsets; resolve with `addr2line -Cfe <noctalia binary> <offset>`.
+  // Frames of the executable print as offsets; resolve with `addr2line -Cfe <zynith-shell binary> <offset>`.
   void installCrashBacktrace();
 
   struct ProcessResources {

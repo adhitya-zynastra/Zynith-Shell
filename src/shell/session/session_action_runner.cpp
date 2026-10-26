@@ -259,8 +259,7 @@ void SessionActionRunner::invoke(const SessionPanelActionConfig& cfg) const {
   if (cfg.action == "lock_and_suspend") {
     if (!lockThenSuspendDetached()) {
       notify::error(
-          noctalia::build_info::kProductName, i18n::tr("session.errors.lock-title"),
-          i18n::tr("session.errors.lock-body")
+          zynith::build_info::kProductName, i18n::tr("session.errors.lock-title"), i18n::tr("session.errors.lock-body")
       );
     }
     return;
@@ -276,8 +275,7 @@ void SessionActionRunner::invoke(const SessionPanelActionConfig& cfg) const {
   if (cfg.action == "lock") {
     if (!lock()) {
       notify::error(
-          noctalia::build_info::kProductName, i18n::tr("session.errors.lock-title"),
-          i18n::tr("session.errors.lock-body")
+          zynith::build_info::kProductName, i18n::tr("session.errors.lock-title"), i18n::tr("session.errors.lock-body")
       );
     }
     return;

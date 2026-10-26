@@ -25,7 +25,7 @@ namespace {
   // unique name from Register, and claiming a name would need a dbus policy.
   const sdbus::ObjectPath kAgentObjectPath{"/org/freedesktop/NetworkManager/SecretAgent"};
   constexpr auto kAgentInterface = "org.freedesktop.NetworkManager.SecretAgent";
-  constexpr auto kAgentIdentifier = "org.noctalia.SecretAgent";
+  constexpr auto kAgentIdentifier = "org.zynith-shell.SecretAgent";
 
   const sdbus::ServiceName kNmBusName{"org.freedesktop.NetworkManager"};
   const sdbus::ObjectPath kAgentManagerObjectPath{"/org/freedesktop/NetworkManager/AgentManager"};

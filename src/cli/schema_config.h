@@ -5,7 +5,7 @@
 #include <array>
 #include <string_view>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array kConfigValidatePositionals{
       Positional{"path", "Config file or directory; defaults to the active config", {}, false, false, false},
@@ -71,8 +71,8 @@ namespace noctalia::cli {
   inline constexpr Command kConfigReplayReportCmd{
       "replay-report",
       "Reconstruct config and state from a support report",
-      "Reconstruct config-home/noctalia and state-home/noctalia from a support report.\n\n"
-      "With --flattened, reconstruct a single config-home/noctalia/config.toml from the report's merged config.",
+      "Reconstruct config-home/zynith-shell and state-home/zynith-shell from a support report.\n\n"
+      "With --flattened, reconstruct a single config-home/zynith-shell/config.toml from the report's merged config.",
       {},
       kConfigReplayFlags,
       kConfigReplayPositionals,
@@ -90,4 +90,4 @@ namespace noctalia::cli {
       "config", "Validate config and support/replay helpers", {}, {}, {}, {}, kConfigSubcommands, false,
   };
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

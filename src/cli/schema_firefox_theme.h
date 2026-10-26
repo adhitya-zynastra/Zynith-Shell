@@ -5,7 +5,7 @@
 #include <array>
 #include <string_view>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array<std::string_view, 9> kFirefoxThemeActionChoices{
       "install", "uninstall", "update", "dark", "light", "auto", "host", "start", "help",
@@ -28,4 +28,4 @@ namespace noctalia::cli {
       false,
   };
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

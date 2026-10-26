@@ -270,7 +270,7 @@ struct PointerCursorCapturePending {
     const int stride = bufferWidth * 4;
     mappedSize = static_cast<std::size_t>(stride) * height;
 #ifdef __linux__
-    fd = memfd_create("noctalia-cursor-capture", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    fd = memfd_create("zynith-shell-cursor-capture", MFD_CLOEXEC | MFD_ALLOW_SEALING);
 #endif
     if (fd < 0 || ftruncate(fd, static_cast<off_t>(mappedSize)) < 0) {
       owner->fail("failed to allocate cursor shared-memory file");

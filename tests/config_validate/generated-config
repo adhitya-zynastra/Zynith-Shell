@@ -28,13 +28,13 @@ type = "sysmon"
 stat = "gpu_vram_used"
 
 [plugins]
-enabled = ["noctalia/wallhaven"]
+enabled = ["zynith-shell/wallhaven"]
 
 [[plugins.source]]
 name = "test"
 kind = "path"
 location = "tests/config_validate/plugin-source"
 
-[plugin_settings."noctalia/wallhaven"]
+[plugin_settings."zynith-shell/wallhaven"]
 browser_placement = "floating"
 browser_position = "center"

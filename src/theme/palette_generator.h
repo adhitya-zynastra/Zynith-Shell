@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   enum class Scheme;
 
@@ -22,4 +22,4 @@ namespace noctalia::theme {
   GeneratedPalette generateMaterial(const std::vector<uint8_t>& rgb112, Scheme scheme);
   GeneratedPalette generateCustom(const std::vector<uint8_t>& rgb112, Scheme scheme);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

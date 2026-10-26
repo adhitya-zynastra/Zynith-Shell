@@ -14,7 +14,7 @@ namespace calendar {
     std::chrono::system_clock::time_point expiry;
   };
 
-  // Client for the api.noctalia.dev Google OAuth broker. The broker holds the OAuth client_secret
+  // Client for a Google OAuth broker (Zynith has none: see google_oauth.cpp). A broker holds the OAuth client_secret
   // and performs the code/token exchange; this client never sees it. See the broker hand-off spec.
   class GoogleOAuthBroker {
   public:

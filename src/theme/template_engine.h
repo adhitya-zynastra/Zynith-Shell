@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   struct GeneratedPalette;
 
@@ -70,4 +70,4 @@ namespace noctalia::theme {
     Options m_options;
   };
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

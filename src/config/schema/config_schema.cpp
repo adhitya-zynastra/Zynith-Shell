@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
 
   const Schema<AudioConfig>& audioSchema() {
     static const Schema<AudioConfig> s = {
@@ -2397,4 +2397,4 @@ namespace noctalia::config::schema {
     return s;
   }
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

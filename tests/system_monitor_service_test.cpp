@@ -32,7 +32,7 @@ namespace {
     }
     monitor.releaseDiskPath(path);
 
-    const std::string missingPath = path + "/definitely-not-a-noctalia-filesystem";
+    const std::string missingPath = path + "/definitely-not-a-zynith-shell-filesystem";
     monitor.retainDiskPath(missingPath);
     expect(!monitor.diskStats(missingPath).has_value(), "an unavailable path should not produce a zero snapshot");
     monitor.releaseDiskPath(missingPath);

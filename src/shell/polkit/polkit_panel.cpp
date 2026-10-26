@@ -411,7 +411,7 @@ void PolkitPanel::resolveIcon(Renderer& renderer, const PolkitRequest& request) 
   }
 
   if (request.isInternal) {
-    const auto logoPath = paths::assetPath("noctalia.svg");
+    const auto logoPath = paths::assetPath("zynith-shell.svg");
     m_fallbackIcon->setVisible(false);
     m_icon->setSize(iconSize, iconSize);
     m_icon->setSourceFile(renderer, logoPath.string(), static_cast<int>(std::round(iconSize)), true);

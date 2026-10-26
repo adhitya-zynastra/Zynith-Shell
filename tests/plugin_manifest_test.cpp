@@ -33,7 +33,7 @@ namespace {
   }
 
   std::filesystem::path makeTempDir() {
-    std::string pattern = (std::filesystem::temp_directory_path() / "noctalia-plugin-manifest-XXXXXX").string();
+    std::string pattern = (std::filesystem::temp_directory_path() / "zynith-shell-plugin-manifest-XXXXXX").string();
     std::vector<char> buffer(pattern.begin(), pattern.end());
     buffer.push_back('\0');
     char* result = ::mkdtemp(buffer.data());

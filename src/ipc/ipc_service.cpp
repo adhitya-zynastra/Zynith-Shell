@@ -104,8 +104,8 @@ bool IpcService::start() {
   return true;
 }
 
-void IpcService::bind(const noctalia::cli::Command& command, Handler handler, HandlerOptions options) {
-  const noctalia::cli::Command* spec = noctalia::cli::findMsgCommand(command.name);
+void IpcService::bind(const zynith::cli::Command& command, Handler handler, HandlerOptions options) {
+  const zynith::cli::Command* spec = zynith::cli::findMsgCommand(command.name);
   if (spec == nullptr) {
     kLog.error("cannot bind non-msg CLI command '{}'", command.name);
     return;
@@ -116,7 +116,7 @@ void IpcService::bind(const noctalia::cli::Command& command, Handler handler, Ha
       spec->name,
       HandlerEntry{
           .fn = std::move(handler),
-          .argsSpec = noctalia::cli::renderArgsSpec(*spec),
+          .argsSpec = zynith::cli::renderArgsSpec(*spec),
           .description = spec->summary,
           .actionEditorVisibility = options.actionEditorVisibility,
           .cycles = false,
@@ -124,7 +124,7 @@ void IpcService::bind(const noctalia::cli::Command& command, Handler handler, Ha
   );
 }
 
-void IpcService::bindCycle(const noctalia::cli::Command& command, Handler handler, HandlerOptions options) {
+void IpcService::bindCycle(const zynith::cli::Command& command, Handler handler, HandlerOptions options) {
   bind(command, std::move(handler), options);
   const auto it =
       std::ranges::find_if(m_handlers, [&command](const auto& entry) { return entry.first == command.name; });
@@ -292,7 +292,7 @@ std::string IpcService::buildHelp() const {
     maxSignature = std::max(maxSignature, signatures.back().size());
   }
 
-  std::string out = "Usage: noctalia msg <command> [args]\n\nCommands:\n";
+  std::string out = "Usage: zynith-shell msg <command> [args]\n\nCommands:\n";
   for (std::size_t i = 0; i < infos.size(); ++i) {
     out += "  ";
     out += signatures[i];
@@ -308,7 +308,7 @@ std::string IpcService::buildHelp() const {
 std::string IpcService::executeParsed(const std::string& command, const std::string& args) const {
   const auto it = std::ranges::find_if(m_handlers, [&command](const auto& e) { return e.first == command; });
   if (it == m_handlers.end()) {
-    return "error: unknown command (try: noctalia msg --help)\n";
+    return "error: unknown command (try: zynith-shell msg --help)\n";
   }
   return it->second.fn(args);
 }
@@ -322,5 +322,5 @@ std::string IpcService::resolveSocketPath() {
   if (display == nullptr || display[0] == '\0') {
     display = "wayland-0";
   }
-  return std::string(runtime) + "/noctalia-" + display + ".sock";
+  return std::string(runtime) + "/zynith-shell-" + display + ".sock";
 }

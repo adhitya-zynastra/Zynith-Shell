@@ -69,7 +69,7 @@ struct BluetoothState {
 
 enum class BluetoothStateChangeOrigin : std::uint8_t {
   External,
-  Noctalia,
+  Zynith,
 };
 
 class BluetoothService {

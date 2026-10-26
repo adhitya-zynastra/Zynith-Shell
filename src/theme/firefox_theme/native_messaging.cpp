@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <vector>
 
-namespace noctalia::theme::firefox_theme::native_messaging {
+namespace zynith::theme::firefox_theme::native_messaging {
   namespace {
 
     bool writeAll(const void* data, std::size_t size) {
@@ -110,4 +110,4 @@ namespace noctalia::theme::firefox_theme::native_messaging {
     }
   }
 
-} // namespace noctalia::theme::firefox_theme::native_messaging
+} // namespace zynith::theme::firefox_theme::native_messaging

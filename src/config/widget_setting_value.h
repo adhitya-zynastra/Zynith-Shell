@@ -19,7 +19,7 @@ using WidgetSettingStringMap = std::unordered_map<std::string, std::string>;
 using WidgetSettingValue =
     std::variant<bool, std::int64_t, double, std::string, std::vector<std::string>, WidgetSettingStringMap>;
 
-namespace noctalia::config {
+namespace zynith::config {
 
   template <typename> inline constexpr bool kUnsupportedWidgetSettingType = false;
 
@@ -111,4 +111,4 @@ namespace noctalia::config {
     }
   }
 
-} // namespace noctalia::config
+} // namespace zynith::config

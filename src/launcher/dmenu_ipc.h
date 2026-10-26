@@ -11,7 +11,7 @@
 class LauncherPanel;
 class PanelManager;
 
-// Dedicated Unix socket implementing the `noctalia dmenu` stdin/stdout contract.
+// Dedicated Unix socket implementing the `zynith-shell dmenu` stdin/stdout contract.
 // The main IPC service is synchronous and line-capped, so it cannot carry large
 // candidate lists or defer a reply until the user picks. This socket accepts one
 // connection per invocation, reads a prompt header line + candidate bytes until EOF,

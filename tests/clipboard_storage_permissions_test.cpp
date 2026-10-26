@@ -203,7 +203,7 @@ namespace {
 
   void seedLegacyHistory(const std::filesystem::path& stateHome) {
     namespace fs = std::filesystem;
-    const fs::path clipboardDir = stateHome / "noctalia/clipboard";
+    const fs::path clipboardDir = stateHome / "zynith-shell/clipboard";
     const fs::path entriesDir = clipboardDir / "entries";
     const fs::path manifestPath = clipboardDir / "index.json";
     const fs::path payloadPath = entriesDir / "entry.bin";
@@ -239,7 +239,7 @@ namespace {
 
   bool migrationAndEncryptedReload(const std::filesystem::path& stateHome) {
     namespace fs = std::filesystem;
-    const fs::path clipboardDir = stateHome / "noctalia/clipboard";
+    const fs::path clipboardDir = stateHome / "zynith-shell/clipboard";
     const fs::path entriesDir = clipboardDir / "entries";
     const fs::path encryptedManifest = clipboardDir / "index.enc";
     const fs::path encryptedPayload = entriesDir / "entry.enc";
@@ -298,8 +298,8 @@ namespace {
   bool unavailableProviderPreservesPlaintext(const std::filesystem::path& stateHome) {
     namespace fs = std::filesystem;
     seedLegacyHistory(stateHome);
-    const fs::path manifest = stateHome / "noctalia/clipboard/index.json";
-    const fs::path payload = stateHome / "noctalia/clipboard/entries/entry.bin";
+    const fs::path manifest = stateHome / "zynith-shell/clipboard/index.json";
+    const fs::path payload = stateHome / "zynith-shell/clipboard/entries/entry.bin";
     const std::string manifestBefore = readFile(manifest);
     const std::string payloadBefore = readFile(payload);
 
@@ -320,7 +320,7 @@ namespace {
     ok = expect(fake->storeCount() == 0, "a key was stored while the provider was unavailable") && ok;
     ok = expect(readFile(manifest) == manifestBefore, "legacy manifest changed without a keyring") && ok;
     ok = expect(readFile(payload) == payloadBefore, "legacy payload changed without a keyring") && ok;
-    ok = expect(!fs::exists(stateHome / "noctalia/clipboard/index.enc"), "encrypted manifest was created") && ok;
+    ok = expect(!fs::exists(stateHome / "zynith-shell/clipboard/index.enc"), "encrypted manifest was created") && ok;
 
     fake->setLookupStatus(std::nullopt);
     clipboard.retryPersistence();
@@ -334,13 +334,14 @@ namespace {
         && ok;
     ok = expect(!fs::exists(manifest), "retry left the legacy manifest behind") && ok;
     ok = expect(!fs::exists(payload), "retry left the legacy payload behind") && ok;
-    ok = expect(fs::exists(stateHome / "noctalia/clipboard/index.enc"), "retry did not create encrypted history") && ok;
+    ok = expect(fs::exists(stateHome / "zynith-shell/clipboard/index.enc"), "retry did not create encrypted history")
+        && ok;
     return ok;
   }
 
   bool missingKeyPreservesEncryptedFiles(const std::filesystem::path& stateHome) {
     namespace fs = std::filesystem;
-    const fs::path clipboardDir = stateHome / "noctalia/clipboard";
+    const fs::path clipboardDir = stateHome / "zynith-shell/clipboard";
     const fs::path manifest = clipboardDir / "index.enc";
     fs::create_directories(clipboardDir);
     {
@@ -369,7 +370,7 @@ namespace {
 
   bool secretServiceRecoveryReset(const std::filesystem::path& stateHome) {
     namespace fs = std::filesystem;
-    const fs::path clipboardDir = stateHome / "noctalia/clipboard";
+    const fs::path clipboardDir = stateHome / "zynith-shell/clipboard";
     const fs::path entriesDir = clipboardDir / "entries";
     const fs::path manifest = clipboardDir / "index.enc";
     const fs::path encryptedPayload = entriesDir / "entry.enc";
@@ -437,7 +438,7 @@ namespace {
     auto backend = std::make_unique<FakeSecretStoreBackend>();
     auto* fake = backend.get();
     security::SecretStore store(std::move(backend));
-    const fs::path encryptedManifest = stateHome / "noctalia/clipboard/index.enc";
+    const fs::path encryptedManifest = stateHome / "zynith-shell/clipboard/index.enc";
     bool ok = true;
 
     {
@@ -452,7 +453,7 @@ namespace {
       ok = expect(clipboard.clipboardText() == "secret", "file key source did not migrate legacy history") && ok;
       ok = expect(fs::exists(encryptedManifest), "file key source did not create encrypted history") && ok;
       ok = expect(
-               !fs::exists(stateHome / "noctalia/clipboard/index.json"),
+               !fs::exists(stateHome / "zynith-shell/clipboard/index.json"),
                "file key source left the legacy manifest behind"
            )
           && ok;
@@ -560,35 +561,34 @@ int main() {
   }
 
   const auto serial = std::chrono::steady_clock::now().time_since_epoch().count();
-  const fs::path root = fs::temp_directory_path() / ("noctalia-clipboard-storage-test-" + std::to_string(serial));
+  const fs::path root = fs::temp_directory_path() / ("zynith-shell-clipboard-storage-test-" + std::to_string(serial));
   fs::remove_all(root);
   fs::create_directories(root);
 
   bool ok = true;
   const fs::path migrationHome = root / "migration";
-  ok = expect(::setenv("NOCTALIA_STATE_HOME", migrationHome.c_str(), 1) == 0, "failed to set migration state home")
-      && ok;
+  ok = expect(::setenv("ZYNITH_STATE_HOME", migrationHome.c_str(), 1) == 0, "failed to set migration state home") && ok;
   ok = migrationAndEncryptedReload(migrationHome) && ok;
 
   const fs::path unavailableHome = root / "unavailable";
-  ok = expect(::setenv("NOCTALIA_STATE_HOME", unavailableHome.c_str(), 1) == 0, "failed to set unavailable state home")
+  ok = expect(::setenv("ZYNITH_STATE_HOME", unavailableHome.c_str(), 1) == 0, "failed to set unavailable state home")
       && ok;
   ok = unavailableProviderPreservesPlaintext(unavailableHome) && ok;
 
   const fs::path missingKeyHome = root / "missing-key";
-  ok = expect(::setenv("NOCTALIA_STATE_HOME", missingKeyHome.c_str(), 1) == 0, "failed to set missing-key state home")
+  ok = expect(::setenv("ZYNITH_STATE_HOME", missingKeyHome.c_str(), 1) == 0, "failed to set missing-key state home")
       && ok;
   ok = missingKeyPreservesEncryptedFiles(missingKeyHome) && ok;
 
   const fs::path recoveryHome = root / "recovery";
-  ok = expect(::setenv("NOCTALIA_STATE_HOME", recoveryHome.c_str(), 1) == 0, "failed to set recovery state home") && ok;
+  ok = expect(::setenv("ZYNITH_STATE_HOME", recoveryHome.c_str(), 1) == 0, "failed to set recovery state home") && ok;
   ok = secretServiceRecoveryReset(recoveryHome) && ok;
 
   const fs::path fileKeyHome = root / "file-key";
-  ok = expect(::setenv("NOCTALIA_STATE_HOME", fileKeyHome.c_str(), 1) == 0, "failed to set file-key state home") && ok;
+  ok = expect(::setenv("ZYNITH_STATE_HOME", fileKeyHome.c_str(), 1) == 0, "failed to set file-key state home") && ok;
   ok = fileKeySource(fileKeyHome) && ok;
 
-  ::unsetenv("NOCTALIA_STATE_HOME");
+  ::unsetenv("ZYNITH_STATE_HOME");
   fs::remove_all(root);
   return ok ? 0 : 1;
 }

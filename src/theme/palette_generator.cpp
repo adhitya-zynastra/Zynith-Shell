@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -32,4 +32,4 @@ namespace noctalia::theme {
     return validateGeneratedPalette(std::move(palette));
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

@@ -10,7 +10,7 @@
 // instance never leaves a stale lock behind — no manual cleanup, no PID probing.
 //
 // The lock is scoped per Wayland display (matching the IPC socket naming) and is
-// independent of IPC: it exists purely to answer "am I the only noctalia on this
+// independent of IPC: it exists purely to answer "am I the only zynith-shell on this
 // display?" and must be claimed before any shell/Wayland init so the answer is
 // settled before bars or surfaces are created.
 class SingleInstanceLock {

@@ -6,7 +6,7 @@
 #include <optional>
 #include <string_view>
 
-namespace noctalia::config {
+namespace zynith::config {
 
   void seedBuiltinWidgets(Config& config);
 
@@ -18,4 +18,4 @@ namespace noctalia::config {
   [[nodiscard]] WidgetConfig
   readBarWidgetConfig(std::string_view widgetName, const toml::table& entryTable, const Config& baseConfig);
 
-} // namespace noctalia::config
+} // namespace zynith::config

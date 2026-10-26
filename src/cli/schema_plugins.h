@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array kPluginsLintPositionals{
       Positional{
@@ -36,7 +36,7 @@ namespace noctalia::cli {
       "plugins",
       "Offline plugin author tools",
       "Offline tools for plugin authors (no running shell required).\n"
-      "To manage installed plugins on the running instance, use 'noctalia msg plugins'.",
+      "To manage installed plugins on the running instance, use 'zynith-shell msg plugins'.",
       {},
       {},
       {},
@@ -44,4 +44,4 @@ namespace noctalia::cli {
       false,
   };
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

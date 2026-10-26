@@ -80,7 +80,7 @@ int main() {
   TEST_CHECK(extInserted);
   extIt->second.order = extToplevels.m_nextOrder++;
 
-  extToplevels.onHandleTitle(extHandle, "noctalia");
+  extToplevels.onHandleTitle(extHandle, "zynith-shell");
   extToplevels.onHandleAppId(extHandle, "com.mitchellh.ghostty");
   extToplevels.onHandleIdentifier(extHandle, "49");
 
@@ -97,7 +97,7 @@ int main() {
   auto extWindows = extToplevels.windowsForApp("com.mitchellh.ghostty", "ghostty");
   TEST_CHECK(extWindows.size() == 1);
   TEST_CHECK(extWindows[0].identifier == "49");
-  TEST_CHECK(extWindows[0].title == "noctalia");
+  TEST_CHECK(extWindows[0].title == "zynith-shell");
   visited = 0;
   extToplevels.visitExtHandles([&](ext_foreign_toplevel_handle_v1* current) {
     TEST_CHECK(current == extHandle);
@@ -111,7 +111,7 @@ int main() {
   extWindows = extToplevels.windowsForApp("com.mitchellh.ghostty", "ghostty");
   TEST_CHECK(extWindows.size() == 1);
   TEST_CHECK(extWindows[0].identifier == "49");
-  TEST_CHECK(extWindows[0].title == "noctalia");
+  TEST_CHECK(extWindows[0].title == "zynith-shell");
 
   extToplevels.onHandleDone(extHandle);
   TEST_CHECK(changeCount == 2);

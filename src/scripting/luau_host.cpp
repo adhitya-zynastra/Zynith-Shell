@@ -56,10 +56,10 @@
 
 namespace {
   Logger kLog{"luau"};
-  constexpr const char* kHostKey = "__noctalia_host";
+  constexpr const char* kHostKey = "__zynith_host";
   // Field on a module environment's metatable holding the module's own directory.
   // Not reachable through the environment table itself, and the metatable is frozen.
-  constexpr const char* kModuleDirKey = "__noctalia_moduledir";
+  constexpr const char* kModuleDirKey = "__zynith_moduledir";
   constexpr auto kDefaultCommandTimeout = std::chrono::milliseconds(5000);
   constexpr auto kMinCommandTimeout = std::chrono::milliseconds(50);
   constexpr auto kMaxCommandTimeout = std::chrono::milliseconds(60000);
@@ -275,7 +275,7 @@ namespace {
     const std::string name(scripting::capabilityName(cap));
     noteDenied(id, name, what);
     luaL_error(
-        L, "%s needs the '%s' capability: declare it in plugin.toml, then `noctalia msg plugins grant %s %s`", what,
+        L, "%s needs the '%s' capability: declare it in plugin.toml, then `zynith-shell msg plugins grant %s %s`", what,
         name.c_str(), id.c_str(), name.c_str()
     );
   }
@@ -611,7 +611,7 @@ namespace {
     return 1;
   }
 
-  // nowMs() -> wall-clock milliseconds since the Unix epoch. os.time() and noctalia.formatTime()
+  // nowMs() -> wall-clock milliseconds since the Unix epoch. os.time() and zynith.formatTime()
   // are both whole-second, so this is the only way a plugin can see sub-second time, e.g. to phase
   // its own updates onto a second boundary.
   int luau_nowMs(lua_State* L) {
@@ -817,7 +817,7 @@ namespace {
     if (auto* host = hostForState(L)) {
       host->scriptNotifyInfo(title, body);
     } else {
-      notify::info(noctalia::build_info::kProductName, title, body);
+      notify::info(zynith::build_info::kProductName, title, body);
     }
     return 0;
   }
@@ -829,7 +829,7 @@ namespace {
     if (auto* host = hostForState(L)) {
       host->scriptNotifyError(title, body);
     } else {
-      notify::error(noctalia::build_info::kProductName, title, body);
+      notify::error(zynith::build_info::kProductName, title, body);
     }
     return 0;
   }
@@ -1726,7 +1726,7 @@ namespace {
     return 0;
   }
 
-  const luaL_Reg kNoctaliaStateLib[] = {
+  const luaL_Reg kZynithStateLib[] = {
       {"set", luau_state_set},
       {"get", luau_state_get},
       {"watch", luau_state_watch},
@@ -1762,13 +1762,13 @@ namespace {
     }
   }
 
-  const luaL_Reg kNoctaliaSoundLib[] = {
+  const luaL_Reg kZynithSoundLib[] = {
       {"load", luau_sound_load},
       {"play", luau_sound_play},
       {nullptr, nullptr},
   };
 
-  const luaL_Reg kNoctaliaJsonLib[] = {
+  const luaL_Reg kZynithJsonLib[] = {
       {"decode", luau_json_decode},
       {"encode", luau_json_encode},
       {nullptr, nullptr},
@@ -1798,7 +1798,7 @@ namespace {
     return 1;
   }
 
-  const luaL_Reg kNoctaliaStringLib[] = {
+  const luaL_Reg kZynithStringLib[] = {
       {"trim", luau_string_trim},
       {"urlEncode", luau_string_urlEncode},
       {"urlDecode", luau_string_urlDecode},
@@ -1820,7 +1820,7 @@ namespace {
     return 1;
   }
 
-  const luaL_Reg kNoctaliaBaseLib[] = {
+  const luaL_Reg kZynithBaseLib[] = {
       {"log", luau_log},
       {"runAsync", luau_runAsync},
       {"runStream", luau_runStream},
@@ -1880,23 +1880,23 @@ namespace {
       {nullptr, nullptr},
   };
 
-  void registerNoctaliaLib(lua_State* L) {
-    luaL_register(L, "noctalia", kNoctaliaBaseLib);
-    // noctalia.state = { set, get, watch }
+  void registerZynithLib(lua_State* L) {
+    luaL_register(L, "zynith", kZynithBaseLib);
+    // zynith.state = { set, get, watch }
     lua_createtable(L, 0, 0);
-    luaL_register(L, nullptr, kNoctaliaStateLib);
+    luaL_register(L, nullptr, kZynithStateLib);
     lua_setfield(L, -2, "state");
-    // noctalia.json = { decode, encode }
+    // zynith.json = { decode, encode }
     lua_createtable(L, 0, 0);
-    luaL_register(L, nullptr, kNoctaliaJsonLib);
+    luaL_register(L, nullptr, kZynithJsonLib);
     lua_setfield(L, -2, "json");
-    // noctalia.sound = { load, play }
+    // zynith.sound = { load, play }
     lua_createtable(L, 0, 0);
-    luaL_register(L, nullptr, kNoctaliaSoundLib);
+    luaL_register(L, nullptr, kZynithSoundLib);
     lua_setfield(L, -2, "sound");
-    // noctalia.string = { trim, urlEncode, urlDecode }
+    // zynith.string = { trim, urlEncode, urlDecode }
     lua_createtable(L, 0, 0);
-    luaL_register(L, nullptr, kNoctaliaStringLib);
+    luaL_register(L, nullptr, kZynithStringLib);
     lua_setfield(L, -2, "string");
     lua_pop(L, 1);
   }
@@ -1940,7 +1940,7 @@ LuauHost::LuauHost(scripting::ScriptApiContext& api, std::string runtimeName, Co
   lua_callbacks(m_L)->userdata = this;
   lua_callbacks(m_L)->interrupt = budgetInterrupt;
   luaL_openlibs(m_L);
-  registerNoctaliaLib(m_L);
+  registerZynithLib(m_L);
   lua_pushcfunction(m_L, &LuauHost::luauRequire, "require");
   lua_setglobal(m_L, "require");
   // Freeze main state's stdlib + globals. The thread we create next inherits
@@ -2799,7 +2799,7 @@ void LuauHost::scriptNotifyInfo(std::string title, std::string body) {
     );
     return;
   }
-  notify::info(noctalia::build_info::kProductName, title, body);
+  notify::info(zynith::build_info::kProductName, title, body);
 }
 
 void LuauHost::scriptNotifyError(std::string title, std::string body) {
@@ -2809,7 +2809,7 @@ void LuauHost::scriptNotifyError(std::string title, std::string body) {
     );
     return;
   }
-  notify::error(noctalia::build_info::kProductName, title, body);
+  notify::error(zynith::build_info::kProductName, title, body);
 }
 
 bool LuauHost::scriptLoadSound(std::string name, std::string path, int callbackRef) {

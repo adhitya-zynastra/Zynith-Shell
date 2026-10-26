@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   enum class Scheme;
 
@@ -23,4 +23,4 @@ namespace noctalia::theme {
   // triangle for M3 schemes, box for the custom schemes.
   std::expected<LoadedImage, std::string> loadAndResize(std::string_view path, Scheme scheme);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

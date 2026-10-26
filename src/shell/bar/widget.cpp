@@ -204,8 +204,8 @@ void Widget::applyCommonOptions(
 
   m_fontScale = options.fontScale;
 
-  m_scrollRepeatMode = noctalia::bar::ScrollRepeatMode::Auto;
-  if (const auto mode = noctalia::bar::parseScrollRepeatMode(options.scrollRepeat); mode.has_value()) {
+  m_scrollRepeatMode = zynith::bar::ScrollRepeatMode::Auto;
+  if (const auto mode = zynith::bar::parseScrollRepeatMode(options.scrollRepeat); mode.has_value()) {
     m_scrollRepeatMode = *mode;
   } else {
     kLog.error("{}.scroll_repeat: unknown mode \"{}\"", logContext, options.scrollRepeat);
@@ -214,22 +214,22 @@ void Widget::applyCommonOptions(
 
 void Widget::resolveGestureBindings(
     std::string_view widgetType, const WidgetConfig* widgetConfig,
-    const noctalia::bar::WidgetActionBindings::ActionTable* barActions, std::string_view barContext,
-    const noctalia::bar::WidgetActionDispatcher* dispatcher
+    const zynith::bar::WidgetActionBindings::ActionTable* barActions, std::string_view barContext,
+    const zynith::bar::WidgetActionDispatcher* dispatcher
 ) {
   m_actionDispatcher = dispatcher;
 
   const std::string widgetContext = std::format("widget.{}", m_configName);
   // Named, not inlined: the span in Inputs borrows from it.
   m_widgetType = std::string(widgetType);
-  const auto typeDefaults = noctalia::bar::gestureDefaultsForType(widgetType, widgetConfig);
+  const auto typeDefaults = zynith::bar::gestureDefaultsForType(widgetType, widgetConfig);
   m_gestureBindings.resolve(
-      noctalia::bar::WidgetActionBindings::Inputs{
-          .builtinDefaults = noctalia::bar::builtinGestureDefaults(),
+      zynith::bar::WidgetActionBindings::Inputs{
+          .builtinDefaults = zynith::bar::builtinGestureDefaults(),
           .widgetDefaults = typeDefaults,
           .barActions = barActions,
-          .widgetActions = noctalia::bar::findActionTable(widgetConfig),
-          .reserved = noctalia::bar::reservedGesturesForType(widgetType),
+          .widgetActions = zynith::bar::findActionTable(widgetConfig),
+          .reserved = zynith::bar::reservedGesturesForType(widgetType),
           .widgetContext = widgetContext,
           .barContext = barContext,
           .widgetName = m_configName,
@@ -249,14 +249,14 @@ void Widget::installGestureHandlers() {
 
   std::uint32_t mask = 0;
   std::uint32_t scrollMask = 0;
-  for (const auto gesture : noctalia::bar::allGestures()) {
+  for (const auto gesture : zynith::bar::allGestures()) {
     if (!bound.contains(gesture)) {
       continue;
     }
-    for (const auto button : noctalia::bar::buttonsForGesture(gesture)) {
+    for (const auto button : zynith::bar::buttonsForGesture(gesture)) {
       mask |= InputArea::buttonMask(button);
     }
-    if (const auto direction = noctalia::bar::scrollDirectionForGesture(gesture); direction.has_value()) {
+    if (const auto direction = zynith::bar::scrollDirectionForGesture(gesture); direction.has_value()) {
       scrollMask |= InputArea::scrollDirectionMask(*direction);
     }
   }
@@ -278,7 +278,7 @@ void Widget::installGestureHandlers() {
   // Runs once per widget per reload; the resolved set is the first thing to check when a binding
   // does not fire.
   std::string summary;
-  for (const auto gesture : noctalia::bar::allGestures()) {
+  for (const auto gesture : zynith::bar::allGestures()) {
     const auto* action = m_gestureBindings.find(gesture);
     if (action == nullptr) {
       continue;
@@ -288,27 +288,27 @@ void Widget::installGestureHandlers() {
     }
     summary += std::format(
         "{}={}", gestureConfigKey(gesture),
-        action->kind == noctalia::bar::WidgetAction::Kind::Exec ? std::format("exec {}", action->args)
-                                                                : action->commandLine()
+        action->kind == zynith::bar::WidgetAction::Kind::Exec ? std::format("exec {}", action->args)
+                                                              : action->commandLine()
     );
   }
   kLog.debug("widget.{}: {}", m_configName, summary.empty() ? "no gesture bindings" : summary);
 
   if (mask != 0) {
     m_gestureArea->setOnClick([this](const InputArea::PointerData& data) {
-      if (const auto gesture = noctalia::bar::gestureForButton(data.button)) {
+      if (const auto gesture = zynith::bar::gestureForButton(data.button)) {
         dispatchGesture(*gesture);
       }
     });
   }
 
   m_gestureArea->setOnAxisHandler([this](const InputArea::PointerData& data) {
-    const auto gesture = noctalia::bar::gestureForScroll(data.axis, data.scrollSteps());
+    const auto gesture = zynith::bar::gestureForScroll(data.axis, data.scrollSteps());
     if (!gesture.has_value()) {
       // Report a scroll gesture we own as consumed even between detents, so a partly accumulated
       // flick does not leak to an ancestor mid-gesture.
-      return m_gestureBindings.find(noctalia::bar::Gesture::ScrollUp) != nullptr
-          || m_gestureBindings.find(noctalia::bar::Gesture::ScrollDown) != nullptr;
+      return m_gestureBindings.find(zynith::bar::Gesture::ScrollUp) != nullptr
+          || m_gestureBindings.find(zynith::bar::Gesture::ScrollDown) != nullptr;
     }
     if (!data.scrollStepStartsGesture() && !bindingRepeatsEveryScrollStep(*gesture)) {
       return true;
@@ -317,13 +317,13 @@ void Widget::installGestureHandlers() {
   });
 }
 
-bool Widget::bindingRepeatsEveryScrollStep(noctalia::bar::Gesture gesture) const {
+bool Widget::bindingRepeatsEveryScrollStep(zynith::bar::Gesture gesture) const {
   const auto* action = m_gestureBindings.find(gesture);
   const bool actionCycles = action != nullptr && m_actionDispatcher != nullptr && m_actionDispatcher->cycles(*action);
-  return noctalia::bar::scrollRepeatsEveryStep(m_scrollRepeatMode, actionCycles);
+  return zynith::bar::scrollRepeatsEveryStep(m_scrollRepeatMode, actionCycles);
 }
 
-bool Widget::dispatchGesture(noctalia::bar::Gesture gesture) {
+bool Widget::dispatchGesture(zynith::bar::Gesture gesture) {
   const auto* action = m_gestureBindings.find(gesture);
   if (action == nullptr) {
     return false;
@@ -333,8 +333,8 @@ bool Widget::dispatchGesture(noctalia::bar::Gesture gesture) {
 
   // Panel actions re-enter through the bar's panel callback so the panel anchors at this widget
   // rather than at the compositor's focused output.
-  if (action->kind == noctalia::bar::WidgetAction::Kind::Ipc && noctalia::bar::isAnchoredPanelVerb(action->verb)) {
-    const auto args = noctalia::bar::parsePanelVerbArgs(action->args);
+  if (action->kind == zynith::bar::WidgetAction::Kind::Ipc && zynith::bar::isAnchoredPanelVerb(action->verb)) {
+    const auto args = zynith::bar::parsePanelVerbArgs(action->args);
     if (args.panelId.empty()) {
       kLog.error(
           "widget.{}.actions.{}: \"{}\" needs a panel id", m_configName, gestureConfigKey(gesture), action->verb

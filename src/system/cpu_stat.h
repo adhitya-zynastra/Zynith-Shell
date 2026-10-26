@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace noctalia::system::cpu_stat {
+namespace zynith::system::cpu_stat {
 
   // Idle and total jiffies accumulated by one CPU since boot.
   struct Totals {
@@ -34,4 +34,4 @@ namespace noctalia::system::cpu_stat {
   // holds one that does not parse.
   [[nodiscard]] std::optional<std::vector<Totals>> readCoreTotals(const std::filesystem::path& statPath = "/proc/stat");
 
-} // namespace noctalia::system::cpu_stat
+} // namespace zynith::system::cpu_stat

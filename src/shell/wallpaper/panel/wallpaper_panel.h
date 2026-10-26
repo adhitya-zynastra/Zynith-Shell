@@ -33,7 +33,7 @@ class VirtualGridView;
 class WallpaperGridAdapter;
 class WaylandConnection;
 
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 
@@ -49,7 +49,7 @@ public:
 
   WallpaperPanel(
       WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails, WallpaperScanner* scanner,
-      noctalia::theme::ThemeService* themeService = nullptr, LiveWallpaperController* live = nullptr
+      zynith::theme::ThemeService* themeService = nullptr, LiveWallpaperController* live = nullptr
   );
   ~WallpaperPanel() override;
 
@@ -163,7 +163,7 @@ private:
   ConfigService* m_config = nullptr;
   ThumbnailService* m_thumbnails = nullptr;
   WallpaperScanner* m_scanner = nullptr;
-  noctalia::theme::ThemeService* m_themeService = nullptr;
+  zynith::theme::ThemeService* m_themeService = nullptr;
   LiveWallpaperController* m_live = nullptr;
   bool m_liveTab = false;
   bool m_liveRefreshQueued = false;

@@ -256,7 +256,7 @@ struct ShellSessionConfig {
   // Optional overrides for built-in session power commands. Empty = auto-detect at runtime.
   struct ShellSessionPowerConfig {
     // Shell strings run with `/bin/sh -lc` (shell=True).
-    // When unset, Noctalia tries a prioritized backend list (systemd/logind/privileged helpers).
+    // When unset, Zynith tries a prioritized backend list (systemd/logind/privileged helpers).
     std::optional<std::string> suspend;
     std::optional<std::string> reboot;
     std::optional<std::string> shutdown;
@@ -1112,7 +1112,7 @@ struct ShellConfig {
     bool enabled = true;
     float speed = 1.0F;
 
-    // Compositor-side motion. `speed` above governs Noctalia's own surfaces; these govern the
+    // Compositor-side motion. `speed` above governs Zynith's own surfaces; these govern the
     // niri animation config Zynith generates, so the two halves of "how fast does the desktop
     // feel" live in one table with one owner instead of in a separate settings surface.
     //
@@ -1314,7 +1314,7 @@ struct ShellConfig {
   /// stays pasteable. Independent of history retention: this keeps the live clipboard, not the stored history.
   bool clipboardKeepFromClosedApps = true;
   /// Maximum unpinned clipboard history entries retained (pinned entries are exempt).
-  int clipboardHistoryMaxEntries = static_cast<int>(noctalia::config::kClipboardHistoryDefaultEntries);
+  int clipboardHistoryMaxEntries = static_cast<int>(zynith::config::kClipboardHistoryDefaultEntries);
   /// When true, clearing clipboard history or deleting unpinned entries from the panel asks for confirmation first.
   bool clipboardConfirmClearHistory = true;
   /// Disables per-app tracking and Control Center usage UI.
@@ -1403,56 +1403,38 @@ struct SystemConfig {
     float memoryPollSeconds = 2.0F;
     float networkPollSeconds = 3.0F;
     float diskPollSeconds = 10.0F;
-    double cpuUsageActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuUsage).activityDefault;
-    double cpuUsageCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuUsage).criticalDefault;
-    double cpuTempActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuTemp).activityDefault;
-    double cpuTempCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuTemp).criticalDefault;
-    double cpuFreqActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuFreq).activityDefault;
-    double cpuFreqCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::CpuFreq).criticalDefault;
-    double gpuTempActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuTemp).activityDefault;
-    double gpuTempCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuTemp).criticalDefault;
-    double gpuUsageActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuUsage).activityDefault;
-    double gpuUsageCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuUsage).criticalDefault;
-    double gpuVramActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuVram).activityDefault;
-    double gpuVramCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::GpuVram).criticalDefault;
-    double ramPctActivityThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::RamPct).activityDefault;
-    double ramPctCriticalThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::RamPct).criticalDefault;
-    double swapPctActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::SwapPct).activityDefault;
-    double swapPctCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::SwapPct).criticalDefault;
+    double cpuUsageActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuUsage).activityDefault;
+    double cpuUsageCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuUsage).criticalDefault;
+    double cpuTempActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuTemp).activityDefault;
+    double cpuTempCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuTemp).criticalDefault;
+    double cpuFreqActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuFreq).activityDefault;
+    double cpuFreqCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::CpuFreq).criticalDefault;
+    double gpuTempActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuTemp).activityDefault;
+    double gpuTempCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuTemp).criticalDefault;
+    double gpuUsageActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuUsage).activityDefault;
+    double gpuUsageCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuUsage).criticalDefault;
+    double gpuVramActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuVram).activityDefault;
+    double gpuVramCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::GpuVram).criticalDefault;
+    double ramPctActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::RamPct).activityDefault;
+    double ramPctCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::RamPct).criticalDefault;
+    double swapPctActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::SwapPct).activityDefault;
+    double swapPctCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::SwapPct).criticalDefault;
     double diskUsedPctActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskUsedPct).activityDefault;
+        zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskUsedPct).activityDefault;
     double diskUsedPctCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskUsedPct).criticalDefault;
-    double diskUsedActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskUsed).activityDefault;
-    double diskUsedCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskUsed).criticalDefault;
+        zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskUsedPct).criticalDefault;
+    double diskUsedActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskUsed).activityDefault;
+    double diskUsedCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskUsed).criticalDefault;
     double diskFreePctActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskFreePct).activityDefault;
+        zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskFreePct).activityDefault;
     double diskFreePctCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskFreePct).criticalDefault;
-    double diskFreeActivityThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskFree).activityDefault;
-    double diskFreeCriticalThreshold =
-        noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::DiskFree).criticalDefault;
-    double netRxActivityThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::NetRx).activityDefault;
-    double netRxCriticalThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::NetRx).criticalDefault;
-    double netTxActivityThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::NetTx).activityDefault;
-    double netTxCriticalThreshold = noctalia::sysmon::thresholdProfile(noctalia::sysmon::Stat::NetTx).criticalDefault;
+        zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskFreePct).criticalDefault;
+    double diskFreeActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskFree).activityDefault;
+    double diskFreeCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::DiskFree).criticalDefault;
+    double netRxActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::NetRx).activityDefault;
+    double netRxCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::NetRx).criticalDefault;
+    double netTxActivityThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::NetTx).activityDefault;
+    double netTxCriticalThreshold = zynith::sysmon::thresholdProfile(zynith::sysmon::Stat::NetTx).criticalDefault;
 
     bool operator==(const MonitorConfig&) const = default;
   };
@@ -1654,7 +1636,7 @@ constexpr EnumOption<ThemeMode> kThemeModes[] = {
     {ThemeMode::Auto, "auto", "common.states.auto"},
 };
 
-// Noctalia's own light/dark mode. `follow` tracks [theme].mode, which always drives apps
+// Zynith's own light/dark mode. `follow` tracks [theme].mode, which always drives apps
 // (templates and the GTK color scheme); the other values pin the shell independently.
 enum class ShellThemeMode : std::uint8_t {
   Follow = 0,
@@ -1762,7 +1744,7 @@ struct ThemeConfig {
   bool operator==(const ThemeConfig&) const = default;
 };
 
-// The theme mode Noctalia's own surfaces run in, still expressed as a ThemeMode so `auto`
+// The theme mode Zynith's own surfaces run in, still expressed as a ThemeMode so `auto`
 // keeps resolving against the day/night schedule.
 [[nodiscard]] constexpr ThemeMode shellThemeMode(const ThemeConfig& theme) noexcept {
   switch (theme.shellMode) {
@@ -1830,7 +1812,7 @@ enum class PluginAutoUpdateMode : std::uint8_t {
   All = 2,      // every enabled git source
   // zynith default: check every enabled git source and notify when installed plugins have updates, but install
   // nothing. Third-party plugin code runs inside the shell, so a new version is applied only by an explicit
-  // update (Settings → Plugins, or `noctalia msg plugins update <source>`).
+  // update (Settings → Plugins, or `zynith-shell msg plugins update <source>`).
   Notify = 3,
 };
 

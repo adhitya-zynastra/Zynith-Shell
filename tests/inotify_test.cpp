@@ -20,7 +20,7 @@ namespace {
   std::filesystem::path uniqueTempDir() {
     const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
     auto dir = std::filesystem::temp_directory_path()
-        / ("noctalia-inotify-test-" + std::to_string(::getpid()) + "-" + std::to_string(now));
+        / ("zynith-shell-inotify-test-" + std::to_string(::getpid()) + "-" + std::to_string(now));
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     return dir;

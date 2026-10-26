@@ -37,7 +37,7 @@ namespace {
 } // namespace
 
 int main() {
-  char dirTemplate[] = "/tmp/noctalia_cpu_freq_test_XXXXXX";
+  char dirTemplate[] = "/tmp/zynith_cpu_freq_test_XXXXXX";
   char* dir = mkdtemp(dirTemplate);
   if (dir == nullptr)
     return EXIT_FAILURE;
@@ -46,29 +46,27 @@ int main() {
 
   writeStat(root / "cpu0/cpufreq/scaling_cur_freq", "1800000");
   writeStat(root / "cpu1/cpufreq/scaling_cur_freq", "2400000");
-  ok = expectNear(noctalia::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2100.0, "average across cores")
-      && ok;
+  ok = expectNear(zynith::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2100.0, "average across cores") && ok;
 
   writeStat(root / "cpu0/cpufreq/scaling_cur_freq", "0");
-  ok = expectNear(noctalia::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2400.0, "zero entries skipped")
-      && ok;
+  ok = expectNear(zynith::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2400.0, "zero entries skipped") && ok;
 
   const std::filesystem::path emptyRoot = root / "empty";
   std::filesystem::create_directory(emptyRoot);
-  ok = expect(!noctalia::system::cpu_freq::readFreqs(emptyRoot).curMhz.has_value(), "empty root yields nullopt") && ok;
+  ok = expect(!zynith::system::cpu_freq::readFreqs(emptyRoot).curMhz.has_value(), "empty root yields nullopt") && ok;
 
   writeStat(root / "cpufreq/", ""); // stray non-cpuN dir at root must be ignored
   std::filesystem::create_directory(root / "offline");
-  ok = expectNear(noctalia::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2400.0, "stray dirs ignored") && ok;
+  ok = expectNear(zynith::system::cpu_freq::readFreqs(root).curMhz.value_or(0.0), 2400.0, "stray dirs ignored") && ok;
 
   writeStat(root / "cpu0/cpufreq/scaling_max_freq", "4800000");
-  ok = expectNear(noctalia::system::cpu_freq::readFreqs(root).maxMhz, 4800.0, "max freq from scaling_max_freq") && ok;
+  ok = expectNear(zynith::system::cpu_freq::readFreqs(root).maxMhz, 4800.0, "max freq from scaling_max_freq") && ok;
 
-  ok = expect(!noctalia::system::cpu_freq::readFreqs(emptyRoot).maxMhz.has_value(), "no max freq yields nullopt") && ok;
+  ok = expect(!zynith::system::cpu_freq::readFreqs(emptyRoot).maxMhz.has_value(), "no max freq yields nullopt") && ok;
 
   std::filesystem::remove_all(root / "cpu0/cpufreq");
   std::filesystem::remove_all(root / "cpu1/cpufreq");
-  const auto unavailable = noctalia::system::cpu_freq::readFreqs(root);
+  const auto unavailable = zynith::system::cpu_freq::readFreqs(root);
   ok = expect(!unavailable.curMhz.has_value(), "removed cpufreq data clears current frequency") && ok;
   ok = expect(!unavailable.maxMhz.has_value(), "removed cpufreq data clears maximum frequency") && ok;
 

@@ -1,10 +1,10 @@
 #include "shell/bar/widgets/privacy_widget_definition.h"
 
-const noctalia::bar::WidgetDefinition<PrivacyWidget::Options>& privacyWidgetDefinition() {
-  using noctalia::bar::field;
+const zynith::bar::WidgetDefinition<PrivacyWidget::Options>& privacyWidgetDefinition() {
+  using zynith::bar::field;
   using Options = PrivacyWidget::Options;
 
-  static const noctalia::bar::WidgetDefinition<Options> definition{
+  static const zynith::bar::WidgetDefinition<Options> definition{
       .type = "privacy",
       .fields = {
           field<&Options::hideInactive>({

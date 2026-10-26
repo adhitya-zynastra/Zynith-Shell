@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   struct KdeColorSchemeApplyResult {
     bool success = false;
@@ -17,4 +17,4 @@ namespace noctalia::theme {
 
   [[nodiscard]] KdeColorSchemeApplyResult applyKdeColorScheme(const std::filesystem::path& schemePath);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

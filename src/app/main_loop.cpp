@@ -84,7 +84,7 @@ namespace {
 
   bool idleProfileEnabled() {
     static const bool enabled = [] {
-      const char* value = std::getenv("NOCTALIA_IDLE_PROFILE");
+      const char* value = std::getenv("ZYNITH_IDLE_PROFILE");
       return value != nullptr
           && value[0] != '\0'
           && std::string_view(value) != "0"
@@ -312,7 +312,7 @@ MainLoop::MainLoop(WaylandConnection& wayland, Bar& bar, PollSourcesProvider sou
 void MainLoop::run() {
   if (idleProfileEnabled()) {
     kLog.info(
-        "NOCTALIA_IDLE_PROFILE enabled; logging idle wake/render profile every {}s",
+        "ZYNITH_IDLE_PROFILE enabled; logging idle wake/render profile every {}s",
         std::chrono::duration_cast<std::chrono::seconds>(kIdleProfileReportInterval).count()
     );
     resetIdleProfile(idleProfile(), std::chrono::steady_clock::now());

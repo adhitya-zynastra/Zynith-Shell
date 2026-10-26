@@ -7,7 +7,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   using TokenMap = std::unordered_map<std::string, uint32_t>;
 
@@ -95,4 +95,4 @@ namespace noctalia::theme {
   void synthesizeTerminalPaletteTokens(GeneratedPalette& palette);
   [[nodiscard]] TerminalPalette terminalPaletteFromTokens(const TokenMap& tokens);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

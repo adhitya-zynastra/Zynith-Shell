@@ -50,16 +50,16 @@ int main() {
 
   events = hooks.update(batteryState(BatteryState::Charging, 51.0));
   expectSingleHook(events, HookKind::BatteryPercentageChanged);
-  TEST_CHECK(envValue(events[0], "NOCTALIA_BATTERY_STATE") == "charging");
-  TEST_CHECK(envValue(events[0], "NOCTALIA_BATTERY_PERCENT") == "51");
+  TEST_CHECK(envValue(events[0], "ZYNITH_BATTERY_STATE") == "charging");
+  TEST_CHECK(envValue(events[0], "ZYNITH_BATTERY_PERCENT") == "51");
 
   events = hooks.update(batteryState(BatteryState::FullyCharged, 100.0));
   TEST_CHECK(events.size() == 2);
   TEST_CHECK(events[0].kind == HookKind::BatteryPlugged);
   TEST_CHECK(events[0].env.empty());
   TEST_CHECK(events[1].kind == HookKind::BatteryPercentageChanged);
-  TEST_CHECK(envValue(events[1], "NOCTALIA_BATTERY_STATE") == "fully_charged");
-  TEST_CHECK(envValue(events[1], "NOCTALIA_BATTERY_PERCENT") == "100");
+  TEST_CHECK(envValue(events[1], "ZYNITH_BATTERY_STATE") == "fully_charged");
+  TEST_CHECK(envValue(events[1], "ZYNITH_BATTERY_PERCENT") == "100");
   TEST_CHECK(hooks.update(batteryState(BatteryState::PendingCharge, 100.0)).empty());
 
   events = hooks.update(batteryState(BatteryState::Charging, 100.0));

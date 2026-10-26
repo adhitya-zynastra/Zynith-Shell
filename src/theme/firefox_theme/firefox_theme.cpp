@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <vector>
 
-namespace noctalia::theme {
+namespace zynith::theme {
   namespace {
 
     namespace css = firefox_theme::css;
@@ -38,7 +38,7 @@ namespace noctalia::theme {
     // Wire names required by the Pywalfox Firefox/Thunderbird extension.
     constexpr std::string_view kExtensionId = "pywalfox@frewacom.org";
     constexpr std::string_view kManifestName = "pywalfox";
-    constexpr std::string_view kHostVersion = "noctalia-2.9.0-compat";
+    constexpr std::string_view kHostVersion = "zynith-shell-2.9.0-compat";
 
     constexpr std::string_view kActionVersion = "debug:version";
     constexpr std::string_view kActionColors = "action:colors";
@@ -108,9 +108,9 @@ namespace noctalia::theme {
     // reach all Firefox profiles, not only the process that owns the Unix socket.
     [[nodiscard]] std::filesystem::path commandNotifyDir() {
       if (const char* runtime = std::getenv("XDG_RUNTIME_DIR"); runtime != nullptr && runtime[0] != '\0') {
-        return std::filesystem::path(runtime) / "noctalia" / "firefox-theme";
+        return std::filesystem::path(runtime) / "zynith-shell" / "firefox-theme";
       }
-      return std::filesystem::temp_directory_path() / ("noctalia-firefox-theme-" + std::to_string(::getuid()));
+      return std::filesystem::temp_directory_path() / ("zynith-shell-firefox-theme-" + std::to_string(::getuid()));
     }
 
     [[nodiscard]] std::filesystem::path commandNotifyPath() { return commandNotifyDir() / "command"; }
@@ -191,13 +191,13 @@ namespace noctalia::theme {
       return home / ".mozilla" / "native-messaging-hosts" / "pywalfox.json";
     }
 
-    [[nodiscard]] std::filesystem::path resolveNoctaliaExecutable() {
+    [[nodiscard]] std::filesystem::path resolveZynithExecutable() {
       const std::string self = selfExePath();
       if (!self.empty()) {
         return self;
       }
-#ifdef NOCTALIA_INSTALL_PREFIX
-      const auto installed = std::filesystem::path(NOCTALIA_INSTALL_PREFIX) / "bin" / "noctalia";
+#ifdef ZYNITH_INSTALL_PREFIX
+      const auto installed = std::filesystem::path(ZYNITH_INSTALL_PREFIX) / "bin" / "zynith-shell";
       std::error_code ec;
       if (std::filesystem::is_regular_file(installed, ec)) {
         return installed;
@@ -206,9 +206,9 @@ namespace noctalia::theme {
       return {};
     }
 
-    [[nodiscard]] bool pathLooksLikeNoctaliaHost(const std::filesystem::path& path) {
+    [[nodiscard]] bool pathLooksLikeZynithHost(const std::filesystem::path& path) {
       const std::string name = path.filename().string();
-      return name == "noctalia" || name == "noctalia-pywalfox";
+      return name == "zynith-shell" || name == "zynith-shell-pywalfox";
     }
 
     [[nodiscard]] std::optional<std::filesystem::path> readExistingManifestHostPath() {
@@ -235,7 +235,7 @@ namespace noctalia::theme {
     bool installManifest(const std::filesystem::path& hostExecutable, std::string* error) {
       if (hostExecutable.empty() || !std::filesystem::is_regular_file(hostExecutable)) {
         if (error != nullptr) {
-          *error = "noctalia executable not found";
+          *error = "zynith-shell executable not found";
         }
         return false;
       }
@@ -300,18 +300,18 @@ namespace noctalia::theme {
       return true;
     }
 
-    // Install only when absent or already owned by noctalia — never clobber a foreign host.
-    bool ensureManifestOwnedByNoctalia(std::string* error, std::string* warning) {
-      const auto host = resolveNoctaliaExecutable();
+    // Install only when absent or already owned by zynith-shell — never clobber a foreign host.
+    bool ensureManifestOwnedByZynith(std::string* error, std::string* warning) {
+      const auto host = resolveZynithExecutable();
       if (host.empty()) {
         if (error != nullptr) {
-          *error = "noctalia executable not found";
+          *error = "zynith-shell executable not found";
         }
         return false;
       }
 
       if (const auto existing = readExistingManifestHostPath()) {
-        if (!pathLooksLikeNoctaliaHost(*existing)) {
+        if (!pathLooksLikeZynithHost(*existing)) {
           if (warning != nullptr) {
             *warning = "leaving existing native messaging host at " + existing->string();
           }
@@ -632,7 +632,7 @@ namespace noctalia::theme {
 
     std::string ensureError;
     std::string ensureWarning;
-    if (!ensureManifestOwnedByNoctalia(&ensureError, &ensureWarning)) {
+    if (!ensureManifestOwnedByZynith(&ensureError, &ensureWarning)) {
       result.error = ensureError;
       return result;
     }
@@ -766,7 +766,7 @@ namespace noctalia::theme {
 
   int runFirefoxThemeCli(int argc, char* argv[]) {
     auto parsed = cli::parseOrReport(
-        cli::kFirefoxThemeCmd, "noctalia firefox-theme",
+        cli::kFirefoxThemeCmd, "zynith-shell firefox-theme",
         std::span<char* const>{argv + 2, static_cast<std::size_t>(argc - 2)}
     );
     if (!parsed)
@@ -775,14 +775,14 @@ namespace noctalia::theme {
       return 0;
     const std::string_view action = parsed->positionals.front();
     if (action == "help") {
-      std::print("{}", cli::renderHelp(cli::kFirefoxThemeCmd, "noctalia firefox-theme"));
+      std::print("{}", cli::renderHelp(cli::kFirefoxThemeCmd, "zynith-shell firefox-theme"));
       return 0;
     }
     if (action == "host" || action == "start") {
       return runFirefoxNativeMessagingHost();
     }
     if (action == "install") {
-      const auto host = resolveNoctaliaExecutable();
+      const auto host = resolveZynithExecutable();
       std::string err;
       if (!installManifest(host, &err)) {
         std::println(stderr, "install failed: {}", err);
@@ -822,4 +822,4 @@ namespace noctalia::theme {
     return 1;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

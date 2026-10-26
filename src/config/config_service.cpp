@@ -47,7 +47,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace schema = noctalia::config::schema;
+namespace schema = zynith::config::schema;
 
 namespace {
 
@@ -57,12 +57,12 @@ namespace {
 
   template <typename T>
   void readConfigSection(
-      const toml::table& table, T& target, const noctalia::config::schema::Schema<T>& sectionSchema,
-      std::string_view path, noctalia::config::schema::Diagnostics& diagnostics
+      const toml::table& table, T& target, const zynith::config::schema::Schema<T>& sectionSchema,
+      std::string_view path, zynith::config::schema::Diagnostics& diagnostics
   ) {
     T candidate = target;
     try {
-      noctalia::config::schema::readInto(table, candidate, sectionSchema, path, diagnostics);
+      zynith::config::schema::readInto(table, candidate, sectionSchema, path, diagnostics);
       target = std::move(candidate);
     } catch (const std::exception& e) {
       diagnostics.error(std::string(path), e.what());
@@ -187,7 +187,7 @@ namespace {
   }
 
   void restoreInvalidComponents(
-      Config& candidate, const Config& active, const noctalia::config::schema::Diagnostics& diagnostics
+      Config& candidate, const Config& active, const zynith::config::schema::Diagnostics& diagnostics
   ) {
     const auto restorePlacementWidget = [](std::vector<DesktopWidgetState>& candidateWidgets,
                                            const std::vector<DesktopWidgetState>& activeWidgets,
@@ -206,8 +206,8 @@ namespace {
     };
 
     for (const auto& entry : diagnostics.entries) {
-      if (entry.severity != noctalia::config::schema::Diagnostics::Severity::Error
-          || entry.recoveryScope != noctalia::config::schema::Diagnostics::RecoveryScope::Component) {
+      if (entry.severity != zynith::config::schema::Diagnostics::Severity::Error
+          || entry.recoveryScope != zynith::config::schema::Diagnostics::RecoveryScope::Component) {
         continue;
       }
       if (const auto barId = componentOwnerId(entry.ownerPath, "widget.")) {
@@ -278,7 +278,7 @@ namespace {
     }
     if (const auto* settingsTable = widgetTable["settings"].as_table()) {
       for (const auto& [key, value] : *settingsTable) {
-        if (auto parsed = noctalia::config::readWidgetSettingValue(value); parsed.has_value()) {
+        if (auto parsed = zynith::config::readWidgetSettingValue(value); parsed.has_value()) {
           widget.settings.emplace(std::string(key.str()), std::move(*parsed));
         }
       }
@@ -480,7 +480,7 @@ namespace {
 
   std::optional<toml::table>
   mergeUserConfigSources(std::string_view configDir, std::string_view settingsPath, std::string* error) {
-    auto mergeResult = noctalia::config::mergeConfigWithIncludes(configDir);
+    auto mergeResult = zynith::config::mergeConfigWithIncludes(configDir);
     toml::table merged = std::move(mergeResult.merged);
     if (!mergeResult.firstError.empty()) {
       const std::string located = mergeResult.firstErrorOrigin.prefixed(mergeResult.firstError);
@@ -495,12 +495,12 @@ namespace {
       const std::filesystem::path settingsFile{std::string(settingsPath)};
       try {
         toml::table sidecar = toml::parse_file(std::string(settingsPath));
-        noctalia::config::ConfigOriginIndex origins;
+        zynith::config::ConfigOriginIndex origins;
         origins.record(settingsFile, sidecar);
         schema::Diagnostics migrationDiag;
-        const auto storedVersion = noctalia::config::storedConfigVersion(sidecar, migrationDiag);
+        const auto storedVersion = zynith::config::storedConfigVersion(sidecar, migrationDiag);
         if (storedVersion.has_value()) {
-          (void)noctalia::config::applyPendingConfigMigrations(sidecar, *storedVersion, migrationDiag);
+          (void)zynith::config::applyPendingConfigMigrations(sidecar, *storedVersion, migrationDiag);
         }
         origins.annotate(migrationDiag);
         for (const auto& entry : migrationDiag.entries) {
@@ -515,7 +515,7 @@ namespace {
         ConfigService::deepMerge(merged, sidecar);
       } catch (const toml::parse_error& e) {
         if (error != nullptr) {
-          *error = noctalia::config::parseErrorOrigin(e, settingsFile).prefixed(e.description());
+          *error = zynith::config::parseErrorOrigin(e, settingsFile).prefixed(e.description());
           return std::nullopt;
         }
         kLog.warn("skipping parse error in merged user config export {}: {}", settingsPath, e.description());
@@ -607,7 +607,7 @@ void ConfigService::forceReload() {
 }
 
 void ConfigService::fireReloadCallbacks() {
-  if (!noctalia::profiling::enabled()) {
+  if (!zynith::profiling::enabled()) {
     for (const auto& sub : m_reloadCallbacks) {
       sub.callback();
     }
@@ -651,10 +651,10 @@ void ConfigService::fireReloadCallbacks() {
     kLog.info("reload: changed sections = [{}]", changed.empty() ? "none" : changed);
   }
 
-  noctalia::profiling::StopWatch total;
+  zynith::profiling::StopWatch total;
   for (std::size_t i = 0; i < m_reloadCallbacks.size(); ++i) {
     const auto& sub = m_reloadCallbacks[i];
-    noctalia::profiling::StopWatch one;
+    zynith::profiling::StopWatch one;
     sub.callback();
     const double ms = one.elapsedMs();
     if (ms >= 0.5) {
@@ -696,10 +696,10 @@ std::string ConfigService::buildSupportReport() const {
 
   toml::table report;
   report.insert_or_assign("format_version", std::int64_t{1});
-  report.insert_or_assign("generated_by", "noctalia");
+  report.insert_or_assign("generated_by", "zynith-shell");
   report.insert_or_assign("generated_at_utc", utcTimestamp());
-  report.insert_or_assign("noctalia_version", std::string(noctalia::build_info::version()));
-  report.insert_or_assign("git_revision", std::string(noctalia::build_info::revision()));
+  report.insert_or_assign("zynith_version", std::string(zynith::build_info::version()));
+  report.insert_or_assign("git_revision", std::string(zynith::build_info::revision()));
   root.insert_or_assign("report", std::move(report));
 
   toml::table system;
@@ -790,9 +790,9 @@ std::string ConfigService::buildMergedUserConfigFromSources(
     return {};
   }
   toml::table normalized = *merged;
-  normalized.erase(noctalia::config::kConfigVersionKey);
-  noctalia::config::LegacyConfigIssues issues;
-  noctalia::config::normalizeLegacyConfig(normalized, issues);
+  normalized.erase(zynith::config::kConfigVersionKey);
+  zynith::config::LegacyConfigIssues issues;
+  zynith::config::normalizeLegacyConfig(normalized, issues);
   return formatToml(normalized) + "\n";
 }
 
@@ -805,12 +805,12 @@ std::string ConfigService::buildEffectiveConfigFromSources(
   }
 
   toml::table normalized = *merged;
-  normalized.erase(noctalia::config::kConfigVersionKey);
-  noctalia::config::LegacyConfigIssues issues;
-  noctalia::config::normalizeLegacyConfig(normalized, issues);
+  normalized.erase(zynith::config::kConfigVersionKey);
+  zynith::config::LegacyConfigIssues issues;
+  zynith::config::normalizeLegacyConfig(normalized, issues);
 
   Config config;
-  noctalia::config::seedBuiltinWidgets(config);
+  zynith::config::seedBuiltinWidgets(config);
   if (normalized.empty()) {
     config = makeDefaultConfig();
   } else {
@@ -832,7 +832,7 @@ std::string ConfigService::buildEffectiveConfigFromSources(
 
 Config ConfigService::makeDefaultConfig() {
   Config config;
-  noctalia::config::seedBuiltinWidgets(config);
+  zynith::config::seedBuiltinWidgets(config);
   config.idle.behaviors = defaultIdleBehaviors();
   config.bars.push_back(BarConfig{});
   config.controlCenter.shortcuts = defaultControlCenterShortcuts();
@@ -1196,7 +1196,7 @@ void ConfigService::loadOverridesFromFile() {
     m_overridesTable = toml::parse_file(m_overridesPath);
     m_persistedOverridesTable = m_overridesTable;
   } catch (const toml::parse_error& e) {
-    auto origin = noctalia::config::parseErrorOrigin(e, std::filesystem::path(m_overridesPath));
+    auto origin = zynith::config::parseErrorOrigin(e, std::filesystem::path(m_overridesPath));
     kLog.warn("{}", origin.prefixed(e.description()));
     m_overridesParseError = ConfigProblem{std::move(origin), std::string(e.description())};
     m_overridesTable = toml::table{};
@@ -1230,11 +1230,11 @@ void ConfigService::setConfigParseError(ConfigProblem problem) {
   std::string title = located ? problem.origin.shortFormat(m_configDir) : std::string("Config error");
   std::string body = located ? "Error: " + problem.message : std::move(problem.message);
   m_configErrorNotificationId = m_notificationManager->addInternal(
-      noctalia::build_info::kProductName, std::move(title), std::move(body), Urgency::Critical, 0
+      zynith::build_info::kProductName, std::move(title), std::move(body), Urgency::Critical, 0
   );
 }
 
-void ConfigService::updateLegacyConfigIssues(noctalia::config::LegacyConfigIssues issues) {
+void ConfigService::updateLegacyConfigIssues(zynith::config::LegacyConfigIssues issues) {
   std::ranges::sort(issues, [](const auto& lhs, const auto& rhs) {
     return std::tie(lhs.migrationVersion, lhs.path) < std::tie(rhs.migrationVersion, rhs.path);
   });
@@ -1245,7 +1245,7 @@ void ConfigService::updateLegacyConfigIssues(noctalia::config::LegacyConfigIssue
       issues.end()
   );
 
-  const std::string fingerprint = noctalia::config::legacyConfigIssueFingerprint(issues);
+  const std::string fingerprint = zynith::config::legacyConfigIssueFingerprint(issues);
   if (fingerprint != m_loggedLegacyIssueFingerprint) {
     for (const auto& issue : issues) {
       kLog.warn(
@@ -1269,9 +1269,9 @@ void ConfigService::updateLegacyConfigIssues(noctalia::config::LegacyConfigIssue
   const auto encodedState = m_stateStore.stringValue(kMigrationReminderOwner, kMigrationReminderKey);
   const auto reminderState = encodedState.has_value() ? parseMigrationReminderState(*encodedState) : std::nullopt;
   const bool hasNewIssues = !reminderState.has_value()
-      || noctalia::config::legacyConfigFingerprintHasNewIssues(fingerprint, reminderState->issueFingerprint);
+      || zynith::config::legacyConfigFingerprintHasNewIssues(fingerprint, reminderState->issueFingerprint);
   const bool intervalElapsed = !reminderState.has_value()
-      || noctalia::config::legacyConfigReminderIntervalElapsed(now, reminderState->epochSeconds);
+      || zynith::config::legacyConfigReminderIntervalElapsed(now, reminderState->epochSeconds);
   m_legacyReminderPending = hasNewIssues || intervalElapsed;
   if (m_legacyReminderPending) {
     notifyLegacyConfigIssues();
@@ -1279,7 +1279,7 @@ void ConfigService::updateLegacyConfigIssues(noctalia::config::LegacyConfigIssue
   }
 
   const auto elapsed = std::chrono::seconds(now - reminderState->epochSeconds);
-  const auto remaining = std::chrono::seconds(noctalia::config::kLegacyConfigReminderIntervalSeconds) - elapsed;
+  const auto remaining = std::chrono::seconds(zynith::config::kLegacyConfigReminderIntervalSeconds) - elapsed;
   m_legacyReminderTimer.start(std::chrono::duration_cast<std::chrono::milliseconds>(remaining), [this]() {
     m_legacyReminderPending = true;
     notifyLegacyConfigIssues();
@@ -1292,19 +1292,19 @@ void ConfigService::notifyLegacyConfigIssues() {
   }
 
   const auto& issue = m_legacyConfigIssues.front();
-  const std::string fingerprint = noctalia::config::legacyConfigIssueFingerprint(m_legacyConfigIssues);
+  const std::string fingerprint = zynith::config::legacyConfigIssueFingerprint(m_legacyConfigIssues);
   const std::int64_t now = currentEpochSeconds();
   std::string title = issue.origin.valid() ? issue.origin.shortFormat(m_configDir)
                                            : i18n::tr("notifications.internal.config-migration-title");
   (void)m_notificationManager->addInternal(
-      noctalia::build_info::kProductName, std::move(title),
+      zynith::build_info::kProductName, std::move(title),
       i18n::tr("notifications.internal.config-migration-body", "path", issue.path + ": " + issue.message),
       Urgency::Normal
   );
   (void)m_stateStore.setString(kMigrationReminderOwner, kMigrationReminderKey, std::format("{}\n{}", now, fingerprint));
   m_legacyReminderPending = false;
   m_legacyReminderTimer.start(
-      std::chrono::milliseconds(noctalia::config::kLegacyConfigReminderIntervalSeconds * 1000), [this]() {
+      std::chrono::milliseconds(zynith::config::kLegacyConfigReminderIntervalSeconds * 1000), [this]() {
         m_legacyReminderPending = true;
         notifyLegacyConfigIssues();
       }
@@ -1371,21 +1371,21 @@ void ConfigService::deepMerge(toml::table& base, const toml::table& overlay) {
 }
 
 void ConfigService::loadAll() {
-  noctalia::profiling::ScopedTimer parseTimer(kLog, "reload: parse (loadAll)");
+  zynith::profiling::ScopedTimer parseTimer(kLog, "reload: parse (loadAll)");
   m_effectiveOverrideCache.clear();
 
   Config nextConfig;
-  noctalia::config::seedBuiltinWidgets(nextConfig);
+  zynith::config::seedBuiltinWidgets(nextConfig);
 
-  auto mergeResult = noctalia::config::mergeConfigWithIncludes(m_configDir);
+  auto mergeResult = zynith::config::mergeConfigWithIncludes(m_configDir);
   toml::table merged = std::move(mergeResult.merged);
   std::string firstError = std::move(mergeResult.firstError);
-  const noctalia::config::schema::SourceOrigin firstErrorOrigin = std::move(mergeResult.firstErrorOrigin);
+  const zynith::config::schema::SourceOrigin firstErrorOrigin = std::move(mergeResult.firstErrorOrigin);
   m_includeLoadedFiles = std::move(mergeResult.loadedFiles);
   m_includeDirs = std::move(mergeResult.includeDirs);
 
   // Recorded after the config dir so the sidecar wins, matching the deepMerge below.
-  noctalia::config::ConfigOriginIndex origins = std::move(mergeResult.origins);
+  zynith::config::ConfigOriginIndex origins = std::move(mergeResult.origins);
   if (!m_overridesPath.empty()) {
     origins.record(std::filesystem::path(m_overridesPath), m_overridesTable);
   }
@@ -1430,18 +1430,16 @@ void ConfigService::loadAll() {
   toml::table effectiveOverrides = m_overridesTable;
   schema::Diagnostics migrationDiag;
   ConfigProblem migrationError;
-  int storedVersion = noctalia::config::currentConfigVersion();
+  int storedVersion = zynith::config::currentConfigVersion();
   int appliedVersion = storedVersion;
   bool sidecarNeedsPersist = false;
   if (!m_overridesTable.empty()) {
-    const auto parsedVersion = noctalia::config::storedConfigVersion(effectiveOverrides, migrationDiag);
+    const auto parsedVersion = zynith::config::storedConfigVersion(effectiveOverrides, migrationDiag);
     if (parsedVersion.has_value()) {
       storedVersion = *parsedVersion;
-      appliedVersion = noctalia::config::applyPendingConfigMigrations(effectiveOverrides, storedVersion, migrationDiag);
+      appliedVersion = zynith::config::applyPendingConfigMigrations(effectiveOverrides, storedVersion, migrationDiag);
       sidecarNeedsPersist = appliedVersion != storedVersion;
-      effectiveOverrides.insert_or_assign(
-          noctalia::config::kConfigVersionKey, static_cast<std::int64_t>(appliedVersion)
-      );
+      effectiveOverrides.insert_or_assign(zynith::config::kConfigVersionKey, static_cast<std::int64_t>(appliedVersion));
     }
   }
   origins.annotate(migrationDiag);
@@ -1458,9 +1456,9 @@ void ConfigService::loadAll() {
   // Apply the app-writable overrides overlay last; sidecar wins. Compatibility
   // normalization must see the final effective values to preserve overlay intent.
   deepMerge(merged, effectiveOverrides);
-  merged.erase(noctalia::config::kConfigVersionKey);
-  noctalia::config::LegacyConfigIssues legacyIssues;
-  noctalia::config::normalizeLegacyConfig(merged, legacyIssues);
+  merged.erase(zynith::config::kConfigVersionKey);
+  zynith::config::LegacyConfigIssues legacyIssues;
+  zynith::config::normalizeLegacyConfig(merged, legacyIssues);
   for (auto& issue : legacyIssues) {
     if (const auto* origin = origins.find(issue.path)) {
       issue.origin = *origin;
@@ -1490,7 +1488,7 @@ void ConfigService::loadAll() {
   schema::Diagnostics diagnostics;
   if (semanticError.empty()) {
     try {
-      diagnostics = noctalia::config::validateMergedConfig(merged, origins);
+      diagnostics = zynith::config::validateMergedConfig(merged, origins);
       std::size_t errorCount = 0;
       for (const auto& entry : diagnostics.entries) {
         if (entry.severity == schema::Diagnostics::Severity::Error) {
@@ -1644,7 +1642,7 @@ void ConfigService::parseConfigTable(
       }
 
       const std::string widgetName(name.str());
-      WidgetConfig wc = noctalia::config::readBarWidgetConfig(widgetName, *entryTbl, config);
+      WidgetConfig wc = zynith::config::readBarWidgetConfig(widgetName, *entryTbl, config);
 
       try {
         validateWidgetSettings(widgetName, wc);
@@ -1787,7 +1785,7 @@ void ConfigService::parseConfigTable(
       }
       auto& bucket = config.plugins.pluginSettings[std::string(pluginId.str())];
       for (const auto& [key, value] : *perPlugin) {
-        if (auto parsed = noctalia::config::readWidgetSettingValue(value); parsed.has_value()) {
+        if (auto parsed = zynith::config::readWidgetSettingValue(value); parsed.has_value()) {
           bucket[std::string(key.str())] = std::move(*parsed);
         }
       }
@@ -1837,7 +1835,7 @@ bool ConfigService::matchesKeybind(KeybindAction action, std::uint32_t sym, std:
 }
 
 void ConfigService::registerIpc(IpcService& ipc) {
-  ipc.bind(noctalia::cli::msg::configReload, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::configReload, [this](const std::string&) -> std::string {
     forceReload();
     return "ok\n";
   });

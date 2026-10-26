@@ -1,6 +1,6 @@
 #include "theme/scheme.h"
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   std::optional<Scheme> schemeFromString(std::string_view s) {
     for (const auto& [name, scheme] : kSchemeEntries) {
@@ -18,4 +18,4 @@ namespace noctalia::theme {
     return kSchemeEntries.front().first;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

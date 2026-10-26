@@ -94,7 +94,7 @@ namespace {
   void testAppImageOriginDetection() {
     namespace fs = std::filesystem;
 
-    const fs::path root = fs::temp_directory_path() / ("noctalia-appimage-origin-" + std::to_string(getpid()));
+    const fs::path root = fs::temp_directory_path() / ("zynith-shell-appimage-origin-" + std::to_string(getpid()));
     const fs::path applications = root / "data/applications";
     const fs::path systemApplications = root / "system/applications";
     const fs::path executable = root / "PortableApp";

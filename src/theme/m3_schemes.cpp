@@ -33,7 +33,7 @@
 
 namespace mcu = material_color_utilities;
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -449,4 +449,4 @@ namespace noctalia::theme {
     return out;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

@@ -556,7 +556,7 @@ namespace scripting {
               kOldestSupportedPluginApiVersion, kCurrentPluginApiVersion
           );
           notify::error(
-              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
+              zynith::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr(
                   "plugins.enable-failed.body-incompatible", "plugin", id, "version", pluginApiVersion, "oldest",
                   kOldestSupportedPluginApiVersion, "current", kCurrentPluginApiVersion
@@ -565,14 +565,14 @@ namespace scripting {
         } else if (timedOut) {
           kLog.warn("cannot enable '{}': export timed out", id);
           notify::error(
-              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
+              zynith::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr("plugins.enable-failed.body-timeout", "plugin", id)
           );
         } else {
           const std::string reason = error.empty() ? "export failed" : error;
           kLog.warn("cannot enable '{}': {}", id, reason);
           notify::error(
-              noctalia::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
+              zynith::build_info::kProductName, i18n::tr("plugins.enable-failed.title"),
               i18n::tr("plugins.enable-failed.body-error", "plugin", id, "error", reason)
           );
         }

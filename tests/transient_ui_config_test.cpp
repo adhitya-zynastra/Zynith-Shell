@@ -59,7 +59,7 @@ int main() {
       std::filesystem::temp_directory_path() / ("zynith-transient-ui-" + std::to_string(::getpid()));
   std::filesystem::remove_all(root);
   writeFile(
-      root / "config" / "noctalia" / "rice.toml",
+      root / "config" / "zynith-shell" / "rice.toml",
       "[shell.launcher]\n"
       "style = \"classic\"\n"
       "width = 2000\n"   // above the ceiling: clamped to 1200
@@ -77,7 +77,7 @@ int main() {
       "[shell]\n"
       "display_font_family = \"Space Grotesk\"\n"
   );
-  ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
+  ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
   ::setenv("XDG_STATE_HOME", (root / "state").c_str(), 1);
 
   {

@@ -117,7 +117,7 @@ void LockscreenWidgetsController::initialize(const LockscreenWidgetsControllerSe
 }
 
 void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
-  ipc.bind(noctalia::cli::msg::lockscreenWidgetsEdit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::lockscreenWidgetsEdit, [this](const std::string&) -> std::string {
     if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
       return "error: lock screen disabled\n";
     }
@@ -125,7 +125,7 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::lockscreenWidgetsExit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::lockscreenWidgetsExit, [this](const std::string&) -> std::string {
     exitEdit();
     return "ok\n";
   });
@@ -134,7 +134,7 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
   // which then shadow the lockscreen.toml preset entirely. This is the way back: it clears only the
   // [lockscreen_widgets] overrides, and the reload callback rebuilds from the preset. Refused while the
   // editor is open (its exit would write the old snapshot back) and while the session is locked.
-  ipc.bind(noctalia::cli::msg::lockscreenWidgetsReset, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::lockscreenWidgetsReset, [this](const std::string&) -> std::string {
     if (m_config == nullptr) {
       return "error: configuration unavailable\n";
     }
@@ -153,7 +153,7 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
                                                            : "ok: no lockscreen widget overrides\n";
   });
 
-  ipc.bind(noctalia::cli::msg::lockscreenWidgetsRestore, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::lockscreenWidgetsRestore, [this](const std::string&) -> std::string {
     if (m_config == nullptr) {
       return "error: configuration unavailable\n";
     }
@@ -167,7 +167,7 @@ void LockscreenWidgetsController::registerIpc(IpcService& ipc) {
     return m_config->restoreStashedOverrideTable("lockscreen_widgets", &error) ? "ok\n" : "error: " + error + "\n";
   });
 
-  ipc.bind(noctalia::cli::msg::lockscreenWidgetsToggleEdit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::lockscreenWidgetsToggleEdit, [this](const std::string&) -> std::string {
     if (m_config != nullptr && !m_config->isLockScreenEnabled()) {
       return "error: lock screen disabled\n";
     }

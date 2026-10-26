@@ -152,7 +152,7 @@ bool VirtualKeyboardService::ensureKeymap() {
     return false;
   }
 
-  char path[] = "/tmp/noctalia-virtual-keyboard-XXXXXX";
+  char path[] = "/tmp/zynith-shell-virtual-keyboard-XXXXXX";
   const int fd = mkstemp(path);
   if (fd < 0) {
     std::free(keymapString);

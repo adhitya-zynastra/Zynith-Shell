@@ -6,7 +6,7 @@
 #include <string_view>
 #include <utility>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   // Color generation strategies. The first five are Material Design 3 schemes
   // (TonalPalette + tone tables, built on top of material_color_utilities).
@@ -61,4 +61,4 @@ namespace noctalia::theme {
   // String form used in CLI / JSON output.
   std::string_view schemeToString(Scheme s);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

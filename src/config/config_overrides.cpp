@@ -1061,19 +1061,19 @@ bool ConfigService::setThemeColorScheme(PaletteSource source, std::string_view v
 
   switch (source) {
   case PaletteSource::Builtin:
-    if (noctalia::theme::findBuiltinPalette(value) == nullptr) {
+    if (zynith::theme::findBuiltinPalette(value) == nullptr) {
       return false;
     }
     break;
   case PaletteSource::Wallpaper:
-    if (!noctalia::theme::schemeFromString(value)) {
+    if (!zynith::theme::schemeFromString(value)) {
       return false;
     }
     break;
   case PaletteSource::Community:
     break;
   case PaletteSource::Custom:
-    if (!std::filesystem::exists(noctalia::theme::customPalettePath(value))) {
+    if (!std::filesystem::exists(zynith::theme::customPalettePath(value))) {
       return false;
     }
     break;
@@ -1418,9 +1418,9 @@ void ConfigService::reconcileCapsuleGroupOverrides(toml::table& candidate) const
 
 std::optional<Config> ConfigService::configForOverrides(const toml::table& overrides) const {
   Config parsed;
-  noctalia::config::seedBuiltinWidgets(parsed);
+  zynith::config::seedBuiltinWidgets(parsed);
 
-  auto mergeResult = noctalia::config::mergeConfigWithIncludes(m_configDir);
+  auto mergeResult = zynith::config::mergeConfigWithIncludes(m_configDir);
   toml::table merged = std::move(mergeResult.merged);
   if (!mergeResult.firstError.empty()) {
     kLog.warn(
@@ -1430,11 +1430,11 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   }
 
   toml::table effectiveOverrides = overrides;
-  noctalia::config::schema::Diagnostics migrationDiag;
+  zynith::config::schema::Diagnostics migrationDiag;
   if (!effectiveOverrides.empty()) {
-    const auto storedVersion = noctalia::config::storedConfigVersion(effectiveOverrides, migrationDiag);
+    const auto storedVersion = zynith::config::storedConfigVersion(effectiveOverrides, migrationDiag);
     if (storedVersion.has_value()) {
-      (void)noctalia::config::applyPendingConfigMigrations(effectiveOverrides, *storedVersion, migrationDiag);
+      (void)zynith::config::applyPendingConfigMigrations(effectiveOverrides, *storedVersion, migrationDiag);
     }
   }
   if (migrationDiag.hasErrors()) {
@@ -1442,9 +1442,9 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
     return std::nullopt;
   }
   deepMerge(merged, effectiveOverrides);
-  merged.erase(noctalia::config::kConfigVersionKey);
-  noctalia::config::LegacyConfigIssues issues;
-  noctalia::config::normalizeLegacyConfig(merged, issues);
+  merged.erase(zynith::config::kConfigVersionKey);
+  zynith::config::LegacyConfigIssues issues;
+  zynith::config::normalizeLegacyConfig(merged, issues);
   if (mergeResult.loadedFiles.empty() && overrides.empty()) {
     parsed.idle.behaviors = defaultIdleBehaviors();
     parsed.bars.push_back(BarConfig{});
@@ -1462,11 +1462,11 @@ std::optional<Config> ConfigService::configForOverrides(const toml::table& overr
   return parsed;
 }
 
-noctalia::config::schema::Diagnostics ConfigService::diagnosticsForOverrides(const toml::table& overrides) const {
-  auto mergeResult = noctalia::config::mergeConfigWithIncludes(m_configDir);
+zynith::config::schema::Diagnostics ConfigService::diagnosticsForOverrides(const toml::table& overrides) const {
+  auto mergeResult = zynith::config::mergeConfigWithIncludes(m_configDir);
   toml::table merged = std::move(mergeResult.merged);
-  noctalia::config::ConfigOriginIndex origins = std::move(mergeResult.origins);
-  noctalia::config::schema::Diagnostics diagnostics;
+  zynith::config::ConfigOriginIndex origins = std::move(mergeResult.origins);
+  zynith::config::schema::Diagnostics diagnostics;
   if (!mergeResult.firstError.empty()) {
     diagnostics.fatalAt(std::move(mergeResult.firstErrorOrigin), "syntax", mergeResult.firstError, "config.syntax");
   }
@@ -1476,21 +1476,21 @@ noctalia::config::schema::Diagnostics ConfigService::diagnosticsForOverrides(con
     origins.record(std::filesystem::path(m_overridesPath), overrides);
   }
   if (!effectiveOverrides.empty()) {
-    const auto storedVersion = noctalia::config::storedConfigVersion(effectiveOverrides, diagnostics);
+    const auto storedVersion = zynith::config::storedConfigVersion(effectiveOverrides, diagnostics);
     if (storedVersion.has_value()) {
-      (void)noctalia::config::applyPendingConfigMigrations(effectiveOverrides, *storedVersion, diagnostics);
+      (void)zynith::config::applyPendingConfigMigrations(effectiveOverrides, *storedVersion, diagnostics);
     }
   }
   deepMerge(merged, effectiveOverrides);
-  merged.erase(noctalia::config::kConfigVersionKey);
-  noctalia::config::LegacyConfigIssues issues;
-  noctalia::config::normalizeLegacyConfig(merged, issues);
+  merged.erase(zynith::config::kConfigVersionKey);
+  zynith::config::LegacyConfigIssues issues;
+  zynith::config::normalizeLegacyConfig(merged, issues);
   for (const auto& issue : issues) {
     diagnostics.warn(issue.path, issue.message, "config.legacy");
   }
   origins.annotate(diagnostics);
 
-  auto semantic = noctalia::config::validateMergedConfig(merged, origins);
+  auto semantic = zynith::config::validateMergedConfig(merged, origins);
   diagnostics.entries.insert(
       diagnostics.entries.end(), std::make_move_iterator(semantic.entries.begin()),
       std::make_move_iterator(semantic.entries.end())
@@ -1500,7 +1500,7 @@ noctalia::config::schema::Diagnostics ConfigService::diagnosticsForOverrides(con
 
 bool ConfigService::validateOverrideMutation(
     const toml::table& candidateOverrides, const toml::table* baselineOverrides,
-    const noctalia::config::schema::Diagnostics* candidateDiagnostics
+    const zynith::config::schema::Diagnostics* candidateDiagnostics
 ) {
   m_lastMutationError.clear();
   if (!m_overridesParseError.empty()) {
@@ -1511,11 +1511,11 @@ bool ConfigService::validateOverrideMutation(
   try {
     const auto baseline = diagnosticsForOverrides(baselineOverrides != nullptr ? *baselineOverrides : m_overridesTable);
     const auto computedCandidate = candidateDiagnostics == nullptr ? diagnosticsForOverrides(candidateOverrides)
-                                                                   : noctalia::config::schema::Diagnostics{};
+                                                                   : zynith::config::schema::Diagnostics{};
     const auto& candidate = candidateDiagnostics != nullptr ? *candidateDiagnostics : computedCandidate;
     const auto fatal = std::ranges::find_if(candidate.entries, [](const auto& entry) {
-      return entry.severity == noctalia::config::schema::Diagnostics::Severity::Error
-          && entry.recoveryScope == noctalia::config::schema::Diagnostics::RecoveryScope::Document;
+      return entry.severity == zynith::config::schema::Diagnostics::Severity::Error
+          && entry.recoveryScope == zynith::config::schema::Diagnostics::RecoveryScope::Document;
     });
     if (fatal != candidate.entries.end()) {
       m_lastMutationError = fatal->describeShort(m_configDir);
@@ -1850,7 +1850,7 @@ bool ConfigService::validateOverride(
   const auto candidateDiagnostics = diagnosticsForOverrides(candidate);
   const std::string settingPath = overrideCacheKey(path);
   const auto fieldError = std::ranges::find_if(candidateDiagnostics.entries, [&](const auto& entry) {
-    return entry.severity == noctalia::config::schema::Diagnostics::Severity::Error && entry.path == settingPath;
+    return entry.severity == zynith::config::schema::Diagnostics::Severity::Error && entry.path == settingPath;
   });
   if (fieldError != candidateDiagnostics.entries.end()) {
     m_lastMutationError = fieldError->describeShort(m_configDir);
@@ -2089,7 +2089,7 @@ bool ConfigService::stashOverrideTable(std::string_view section, std::string* er
   toml::table out;
   out.insert_or_assign(section, *table);
   std::ostringstream text;
-  text << "# Saved by noctalia before [" << section << "] overrides were reset. Not read as configuration.\n";
+  text << "# Saved by zynith-shell before [" << section << "] overrides were reset. Not read as configuration.\n";
   text << toml::toml_formatter{out, toml::toml_formatter::default_flags & ~toml::format_flags::allow_literal_strings};
   const std::string path = overrideStashPath(m_overridesPath, section);
   if (!text.good() || !writeTextFileAtomic(path, text.str())) {
@@ -2264,7 +2264,6 @@ void ConfigService::setPaletteSourceOverride(const std::string& path) {
     m_wallpaperChangeCallback();
   }
 }
-
 
 void ConfigService::setWallpaperChangeCallback(ChangeCallback callback) {
   m_wallpaperChangeCallback = std::move(callback);

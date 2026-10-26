@@ -19,8 +19,8 @@
 
 namespace {
 
-  using noctalia::theme::GeneratedPalette;
-  using noctalia::theme::TemplateApplyService;
+  using zynith::theme::GeneratedPalette;
+  using zynith::theme::TemplateApplyService;
 
   GeneratedPalette paletteWith(std::uint32_t surface) {
     GeneratedPalette palette;
@@ -48,14 +48,14 @@ namespace {
 
 int main() {
   const std::filesystem::path root =
-      std::filesystem::temp_directory_path() / ("noctalia-template-notify-" + std::to_string(::getpid()));
+      std::filesystem::temp_directory_path() / ("zynith-shell-template-notify-" + std::to_string(::getpid()));
   std::filesystem::remove_all(root);
   std::filesystem::create_directories(root / "config");
   std::filesystem::create_directories(root / "state");
   std::filesystem::create_directories(root / "data");
-  ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
-  ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
-  ::setenv("NOCTALIA_DATA_HOME", (root / "data").c_str(), 1);
+  ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
+  ::setenv("ZYNITH_STATE_HOME", (root / "state").c_str(), 1);
+  ::setenv("ZYNITH_DATA_HOME", (root / "data").c_str(), 1);
 
   int applications = 0;
   int paletteChanges = 0;
@@ -115,9 +115,9 @@ int main() {
     TEST_CHECK(paletteChanges == 1);
   }
 
-  ::unsetenv("NOCTALIA_CONFIG_HOME");
-  ::unsetenv("NOCTALIA_STATE_HOME");
-  ::unsetenv("NOCTALIA_DATA_HOME");
+  ::unsetenv("ZYNITH_CONFIG_HOME");
+  ::unsetenv("ZYNITH_STATE_HOME");
+  ::unsetenv("ZYNITH_DATA_HOME");
   std::filesystem::remove_all(root);
   return 0;
 }

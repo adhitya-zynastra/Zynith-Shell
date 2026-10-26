@@ -152,10 +152,10 @@ namespace scripting {
           kLog.info("{}", effect.title);
           break;
         case ScriptSideEffectKind::NotifyInfo:
-          notify::info(noctalia::build_info::kProductName, effect.title, effect.body);
+          notify::info(zynith::build_info::kProductName, effect.title, effect.body);
           break;
         case ScriptSideEffectKind::NotifyError:
-          notify::error(noctalia::build_info::kProductName, effect.title, effect.body);
+          notify::error(zynith::build_info::kProductName, effect.title, effect.body);
           break;
         case ScriptSideEffectKind::CopyToClipboard:
           if (clipboard == nullptr || !clipboard->copyText(effect.title, effect.body)) {
@@ -964,8 +964,7 @@ namespace scripting {
         const std::string bodyKey =
             reason == "timeouts" ? "plugins.auto-disabled.body-timeouts" : "plugins.auto-disabled.body-errors";
         notify::error(
-            noctalia::build_info::kProductName, i18n::tr("plugins.auto-disabled.title"),
-            i18n::tr(bodyKey, "plugin", name)
+            zynith::build_info::kProductName, i18n::tr("plugins.auto-disabled.title"), i18n::tr(bodyKey, "plugin", name)
         );
       });
     }

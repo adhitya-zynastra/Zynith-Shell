@@ -62,5 +62,5 @@ std::string SingleInstanceLock::resolveLockPath() {
   if (display == nullptr || display[0] == '\0') {
     display = "wayland-0";
   }
-  return std::string(runtime) + "/noctalia-" + display + ".lock";
+  return std::string(runtime) + "/zynith-shell-" + display + ".lock";
 }

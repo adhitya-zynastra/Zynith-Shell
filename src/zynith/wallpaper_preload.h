@@ -40,7 +40,7 @@ namespace zynith {
     struct Result {
       std::uint64_t generation = 0;
       std::vector<Image> images;
-      std::optional<noctalia::theme::ThemeService::PrimedWallpaperPalette> palette;
+      std::optional<zynith::theme::ThemeService::PrimedWallpaperPalette> palette;
       double decodeMs = 0;
     };
     // called on the main thread, for the latest job only

@@ -49,20 +49,20 @@ namespace {
 
   bool readsLogLevelEnvironment() {
     setLogLevel(LogLevel::Info);
-    bool ok = expect(setenv("NOCTALIA_LOG_LEVEL", "warn", 1) == 0, "failed to set NOCTALIA_LOG_LEVEL");
+    bool ok = expect(setenv("ZYNITH_LOG_LEVEL", "warn", 1) == 0, "failed to set ZYNITH_LOG_LEVEL");
     initLogLevelFromEnvironment();
     ok = expect(currentLogLevel() == LogLevel::Warn, "environment log level was not applied") && ok;
 
     setLogLevel(LogLevel::Error);
-    ok = expect(setenv("NOCTALIA_LOG_LEVEL", "WRN", 1) == 0, "failed to set invalid NOCTALIA_LOG_LEVEL") && ok;
+    ok = expect(setenv("ZYNITH_LOG_LEVEL", "WRN", 1) == 0, "failed to set invalid ZYNITH_LOG_LEVEL") && ok;
     initLogLevelFromEnvironment();
     ok = expect(currentLogLevel() == LogLevel::Error, "invalid environment log level changed current level") && ok;
-    unsetenv("NOCTALIA_LOG_LEVEL");
+    unsetenv("ZYNITH_LOG_LEVEL");
     return ok;
   }
 
   bool writesCappedLogLines() {
-    const auto cacheRoot = makeTempRoot("noctalia-log-cap");
+    const auto cacheRoot = makeTempRoot("zynith-shell-log-cap");
     if (!expect(useCacheHome(cacheRoot), "failed to set XDG_CACHE_HOME")) {
       return false;
     }
@@ -70,7 +70,7 @@ namespace {
     initLogFile();
     logWarn("{}", std::string(10'000, 'x'));
 
-    const auto logPath = cacheRoot / "noctalia" / "noctalia.log";
+    const auto logPath = cacheRoot / "zynith-shell" / "zynith-shell.log";
     std::error_code ec;
     const auto size = std::filesystem::file_size(logPath, ec);
     bool ok = expect(!ec, "failed to stat capped log file");
@@ -84,15 +84,15 @@ namespace {
   }
 
   bool rotatesWhileRunning() {
-    const auto cacheRoot = makeTempRoot("noctalia-log-rotate");
+    const auto cacheRoot = makeTempRoot("zynith-shell-log-rotate");
     if (!expect(useCacheHome(cacheRoot), "failed to set XDG_CACHE_HOME")) {
       return false;
     }
 
-    const auto logDir = cacheRoot / "noctalia";
+    const auto logDir = cacheRoot / "zynith-shell";
     std::filesystem::create_directories(logDir);
 
-    const auto logPath = logDir / "noctalia.log";
+    const auto logPath = logDir / "zynith-shell.log";
     const std::size_t initialSize = kMaxLogBytes - 8;
     {
       std::ofstream out(logPath, std::ios::binary);
@@ -109,7 +109,7 @@ namespace {
     initLogFile();
     logWarn("rotate-now");
 
-    const auto backupPath = logDir / "noctalia.log.1";
+    const auto backupPath = logDir / "zynith-shell.log.1";
     std::error_code ec;
     const auto backupSize = std::filesystem::file_size(backupPath, ec);
     bool ok = expect(!ec, "missing rotated backup");

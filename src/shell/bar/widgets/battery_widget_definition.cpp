@@ -2,12 +2,11 @@
 
 #include "system/battery_warning_monitor.h"
 
-const noctalia::bar::WidgetDefinition<BatteryWidget::Options, BatteryWidgetDefinitionContext>&
-batteryWidgetDefinition() {
-  using noctalia::bar::field;
+const zynith::bar::WidgetDefinition<BatteryWidget::Options, BatteryWidgetDefinitionContext>& batteryWidgetDefinition() {
+  using zynith::bar::field;
   using Options = BatteryWidget::Options;
 
-  static const noctalia::bar::WidgetDefinition<Options, BatteryWidgetDefinitionContext> definition{
+  static const zynith::bar::WidgetDefinition<Options, BatteryWidgetDefinitionContext> definition{
       .type = "battery",
       .fields =
           {

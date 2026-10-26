@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   inline constexpr std::string_view kFirefoxThemePostAction = "firefox-theme";
 
@@ -15,7 +15,7 @@ namespace noctalia::theme {
   };
 
   // After a template writes colors.json: ensure the Pywalfox-compatible native-messaging
-  // manifest points at this noctalia binary (without clobbering a foreign host), then push
+  // manifest points at this zynith-shell binary (without clobbering a foreign host), then push
   // theme mode (when dark/light) and a colors update to every running host — same parity as
   // the old community apply.sh (`pywalfox dark|light` + `pywalfox update`), with multi-profile
   // fan-out so all open Firefox profiles refresh.
@@ -29,7 +29,7 @@ namespace noctalia::theme {
   // One host per Firefox profile; theme pushes reach all via a shared command file.
   int runFirefoxNativeMessagingHost();
 
-  // CLI: noctalia firefox-theme <install|uninstall|update|dark|light|auto|host|...>
+  // CLI: zynith-shell firefox-theme <install|uninstall|update|dark|light|auto|host|...>
   int runFirefoxThemeCli(int argc, char* argv[]);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

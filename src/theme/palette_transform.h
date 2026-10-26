@@ -2,7 +2,7 @@
 
 #include "theme/fixed_palette.h"
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   // Re-anchors the dark surface ramp to true black: every surface-family token is
   // lowered by the tone of `surface`, so the background lands on tone 0 and the
@@ -17,4 +17,4 @@ namespace noctalia::theme {
   void applyHighContrast(TokenMap& tokens, bool isDark);
   void applyHighContrast(GeneratedPalette& palette);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

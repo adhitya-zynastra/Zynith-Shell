@@ -77,7 +77,7 @@ int main() {
       "an executed program is not affected (exec resets dumpability)"
   );
 
-  // Self-inspection works while non-dumpable (this is what `noctalia msg status` reports).
+  // Self-inspection works while non-dumpable (this is what `zynith-shell msg status` reports).
   check(
       exitedWith(
           inChild([] {
@@ -120,7 +120,7 @@ int main() {
     int status = 0;
     ::waitpid(pid, &status, 0);
     check(WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV, "the process still dies of SIGSEGV");
-    check(out.find("[FATAL] noctalia: fatal signal 11 (SEGV)") != std::string::npos, "the signal is reported");
+    check(out.find("[FATAL] zynith-shell: fatal signal 11 (SEGV)") != std::string::npos, "the signal is reported");
     check(
         out.find("backtrace") != std::string::npos && out.find("process_hardening_test") != std::string::npos,
         "a backtrace naming the executable is written"

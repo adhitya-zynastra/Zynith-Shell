@@ -7,7 +7,7 @@
 #include <array>
 #include <vector>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   namespace {
 
@@ -212,4 +212,4 @@ namespace noctalia::bar {
     return actions;
   }
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

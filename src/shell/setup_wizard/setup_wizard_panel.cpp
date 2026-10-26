@@ -79,8 +79,8 @@ namespace {
 
   std::vector<std::string> builtinPaletteNames() {
     std::vector<std::string> paletteNames;
-    paletteNames.reserve(noctalia::theme::builtinPalettes().size());
-    for (const auto& entry : noctalia::theme::builtinPalettes()) {
+    paletteNames.reserve(zynith::theme::builtinPalettes().size());
+    for (const auto& entry : zynith::theme::builtinPalettes()) {
       paletteNames.emplace_back(entry.name);
     }
     return paletteNames;
@@ -88,7 +88,7 @@ namespace {
 
   std::size_t selectedBuiltinPaletteIndex(std::string_view name) {
     std::size_t index = 0;
-    for (const auto& entry : noctalia::theme::builtinPalettes()) {
+    for (const auto& entry : zynith::theme::builtinPalettes()) {
       if (entry.name == name) {
         return index;
       }
@@ -400,7 +400,9 @@ void SetupWizardPanel::create() {
 
 void SetupWizardPanel::doLayout(Renderer& renderer, float width, float height) {
   if (m_logo != nullptr && !m_logo->hasImage()) {
-    m_logo->setSourceFile(renderer, paths::assetPath("noctalia.svg").string(), 48 * static_cast<int>(contentScale()));
+    m_logo->setSourceFile(
+        renderer, paths::assetPath("zynith-shell.svg").string(), 48 * static_cast<int>(contentScale())
+    );
   }
   if (m_root != nullptr) {
     m_root->setPosition(0.0F, 0.0F);

@@ -16,7 +16,7 @@ class ConfigService;
 class HttpClient;
 class IpcService;
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   class ThemeService {
   public:
@@ -38,7 +38,7 @@ namespace noctalia::theme {
     void toggleLightDark();
     void cycleMode();
     [[nodiscard]] ThemeMode configuredMode() const noexcept;
-    // Noctalia's own resolved mode ([theme].shell_mode, or [theme].mode when it follows).
+    // Zynith's own resolved mode ([theme].shell_mode, or [theme].mode when it follows).
     [[nodiscard]] bool isLightMode() const noexcept;
     [[nodiscard]] std::string_view resolvedShellMode() const noexcept;
     // The resolved [theme].mode, which drives apps.
@@ -64,7 +64,7 @@ namespace noctalia::theme {
     computeWallpaperPalette(const std::string& path, const std::string& scheme);
     void primeWallpaperPalette(PrimedWallpaperPalette primed);
 
-    // Writes the current wallpaper-generated palette to ~/.config/noctalia/palettes/
+    // Writes the current wallpaper-generated palette to ~/.config/zynith-shell/palettes/
     // and switches palette source to custom.
     [[nodiscard]] bool saveWallpaperPaletteAsCustom(std::string* paletteNameOut, std::string* errorOut = nullptr);
 
@@ -114,4 +114,4 @@ namespace noctalia::theme {
     Timer m_autoTimer;
   };
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

@@ -87,7 +87,7 @@ namespace {
   }
 
   bool blurTraceEnabled() {
-    static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_BLUR_TRACE");
+    static const bool enabled = SysUtils::isEnvFlagOn("ZYNITH_BLUR_TRACE");
     return enabled;
   }
 
@@ -946,7 +946,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   }
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-panel",
+      .nameSpace = "zynith-shell-panel",
       .layer = floatingPanelLayer,
       .anchor = standaloneAnchor,
       .width = requestedSurfaceWidth,
@@ -1196,7 +1196,7 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
     }
 
     auto attachedConfig = LayerSurfaceConfig{
-        .nameSpace = "noctalia-attached-panel",
+        .nameSpace = "zynith-shell-attached-panel",
         .layer = panelLayer,
         .anchor = attachedAnchor,
         .width = surfaceWidth,
@@ -1361,7 +1361,7 @@ void PanelManager::showModalBackdrop(wl_output* output) {
   if (m_activePanel != nullptr && m_activePanel->modalBackdropMode() == Panel::ModalBackdropMode::Live) {
     auto liveVeil = std::make_unique<ScreenVeil>(wayland, m_renderContext, nullptr);
     const ScreenVeil::Style liveStyle{
-        .nameSpace = "noctalia-modal-backdrop",
+        .nameSpace = "zynith-shell-modal-backdrop",
         .layer = LayerShellLayer::Top,
         .blurIntensity = 0.0F,
         .tintIntensity = 0.46F,
@@ -1386,7 +1386,7 @@ void PanelManager::showModalBackdrop(wl_output* output) {
 
   auto veil = std::make_unique<ScreenVeil>(wayland, m_renderContext, nullptr);
   const ScreenVeil::Style style{
-      .nameSpace = "noctalia-modal-backdrop",
+      .nameSpace = "zynith-shell-modal-backdrop",
       .layer = LayerShellLayer::Top, // above windows and the bar, below floating (overlay) panels
       .blurIntensity = 0.30F,
       .tintIntensity = 0.38F,
@@ -2943,8 +2943,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
   };
 
   ipc.bind(
-      noctalia::cli::msg::panelToggle,
-      [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
+      zynith::cli::msg::panelToggle, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
         std::string panelId;
         std::string context;
         if (auto error = parseOpenArgs(args, "panel-toggle", panelId, context)) {
@@ -2964,7 +2963,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
 
   // The same override the Settings window writes for [control_center] style. An open Control Center keeps
   // its current tree; the next open builds with the new style.
-  ipc.bind(noctalia::cli::msg::controlCenterStyleSet, [this](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::controlCenterStyleSet, [this](const std::string& args) -> std::string {
     const std::string token = StringUtils::trim(args);
     const auto style = enumFromKey(kControlCenterStyles, token);
     if (!style.has_value()) {
@@ -2977,7 +2976,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
   });
 
   ipc.bind(
-      noctalia::cli::msg::panelOpen, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
+      zynith::cli::msg::panelOpen, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
         std::string panelId;
         std::string context;
         if (auto error = parseOpenArgs(args, "panel-open", panelId, context)) {
@@ -3003,7 +3002,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
       }
   );
 
-  ipc.bind(noctalia::cli::msg::panelClose, [this, unknownPanelError](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::panelClose, [this, unknownPanelError](const std::string& args) -> std::string {
     const std::string panelId = StringUtils::trim(args);
     if (!panelId.empty() && StringUtils::splitWhitespace(panelId).size() != 1) {
       return "error: panel-close accepts at most one panel id\n";
@@ -3029,13 +3028,13 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return std::format("error: {} accepts no arguments\n", command);
   };
 
-  ipc.bind(noctalia::cli::msg::settingsOpen, [this](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::settingsOpen, [this](const std::string& args) -> std::string {
     openSettingsWindow(std::string(StringUtils::trimLeftView(args)));
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::settingsOpenWidget, [this, &ipc](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  ipc.bind(zynith::cli::msg::settingsOpenWidget, [this, &ipc](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     std::string barName;
     std::string widgetName;
     if (parts.size() == 2) {
@@ -3063,10 +3062,10 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::settingsOpenPlugin, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  ipc.bind(zynith::cli::msg::settingsOpenPlugin, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() != 1) {
-      return "error: settings-open-plugin takes <plugin-id> (e.g. noctalia/notes)\n";
+      return "error: settings-open-plugin takes <plugin-id> (e.g. zynith-shell/notes)\n";
     }
     const std::string& pluginId = parts[0];
     if (!scripting::isValidPluginId(pluginId)) {
@@ -3082,7 +3081,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::settingsClose, [this, rejectSettingsArgs](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::settingsClose, [this, rejectSettingsArgs](const std::string& args) -> std::string {
     if (auto error = rejectSettingsArgs(args, "settings-close")) {
       return *error;
     }
@@ -3090,7 +3089,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::settingsToggle, [this](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::settingsToggle, [this](const std::string& args) -> std::string {
     toggleSettingsWindow(std::string(StringUtils::trimLeftView(args)));
     return "ok\n";
   });

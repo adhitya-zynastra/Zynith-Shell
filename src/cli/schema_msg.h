@@ -6,7 +6,7 @@
 #include <array>
 #include <string_view>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array<std::string_view, 10> kBuiltinPaletteNames{
       "Ayu", "Catppuccin", "Dracula", "Eldritch", "Gruvbox", "Kanagawa", "Nord", "Rosé Pine", "Tokyo-Night", "Zynith",
@@ -948,7 +948,7 @@ namespace noctalia::cli {
     };
     inline constexpr Command settingsOpenPlugin{
         "settings-open-plugin",
-        "Open the settings window at a plugin's settings (e.g. noctalia/notes)",
+        "Open the settings window at a plugin's settings (e.g. zynith-shell/notes)",
         {},
         {},
         {},
@@ -1380,4 +1380,4 @@ namespace noctalia::cli {
     return nullptr;
   }
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

@@ -290,9 +290,9 @@ std::expected<live::LaunchSpec, std::string> WallpaperEngineProvider::launchSpec
     spec.argv.push_back("--volume");
     spec.argv.push_back(std::to_string(std::clamp(config.volume, 1, 100)));
   }
-  // Same layer as Zynith's own wallpaper surface (noctalia-wallpaper). On niri a background-layer surface
+  // Same layer as Zynith's own wallpaper surface (zynith-shell-wallpaper). On niri a background-layer surface
   // without a place-within-backdrop rule behaves exactly like the static wallpaper does today, including in
-  // the overview. Zynith keeps niri's backdrop for its own blurred noctalia-backdrop surface.
+  // the overview. Zynith keeps niri's backdrop for its own blurred zynith-shell-backdrop surface.
   spec.argv.push_back("--layer");
   spec.argv.push_back("background");
   if (!config.mouse) {

@@ -65,7 +65,7 @@ int main() {
   bool ok = true;
 
   Config base;
-  noctalia::config::seedBuiltinWidgets(base);
+  zynith::config::seedBuiltinWidgets(base);
 
   const auto parsed = toml::parse("[widget.temp]\nshow_label = false\n");
   const auto* widgetRoot = parsed["widget"].as_table();
@@ -74,7 +74,7 @@ int main() {
     return 1;
   }
 
-  const WidgetConfig temp = noctalia::config::readBarWidgetConfig("temp", *tempTable, base);
+  const WidgetConfig temp = zynith::config::readBarWidgetConfig("temp", *tempTable, base);
   ok = expect(temp.type == "sysmon", "temp resolves to sysmon") && ok;
   ok = expectStringSetting(temp, "stat", "cpu_temp") && ok;
   ok = expectBoolSetting(temp, "show_label", false) && ok;
@@ -86,7 +86,7 @@ int main() {
     return 1;
   }
 
-  const WidgetConfig custom = noctalia::config::readBarWidgetConfig("my_clock", *customTable, base);
+  const WidgetConfig custom = zynith::config::readBarWidgetConfig("my_clock", *customTable, base);
   ok = expect(custom.type == "my_clock", "unknown widget name resolves to its own type") && ok;
   ok = expectStringSetting(custom, "format", "{:%H:%M}") && ok;
 
@@ -102,7 +102,7 @@ int main() {
     return 1;
   }
 
-  const WidgetConfig layout = noctalia::config::readBarWidgetConfig("keyboard_layout", *layoutTable, base);
+  const WidgetConfig layout = zynith::config::readBarWidgetConfig("keyboard_layout", *layoutTable, base);
   ok = expect(layout.type == "keyboard_layout", "keyboard_layout keeps builtin type") && ok;
   ok = expectBoolSetting(layout, "hide_when_single_layout", false) && ok;
   ok = expectStringMapEntry(layout, "custom_labels", "English (US)", "EN") && ok;
@@ -112,7 +112,7 @@ int main() {
   if (!expect(mapValueNode != nullptr, "parsed string-map widget setting")) {
     return 1;
   }
-  const auto mapValue = noctalia::config::readWidgetSettingValue(*mapValueNode);
+  const auto mapValue = zynith::config::readWidgetSettingValue(*mapValueNode);
   ok = expect(mapValue.has_value(), "string-map widget setting parses") && ok;
   if (mapValue.has_value()) {
     const auto* values = std::get_if<WidgetSettingStringMap>(&*mapValue);
@@ -130,7 +130,7 @@ int main() {
     return 1;
   }
   ok = expect(
-           !noctalia::config::readWidgetSettingValue(*invalidMapValueNode).has_value(),
+           !zynith::config::readWidgetSettingValue(*invalidMapValueNode).has_value(),
            "string-map widget setting rejects non-string values"
        )
       && ok;

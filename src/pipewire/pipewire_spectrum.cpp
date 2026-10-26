@@ -180,7 +180,7 @@ bool PipeWireSpectrum::Stream::start() {
     return false;
   }
 
-  m_stream = pw_stream_new(core, "noctalia-spectrum", props);
+  m_stream = pw_stream_new(core, "zynith-shell-spectrum", props);
   if (m_stream == nullptr) {
     pw_properties_free(props);
     kLog.warn("failed to create spectrum stream");
@@ -350,7 +350,7 @@ void PipeWireSpectrum::Stream::handleProcess() {
 }
 
 PipeWireSpectrum::PipeWireSpectrum(PipeWireService& service) : m_service(service) {
-  m_diagEnabled = std::getenv("NOCTALIA_SPECTRUM_DEBUG") != nullptr;
+  m_diagEnabled = std::getenv("ZYNITH_SPECTRUM_DEBUG") != nullptr;
   initProcessing();
 }
 

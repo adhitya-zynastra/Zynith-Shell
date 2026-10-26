@@ -63,7 +63,7 @@ struct BarInstance {
   InputDispatcher inputDispatcher;
   // Gestures for the parts of the bar no widget covers. The sink is never mounted in the scene; it
   // is used only for its scroll-detent accumulator, so dead-zone scrolling quantizes like a widget.
-  noctalia::bar::WidgetActionBindings deadZoneBindings;
+  zynith::bar::WidgetActionBindings deadZoneBindings;
   InputArea deadZoneAxisSink;
   float hideOpacity = 1.0F;
   // bar-hide/toggle IPC on non-autohide bars: release compositor exclusive zone until bar-show (v4 isVisible=false).

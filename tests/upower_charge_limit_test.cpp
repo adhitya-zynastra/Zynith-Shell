@@ -53,7 +53,7 @@ namespace {
   public:
     TempTree() {
       const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
-      root = std::filesystem::temp_directory_path() / ("noctalia-charge-limit-" + std::to_string(stamp));
+      root = std::filesystem::temp_directory_path() / ("zynith-shell-charge-limit-" + std::to_string(stamp));
       std::filesystem::create_directories(root / "BAT0");
     }
 

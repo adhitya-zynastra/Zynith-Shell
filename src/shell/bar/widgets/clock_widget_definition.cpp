@@ -1,10 +1,10 @@
 #include "shell/bar/widgets/clock_widget_definition.h"
 
-const noctalia::bar::WidgetDefinition<ClockWidget::Options>& clockWidgetDefinition() {
-  using noctalia::bar::field;
+const zynith::bar::WidgetDefinition<ClockWidget::Options>& clockWidgetDefinition() {
+  using zynith::bar::field;
   using Options = ClockWidget::Options;
 
-  static const noctalia::bar::WidgetDefinition<Options> definition{
+  static const zynith::bar::WidgetDefinition<Options> definition{
       .type = "clock",
       .fields = {
           field<&Options::format>({

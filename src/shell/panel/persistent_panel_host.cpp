@@ -217,7 +217,7 @@ void PersistentPanelHost::open(const std::string& id, wl_output* output, std::st
   instance->fillHeight = fillHeight;
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-panel",
+      .nameSpace = "zynith-shell-panel",
       .layer = panel->layer(),
       .anchor = anchor,
       .width = requestedWidth,

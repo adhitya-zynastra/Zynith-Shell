@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array kDmenuFlags{
       Flag{"--prompt", "-p", "<text>", "Set the launcher prompt", {}, {}, false, false},
@@ -21,4 +21,4 @@ namespace noctalia::cli {
       false,
   };
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

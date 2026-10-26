@@ -21,8 +21,8 @@ namespace {
 
   bool allowed(const std::filesystem::path& path, FileAccess access, CapabilitySet caps) {
     return fileAccessAllowed(
-        path, access, "/tmp/zcap/home/.local/share/noctalia/plugins/me",
-        "/tmp/zcap/home/.local/state/noctalia/plugins/data/me/plugin", caps, nullptr
+        path, access, "/tmp/zcap/home/.local/share/zynith-shell/plugins/me",
+        "/tmp/zcap/home/.local/state/zynith-shell/plugins/data/me/plugin", caps, nullptr
     );
   }
 
@@ -31,7 +31,7 @@ namespace {
 int main() {
   const std::filesystem::path root = "/tmp/zcap";
   std::filesystem::remove_all(root);
-  std::filesystem::create_directories(root / "home/.local/share/noctalia/plugins/me");
+  std::filesystem::create_directories(root / "home/.local/share/zynith-shell/plugins/me");
   std::filesystem::create_directories(root / "home/.ssh");
   std::filesystem::create_directories(root / "home/.config/zynith");
   ::setenv("HOME", (root / "home").c_str(), 1);
@@ -42,7 +42,7 @@ int main() {
 
   const CapabilitySet files = static_cast<CapabilitySet>(Capability::Files);
   const auto home = root / "home";
-  const auto own = home / ".local/share/noctalia/plugins/me";
+  const auto own = home / ".local/share/zynith-shell/plugins/me";
 
   // own directories need nothing
   expect(allowed(own / "data.json", FileAccess::Write, 0), "own directory writable without capabilities");
@@ -51,7 +51,7 @@ int main() {
   expect(allowed(home / "notes.txt", FileAccess::Read, files), "home read allowed with files");
   // secrets never
   expect(!allowed(home / ".ssh/id_ed25519", FileAccess::Read, files), "ssh key refused even with files");
-  expect(!allowed(home / ".local/state/noctalia/clipboard/x", FileAccess::Read, files), "clipboard store refused");
+  expect(!allowed(home / ".local/state/zynith-shell/clipboard/x", FileAccess::Read, files), "clipboard store refused");
   expect(!allowed("/proc/self/environ", FileAccess::Read, files), "own environment via /proc refused");
   expect(!allowed("/proc/1234/environ", FileAccess::Read, files), "other environments via /proc refused");
   // symlink out of the plugin directory is judged by its target
@@ -62,7 +62,7 @@ int main() {
   expect(!allowed(home / ".config/zynith/plugin-grants.toml", FileAccess::Write, files), "grants file write refused");
   expect(!allowed(home / ".config/niri/config.kdl", FileAccess::Write, files), "niri config write refused");
   expect(
-      !allowed(home / ".local/share/noctalia/plugins/other/x.luau", FileAccess::Write, files),
+      !allowed(home / ".local/share/zynith-shell/plugins/other/x.luau", FileAccess::Write, files),
       "other plugin's code write refused"
   );
   expect(allowed(home / ".config/niri/config.kdl", FileAccess::Read, files), "niri config readable with files");

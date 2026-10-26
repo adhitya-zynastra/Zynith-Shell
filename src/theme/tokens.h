@@ -3,7 +3,7 @@
 #include <array>
 #include <string_view>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   // Canonical list of built-in color tokens emitted in every generated palette.
   // The order is the iteration order used by json_output. Both the M3 schemes
@@ -87,4 +87,4 @@ namespace noctalia::theme {
 
   inline constexpr size_t kTokenCount = kTokens.size();
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

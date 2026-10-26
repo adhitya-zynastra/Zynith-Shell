@@ -2629,5 +2629,5 @@ NetworkChangeOrigin NetworkManagerService::consumeWirelessEnabledChangeOrigin(bo
   }
   const bool matchesLocalRequest = *m_pendingLocalWirelessEnabled == enabled;
   m_pendingLocalWirelessEnabled.reset();
-  return matchesLocalRequest ? NetworkChangeOrigin::Noctalia : NetworkChangeOrigin::External;
+  return matchesLocalRequest ? NetworkChangeOrigin::Zynith : NetworkChangeOrigin::External;
 }

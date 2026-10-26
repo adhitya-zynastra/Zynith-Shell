@@ -32,16 +32,16 @@ int main(int argc, char* argv[]) {
   namespace fs = std::filesystem;
 
   TEST_CHECK(argc == 2);
-  setenv("NOCTALIA_ASSETS_DIR", argv[1], 1);
+  setenv("ZYNITH_ASSETS_DIR", argv[1], 1);
   unsetenv("LC_ALL");
   unsetenv("LC_MESSAGES");
   setenv("LANG", "zh_CN.UTF-8", 1);
 
-  const fs::path root = fs::temp_directory_path() / ("noctalia-desktop-entry-locale-" + std::to_string(getpid()));
+  const fs::path root = fs::temp_directory_path() / ("zynith-shell-desktop-entry-locale-" + std::to_string(getpid()));
   const fs::path applications = root / "data/applications";
   fs::create_directories(applications);
   {
-    std::ofstream entry(applications / "noctalia-locale-probe.desktop");
+    std::ofstream entry(applications / "zynith-shell-locale-probe.desktop");
     entry
         << "[Desktop Entry]\n"
         << "Type=Application\n"
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
         << "GenericName[ru]=Дисковая утилита\n"
         << "Keywords=disk;storage;\n"
         << "Keywords[ru]=диск;хранилище;\n"
-        << "Exec=noctalia-locale-probe\n";
+        << "Exec=zynith-shell-locale-probe\n";
   }
 
   setenv("XDG_DATA_HOME", (root / "data").c_str(), 1);
@@ -65,26 +65,28 @@ int main(int argc, char* argv[]) {
   TEST_CHECK(i18n::Service::instance().language() == "zh-Hans");
   TEST_CHECK(i18n::Service::instance().requestedLanguage() == "zh-CN");
   setDesktopEntryLanguage(i18n::Service::instance().requestedLanguage());
-  TEST_CHECK(findEntry("noctalia-locale-probe").name == "软件");
+  TEST_CHECK(findEntry("zynith-shell-locale-probe").name == "软件");
 
   setDesktopEntryLanguage("en");
-  TEST_CHECK(findEntry("noctalia-locale-probe").name == "Disk Locale Probe");
+  TEST_CHECK(findEntry("zynith-shell-locale-probe").name == "Disk Locale Probe");
 
   AppProvider provider(nullptr, nullptr);
   provider.initialize();
   const auto translatedSearch = provider.query("Диск");
-  TEST_CHECK(findResult(translatedSearch, "Disk Locale Probe").id == (applications / "noctalia-locale-probe.desktop"));
+  TEST_CHECK(
+      findResult(translatedSearch, "Disk Locale Probe").id == (applications / "zynith-shell-locale-probe.desktop")
+  );
 
   const std::uint64_t englishVersion = desktopEntriesVersion();
   setDesktopEntryLanguage("ru");
-  const DesktopEntry& russian = findEntry("noctalia-locale-probe");
+  const DesktopEntry& russian = findEntry("zynith-shell-locale-probe");
   TEST_CHECK(desktopEntriesVersion() > englishVersion);
   TEST_CHECK(russian.name == "Диски Locale Probe");
   TEST_CHECK(russian.genericName == "Дисковая утилита");
   TEST_CHECK(russian.keywords == "диск;хранилище;");
 
   setDesktopEntryLanguage("pt-BR");
-  TEST_CHECK(findEntry("noctalia-locale-probe").name == "Discos Locale Probe");
+  TEST_CHECK(findEntry("zynith-shell-locale-probe").name == "Discos Locale Probe");
 
   fs::remove_all(root);
   return 0;

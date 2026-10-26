@@ -4,7 +4,7 @@
 #include <optional>
 #include <string>
 
-namespace noctalia::system::cpu_temp {
+namespace zynith::system::cpu_temp {
 
   struct Reading {
     double tempC = 0.0;
@@ -21,4 +21,4 @@ namespace noctalia::system::cpu_temp {
       const std::string& configuredSensorPath
   );
 
-} // namespace noctalia::system::cpu_temp
+} // namespace zynith::system::cpu_temp

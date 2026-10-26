@@ -1,6 +1,6 @@
 #pragma once
 
-namespace noctalia::sysmon {
+namespace zynith::sysmon {
 
   enum class Stat {
     CpuUsage,
@@ -61,4 +61,4 @@ namespace noctalia::sysmon {
     return ThresholdProfile{};
   }
 
-} // namespace noctalia::sysmon
+} // namespace zynith::sysmon

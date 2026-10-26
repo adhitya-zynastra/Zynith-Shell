@@ -33,7 +33,7 @@ namespace scripting {
 
   void registerPluginBindings(lua_State* L, PluginBindingContext* context);
 
-  // noctalia.getConfig(key) binding — reads the runtime's seeded settings for every
+  // zynith.getConfig(key) binding — reads the runtime's seeded settings for every
   // entry kind (widget/shortcut/service/etc.).
   int luau_getConfig(lua_State* L);
 

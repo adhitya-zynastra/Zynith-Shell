@@ -7,7 +7,7 @@
 #include <string_view>
 #include <vector>
 
-namespace noctalia::ipc {
+namespace zynith::ipc {
 
   inline std::vector<std::string> splitWords(std::string_view text) { return StringUtils::splitWhitespace(text); }
 
@@ -45,4 +45,4 @@ namespace noctalia::ipc {
     return std::nullopt;
   }
 
-} // namespace noctalia::ipc
+} // namespace zynith::ipc

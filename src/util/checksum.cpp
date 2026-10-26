@@ -4,7 +4,7 @@
 #include <fstream>
 #include <glib.h>
 
-namespace noctalia::util {
+namespace zynith::util {
 
   std::string fileMd5Hex(const std::filesystem::path& path) {
     std::ifstream in(path, std::ios::binary);
@@ -36,4 +36,4 @@ namespace noctalia::util {
     return digest;
   }
 
-} // namespace noctalia::util
+} // namespace zynith::util

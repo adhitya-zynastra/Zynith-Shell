@@ -2,12 +2,12 @@
 
 #include "shell/bar/widgets/glyph_button_definition.h"
 
-const noctalia::bar::WidgetDefinition<SettingsWidget::Options>& settingsWidgetDefinition() {
+const zynith::bar::WidgetDefinition<SettingsWidget::Options>& settingsWidgetDefinition() {
   using Options = SettingsWidget::Options;
 
-  static const noctalia::bar::WidgetDefinition<Options> definition{
+  static const zynith::bar::WidgetDefinition<Options> definition{
       .type = "settings",
-      .fields = noctalia::bar::glyphButtonFields<Options>(),
+      .fields = zynith::bar::glyphButtonFields<Options>(),
       .glyph = [](const Options& options) { return options.glyph; },
   };
   return definition;

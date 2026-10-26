@@ -9,7 +9,7 @@
 #include <optional>
 #include <system_error>
 
-namespace noctalia::system::cpu_freq {
+namespace zynith::system::cpu_freq {
 
   namespace {
     // Parse a kHz/mHz integer file, or nullopt on absence/garbage.
@@ -50,4 +50,4 @@ namespace noctalia::system::cpu_freq {
     return freqs;
   }
 
-} // namespace noctalia::system::cpu_freq
+} // namespace zynith::system::cpu_freq

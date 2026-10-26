@@ -134,11 +134,11 @@ namespace settings {
 
   // Complete setting description.
   struct WidgetSettingSpec : WidgetSettingPresentation {
-    noctalia::config::schema::WidgetSettingField schema;
+    zynith::config::schema::WidgetSettingField schema;
   };
 
   // The schema (validation) value type behind a UI control kind.
-  [[nodiscard]] noctalia::config::schema::WidgetSettingType schemaTypeForControl(WidgetControlKind control);
+  [[nodiscard]] zynith::config::schema::WidgetSettingType schemaTypeForControl(WidgetControlKind control);
 
   [[nodiscard]] const std::vector<WidgetTypeSpec>& widgetTypeSpecs();
   [[nodiscard]] bool isBuiltInWidgetType(std::string_view type);
@@ -173,14 +173,14 @@ namespace settings {
   // Schema projection (the validity half of the specs), consumed by the config
   // layer (e.g. `config validate`). For plugin widgets the type alone resolves the
   // manifest, so the config arg is no longer required for them.
-  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type);
-  [[nodiscard]] noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(
+  [[nodiscard]] zynith::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type);
+  [[nodiscard]] zynith::config::schema::WidgetSettingSchema widgetSettingSchema(
       std::string_view type, const WidgetConfig* config, scripting::PluginRegistry* pluginRegistry = nullptr
   );
   // Semantic cross-field validation for a widget config entry. Nullopt means the
   // resolved options are valid or the widget type declares no semantic rule.
   [[nodiscard]] std::optional<std::string> validateWidgetSemantics(std::string_view type, const WidgetConfig* config);
-  [[nodiscard]] std::optional<noctalia::config::schema::WidgetSettingField>
+  [[nodiscard]] std::optional<zynith::config::schema::WidgetSettingField>
   findWidgetSettingField(std::string_view widgetType, std::string_view settingKey);
 
   [[nodiscard]] std::optional<WidgetSettingSpec>

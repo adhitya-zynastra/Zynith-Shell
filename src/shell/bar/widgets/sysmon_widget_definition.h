@@ -7,5 +7,5 @@ struct SysmonWidgetDefinitionContext {
   bool verticalBar = false;
 };
 
-[[nodiscard]] const noctalia::bar::WidgetDefinition<SysmonWidget::Options, SysmonWidgetDefinitionContext>&
+[[nodiscard]] const zynith::bar::WidgetDefinition<SysmonWidget::Options, SysmonWidgetDefinitionContext>&
 sysmonWidgetDefinition();

@@ -195,7 +195,7 @@ namespace mpris {
   std::string normalizeArtPath(std::string_view artUrl) { return uri::normalizeFileUrl(artUrl); }
 
   std::filesystem::path artCachePath(std::string_view artUrl) {
-    const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "noctalia-media-art";
+    const std::filesystem::path cacheDir = std::filesystem::path("/tmp") / "zynith-shell-media-art";
     const std::size_t hash = std::hash<std::string_view>{}(artUrl);
     return cacheDir / (std::to_string(hash) + ".img");
   }

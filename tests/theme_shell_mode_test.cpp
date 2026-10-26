@@ -1,6 +1,6 @@
 // [theme].mode is the app-facing mode: it is what the resolved callback carries to templates,
 // the GTK color scheme, and theme_mode_changed hooks. [theme].shell_mode pins the palette
-// Noctalia itself renders with, without moving the app-facing mode.
+// Zynith itself renders with, without moving the app-facing mode.
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
@@ -32,10 +32,10 @@ namespace {
 
     ConfigService config;
     HttpClient http;
-    noctalia::theme::ThemeService theme(config, http);
+    zynith::theme::ThemeService theme(config, http);
 
     Resolution result;
-    theme.setResolvedCallback([&result](const noctalia::theme::GeneratedPalette&, std::string_view mode) {
+    theme.setResolvedCallback([&result](const zynith::theme::GeneratedPalette&, std::string_view mode) {
       result.appliedMode = std::string(mode);
     });
     theme.apply();
@@ -53,19 +53,19 @@ namespace {
 
 int main() {
   const std::filesystem::path root =
-      std::filesystem::temp_directory_path() / ("noctalia-theme-shell-mode-" + std::to_string(::getpid()));
+      std::filesystem::temp_directory_path() / ("zynith-shell-theme-shell-mode-" + std::to_string(::getpid()));
   std::filesystem::remove_all(root);
-  std::filesystem::create_directories(root / "config" / "noctalia");
-  std::filesystem::create_directories(root / "state" / "noctalia");
+  std::filesystem::create_directories(root / "config" / "zynith-shell");
+  std::filesystem::create_directories(root / "state" / "zynith-shell");
   std::filesystem::create_directories(root / "data");
-  ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
-  ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
-  ::setenv("NOCTALIA_DATA_HOME", (root / "data").c_str(), 1);
+  ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
+  ::setenv("ZYNITH_STATE_HOME", (root / "state").c_str(), 1);
+  ::setenv("ZYNITH_DATA_HOME", (root / "data").c_str(), 1);
 
   // ConfigService reads its persisted overrides from <state dir>/settings.toml, the same file
   // the settings GUI writes.
-  const std::filesystem::path overrides = root / "state" / "noctalia" / "settings.toml";
-  // follow: one mode drives Noctalia and apps together.
+  const std::filesystem::path overrides = root / "state" / "zynith-shell" / "settings.toml";
+  // follow: one mode drives Zynith and apps together.
   {
     const Resolution r = resolve(overrides, "[theme]\nmode = \"light\"\nshell_mode = \"follow\"\n");
     TEST_CHECK(r.mode == "light");

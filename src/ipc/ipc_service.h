@@ -98,12 +98,12 @@ public:
   // Bind a handler to a canonical `msg` schema command. The handler receives everything after
   // the first space as `args` and must return a string ending with '\n'. Command identity and
   // help metadata come from the schema.
-  void bind(const noctalia::cli::Command& command, Handler handler, HandlerOptions options = {});
+  void bind(const zynith::cli::Command& command, Handler handler, HandlerOptions options = {});
 
   // A command that steps one position along an ordered set (workspaces, tracks, power profiles).
   // Bound like any other; on a scroll gesture it runs once per flick instead of once per notch,
   // so an eager wheel movement moves one position rather than several.
-  void bindCycle(const noctalia::cli::Command& command, Handler handler, HandlerOptions options = {});
+  void bindCycle(const zynith::cli::Command& command, Handler handler, HandlerOptions options = {});
 
   // True when `command` was registered with bindCycle().
   [[nodiscard]] bool handlerCycles(std::string_view command) const noexcept;

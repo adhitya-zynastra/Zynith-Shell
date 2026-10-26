@@ -20,7 +20,8 @@ namespace {
 } // namespace
 
 int main() {
-  const auto fixture = std::filesystem::temp_directory_path() / ("noctalia-disk-mounts-" + std::to_string(::getpid()));
+  const auto fixture =
+      std::filesystem::temp_directory_path() / ("zynith-shell-disk-mounts-" + std::to_string(::getpid()));
   {
     std::ofstream out{fixture};
     out

@@ -502,21 +502,21 @@ void BluetoothService::registerIpc(IpcService& ipc, StateFeedbackCallback stateF
     return "ok\n";
   };
 
-  ipc.bind(noctalia::cli::msg::bluetoothEnable, [setBluetooth](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::bluetoothEnable, [setBluetooth](const std::string& args) -> std::string {
     if (auto err = rejectArgs("bluetooth-enable", args); err.has_value()) {
       return *err;
     }
     return setBluetooth(true);
   });
 
-  ipc.bind(noctalia::cli::msg::bluetoothDisable, [setBluetooth](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::bluetoothDisable, [setBluetooth](const std::string& args) -> std::string {
     if (auto err = rejectArgs("bluetooth-disable", args); err.has_value()) {
       return *err;
     }
     return setBluetooth(false);
   });
 
-  ipc.bind(noctalia::cli::msg::bluetoothToggle, [this, setBluetooth](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::bluetoothToggle, [this, setBluetooth](const std::string& args) -> std::string {
     if (auto err = rejectArgs("bluetooth-toggle", args); err.has_value()) {
       return *err;
     }
@@ -527,7 +527,7 @@ void BluetoothService::registerIpc(IpcService& ipc, StateFeedbackCallback stateF
   });
 
   ipc.bind(
-      noctalia::cli::msg::bluetoothStatus,
+      zynith::cli::msg::bluetoothStatus,
       [this](const std::string& args) -> std::string {
         if (auto err = rejectArgs("bluetooth-status", args); err.has_value()) {
           return *err;
@@ -586,7 +586,7 @@ void BluetoothService::setPowered(bool enabled) {
     const bool wasSoftBlocked = m_state.rfkillSoftBlocked;
     applyRfkillState(m_state);
     if (wasSoftBlocked && !m_state.rfkillSoftBlocked) {
-      emitState(BluetoothStateChangeOrigin::Noctalia);
+      emitState(BluetoothStateChangeOrigin::Zynith);
     }
   }
   if (enabled != m_state.powered) {
@@ -808,7 +808,7 @@ BluetoothStateChangeOrigin BluetoothService::consumePoweredChangeOrigin(bool pow
   }
   const bool matchesLocalRequest = *m_pendingLocalPowered == powered;
   m_pendingLocalPowered.reset();
-  return matchesLocalRequest ? BluetoothStateChangeOrigin::Noctalia : BluetoothStateChangeOrigin::External;
+  return matchesLocalRequest ? BluetoothStateChangeOrigin::Zynith : BluetoothStateChangeOrigin::External;
 }
 
 void BluetoothService::scheduleAutoReconnect() {

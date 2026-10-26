@@ -1294,7 +1294,7 @@ void SettingsWindow::openCalendarAccountEditor(std::optional<std::string> accoun
             ui::input({
                 .out = &passwordFileInput,
                 .value = draft->passwordFile,
-                .placeholder = "/run/agenix/noctalia-caldav",
+                .placeholder = "/run/agenix/zynith-shell-caldav",
                 .invalid = draft->passwordFileInvalid,
                 .enabled = draft->creating,
                 .onChange = [draft](const std::string& value) {
@@ -2188,27 +2188,11 @@ void SettingsWindow::openPluginStore() {
                 });
               },
               .createHeaderAction = [storeContent, scale]() -> std::unique_ptr<Node> {
-                const auto pageUrl = storeContent->detailPageUrl();
                 const auto sourceUrl = storeContent->detailSourceUrl();
-                if (!pageUrl.has_value() && !sourceUrl.has_value()) {
+                if (!sourceUrl.has_value()) {
                   return nullptr;
                 }
                 auto actions = ui::row({.align = FlexAlign::Center, .gap = Style::spaceXs * scale});
-                if (pageUrl.has_value()) {
-                  actions->addChild(
-                      ui::button({
-                          .glyph = "external-link",
-                          .glyphSize = Style::fontSizeBody * scale,
-                          .variant = ButtonVariant::Ghost,
-                          .tooltip = i18n::tr("settings.plugins.store.open-page"),
-                          .minWidth = Style::controlHeightSm * scale,
-                          .minHeight = Style::controlHeightSm * scale,
-                          .padding = Style::spaceXs * scale,
-                          .radius = Style::scaledRadiusMd(scale),
-                          .onClick = [url = *pageUrl]() { (void)net::openInBrowser(url); },
-                      })
-                  );
-                }
                 if (sourceUrl.has_value()) {
                   actions->addChild(
                       ui::button({
@@ -2292,7 +2276,7 @@ void SettingsWindow::openCommunityTemplateStore() {
   }
 
   const float scale = uiScale();
-  auto catalog = noctalia::theme::CommunityTemplateService::availableTemplates();
+  auto catalog = zynith::theme::CommunityTemplateService::availableTemplates();
   std::unordered_set<std::string> selectedIds(
       m_config->config().theme.templates.communityIds.begin(), m_config->config().theme.templates.communityIds.end()
   );
@@ -2364,7 +2348,7 @@ void SettingsWindow::saveSupportReport() {
 
   FileDialogOptions options;
   options.mode = FileDialogMode::Save;
-  options.defaultFilename = "noctalia-support-report.toml";
+  options.defaultFilename = "zynith-shell-support-report.toml";
   options.title = i18n::tr("settings.window.support-report-title");
   options.extensions = {".toml"};
 
@@ -2407,7 +2391,7 @@ void SettingsWindow::saveConfigExport(settings::ConfigExportMode mode) {
 
   FileDialogOptions options;
   options.mode = FileDialogMode::Save;
-  options.defaultFilename = fullEffective ? "noctalia-full-config.toml" : "noctalia-config.toml";
+  options.defaultFilename = fullEffective ? "zynith-shell-full-config.toml" : "zynith-shell-config.toml";
   options.title = fullEffective ? i18n::tr("settings.export-config.full-effective-save-title")
                                 : i18n::tr("settings.export-config.merged-user-save-title");
   options.extensions = {".toml"};

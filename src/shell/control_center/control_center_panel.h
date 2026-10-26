@@ -59,7 +59,7 @@ class Wallpaper;
 class WeatherService;
 class ClipboardService;
 
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 namespace scripting {

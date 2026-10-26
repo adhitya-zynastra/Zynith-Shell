@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   // Per-type gesture metadata, keyed by widget type so both the runtime and the settings GUI read
   // the same source. The GUI only ever has the type string, never a Widget instance, which is why
@@ -40,4 +40,4 @@ namespace noctalia::bar {
   // icons) rather than as a whole. They are never bindable and the settings editor omits them.
   [[nodiscard]] GestureMask reservedGesturesForType(std::string_view type) noexcept;
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

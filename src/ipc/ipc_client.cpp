@@ -25,7 +25,7 @@ namespace {
     if (display == nullptr || display[0] == '\0') {
       display = "wayland-0";
     }
-    return std::string(runtime) + "/noctalia-" + display + ".sock";
+    return std::string(runtime) + "/zynith-shell-" + display + ".sock";
   }
 
 } // namespace
@@ -55,7 +55,7 @@ int IpcClient::send(const std::string& command) {
   std::memcpy(addr.sun_path, path.c_str(), path.size() + 1);
 
   if (::connect(fd, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) < 0) {
-    std::println(stderr, "error: noctalia is not running");
+    std::println(stderr, "error: zynith-shell is not running");
     ::close(fd);
     return 1;
   }

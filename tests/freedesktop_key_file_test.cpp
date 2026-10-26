@@ -11,7 +11,7 @@ namespace {
 
   std::filesystem::path uniqueTestDir() {
     const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
-    return std::filesystem::temp_directory_path() / ("noctalia-freedesktop-key-file-test-" + std::to_string(now));
+    return std::filesystem::temp_directory_path() / ("zynith-shell-freedesktop-key-file-test-" + std::to_string(now));
   }
 
   bool expect(bool condition, std::string_view message) {

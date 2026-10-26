@@ -56,7 +56,7 @@ namespace process {
   [[nodiscard]] std::optional<std::string> resolvePrivilegeEscalator();
 
   // Shell string — runs fully detached (double-fork + setsid) so the child is not a direct
-  // subprocess of noctalia (hooks, idle commands, launcher parity).
+  // subprocess of zynith-shell (hooks, idle commands, launcher parity).
   [[nodiscard]] bool runAsync(const std::string& command);
   // Shell string — runs on a worker thread, captures stdout/stderr, and invokes callbacks from
   // that worker. Output chunk views are valid only for the callback call.

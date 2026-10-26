@@ -2,7 +2,7 @@
 
 #include "theme/color.h"
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   double relativeLuminance(int r, int g, int b);
   double contrastRatio(const Color& a, const Color& b);
@@ -13,4 +13,4 @@ namespace noctalia::theme {
   // is reduced only when needed to keep the adjusted color inside the sRGB gamut.
   Color ensureContrast(const Color& foreground, const Color& background, double minRatio = 4.5, int preferLight = 0);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

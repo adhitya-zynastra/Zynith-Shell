@@ -50,8 +50,8 @@ int main() {
   using P = fs::perms;
 
   const auto serial = std::chrono::steady_clock::now().time_since_epoch().count();
-  const fs::path root = fs::temp_directory_path() / ("noctalia-calendar-cache-test-" + std::to_string(serial));
-  const fs::path cacheDir = root / "noctalia/calendar";
+  const fs::path root = fs::temp_directory_path() / ("zynith-shell-calendar-cache-test-" + std::to_string(serial));
+  const fs::path cacheDir = root / "zynith-shell/calendar";
   const fs::path legacyPath = cacheDir / "events.json";
   const fs::path encryptedPath = cacheDir / "events.enc";
   constexpr std::string_view plaintext = R"({"events":[{"title":"private appointment"}]})";

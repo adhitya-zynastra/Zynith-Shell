@@ -17,7 +17,7 @@ class WeatherService;
 class HttpClient;
 class ClipboardService;
 
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 namespace scripting {
@@ -28,7 +28,7 @@ struct ShortcutServices {
   INetworkService* network = nullptr;
   BluetoothService* bluetooth = nullptr;
   GammaService* nightLight = nullptr;
-  noctalia::theme::ThemeService* theme = nullptr;
+  zynith::theme::ThemeService* theme = nullptr;
   NotificationManager* notifications = nullptr;
   IdleInhibitor* idleInhibitor = nullptr;
   PipeWireService* audio = nullptr;

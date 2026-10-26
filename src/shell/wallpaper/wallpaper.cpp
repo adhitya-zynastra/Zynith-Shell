@@ -406,7 +406,7 @@ void Wallpaper::onGpuResourcesInvalidated() {
 
 bool Wallpaper::initialize(
     WaylandConnection& wayland, ConfigService* config, RenderContext* renderContext, SharedTextureCache* textureCache,
-    noctalia::theme::ThemeService* themeService
+    zynith::theme::ThemeService* themeService
 ) {
   m_wayland = &wayland;
   m_config = config;
@@ -716,20 +716,20 @@ void Wallpaper::registerIpc(IpcService& ipc) {
     return switchResponse(switchWallpaperTo(action, connector));
   };
 
-  ipc.bind(noctalia::cli::msg::wallpaperRandom, [switchWallpaperHandler](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::wallpaperRandom, [switchWallpaperHandler](const std::string& args) -> std::string {
     return switchWallpaperHandler(PickWallpaper::Random, args);
   });
 
-  ipc.bind(noctalia::cli::msg::wallpaperNext, [switchWallpaperHandler](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::wallpaperNext, [switchWallpaperHandler](const std::string& args) -> std::string {
     return switchWallpaperHandler(PickWallpaper::Next, args);
   });
 
-  ipc.bind(noctalia::cli::msg::wallpaperPrevious, [switchWallpaperHandler](const std::string& args) -> std::string {
+  ipc.bind(zynith::cli::msg::wallpaperPrevious, [switchWallpaperHandler](const std::string& args) -> std::string {
     return switchWallpaperHandler(PickWallpaper::Previous, args);
   });
 
   ipc.bind(
-      noctalia::cli::msg::wallpaperGet,
+      zynith::cli::msg::wallpaperGet,
       [this, validateOutputConnector](const std::string& args) -> std::string {
         if (m_config == nullptr) {
           return "error: wallpaper service not initialized\n";
@@ -754,7 +754,7 @@ void Wallpaper::registerIpc(IpcService& ipc) {
   );
   // zynith: the favourite static wallpapers, for the Zynith UI's browser
   ipc.bind(
-      noctalia::cli::msg::wallpaperFavorites,
+      zynith::cli::msg::wallpaperFavorites,
       [this](const std::string&) -> std::string {
         if (m_config == nullptr) {
           return "error: wallpaper service not initialized\n";
@@ -768,7 +768,7 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
   ipc.bind(
-      noctalia::cli::msg::wallpaperFavorite,
+      zynith::cli::msg::wallpaperFavorite,
       [this](const std::string& args) -> std::string {
         if (m_config == nullptr) {
           return "error: wallpaper service not initialized\n";
@@ -794,31 +794,29 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
   // zynith: where the next change on an output was chosen (the wallpaper browser's card), as 0..1 of the output
-  ipc.bind(
-      noctalia::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
-        const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
-        if (tokens.size() != 3) {
-          return "error: wallpaper-reveal <connector> <x> <y>\n";
-        }
-        if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
-          return error;
-        }
-        float x = 0.5F;
-        float y = 0.5F;
-        try {
-          x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
-          y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
-        } catch (...) {
-          return "error: x and y are numbers from 0 to 1\n";
-        }
-        m_revealOrigin =
-            RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
-        return "ok\n";
-      }
-  );
+  ipc.bind(zynith::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
+    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+    if (tokens.size() != 3) {
+      return "error: wallpaper-reveal <connector> <x> <y>\n";
+    }
+    if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
+      return error;
+    }
+    float x = 0.5F;
+    float y = 0.5F;
+    try {
+      x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
+      y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
+    } catch (...) {
+      return "error: x and y are numbers from 0 to 1\n";
+    }
+    m_revealOrigin =
+        RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
+    return "ok\n";
+  });
 
   ipc.bind(
-      noctalia::cli::msg::wallpaperSet, [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
+      zynith::cli::msg::wallpaperSet, [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
         if (m_config == nullptr) {
           return "error: wallpaper service not initialized\n";
         }
@@ -1373,7 +1371,7 @@ void Wallpaper::createInstance(const WaylandOutput& output) {
   instance->description = output.description;
 
   auto surfaceConfig = LayerSurfaceConfig{
-      .nameSpace = "noctalia-wallpaper",
+      .nameSpace = "zynith-shell-wallpaper",
       .layer = shell::surface::layer(shell::surface::Role::Scene),
       .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
       .width = 0,

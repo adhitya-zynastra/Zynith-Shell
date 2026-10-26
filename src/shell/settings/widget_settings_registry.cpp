@@ -56,7 +56,7 @@
 #include <utility>
 
 namespace settings {
-  namespace schema = noctalia::config::schema;
+  namespace schema = zynith::config::schema;
 
   // File/Folder/Glyph carry a String value; Select an Enum; ColorSpec a Color; the rest map 1:1.
   schema::WidgetSettingType schemaTypeForControl(WidgetControlKind control) {
@@ -97,7 +97,7 @@ namespace settings {
       std::string_view (*type)();
       schema::WidgetSettingSchema (*schemaFields)();
       std::vector<WidgetSettingSpec> (*presentedSettingSpecs)();
-      const std::vector<noctalia::bar::WidgetCommonSettingOverride>& (*commonOverrides)();
+      const std::vector<zynith::bar::WidgetCommonSettingOverride>& (*commonOverrides)();
       std::string (*glyph)(const WidgetConfig* config);
       std::optional<std::string> (*validateConfig)(const WidgetConfig* config);
     };
@@ -117,7 +117,7 @@ namespace settings {
           .type = [] { return DefinitionAccessor().type; },
           .schemaFields = [] { return DefinitionAccessor().schemaFields(); },
           .presentedSettingSpecs = [] { return DefinitionAccessor().presentedSettingSpecs(); },
-          .commonOverrides = []() -> const std::vector<noctalia::bar::WidgetCommonSettingOverride>& {
+          .commonOverrides = []() -> const std::vector<zynith::bar::WidgetCommonSettingOverride>& {
             return DefinitionAccessor().commonOverrides;
           },
           .glyph = [](const WidgetConfig* config) -> std::string {
@@ -182,7 +182,7 @@ namespace settings {
     // setting is a definition bug, not a silent no-op.
     void applyCommonOverrides(
         std::vector<WidgetSettingSpec>& commonSpecs,
-        const std::vector<noctalia::bar::WidgetCommonSettingOverride>& overrides, std::string_view type
+        const std::vector<zynith::bar::WidgetCommonSettingOverride>& overrides, std::string_view type
     ) {
       for (const auto& entry : overrides) {
         const auto spec = std::ranges::find_if(commonSpecs, [&entry](const WidgetSettingSpec& candidate) {
@@ -231,7 +231,7 @@ namespace settings {
         {.type = "bluetooth", .labelKey = "settings.widgets.types.bluetooth", .glyph = "bluetooth"},
         {.type = "brightness", .labelKey = "settings.widgets.types.brightness", .glyph = "brightness-high"},
         {.type = "clock", .labelKey = "settings.widgets.types.clock", .glyph = "clock"},
-        {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "noctalia"},
+        {.type = "control-center", .labelKey = "settings.widgets.types.control-center", .glyph = "zynith-shell"},
         {.type = "clipboard", .labelKey = "settings.widgets.types.clipboard", .glyph = "clipboard"},
         {.type = "custom_button", .labelKey = "settings.widgets.types.custom-button", .glyph = "circuit-pushbutton"},
         {.type = "caffeine", .labelKey = "settings.widgets.types.caffeine", .glyph = "caffeine-off"},
@@ -726,7 +726,7 @@ namespace settings {
         return std::string_view(spec.schema.key);
       });
       if (it != specs.end()) {
-        it->schema.defaultValue = noctalia::bar::defaultActionsForType(type, config);
+        it->schema.defaultValue = zynith::bar::defaultActionsForType(type, config);
       }
     }
 
@@ -1140,20 +1140,20 @@ namespace settings {
 
   } // namespace
 
-  noctalia::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type) {
+  zynith::config::schema::WidgetSettingSchema widgetSettingSchema(std::string_view type) {
     if (auto fields = typedWidgetSettingSchema(type)) {
       return std::move(*fields);
     }
-    noctalia::config::schema::WidgetSettingSchema out;
+    zynith::config::schema::WidgetSettingSchema out;
     for (const auto& spec : widgetSettingSpecs(type, nullptr, "sans-serif", false)) {
       out.push_back(spec.schema);
     }
     return out;
   }
 
-  noctalia::config::schema::WidgetSettingSchema
+  zynith::config::schema::WidgetSettingSchema
   widgetSettingSchema(std::string_view type, const WidgetConfig* config, scripting::PluginRegistry* pluginRegistry) {
-    noctalia::config::schema::WidgetSettingSchema out;
+    zynith::config::schema::WidgetSettingSchema out;
     if (auto pluginEntry = resolvePluginWidget(type, pluginRegistry)) {
       for (const auto& spec : manifestSettingSpecs(pluginEntry->entry->settings)) {
         out.push_back(spec.schema);
@@ -1177,7 +1177,7 @@ namespace settings {
     return out;
   }
 
-  std::optional<noctalia::config::schema::WidgetSettingField>
+  std::optional<zynith::config::schema::WidgetSettingField>
   findWidgetSettingField(std::string_view widgetType, std::string_view settingKey) {
     if (auto fields = typedWidgetSettingSchema(widgetType)) {
       const auto field = std::ranges::find(*fields, settingKey, &schema::WidgetSettingField::key);

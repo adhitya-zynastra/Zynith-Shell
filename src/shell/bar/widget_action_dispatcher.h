@@ -7,7 +7,7 @@
 
 class IpcService;
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   // Panel verbs are routed through Widget::requestPanelToggle rather than the IPC handler, so the
   // panel anchors at the widget that triggered it instead of the compositor's focused output.
@@ -37,4 +37,4 @@ namespace noctalia::bar {
     IpcService* m_ipc = nullptr;
   };
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

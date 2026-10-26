@@ -290,18 +290,6 @@ namespace settings {
       }
       r->addChild(std::move(info));
 
-      if (const auto pageUrl = scripting::pluginWebsitePageUrl(plugin.source, plugin.id)) {
-        r->addChild(
-            ui::button({
-                .glyph = "external-link",
-                .glyphSize = Style::fontSizeBody * scale,
-                .variant = ButtonVariant::Ghost,
-                .tooltip = i18n::tr("settings.plugins.store.open-page"),
-                .onClick = [url = *pageUrl]() { (void)net::openInBrowser(url); },
-            })
-        );
-      }
-
       const auto* manifest = scripting::PluginRegistry::instance().findManifest(plugin.id);
       if (enabled && manifest != nullptr && pluginHasSettings(*manifest) && ctx.onConfigure) {
         r->addChild(
@@ -518,7 +506,7 @@ namespace settings {
         }
         SelectSetting selectSetting{std::move(options), valueAsString(value)};
         selectSetting.segmented = spec.segmented;
-        if (spec.schema.type == noctalia::config::schema::WidgetSettingType::Bool) {
+        if (spec.schema.type == zynith::config::schema::WidgetSettingType::Bool) {
           selectSetting.valueType = SelectValueType::Boolean;
         }
         if (const auto* defaultString = std::get_if<std::string>(&spec.schema.defaultValue)) {

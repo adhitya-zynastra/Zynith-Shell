@@ -16,7 +16,7 @@
 //
 // Independent of any grant: secret stores (ssh/gpg keys, keyrings, password stores, browser profiles, the
 // shell's encrypted clipboard) are never readable, and files that would turn a write into code execution
-// (shell startup files, autostart, niri/noctalia/zynith config, other plugins) are never writable.
+// (shell startup files, autostart, niri/zynith-shell/zynith config, other plugins) are never writable.
 
 #include <cstdint>
 #include <filesystem>

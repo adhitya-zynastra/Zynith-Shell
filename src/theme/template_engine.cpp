@@ -40,7 +40,7 @@
 #include <variant>
 #include <vector>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -1882,4 +1882,4 @@ namespace noctalia::theme {
     return ok;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

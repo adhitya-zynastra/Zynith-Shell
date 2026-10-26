@@ -20,7 +20,7 @@ namespace {
   constexpr char32_t kMissingGlyph = 0xF292; // skull
 
   // Hand-curated alias -> native Tabler icon name map.
-  // Use these for semantic shell states and stable Noctalia-facing names.
+  // Use these for semantic shell states and stable Zynith-facing names.
   // clang-format off
 const std::unordered_map<std::string, std::string_view> kAliases = {
     // General

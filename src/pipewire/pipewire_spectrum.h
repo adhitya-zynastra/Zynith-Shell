@@ -110,7 +110,7 @@ private:
   int m_idleFrames = 0;
   bool m_samplesReceived = false;
 
-  // Env-gated diagnostics (NOCTALIA_SPECTRUM_DEBUG=1): ~1 line/s capture + analysis summaries.
+  // Env-gated diagnostics (ZYNITH_SPECTRUM_DEBUG=1): ~1 line/s capture + analysis summaries.
   void noteProcessDiag(int frameCount, int channelCount, float peak);
   bool m_diagEnabled = false;
   std::chrono::steady_clock::time_point m_diagLastProcessLog;

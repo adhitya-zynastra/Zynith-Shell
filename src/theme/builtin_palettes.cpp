@@ -5,7 +5,7 @@
 #include <array>
 #include <string_view>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -1110,10 +1110,6 @@ namespace noctalia::theme {
   std::span<const BuiltinPalette> builtinPalettes() { return kPalettes; }
 
   const BuiltinPalette* findBuiltinPalette(std::string_view name) {
-    // the default palette's earlier name, still found in older configurations
-    if (name == "Noctalia") {
-      name = "Zynith";
-    }
     for (const auto& palette : kPalettes) {
       if (palette.name == name) {
         return &palette;
@@ -1129,4 +1125,4 @@ namespace noctalia::theme {
     return generated;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

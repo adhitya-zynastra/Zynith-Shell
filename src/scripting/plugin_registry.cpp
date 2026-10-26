@@ -55,7 +55,7 @@ namespace scripting {
     m_plugins.clear();
     std::vector<std::filesystem::path> roots = m_sourceRoots;
     if (roots.empty()) {
-      // Implicit local source: the user data dir (honoring NOCTALIA_DATA_HOME). When
+      // Implicit local source: the user data dir (honoring ZYNITH_DATA_HOME). When
       // the plugin manager is wired it injects the resolved git/path source roots.
       if (const std::string data = FileUtils::dataDir(); !data.empty()) {
         roots.emplace_back(std::filesystem::path(data) / "plugins");

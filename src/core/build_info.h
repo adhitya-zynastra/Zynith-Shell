@@ -3,10 +3,10 @@
 #include <string>
 #include <string_view>
 
-namespace noctalia::build_info {
+namespace zynith::build_info {
 
   // the product's name wherever the shell names itself to the user (notification sender, window titles, audio
-  // streams). The code's own identifiers (namespace, command, configuration paths) keep their historical name.
+  // streams); the command, paths and identifiers use zynith-shell / zynith.
   inline constexpr const char* kProductName = "Zynith";
 
   [[nodiscard]] std::string_view version() noexcept;
@@ -15,4 +15,4 @@ namespace noctalia::build_info {
 
   [[nodiscard]] std::string displayVersion();
 
-} // namespace noctalia::build_info
+} // namespace zynith::build_info

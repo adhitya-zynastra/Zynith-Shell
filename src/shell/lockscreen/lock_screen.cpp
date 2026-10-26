@@ -886,7 +886,7 @@ void LockScreen::tryAuthenticate() {
 
   const PamAuthenticator authenticator = m_authenticator;
   // Authenticate against the "login" stack. If fingerprint is enabled, strip
-  // pam_fprintd from it: noctalia drives the reader itself over D-Bus and the
+  // pam_fprintd from it: zynith-shell drives the reader itself over D-Bus and the
   // two can't share the sensor. See docs/fingerprint.md.
   const std::string pamService = "login";
   const std::string pamLanguage(i18n::Service::instance().language());
@@ -976,7 +976,7 @@ void LockScreen::createUnlockVeils() {
     }
     // Draw exactly what the lock background draws: same source, blur, tint and fill.
     ScreenVeil::Style style{
-        .nameSpace = "noctalia-unlock-veil",
+        .nameSpace = "zynith-shell-unlock-veil",
         .layer = LayerShellLayer::Overlay,
         .blurIntensity = config.lockscreen.blurIntensity,
         .tintIntensity = config.lockscreen.tintIntensity,

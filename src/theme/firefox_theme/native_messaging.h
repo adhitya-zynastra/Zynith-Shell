@@ -5,7 +5,7 @@
 #include <optional>
 #include <vector>
 
-namespace noctalia::theme::firefox_theme::native_messaging {
+namespace zynith::theme::firefox_theme::native_messaging {
 
   bool writeMessage(const nlohmann::json& message);
 
@@ -23,4 +23,4 @@ namespace noctalia::theme::firefox_theme::native_messaging {
     bool m_eof = false;
   };
 
-} // namespace noctalia::theme::firefox_theme::native_messaging
+} // namespace zynith::theme::firefox_theme::native_messaging

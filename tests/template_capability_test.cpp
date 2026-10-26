@@ -11,10 +11,10 @@
 
 namespace {
 
-  using noctalia::theme::HookRunner;
-  using noctalia::theme::TemplateEngine;
+  using zynith::theme::HookRunner;
+  using zynith::theme::TemplateEngine;
 
-  const std::filesystem::path kRoot = std::filesystem::temp_directory_path() / "noctalia_template_capability_test";
+  const std::filesystem::path kRoot = std::filesystem::temp_directory_path() / "zynith_template_capability_test";
   int failures = 0;
 
   void check(bool cond, const char* msg) {

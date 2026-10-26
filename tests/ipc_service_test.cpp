@@ -16,7 +16,7 @@
 namespace {
 
   std::filesystem::path makeTempDir() {
-    std::string pattern = (std::filesystem::temp_directory_path() / "noctalia-ipc-service-XXXXXX").string();
+    std::string pattern = (std::filesystem::temp_directory_path() / "zynith-shell-ipc-service-XXXXXX").string();
     std::vector<char> buffer(pattern.begin(), pattern.end());
     buffer.push_back('\0');
     char* result = ::mkdtemp(buffer.data());
@@ -70,18 +70,18 @@ namespace {
 int main() {
   const auto runtimeDir = makeTempDir();
   TEST_CHECK(!runtimeDir.empty());
-  constexpr const char* kWaylandDisplay = "noctalia-ipc-service-test";
+  constexpr const char* kWaylandDisplay = "zynith-shell-ipc-service-test";
   TEST_CHECK(::setenv("XDG_RUNTIME_DIR", runtimeDir.c_str(), 1) == 0);
   TEST_CHECK(::setenv("WAYLAND_DISPLAY", kWaylandDisplay, 1) == 0);
 
   IpcService ipc;
-  constexpr noctalia::cli::Command nonMsgCommand{"not-msg", {}, {}, {}, {}, {}, {}, false};
+  constexpr zynith::cli::Command nonMsgCommand{"not-msg", {}, {}, {}, {}, {}, {}, false};
   ipc.bind(nonMsgCommand, [](const std::string&) { return "unexpected\n"; });
   TEST_CHECK(!ipc.hasHandler("not-msg"));
 
-  ipc.bind(noctalia::cli::msg::panelToggle, [](const std::string& args) { return "visible:" + args + "\n"; });
+  ipc.bind(zynith::cli::msg::panelToggle, [](const std::string& args) { return "visible:" + args + "\n"; });
   ipc.bind(
-      noctalia::cli::msg::status, [](const std::string& args) { return "status:" + args + "\n"; },
+      zynith::cli::msg::status, [](const std::string& args) { return "status:" + args + "\n"; },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
@@ -116,7 +116,7 @@ int main() {
   // Action-editor visibility does not affect execution or help output.
   {
     ipc.bind(
-        noctalia::cli::msg::logLevelStatus, [](const std::string&) { return "state\n"; },
+        zynith::cli::msg::logLevelStatus, [](const std::string&) { return "state\n"; },
         IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
     );
     TEST_CHECK(ipc.execute("log-level-status") == "state\n");
@@ -136,7 +136,7 @@ int main() {
   // A cycling command runs like any other, but declares that a scroll flick should move one
   // position rather than one per notch.
   {
-    ipc.bindCycle(noctalia::cli::msg::workspaceSwitch, [](const std::string&) { return "moved\n"; });
+    ipc.bindCycle(zynith::cli::msg::workspaceSwitch, [](const std::string&) { return "moved\n"; });
     TEST_CHECK(ipc.execute("workspace-switch next") == "moved\n");
     TEST_CHECK(ipc.handlerCycles("workspace-switch"));
     TEST_CHECK(!ipc.handlerCycles("panel-toggle"));
@@ -177,14 +177,14 @@ int main() {
   TEST_CHECK(help.contains("status"));
   TEST_CHECK(help.contains("Print current state as JSON"));
 
-  ipc.bind(noctalia::cli::msg::panelToggle, [](const std::string&) { return "replaced\n"; });
+  ipc.bind(zynith::cli::msg::panelToggle, [](const std::string&) { return "replaced\n"; });
   TEST_CHECK(ipc.execute("panel-toggle") == "replaced\n");
   const std::string updatedHelp = ipc.execute("--help");
   TEST_CHECK(updatedHelp.contains("panel-toggle <id> [context]"));
   TEST_CHECK(updatedHelp.contains("Toggle a panel by id"));
 
   TEST_CHECK(ipc.start());
-  const auto socketPath = runtimeDir / ("noctalia-" + std::string(kWaylandDisplay) + ".sock");
+  const auto socketPath = runtimeDir / ("zynith-shell-" + std::string(kWaylandDisplay) + ".sock");
   TEST_CHECK(sendRaw(ipc, socketPath, "status line1\nline2\nline3") == "status:line1\nline2\nline3\n");
   return 0;
 }

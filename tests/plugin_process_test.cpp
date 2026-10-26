@@ -57,20 +57,20 @@ int main() {
   });
 
   constexpr auto source = R"(
-assert(not noctalia.runAsync(""))
-assert(noctalia.runAsync(
+assert(not zynith.runAsync(""))
+assert(zynith.runAsync(
   { "printf", "%s", "owner/repo; printf injected" },
   function(_) end,
   5000
 ))
-assert(noctalia.getSetting("shell.offline_mode"))
-assert(noctalia.wallpaperPath("DP-1") == "/tmp/wallpaper.png")
-assert(noctalia.wallpaperPath("missing") == nil)
-noctalia.setWallpaperMask("DP-1", {
+assert(zynith.getSetting("shell.offline_mode"))
+assert(zynith.wallpaperPath("DP-1") == "/tmp/wallpaper.png")
+assert(zynith.wallpaperPath("missing") == nil)
+zynith.setWallpaperMask("DP-1", {
   path = "/tmp/mask.png",
   wallpaperPath = "/tmp/wallpaper.png",
 })
-noctalia.setWallpaperMask("DP-1", nil)
+zynith.setWallpaperMask("DP-1", nil)
 )";
   if (!expect(host.exec("=direct-argv", source), "argv call should be accepted")) {
     return 1;

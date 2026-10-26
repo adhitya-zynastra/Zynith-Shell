@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <vector>
 
-namespace noctalia::config {
+namespace zynith::config {
   namespace {
 
     struct ReplayOptions {
@@ -76,7 +76,7 @@ namespace noctalia::config {
 
     int runSettingsCount(int argc, char* argv[]) {
       auto parsed = cli::parseOrReport(
-          cli::kConfigSettingsCountCmd, "noctalia config settings-count",
+          cli::kConfigSettingsCountCmd, "zynith-shell config settings-count",
           std::span<char* const>{argv + 3, static_cast<std::size_t>(argc - 3)}
       );
       if (!parsed)
@@ -208,8 +208,8 @@ namespace noctalia::config {
 
       const std::filesystem::path configHome = target / "config-home";
       const std::filesystem::path stateHome = target / "state-home";
-      const std::filesystem::path configDir = configHome / "noctalia";
-      const std::filesystem::path stateDir = stateHome / "noctalia";
+      const std::filesystem::path configDir = configHome / "zynith-shell";
+      const std::filesystem::path stateDir = stateHome / "zynith-shell";
 
       if (options.force) {
         std::error_code ec;
@@ -312,7 +312,7 @@ namespace noctalia::config {
       std::println();
       std::println("Run with:");
       std::println(
-          "  NOCTALIA_CONFIG_HOME={} NOCTALIA_STATE_HOME={} {}", StringUtils::shellQuote(configHome.string()),
+          "  ZYNITH_CONFIG_HOME={} ZYNITH_STATE_HOME={} {}", StringUtils::shellQuote(configHome.string()),
           StringUtils::shellQuote(stateHome.string()), StringUtils::shellQuote(argv0)
       );
       return 0;
@@ -327,7 +327,7 @@ namespace noctalia::config {
 
     int runValidate(int argc, char* argv[]) {
       auto parsed = cli::parseOrReport(
-          cli::kConfigValidateCmd, "noctalia config validate",
+          cli::kConfigValidateCmd, "zynith-shell config validate",
           std::span<char* const>{argv + 3, static_cast<std::size_t>(argc - 3)}
       );
       if (!parsed)
@@ -403,7 +403,7 @@ namespace noctalia::config {
 
     int runExport(int argc, char* argv[]) {
       auto parsed = cli::parseOrReport(
-          cli::kConfigExportCmd, "noctalia config export",
+          cli::kConfigExportCmd, "zynith-shell config export",
           std::span<char* const>{argv + 3, static_cast<std::size_t>(argc - 3)}
       );
       if (!parsed)
@@ -443,7 +443,7 @@ namespace noctalia::config {
 
   int runCli(int argc, char* argv[]) {
     if (argc < 3 || std::strcmp(argv[2], "--help") == 0 || std::strcmp(argv[2], "-h") == 0) {
-      std::print("{}", cli::renderHelp(cli::kConfigCmd, "noctalia config"));
+      std::print("{}", cli::renderHelp(cli::kConfigCmd, "zynith-shell config"));
       return argc < 3 ? 1 : 0;
     }
 
@@ -455,7 +455,7 @@ namespace noctalia::config {
       return runSettingsCount(argc, argv);
     if (std::strcmp(argv[2], "replay-report") == 0) {
       auto parsed = cli::parseOrReport(
-          cli::kConfigReplayReportCmd, "noctalia config replay-report",
+          cli::kConfigReplayReportCmd, "zynith-shell config replay-report",
           std::span<char* const>{argv + 3, static_cast<std::size_t>(argc - 3)}
       );
       if (!parsed)
@@ -472,8 +472,8 @@ namespace noctalia::config {
     }
 
     std::println(stderr, "error: unknown command: {}", argv[2]);
-    std::println(stderr, "Run 'noctalia config --help' for usage.");
+    std::println(stderr, "Run 'zynith-shell config --help' for usage.");
     return 1;
   }
 
-} // namespace noctalia::config
+} // namespace zynith::config

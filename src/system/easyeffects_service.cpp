@@ -496,43 +496,41 @@ bool EasyEffectsService::loadEffectsProfile(AudioEffectsProfileKind kind, std::s
 void EasyEffectsService::registerIpc(
     IpcService& ipc, const ConfigService&, EffectsProfileFeedbackCallback effectsProfileFeedback
 ) {
-  ipc.bind(
-      noctalia::cli::msg::effectsProfileSet, [this, effectsProfileFeedback](const std::string& args) -> std::string {
-        const auto trimmedView = std::string_view(args);
-        const auto split = trimmedView.find(' ');
-        if (split == std::string_view::npos) {
-          return "error: effects-profile-set requires <output|input> <profile>\n";
-        }
-        const std::string kindArg = StringUtils::trim(trimmedView.substr(0, split));
-        const auto kind = parseEffectsProfileKind(kindArg);
-        if (!kind.has_value()) {
-          return "error: effects-profile-set requires <output|input> <profile>\n";
-        }
-        const std::string profile = StringUtils::trim(trimmedView.substr(split));
-        if (profile.empty()) {
-          return "error: profile required\n";
-        }
+  ipc.bind(zynith::cli::msg::effectsProfileSet, [this, effectsProfileFeedback](const std::string& args) -> std::string {
+    const auto trimmedView = std::string_view(args);
+    const auto split = trimmedView.find(' ');
+    if (split == std::string_view::npos) {
+      return "error: effects-profile-set requires <output|input> <profile>\n";
+    }
+    const std::string kindArg = StringUtils::trim(trimmedView.substr(0, split));
+    const auto kind = parseEffectsProfileKind(kindArg);
+    if (!kind.has_value()) {
+      return "error: effects-profile-set requires <output|input> <profile>\n";
+    }
+    const std::string profile = StringUtils::trim(trimmedView.substr(split));
+    if (profile.empty()) {
+      return "error: profile required\n";
+    }
 
-        refreshProfiles();
-        const auto profiles = effectsProfiles(*kind);
-        if (profiles.empty()) {
-          return std::format("error: no EasyEffects {} profiles found\n", effectsProfileKindName(*kind));
-        }
-        if (!std::ranges::contains(profiles, profile)) {
-          return std::format(
-              "error: unknown EasyEffects {} profile \"{}\"{}", effectsProfileKindName(*kind), profile,
-              availableEffectsProfilesSuffix(profiles)
-          );
-        }
-        if (!loadEffectsProfile(*kind, profile)) {
-          return std::format(
-              "error: failed to set EasyEffects {} profile (is EasyEffects running?)\n", effectsProfileKindName(*kind)
-          );
-        }
-        if (effectsProfileFeedback) {
-          effectsProfileFeedback(*kind, profile);
-        }
-        return "ok\n";
-      }
-  );
+    refreshProfiles();
+    const auto profiles = effectsProfiles(*kind);
+    if (profiles.empty()) {
+      return std::format("error: no EasyEffects {} profiles found\n", effectsProfileKindName(*kind));
+    }
+    if (!std::ranges::contains(profiles, profile)) {
+      return std::format(
+          "error: unknown EasyEffects {} profile \"{}\"{}", effectsProfileKindName(*kind), profile,
+          availableEffectsProfilesSuffix(profiles)
+      );
+    }
+    if (!loadEffectsProfile(*kind, profile)) {
+      return std::format(
+          "error: failed to set EasyEffects {} profile (is EasyEffects running?)\n", effectsProfileKindName(*kind)
+      );
+    }
+    if (effectsProfileFeedback) {
+      effectsProfileFeedback(*kind, profile);
+    }
+    return "ok\n";
+  });
 }

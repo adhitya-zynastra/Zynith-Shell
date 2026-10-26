@@ -16,7 +16,7 @@ namespace {
   constexpr Logger kLog("output-probe");
 
   int createAnonFd(std::size_t size) {
-    int fd = memfd_create("noctalia-output-probe", MFD_CLOEXEC);
+    int fd = memfd_create("zynith-shell-output-probe", MFD_CLOEXEC);
     if (fd < 0) {
       return -1;
     }
@@ -65,7 +65,7 @@ OutputProbe::OutputProbe(WaylandConnection& wayland, std::chrono::milliseconds t
   // would choose for any unpinned layer surface (the focused one).
   m_layerSurface = zwlr_layer_shell_v1_get_layer_surface(
       m_wayland.layerShell(), m_surface, nullptr, static_cast<std::uint32_t>(LayerShellLayer::Background),
-      "noctalia-output-probe"
+      "zynith-shell-output-probe"
   );
   if (m_layerSurface == nullptr) {
     finish(nullptr);

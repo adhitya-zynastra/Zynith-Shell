@@ -7,7 +7,7 @@
 #include <array>
 #include <utility>
 
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
   namespace {
 
     template <typename T> SectionSpec makeSection(std::string_view name, T Config::* member, const Schema<T>& schema) {
@@ -104,4 +104,4 @@ namespace noctalia::config::schema {
     return findSection(name) != nullptr || std::ranges::find(customRootKeys(), name) != customRootKeys().end();
   }
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

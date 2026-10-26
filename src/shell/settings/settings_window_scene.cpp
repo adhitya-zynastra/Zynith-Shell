@@ -68,7 +68,7 @@ namespace {
     return i18n::tr(std::format("settings.widgets.actions.commands.{}.{}", command, field));
   }
 
-  ColorSwatchPreview palettePreviewFromMetadata(const noctalia::theme::AvailablePalette::PreviewMode& metadata) {
+  ColorSwatchPreview palettePreviewFromMetadata(const zynith::theme::AvailablePalette::PreviewMode& metadata) {
     ColorSwatchPreview preview;
     Color surface;
     if (tryParseHexColor(metadata.surface, surface)) {
@@ -84,7 +84,7 @@ namespace {
     return preview;
   }
 
-  ColorSwatchPreview availablePalettePreview(const noctalia::theme::AvailablePalette& palette, ThemeMode mode) {
+  ColorSwatchPreview availablePalettePreview(const zynith::theme::AvailablePalette& palette, ThemeMode mode) {
     if (useLightPalettePreview(mode)) {
       ColorSwatchPreview preview = palettePreviewFromMetadata(palette.preview.light);
       if (!preview.empty()) {
@@ -396,7 +396,7 @@ namespace {
   }
 
   std::optional<toml::table> configSectionTable(const Config& cfg, std::string_view section) {
-    namespace schema = noctalia::config::schema;
+    namespace schema = zynith::config::schema;
 
     if (section == "audio") {
       return schema::writeTable(cfg.audio, schema::audioSchema());
@@ -560,7 +560,7 @@ namespace {
   class SettingsProfileWatch {
   public:
     SettingsProfileWatch() {
-      if (noctalia::profiling::enabled()) {
+      if (zynith::profiling::enabled()) {
         m_watch.emplace();
       }
     }
@@ -575,7 +575,7 @@ namespace {
     [[nodiscard]] double elapsedMs() const { return m_watch.has_value() ? m_watch->elapsedMs() : 0.0; }
 
   private:
-    std::optional<noctalia::profiling::StopWatch> m_watch;
+    std::optional<zynith::profiling::StopWatch> m_watch;
   };
 
   void logSettingsProfile(std::string_view label, const SettingsProfileWatch& watch) {
@@ -753,7 +753,7 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   env.systemdUserManaged = process::runningUnderSystemdUserManager();
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
   const ThemeMode previewMode = m_config != nullptr ? shellThemeMode(m_config->config().theme) : ThemeMode::Dark;
-  for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
+  for (const auto& paletteInfo : zynith::theme::availableCommunityPalettes()) {
     env.communityPalettes.push_back(
         settings::SelectOption{
             .value = paletteInfo.name,
@@ -763,7 +763,7 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
         }
     );
   }
-  for (const auto& p : noctalia::theme::availableCustomPalettes()) {
+  for (const auto& p : zynith::theme::availableCustomPalettes()) {
     env.customPalettes.push_back(
         settings::SelectOption{
             .value = p.name,
@@ -773,13 +773,13 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
         }
     );
   }
-  for (const auto& t : noctalia::theme::CommunityTemplateService::availableTemplates()) {
+  for (const auto& t : zynith::theme::CommunityTemplateService::availableTemplates()) {
     env.communityTemplates.push_back(
         settings::SelectOption{
             .value = t.id,
             .label = t.displayName,
             .description = t.category,
-            .tooltip = noctalia::theme::formatTemplateTooltip(t)
+            .tooltip = zynith::theme::formatTemplateTooltip(t)
         }
     );
   }
@@ -844,7 +844,7 @@ std::vector<settings::GestureActionOption> SettingsWindow::gestureActionCatalog(
   std::vector<settings::GestureActionOption> options;
   for (const auto& handler : m_ipcService->handlers()) {
     // `exec` and `none` are grammar keywords, not commands, and are offered as their own rows.
-    if (handler.command == noctalia::bar::kExecVerb || handler.command == noctalia::bar::kNoneVerb) {
+    if (handler.command == zynith::bar::kExecVerb || handler.command == zynith::bar::kNoneVerb) {
       continue;
     }
     if (handler.actionEditorVisibility == IpcService::ActionEditorVisibility::Hidden) {
@@ -1161,7 +1161,7 @@ void SettingsWindow::rebuildSettingsContent() {
   }
   logSettingsProfile("rebuildContent plugins", phaseProfileWatch);
   logSettingsProfile("rebuildContent total", totalProfileWatch);
-  if (noctalia::profiling::enabled()) {
+  if (zynith::profiling::enabled()) {
     kLog.info(
         "profile rebuildContent visibleEntries={} registrySize={} selectedSection=\"{}\" searchActive={}",
         visibleEntries, m_settingsRegistry.size(), m_selectedSection, !m_searchQuery.empty()
@@ -1263,7 +1263,7 @@ std::unique_ptr<Flex> SettingsWindow::buildFilterRow(
   }
   filters->addChild(ui::spacer());
 
-  static const bool translatorMode = SysUtils::isEnvFlagOn("NOCTALIA_TRANSLATOR");
+  static const bool translatorMode = SysUtils::isEnvFlagOn("ZYNITH_TRANSLATOR");
   if (translatorMode) {
     auto enLabel =
         makeLabel("en", Style::fontSizeBody * scale, colorSpecFromRole(ColorRole::Error), FontWeight::Normal);
@@ -2197,7 +2197,7 @@ void SettingsWindow::buildScene(std::uint32_t width, std::uint32_t height) {
   m_surface->setSceneRoot(m_sceneRoot.get());
   logSettingsProfile("buildScene input", phaseProfileWatch);
   logSettingsProfile("buildScene total", totalProfileWatch);
-  if (noctalia::profiling::enabled()) {
+  if (zynith::profiling::enabled()) {
     kLog.info(
         "profile buildScene registrySize={} sections={} selectedSection=\"{}\" size={}x{}", m_settingsRegistry.size(),
         sections.size(), m_selectedSection, width, height

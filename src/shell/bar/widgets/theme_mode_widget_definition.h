@@ -4,4 +4,4 @@
 
 #include <variant>
 
-[[nodiscard]] const noctalia::bar::WidgetDefinition<std::monostate>& themeModeWidgetDefinition();
+[[nodiscard]] const zynith::bar::WidgetDefinition<std::monostate>& themeModeWidgetDefinition();

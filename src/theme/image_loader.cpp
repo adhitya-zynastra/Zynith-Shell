@@ -11,7 +11,7 @@
 #include <fstream>
 #include <iterator>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -291,4 +291,4 @@ namespace noctalia::theme {
     return out;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

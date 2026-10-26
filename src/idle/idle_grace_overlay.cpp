@@ -107,7 +107,7 @@ void IdleGraceOverlay::ensureSurfaces() {
     inst->scale = output.scale;
 
     auto surfaceConfig = LayerSurfaceConfig{
-        .nameSpace = "noctalia-idle-grace",
+        .nameSpace = "zynith-shell-idle-grace",
         .layer = LayerShellLayer::Overlay,
         .anchor = LayerShellAnchor::Top | LayerShellAnchor::Bottom | LayerShellAnchor::Left | LayerShellAnchor::Right,
         .width = 0,

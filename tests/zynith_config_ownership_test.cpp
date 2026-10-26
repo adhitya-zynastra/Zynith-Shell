@@ -1,4 +1,4 @@
-// Zynith configuration ownership (ADR-0014): defaults -> ~/.config/noctalia/*.toml (the Zynith
+// Zynith configuration ownership (ADR-0014): defaults -> ~/.config/zynith-shell/*.toml (the Zynith
 // preset, rice.toml) -> settings.toml (the user's deviations).
 //
 // The property that matters most is reset: clearing a setting must DELETE the override so the
@@ -48,7 +48,7 @@ int main() {
   std::filesystem::remove_all(root);
   // The Zynith preset layer, exactly where rice.toml lives on a real install.
   writeFile(
-      root / "config" / "noctalia" / "rice.toml",
+      root / "config" / "zynith-shell" / "rice.toml",
       "[shell.animation]\n"
       "preset = \"cinematic\"\n"
       "speed = 1.0\n"
@@ -60,9 +60,9 @@ int main() {
       "tint_strength = 0.2\n"
       "blur_strength = 70\n"
   );
-  ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
+  ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
   ::setenv("XDG_STATE_HOME", (root / "state").c_str(), 1);
-  const auto settingsToml = root / "state" / "noctalia" / "settings.toml";
+  const auto settingsToml = root / "state" / "zynith-shell" / "settings.toml";
 
   {
     ConfigService config;
@@ -100,7 +100,7 @@ int main() {
 
     // --- a changed preset reaches a key that was reset, i.e. nothing was frozen --------------
     writeFile(
-        root / "config" / "noctalia" / "rice.toml",
+        root / "config" / "zynith-shell" / "rice.toml",
         "[shell.animation]\npreset = \"smooth\"\n\n[shell.glass]\ntint = true\n"
     );
     config.forceReload();
@@ -123,7 +123,7 @@ int main() {
             "placement_height = 1200.0\n\n";
     };
     writeFile(
-        root / "config" / "noctalia" / "lockscreen.toml",
+        root / "config" / "zynith-shell" / "lockscreen.toml",
         "[lockscreen_widgets]\nenabled = true\nschema_version = 2\n"
         "widget_order = [\"lockscreen-widget-0000000000000002\", \"lockscreen-widget-0000000000000013\"]\n\n"
             + widget("lockscreen-widget-0000000000000002", "clock", 452)

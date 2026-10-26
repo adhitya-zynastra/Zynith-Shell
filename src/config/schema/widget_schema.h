@@ -13,7 +13,7 @@
 // This describes WHAT a setting is (type, range, default, allowed values); how
 // it is presented (label, control, grouping, visibility) is the shell registry's
 // concern and layers on top of this.
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
 
   // The data/validation type of a setting value. Coarser than the shell's control
   // kind (which also distinguishes File/Folder/Glyph/Select etc.) — File/Folder/
@@ -45,4 +45,4 @@ namespace noctalia::config::schema {
 
   using WidgetSettingSchema = std::vector<WidgetSettingField>;
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

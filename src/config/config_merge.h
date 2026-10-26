@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-namespace noctalia::config {
+namespace zynith::config {
 
   // Result of merging all config-dir files, including any pulled in via [include].
   struct MergeResult {
@@ -41,4 +41,4 @@ namespace noctalia::config {
   // responsible for overlaying settings.toml afterwards (it is never include-expanded).
   [[nodiscard]] MergeResult mergeConfigWithIncludes(std::string_view configDir);
 
-} // namespace noctalia::config
+} // namespace zynith::config

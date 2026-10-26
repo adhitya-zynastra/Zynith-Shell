@@ -30,7 +30,7 @@ namespace scripting {
     dispatchIpc(std::string_view event, std::string_view payload, const ScriptSnapshot& snapshot) = 0;
   };
 
-  // Routes `noctalia msg plugin <author/plugin:entry> <target> <event> [payload]`
+  // Routes `zynith-shell msg plugin <author/plugin:entry> <target> <event> [payload]`
   // to registered endpoints. Owned by the plugin layer, not by any UI surface.
   class PluginIpcRouter {
   public:

@@ -29,7 +29,7 @@ namespace security {
 }
 
 // Background service that syncs configured online calendars (CalDAV directly, Google via the
-// api.noctalia.dev OAuth broker) and exposes a merged, read-only event snapshot. Modeled on
+// an OAuth broker; Zynith has none) and exposes a merged, read-only event snapshot. Modeled on
 // WeatherService: timer-driven via pollTimeoutMs()/tick(), durable credentials come from the
 // account's explicit source, and an encrypted disk cache provides last-known-good data across
 // restarts and network failures.

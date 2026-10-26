@@ -1,12 +1,12 @@
 #include "shell/bar/widgets/tray_widget_definition.h"
 
-const noctalia::bar::WidgetDefinition<TrayWidget::Options, TrayWidgetDefinitionContext>& trayWidgetDefinition() {
-  using noctalia::bar::field;
+const zynith::bar::WidgetDefinition<TrayWidget::Options, TrayWidgetDefinitionContext>& trayWidgetDefinition() {
+  using zynith::bar::field;
   using Options = TrayWidget::Options;
 
   static const settings::WidgetSettingVisibility drawerOn{"drawer", {"true"}};
 
-  static const noctalia::bar::WidgetDefinition<Options, TrayWidgetDefinitionContext> definition{
+  static const zynith::bar::WidgetDefinition<Options, TrayWidgetDefinitionContext> definition{
       .type = "tray",
       .fields =
           {

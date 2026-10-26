@@ -86,8 +86,8 @@ namespace scripting {
           config / "google-chrome",
           config / "chromium",
           config / "BraveSoftware",
-          state / "noctalia" / "clipboard",
-          state / "noctalia" / "notification_history.json",
+          state / "zynith-shell" / "clipboard",
+          state / "zynith-shell" / "notification_history.json",
       };
     }
 
@@ -113,11 +113,11 @@ namespace scripting {
           config / "environment.d",
           config / "niri",
           config / "hypr",
-          config / "noctalia",
+          config / "zynith-shell",
           config / "zynith",
           data / "applications",
-          data / "noctalia" / "plugins",
-          state / "noctalia",
+          data / "zynith-shell" / "plugins",
+          state / "zynith-shell",
       };
     }
 
@@ -296,7 +296,7 @@ namespace scripting {
     std::filesystem::create_directories(path.parent_path(), ec);
     std::ostringstream out;
     out
-        << "# What each Luau plugin may do beyond drawing itself. Written by `noctalia msg plugins grant|revoke`;\n"
+        << "# What each Luau plugin may do beyond drawing itself. Written by `zynith-shell msg plugins grant|revoke`;\n"
         << "# a plugin gets only what it declares in its plugin.toml AND what is granted here.\n"
         << "# Capabilities: exec shell network files notifications clipboard env\n\n[grants]\n";
     for (const auto& [id, set] : m_granted) {

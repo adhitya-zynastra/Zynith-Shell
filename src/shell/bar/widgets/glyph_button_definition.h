@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   // Shared field set for bar buttons that draw a glyph with an optional custom image override.
   // `Options` must declare `glyph`, `customImage` and `customImageColorize` as its own members:
@@ -35,4 +35,4 @@ namespace noctalia::bar {
     return fields;
   }
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

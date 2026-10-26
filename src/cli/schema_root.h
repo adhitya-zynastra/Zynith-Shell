@@ -10,7 +10,7 @@
 
 #include <array>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   inline constexpr std::array<std::string_view, 3> kCompletionShellChoices{"bash", "fish", "zsh"};
   inline constexpr std::array kCompletionsPositionals{
@@ -21,8 +21,8 @@ namespace noctalia::cli {
       "Generate shell completion scripts",
       "Generate a completion script from the live CLI schema.\n\n"
       "Examples:\n"
-      "  source <(noctalia completions bash)\n"
-      "  noctalia completions fish > ~/.config/fish/completions/noctalia.fish",
+      "  source <(zynith-shell completions bash)\n"
+      "  zynith-shell completions fish > ~/.config/fish/completions/zynith-shell.fish",
       {},
       {},
       kCompletionsPositionals,
@@ -40,7 +40,7 @@ namespace noctalia::cli {
   };
 
   inline constexpr Command kRootCmd{
-      "noctalia",
+      "zynith-shell",
       "A sleek, customizable desktop shell crafted for Wayland",
       {},
       "For more information and documentation, visit:\n  "
@@ -53,4 +53,4 @@ namespace noctalia::cli {
 
   static_assert(validateCommand(kRootCmd));
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

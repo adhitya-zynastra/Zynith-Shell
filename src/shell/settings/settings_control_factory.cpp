@@ -727,7 +727,7 @@ namespace settings {
 
     const bool isOverridden = !setting.configured.empty();
     const std::string effective = isOverridden ? setting.configured : setting.defaultAction;
-    const auto parsed = noctalia::bar::parseWidgetAction(effective);
+    const auto parsed = zynith::bar::parseWidgetAction(effective);
 
     // A row holds its chosen command until the argument is typed, because committing a bare verb
     // that needs one would store a binding that silently does nothing.
@@ -738,9 +738,9 @@ namespace settings {
       selected = ctx.pendingGestureVerb;
     } else if (!isOverridden) {
       selected.clear();
-    } else if (!parsed.has_value() || parsed->kind == noctalia::bar::WidgetAction::Kind::None) {
-      selected = std::string(noctalia::bar::kNoneVerb);
-    } else if (parsed->kind == noctalia::bar::WidgetAction::Kind::Exec) {
+    } else if (!parsed.has_value() || parsed->kind == zynith::bar::WidgetAction::Kind::None) {
+      selected = std::string(zynith::bar::kNoneVerb);
+    } else if (parsed->kind == zynith::bar::WidgetAction::Kind::Exec) {
       selected = std::string(kActionExecOption);
     } else {
       selected = parsed->verb;
@@ -750,9 +750,9 @@ namespace settings {
     // the effective action so optional arguments such as volume/brightness step remain editable.
     std::string actionVerb = selected;
     if (!pending && parsed.has_value()) {
-      if (parsed->kind == noctalia::bar::WidgetAction::Kind::Exec) {
+      if (parsed->kind == zynith::bar::WidgetAction::Kind::Exec) {
         actionVerb = std::string(kActionExecOption);
-      } else if (parsed->kind == noctalia::bar::WidgetAction::Kind::Ipc) {
+      } else if (parsed->kind == zynith::bar::WidgetAction::Kind::Ipc) {
         actionVerb = parsed->verb;
       }
     }
@@ -770,7 +770,7 @@ namespace settings {
     );
     options.push_back(
         SelectOption{
-            .value = std::string(noctalia::bar::kNoneVerb),
+            .value = std::string(zynith::bar::kNoneVerb),
             .label = i18n::tr("settings.widgets.actions.disabled"),
         }
     );
@@ -838,7 +838,7 @@ namespace settings {
                       shouldClear = true;
                     } else {
                       if (execMode) {
-                        commandLine = std::string(noctalia::bar::kExecVerb) + " " + trimmed;
+                        commandLine = std::string(zynith::bar::kExecVerb) + " " + trimmed;
                       } else {
                         commandLine = verb;
                         if (!trimmed.empty()) {

@@ -252,7 +252,7 @@ private:
   bool m_pendingOrphanAdopt = false;
   std::size_t m_maxHistoryBytes;
   std::optional<SelectionBackup> m_selectionBackup;
-  std::size_t m_maxHistoryEntries = static_cast<std::size_t>(noctalia::config::kClipboardHistoryDefaultEntries);
+  std::size_t m_maxHistoryEntries = static_cast<std::size_t>(zynith::config::kClipboardHistoryDefaultEntries);
   security::StorageKeyProvider& m_storageKeyProvider;
   std::optional<security::SecureKey> m_dataKey;
   ClipboardPersistenceState m_persistenceState = ClipboardPersistenceState::Opening;

@@ -33,7 +33,7 @@ class UPowerService;
 class WeatherService;
 struct wl_output;
 class GammaService;
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 namespace scripting {
@@ -70,7 +70,7 @@ private:
   HttpClient* m_httpClient;
   WeatherService* m_weather;
   GammaService* m_nightLight;
-  noctalia::theme::ThemeService* m_themeService;
+  zynith::theme::ThemeService* m_themeService;
   BluetoothService* m_bluetooth;
   BrightnessService* m_brightness;
   LockKeysService* m_lockKeys;

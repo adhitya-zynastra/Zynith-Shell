@@ -77,12 +77,12 @@ namespace {
   }
 
   bool idleProfileEnabled() {
-    static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_IDLE_PROFILE");
+    static const bool enabled = SysUtils::isEnvFlagOn("ZYNITH_IDLE_PROFILE");
     return enabled;
   }
 
   bool blurTraceEnabled() {
-    static const bool enabled = SysUtils::isEnvFlagOn("NOCTALIA_BLUR_TRACE");
+    static const bool enabled = SysUtils::isEnvFlagOn("ZYNITH_BLUR_TRACE");
     return enabled;
   }
 

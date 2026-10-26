@@ -31,12 +31,12 @@ namespace {
 
   std::filesystem::path thumbnailCacheDir() {
     if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr && xdg[0] != '\0') {
-      return std::filesystem::path(xdg) / "noctalia" / "thumbnails";
+      return std::filesystem::path(xdg) / "zynith-shell" / "thumbnails";
     }
     if (const char* home = std::getenv("HOME"); home != nullptr && home[0] != '\0') {
-      return std::filesystem::path(home) / ".cache" / "noctalia" / "thumbnails";
+      return std::filesystem::path(home) / ".cache" / "zynith-shell" / "thumbnails";
     }
-    return std::filesystem::path("/tmp") / "noctalia" / "thumbnails";
+    return std::filesystem::path("/tmp") / "zynith-shell" / "thumbnails";
   }
 
   std::uint64_t fnv1a64(std::string_view text) {

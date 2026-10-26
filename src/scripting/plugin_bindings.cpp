@@ -779,7 +779,7 @@ namespace {
   };
 
   void pushTomlNode(lua_State* L, const toml::node& node) {
-    luaL_checkstack(L, 4, "noctalia.getSetting");
+    luaL_checkstack(L, 4, "zynith.getSetting");
     if (const auto* table = node.as_table()) {
       lua_createtable(L, 0, static_cast<int>(table->size()));
       for (const auto& [key, value] : *table) {

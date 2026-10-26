@@ -88,8 +88,8 @@ std::vector<BatteryHookState::Event> BatteryHookState::update(const UPowerState&
   if (m_lastPercent.has_value() && *m_lastPercent != percent) {
     events.push_back(
         {HookKind::BatteryPercentageChanged,
-         {{"NOCTALIA_BATTERY_STATE", std::string(batteryStateHookValue(state.state))},
-          {"NOCTALIA_BATTERY_PERCENT", std::to_string(percent)}}}
+         {{"ZYNITH_BATTERY_STATE", std::string(batteryStateHookValue(state.state))},
+          {"ZYNITH_BATTERY_PERCENT", std::to_string(percent)}}}
     );
   }
   m_lastPercent = percent;

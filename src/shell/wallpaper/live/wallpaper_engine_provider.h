@@ -8,7 +8,7 @@
 //
 // Previews are the author's own preview image inside the Workshop folder (preview.jpg/.gif/.png, which Workshop
 // items normally carry). They are handed to the shell's ThumbnailService as-is, which
-// decodes them on its workers and persists a small WebP per size in ~/.cache/noctalia/thumbnails, keyed by
+// decodes them on its workers and persists a small WebP per size in ~/.cache/zynith-shell/thumbnails, keyed by
 // path + size + mtime: so nothing is re-decoded until Steam actually updates the item, and no live renderer
 // is ever launched just to produce a thumbnail.
 

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -183,4 +183,4 @@ namespace noctalia::theme {
     return best;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

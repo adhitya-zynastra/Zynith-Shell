@@ -448,7 +448,7 @@ private:
 
 WallpaperPanel::WallpaperPanel(
     WaylandConnection* wayland, ConfigService* config, ThumbnailService* thumbnails, WallpaperScanner* scanner,
-    noctalia::theme::ThemeService* themeService, LiveWallpaperController* live
+    zynith::theme::ThemeService* themeService, LiveWallpaperController* live
 )
     : m_wayland(wayland), m_config(config), m_thumbnails(thumbnails), m_scanner(scanner), m_themeService(themeService),
       m_live(live) {
@@ -747,10 +747,10 @@ void WallpaperPanel::create() {
   };
   addPaletteSource(PaletteSource::Builtin, "settings.options.theme.source.built-in");
   addPaletteSource(PaletteSource::Wallpaper, "settings.options.theme.source.wallpaper");
-  if (!noctalia::theme::availableCommunityPalettes().empty()) {
+  if (!zynith::theme::availableCommunityPalettes().empty()) {
     addPaletteSource(PaletteSource::Community, "settings.options.theme.source.community");
   }
-  if (!noctalia::theme::availableCustomPalettes().empty()) {
+  if (!zynith::theme::availableCustomPalettes().empty()) {
     addPaletteSource(PaletteSource::Custom, "settings.options.theme.source.custom");
   }
 
@@ -1682,7 +1682,7 @@ void WallpaperPanel::rebuildFavoritePaletteDetailSelect(const WallpaperFavorite*
     const PaletteSource source = favorite->paletteSource.value_or(PaletteSource::Builtin);
     switch (source) {
     case PaletteSource::Builtin:
-      for (const auto& builtin : noctalia::theme::builtinPalettes()) {
+      for (const auto& builtin : zynith::theme::builtinPalettes()) {
         m_favoritePaletteDetailValues.emplace_back(builtin.name);
         labels.emplace_back(builtin.name);
       }
@@ -1694,14 +1694,14 @@ void WallpaperPanel::rebuildFavoritePaletteDetailSelect(const WallpaperFavorite*
       selectedValue = favorite->wallpaperScheme;
       break;
     case PaletteSource::Community:
-      for (const auto& community : noctalia::theme::availableCommunityPalettes()) {
+      for (const auto& community : zynith::theme::availableCommunityPalettes()) {
         m_favoritePaletteDetailValues.push_back(community.name);
         labels.push_back(community.name);
       }
       selectedValue = favorite->communityPalette;
       break;
     case PaletteSource::Custom:
-      for (const auto& custom : noctalia::theme::availableCustomPalettes()) {
+      for (const auto& custom : zynith::theme::availableCustomPalettes()) {
         m_favoritePaletteDetailValues.push_back(custom.name);
         labels.push_back(custom.name);
       }

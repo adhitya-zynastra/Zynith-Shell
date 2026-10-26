@@ -13,7 +13,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-namespace noctalia::system::intel_gpu {
+namespace zynith::system::intel_gpu {
 
   namespace {
 
@@ -423,4 +423,4 @@ namespace noctalia::system::intel_gpu {
     return UsageReading{.percent = std::clamp(percent, 0.0, 100.0), .source = usageSource(device)};
   }
 
-} // namespace noctalia::system::intel_gpu
+} // namespace zynith::system::intel_gpu

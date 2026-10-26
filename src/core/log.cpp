@@ -29,7 +29,7 @@ namespace {
   constexpr std::size_t kMaxLogLineBytes = 8 * 1024;    // 8 KiB
   constexpr std::size_t kBufferedFileLogFlushLines = 64;
   constexpr auto kBufferedFileLogFlushInterval = std::chrono::milliseconds(500);
-  constexpr const char* kLogLevelEnv = "NOCTALIA_LOG_LEVEL";
+  constexpr const char* kLogLevelEnv = "ZYNITH_LOG_LEVEL";
 
   struct CappedLogMessage {
     std::string storage;
@@ -282,9 +282,9 @@ void initLogFile() {
 
   std::string dir;
   if (cacheHome != nullptr && cacheHome[0] != '\0') {
-    dir = std::string(cacheHome) + "/noctalia";
+    dir = std::string(cacheHome) + "/zynith-shell";
   } else if (home != nullptr && home[0] != '\0') {
-    dir = std::string(home) + "/.cache/noctalia";
+    dir = std::string(home) + "/.cache/zynith-shell";
   } else {
     return; // no writable location available
   }
@@ -295,8 +295,8 @@ void initLogFile() {
     return;
   }
 
-  const std::string logPath = dir + "/noctalia.log";
-  const std::string backupPath = dir + "/noctalia.log.1";
+  const std::string logPath = dir + "/zynith-shell.log";
+  const std::string backupPath = dir + "/zynith-shell.log.1";
 
   std::scoped_lock lock(gLogMutex);
   closeLogFileUnlocked();

@@ -204,7 +204,7 @@ namespace scripting {
           }
 
           if (ident == "getConfig") {
-            // getConfig is universal and lives only under noctalia.*. Record the old
+            // getConfig is universal and lives only under zynith-shell.*. Record the old
             // entry-specific aliases so the author gets a useful error instead of a
             // nil-global runtime failure.
             std::size_t receiverEnd = i;
@@ -496,7 +496,7 @@ namespace scripting {
 
 } // namespace scripting
 
-namespace noctalia::plugins {
+namespace zynith::plugins {
   namespace {
 
     // Resolve a CLI path argument to the plugin directories it covers: the path
@@ -562,7 +562,7 @@ namespace noctalia::plugins {
           break;
         }
         case Kind::ObsoleteConfigAccessor:
-          std::println("  error  {}  '{}' was removed; use noctalia.getConfig", where, f.key);
+          std::println("  error  {}  '{}' was removed; use zynith.getConfig", where, f.key);
           ++errors;
           break;
         case Kind::MissingEntryFile:
@@ -619,17 +619,17 @@ namespace noctalia::plugins {
 
   int runCli(int argc, char* argv[]) {
     if (argc < 3) {
-      std::print(stderr, "{}", cli::renderHelp(cli::kPluginsCmd, "noctalia plugins"));
+      std::print(stderr, "{}", cli::renderHelp(cli::kPluginsCmd, "zynith-shell plugins"));
       return 1;
     }
     const char* command = argv[2];
     if (std::strcmp(command, "--help") == 0 || std::strcmp(command, "-h") == 0) {
-      std::print("{}", cli::renderHelp(cli::kPluginsCmd, "noctalia plugins"));
+      std::print("{}", cli::renderHelp(cli::kPluginsCmd, "zynith-shell plugins"));
       return 0;
     }
     if (std::strcmp(command, "lint") == 0) {
       auto parsed = cli::parseOrReport(
-          cli::kPluginsLintCmd, "noctalia plugins lint",
+          cli::kPluginsLintCmd, "zynith-shell plugins lint",
           std::span<char* const>{argv + 3, static_cast<std::size_t>(argc - 3)}
       );
       if (!parsed)
@@ -639,8 +639,8 @@ namespace noctalia::plugins {
       return runLint(*parsed);
     }
     std::println(stderr, "error: unknown command: {}", command);
-    std::println(stderr, "Run 'noctalia plugins --help' for usage.");
+    std::println(stderr, "Run 'zynith-shell plugins --help' for usage.");
     return 1;
   }
 
-} // namespace noctalia::plugins
+} // namespace zynith::plugins

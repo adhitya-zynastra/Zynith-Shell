@@ -2,8 +2,8 @@
 Type=Application
 Name=Zynith Shell
 Comment=The Zynith native shell (services, lock screen, wallpaper). Started by the Zynith session; use Zynith Settings to change it.
-Exec=noctalia --daemon
-Icon=noctalia
+Exec=zynith-shell --daemon
+Icon=zynith-shell
 Terminal=false
 Categories=Settings;DesktopSettings;
 StartupNotify=false
@@ -13,4 +13,4 @@ Keywords=desktop;shell;wayland;zynith;
 
 [Desktop Action Settings]
 Name=Open the native shell settings
-Exec=sh -c "noctalia msg settings-open || { noctalia --daemon && noctalia msg settings-open; }"
+Exec=sh -c "zynith-shell msg settings-open || { zynith-shell --daemon && zynith-shell msg settings-open; }"

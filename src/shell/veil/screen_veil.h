@@ -38,7 +38,7 @@ struct wl_output;
 class ScreenVeil {
 public:
   struct Style {
-    std::string nameSpace = "noctalia-veil";
+    std::string nameSpace = "zynith-shell-veil";
     LayerShellLayer layer = LayerShellLayer::Overlay;
     float blurIntensity = 0.0F; // lock-screen semantics: radius = intensity * 40, 3 rounds
     float tintIntensity = 0.0F; // Surface role at this alpha, drawn over the image

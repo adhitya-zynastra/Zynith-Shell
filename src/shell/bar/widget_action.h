@@ -15,7 +15,7 @@
 
 struct WidgetConfig;
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   // Reserved first tokens in the action grammar. They can never be IPC command names, or a
   // binding would resolve to two different things; tests/ipc_service_test.cpp asserts this.
@@ -45,7 +45,7 @@ namespace noctalia::bar {
   };
 
   // Grammar-level parse. Whether an Ipc verb is actually registered is settled at dispatch time
-  // against the live registry: bars are built before any IPC handler exists, and `noctalia config
+  // against the live registry: bars are built before any IPC handler exists, and `zynith-shell config
   // validate` has no running service either. Returns a human-readable reason on failure.
   [[nodiscard]] std::expected<WidgetAction, std::string> parseWidgetAction(std::string_view value);
 
@@ -92,4 +92,4 @@ namespace noctalia::bar {
   // Reads an `actions` sub-table off a widget config entry, or nullptr when absent.
   [[nodiscard]] const WidgetActionBindings::ActionTable* findActionTable(const WidgetConfig* config);
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

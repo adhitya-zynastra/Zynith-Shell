@@ -29,7 +29,7 @@ namespace {
   public:
     TestRoot() {
       const auto serial = std::chrono::steady_clock::now().time_since_epoch().count();
-      m_path = std::filesystem::temp_directory_path() / ("noctalia-security-test-" + std::to_string(serial));
+      m_path = std::filesystem::temp_directory_path() / ("zynith-shell-security-test-" + std::to_string(serial));
       std::filesystem::create_directories(m_path);
     }
 

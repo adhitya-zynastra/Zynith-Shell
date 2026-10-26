@@ -54,7 +54,7 @@ namespace {
 
   [[nodiscard]] int createAnonymousFile(std::size_t size) {
 #ifdef __linux__
-    const int fd = memfd_create("noctalia-screencopy", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    const int fd = memfd_create("zynith-shell-screencopy", MFD_CLOEXEC | MFD_ALLOW_SEALING);
 #else
     const int fd = -1;
 #endif

@@ -30,7 +30,7 @@ namespace calendar {
     req.method = "POST";
     req.url = std::string(kBrokerBase) + "/start";
     req.headers = {"Content-Type: application/json"};
-    req.body = R"({"client":"noctalia-shell"})";
+    req.body = R"({"client":"zynith-shell"})";
     m_http.request(std::move(req), [cb = std::move(cb)](HttpResponse resp) {
       if (!resp.transportOk || resp.status != 200) {
         kLog.warn("oauth start failed http={}", resp.status);

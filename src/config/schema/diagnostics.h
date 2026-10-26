@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
 
   // Where a config key was defined. An empty `file` means the position is
   // unknown, e.g. a key no source file sets or a value synthesized in memory.
@@ -63,7 +63,7 @@ namespace noctalia::config::schema {
   };
 
   // Accumulates issues found while reading or validating a config table. The
-  // same sink feeds the reload pipeline (warnings) and `noctalia config validate`
+  // same sink feeds the reload pipeline (warnings) and `zynith-shell config validate`
   // (errors). `path` is the dotted key path, e.g. "shell.animation.style".
   // `origin` is filled in afterwards by ConfigOriginIndex::annotate, except for
   // syntax errors that carry it from the start.
@@ -189,4 +189,4 @@ namespace noctalia::config::schema {
     return out;
   }
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

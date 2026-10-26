@@ -1281,25 +1281,25 @@ void Dock::openItemMenu(shell::dock::DockInstance& instance, const shell::dock::
 }
 
 void Dock::registerIpc(IpcService& ipc) {
-  ipc.bind(noctalia::cli::msg::dockShow, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::dockShow, [this](const std::string&) -> std::string {
     if (m_config)
       m_config->setDockEnabled(true);
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::dockHide, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::dockHide, [this](const std::string&) -> std::string {
     if (m_config)
       m_config->setDockEnabled(false);
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::dockToggle, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::dockToggle, [this](const std::string&) -> std::string {
     if (m_config)
       m_config->setDockEnabled(!m_config->config().dock.enabled);
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::dockReload, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::dockReload, [this](const std::string&) -> std::string {
     reload();
     return "ok\n";
   });

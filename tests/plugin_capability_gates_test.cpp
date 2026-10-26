@@ -28,7 +28,7 @@ int main() {
   std::filesystem::create_directories(root / "home/.ssh");
   std::filesystem::create_directories(root / "plugin");
   ::setenv("HOME", (root / "home").c_str(), 1);
-  ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
+  ::setenv("ZYNITH_STATE_HOME", (root / "state").c_str(), 1);
   ::setenv("ZYNITH_PLUGIN_GRANTS", (root / "grants.toml").c_str(), 1);
   ::setenv("ZYNITH_TEST_SECRET", "hunter2", 1);
   {
@@ -61,16 +61,16 @@ local function denied(f, ...)
   local good, err = pcall(f, ...)
   return not good and string.find(tostring(err), "refused", 1, true) ~= nil
 end
-assert(refused(noctalia.runAsync, { "true" }, function() end), "argv exec without exec")
-assert(refused(noctalia.runAsync, "true", function() end), "shell string without shell")
-assert(refused(noctalia.http, { url = "https://example.invalid" }, function() end), "http without network")
-assert(refused(noctalia.notify, "x", "y"), "notify without notifications")
-assert(refused(noctalia.clipboardText), "clipboard without clipboard")
-assert(refused(noctalia.getenv, "ZYNITH_TEST_SECRET"), "secret env without env")
-assert(noctalia.getenv("HOME") ~= nil, "HOME is plain")
-assert(denied(noctalia.readFile, "~/notes.txt"), "home file without files")
-assert(noctalia.writeFile("own.txt", "mine"), "own directory needs nothing")
-assert(noctalia.readFile("own.txt") == "mine", "own file reads back")
+assert(refused(zynith.runAsync, { "true" }, function() end), "argv exec without exec")
+assert(refused(zynith.runAsync, "true", function() end), "shell string without shell")
+assert(refused(zynith.http, { url = "https://example.invalid" }, function() end), "http without network")
+assert(refused(zynith.notify, "x", "y"), "notify without notifications")
+assert(refused(zynith.clipboardText), "clipboard without clipboard")
+assert(refused(zynith.getenv, "ZYNITH_TEST_SECRET"), "secret env without env")
+assert(zynith.getenv("HOME") ~= nil, "HOME is plain")
+assert(denied(zynith.readFile, "~/notes.txt"), "home file without files")
+assert(zynith.writeFile("own.txt", "mine"), "own directory needs nothing")
+assert(zynith.readFile("own.txt") == "mine", "own file reads back")
 )") && ok;
 
   std::string error;
@@ -86,14 +86,14 @@ local function denied(f, ...)
   local good, err = pcall(f, ...)
   return not good and string.find(tostring(err), "refused", 1, true) ~= nil
 end
-assert(noctalia.runAsync({ "true" }), "argv exec granted")
-assert(refused(noctalia.runAsync, "true", function() end), "shell still needs shell")
-assert(noctalia.readFile("~/notes.txt") == "notes", "home file with files")
-assert(denied(noctalia.readFile, "~/.ssh/id_test"), "ssh key never")
-assert(denied(noctalia.listDir, "~/.ssh"), "ssh listing never")
-assert(denied(noctalia.writeFile, "~/.bashrc", "x"), "startup file write never")
-assert(noctalia.getenv("ZYNITH_TEST_SECRET") == "hunter2", "env granted")
-assert(refused(noctalia.http, { url = "https://example.invalid" }, function() end), "network declared but not granted")
+assert(zynith.runAsync({ "true" }), "argv exec granted")
+assert(refused(zynith.runAsync, "true", function() end), "shell still needs shell")
+assert(zynith.readFile("~/notes.txt") == "notes", "home file with files")
+assert(denied(zynith.readFile, "~/.ssh/id_test"), "ssh key never")
+assert(denied(zynith.listDir, "~/.ssh"), "ssh listing never")
+assert(denied(zynith.writeFile, "~/.bashrc", "x"), "startup file write never")
+assert(zynith.getenv("ZYNITH_TEST_SECRET") == "hunter2", "env granted")
+assert(refused(zynith.http, { url = "https://example.invalid" }, function() end), "network declared but not granted")
 )") && ok;
 
   std::filesystem::remove_all(root);

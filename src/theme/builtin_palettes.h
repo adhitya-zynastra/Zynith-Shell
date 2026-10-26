@@ -5,7 +5,7 @@
 #include <span>
 #include <string_view>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   struct FixedPaletteMode {
     Palette palette;
@@ -23,4 +23,4 @@ namespace noctalia::theme {
   const BuiltinPalette* findBuiltinPalette(std::string_view name);
   GeneratedPalette expandBuiltinPalette(const BuiltinPalette& palette);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

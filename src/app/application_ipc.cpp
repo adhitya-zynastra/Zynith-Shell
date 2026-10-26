@@ -126,7 +126,7 @@ void Application::initIpc() {
   m_dmenuIpc.start();
 
   m_ipcService.bind(
-      noctalia::cli::msg::status,
+      zynith::cli::msg::status,
       [this](const std::string&) -> std::string {
         const bool panelOpen = m_panelManager.isOpen();
         std::string json = "{\n";
@@ -160,9 +160,9 @@ void Application::initIpc() {
   );
 
   m_ipcService.bind(
-      noctalia::cli::msg::logLevelSet,
+      zynith::cli::msg::logLevelSet,
       [](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
+        const auto parts = zynith::ipc::splitWords(args);
         if (parts.size() != 1) {
           return "error: log-level-set requires <debug|info|warn|error>\n";
         }
@@ -180,7 +180,7 @@ void Application::initIpc() {
   );
 
   m_ipcService.bind(
-      noctalia::cli::msg::logLevelStatus,
+      zynith::cli::msg::logLevelStatus,
       [](const std::string&) -> std::string { return std::string(logLevelName(currentLogLevel())) + "\n"; },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
@@ -194,8 +194,8 @@ void Application::initIpc() {
   };
 
   m_ipcService.bind(
-      noctalia::cli::msg::notificationDndSet, [this, applyNotificationDnd](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
+      zynith::cli::msg::notificationDndSet, [this, applyNotificationDnd](const std::string& args) -> std::string {
+        const auto parts = zynith::ipc::splitWords(args);
         if (parts.size() != 1) {
           return "error: notification-dnd-set requires <on|off|true|false|1|0>\n";
         }
@@ -220,7 +220,7 @@ void Application::initIpc() {
   );
 
   m_ipcService.bind(
-      noctalia::cli::msg::notificationDndToggle, [this, applyNotificationDnd](const std::string&) -> std::string {
+      zynith::cli::msg::notificationDndToggle, [this, applyNotificationDnd](const std::string&) -> std::string {
         const bool nextState = !m_notificationManager.doNotDisturb();
         applyNotificationDnd(nextState);
         m_osdOverlay.show(dndOsdContent(nextState));
@@ -229,12 +229,12 @@ void Application::initIpc() {
   );
 
   m_ipcService.bind(
-      noctalia::cli::msg::notificationDndStatus,
+      zynith::cli::msg::notificationDndStatus,
       [this](const std::string&) -> std::string { return m_notificationManager.doNotDisturb() ? "on\n" : "off\n"; },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
-  m_ipcService.bind(noctalia::cli::msg::notificationClearActive, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::notificationClearActive, [this](const std::string&) -> std::string {
     std::vector<uint32_t> activeIds;
     activeIds.reserve(m_notificationManager.all().size());
     for (const auto& notification : m_notificationManager.all()) {
@@ -249,7 +249,7 @@ void Application::initIpc() {
     return "ok\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::notificationInvokeLatest, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::notificationInvokeLatest, [this](const std::string&) -> std::string {
     // Mirror the toast left-click behavior for the most recent active notification:
     // invoke its "default" action so the source application raises/focuses its window.
     // all() stores notifications oldest-first (push_back), so iterate in reverse for newest.
@@ -269,7 +269,7 @@ void Application::initIpc() {
     return "ok\n"; // No active notification carries a default action; nothing to do.
   });
 
-  m_ipcService.bind(noctalia::cli::msg::notificationClearHistory, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::notificationClearHistory, [this](const std::string&) -> std::string {
     m_notificationManager.clearHistory();
     if (m_panelManager.isOpenPanel("control-center")) {
       m_panelManager.refresh();
@@ -277,13 +277,13 @@ void Application::initIpc() {
     return "ok\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::notificationShow, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::notificationShow, [this](const std::string& args) -> std::string {
     const std::string input = StringUtils::trim(args);
     if (input.empty()) {
       return "error: notification-show requires <summary> or <json-payload>\n";
     }
 
-    std::string appName = noctalia::build_info::kProductName;
+    std::string appName = zynith::build_info::kProductName;
     std::string summary;
     std::string body;
     Urgency urgency = Urgency::Normal;
@@ -394,12 +394,12 @@ void Application::initIpc() {
 
     if (icon.has_value()) {
       const std::string& iconValue = *icon;
-      const bool hasExplicitPrefix = iconValue.starts_with("noctalia-glyph:");
+      const bool hasExplicitPrefix = iconValue.starts_with("zynith-shell-glyph:");
       const bool looksLikePath = iconValue.starts_with('/') || iconValue.starts_with("~/") || iconValue.contains('/');
       const bool looksLikeFileUri = iconValue.starts_with("file:");
       const bool looksLikeRemoteUrl = iconValue.starts_with("http://") || iconValue.starts_with("https://");
       if (!hasExplicitPrefix && !looksLikePath && !looksLikeFileUri && !looksLikeRemoteUrl) {
-        icon = "noctalia-glyph:" + iconValue;
+        icon = "zynith-shell-glyph:" + iconValue;
       }
     }
 
@@ -410,13 +410,13 @@ void Application::initIpc() {
     return "ok\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::clipboardClear, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardClear, [this](const std::string&) -> std::string {
     // Pinned entries survive; with nothing pinned this clears the whole history.
     m_clipboardService.clearUnpinnedHistory();
     return "ok\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::clipboardCopy, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardCopy, [this](const std::string& args) -> std::string {
     if (args.empty()) {
       return "error: clipboard-copy requires <text>\n";
     }
@@ -427,7 +427,7 @@ void Application::initIpc() {
   });
 
   // zynith: previews only; a full payload leaves the shell only by being put back on the clipboard.
-  m_ipcService.bind(noctalia::cli::msg::clipboardHistory, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardHistory, [this](const std::string& args) -> std::string {
     std::size_t limit = 50;
     if (!args.empty()) {
       try {
@@ -472,7 +472,7 @@ void Application::initIpc() {
     return std::nullopt;
   };
 
-  m_ipcService.bind(noctalia::cli::msg::clipboardSelect, [this, historyIndex](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardSelect, [this, historyIndex](const std::string& args) -> std::string {
     const auto index = historyIndex(args);
     if (!index) {
       return "error: no clipboard entry " + args + "\n";
@@ -480,7 +480,7 @@ void Application::initIpc() {
     return m_clipboardService.promoteEntry(*index) ? "ok\n" : "error: failed to set the clipboard selection\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::clipboardRemove, [this, historyIndex](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardRemove, [this, historyIndex](const std::string& args) -> std::string {
     const auto index = historyIndex(args);
     if (!index) {
       return "error: no clipboard entry " + args + "\n";
@@ -488,7 +488,7 @@ void Application::initIpc() {
     return m_clipboardService.removeHistoryEntry(*index) ? "ok\n" : "error: entry not removed\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::clipboardPin, [this, historyIndex](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardPin, [this, historyIndex](const std::string& args) -> std::string {
     const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
     if (tokens.size() != 2 || (tokens[1] != "on" && tokens[1] != "off")) {
       return "error: usage: clipboard-pin <id> <on|off>\n";
@@ -501,7 +501,7 @@ void Application::initIpc() {
   });
 
   // zynith: one image at a time, for the entry the UI has selected; nothing is written to disk
-  m_ipcService.bind(noctalia::cli::msg::clipboardImage, [this, historyIndex](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardImage, [this, historyIndex](const std::string& args) -> std::string {
     constexpr std::size_t kMaxPreviewBytes = 8U * 1024U * 1024U;
     const auto index = historyIndex(StringUtils::trim(args));
     if (!index) {
@@ -530,37 +530,35 @@ void Application::initIpc() {
   });
 
   // zynith: the selected text entry, whole up to 16 KB, for the preview pane; nothing else leaves
-  m_ipcService.bind(
-      noctalia::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
-        constexpr std::size_t kMaxPreviewText = 16U * 1024U;
-        const auto index = historyIndex(StringUtils::trim(args));
-        if (!index) {
-          return "error: no clipboard entry " + args + "\n";
-        }
-        if (m_clipboardService.history()[*index].isImage()) {
-          return "error: not text\n";
-        }
-        if (!m_clipboardService.ensureEntryLoaded(*index)) {
-          return "error: entry unavailable\n";
-        }
-        const ClipboardEntry& entry = m_clipboardService.history()[*index];
-        std::string text(entry.data.begin(), entry.data.end());
-        if (text.size() > kMaxPreviewText) {
-          std::size_t cut = kMaxPreviewText;
-          while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
-            --cut;
-          }
-          text.resize(cut);
-        }
-        if (!m_panelManager.isOpenPanel("clipboard")) {
-          m_clipboardService.evictEntryPayload(*index);
-        }
-        return text;
+  m_ipcService.bind(zynith::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
+    constexpr std::size_t kMaxPreviewText = 16U * 1024U;
+    const auto index = historyIndex(StringUtils::trim(args));
+    if (!index) {
+      return "error: no clipboard entry " + args + "\n";
+    }
+    if (m_clipboardService.history()[*index].isImage()) {
+      return "error: not text\n";
+    }
+    if (!m_clipboardService.ensureEntryLoaded(*index)) {
+      return "error: entry unavailable\n";
+    }
+    const ClipboardEntry& entry = m_clipboardService.history()[*index];
+    std::string text(entry.data.begin(), entry.data.end());
+    if (text.size() > kMaxPreviewText) {
+      std::size_t cut = kMaxPreviewText;
+      while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
+        --cut;
       }
-  );
+      text.resize(cut);
+    }
+    if (!m_panelManager.isOpenPanel("clipboard")) {
+      m_clipboardService.evictEntryPayload(*index);
+    }
+    return text;
+  });
 
   // zynith: what the Control Panel's screen-time module shows
-  m_ipcService.bind(noctalia::cli::msg::screenTime, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::screenTime, [this](const std::string& args) -> std::string {
     int days = 1;
     try {
       if (!StringUtils::trim(args).empty()) {
@@ -591,7 +589,7 @@ void Application::initIpc() {
   });
 
   // zynith: the battery's charge limit (UPower's preset), for the Control Panel's power module
-  m_ipcService.bind(noctalia::cli::msg::chargeLimit, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::chargeLimit, [this](const std::string& args) -> std::string {
     if (m_upowerService == nullptr) {
       return "error: no UPower\n";
     }
@@ -628,7 +626,7 @@ void Application::initIpc() {
   });
 
   // zynith: every display's brightness, for the Control Panel's monitor module
-  m_ipcService.bind(noctalia::cli::msg::brightnessStatus, [this](const std::string& /*args*/) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::brightnessStatus, [this](const std::string& /*args*/) -> std::string {
     nlohmann::json displays = nlohmann::json::array();
     if (m_brightnessService != nullptr) {
       for (const auto& d : m_brightnessService->displays()) {
@@ -652,7 +650,7 @@ void Application::initIpc() {
   });
 
   // zynith: the system monitor's sample for the Zynith UI's sysmon widgets (one sampler, not two)
-  m_ipcService.bind(noctalia::cli::msg::sysmonStats, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::sysmonStats, [this](const std::string& args) -> std::string {
     if (m_systemMonitor == nullptr) {
       return "error: system monitor unavailable\n";
     }
@@ -710,7 +708,7 @@ void Application::initIpc() {
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::brightnessRescan, [this](const std::string& /*args*/) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::brightnessRescan, [this](const std::string& /*args*/) -> std::string {
     if (m_brightnessService == nullptr || !m_configService.config().brightness.enableDdcutil) {
       return "error: DDC/CI is off ([brightness] enable_ddcutil)\n";
     }
@@ -720,18 +718,18 @@ void Application::initIpc() {
 
   // zynith: the native settings, for the Zynith Settings app. Writes go through ConfigService overrides like
   // the native Settings window's, and never while locked (a config reload under the lock once crashed the shell).
-  m_ipcService.bind(noctalia::cli::msg::settingsSchema, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::settingsSchema, [this](const std::string& args) -> std::string {
     return zynith::settings_bridge::schemaJson(
         m_settingsWindow.registrySnapshot(), m_configService, StringUtils::trim(args)
     );
   });
-  m_ipcService.bind(noctalia::cli::msg::settingsSet, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::settingsSet, [this](const std::string& args) -> std::string {
     if (m_lockScreen.isActive()) {
       return "error: locked\n";
     }
     return zynith::settings_bridge::set(m_settingsWindow.registrySnapshot(), m_configService, args);
   });
-  m_ipcService.bind(noctalia::cli::msg::settingsReset, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::settingsReset, [this](const std::string& args) -> std::string {
     if (m_lockScreen.isActive()) {
       return "error: locked\n";
     }
@@ -739,10 +737,10 @@ void Application::initIpc() {
   });
 
   // zynith: the launcher's providers (calculator with units and currencies, plugins…) for the Zynith launcher
-  m_ipcService.bind(noctalia::cli::msg::launcherProviders, [this](const std::string& /*args*/) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::launcherProviders, [this](const std::string& /*args*/) -> std::string {
     return m_launcherPanel != nullptr ? m_launcherPanel->zynithProvidersJson() : "[]\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::launcherQuery, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::launcherQuery, [this](const std::string& args) -> std::string {
     if (m_launcherPanel == nullptr) {
       return "[]\n";
     }
@@ -751,7 +749,7 @@ void Application::initIpc() {
     const std::string text = space == std::string::npos ? std::string() : args.substr(space + 1);
     return m_launcherPanel->zynithQueryJson(id, text);
   });
-  m_ipcService.bind(noctalia::cli::msg::launcherActivate, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::launcherActivate, [this](const std::string& args) -> std::string {
     if (m_launcherPanel == nullptr) {
       return "error: no launcher\n";
     }
@@ -765,7 +763,7 @@ void Application::initIpc() {
   });
 
   // zynith: the synced calendar's coming events, for the Control Panel's calendar module
-  m_ipcService.bind(noctalia::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::calendarEvents, [this](const std::string& args) -> std::string {
     int days = 14;
     try {
       if (!StringUtils::trim(args).empty()) {
@@ -806,7 +804,7 @@ void Application::initIpc() {
   });
 
   // zynith: EasyEffects' profiles, for the Control Panel's audio module (effects-profile-set applies one)
-  m_ipcService.bind(noctalia::cli::msg::effectsStatus, [this](const std::string& /*args*/) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::effectsStatus, [this](const std::string& /*args*/) -> std::string {
     if (m_easyEffectsService == nullptr) {
       return nlohmann::json{{"available", false}}.dump() + "\n";
     }
@@ -827,7 +825,7 @@ void Application::initIpc() {
 
   // zynith: the paste half of the clipboard panel and the launcher's copy results. The caller has already
   // released keyboard focus; the short wait lets the target window have it back.
-  m_ipcService.bind(noctalia::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::clipboardPaste, [this](const std::string& args) -> std::string {
     const bool isImage = StringUtils::trim(args) == "image";
     const ClipboardAutoPasteMode mode = m_configService.config().shell.clipboardAutoPaste;
     if (mode == ClipboardAutoPasteMode::Off) {
@@ -845,7 +843,7 @@ void Application::initIpc() {
   });
 
   // zynith: the weather the shell already polls, for another UI to show without polling again
-  m_ipcService.bind(noctalia::cli::msg::weatherStatus, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::weatherStatus, [this](const std::string&) -> std::string {
     const auto& snap = m_weatherService.snapshot();
     nlohmann::json out{
         {"enabled", m_weatherService.enabled()},
@@ -901,7 +899,7 @@ void Application::initIpc() {
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
     m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
     m_desktopWidgetsController.syncOwnership();
     return std::string("ok: bar ")
@@ -912,28 +910,28 @@ void Application::initIpc() {
   });
 
   m_ipcService.bind(
-      noctalia::cli::msg::clipboardText, // The response is the clipboard payload itself, so it carries no trailing
-                                         // newline.
+      zynith::cli::msg::clipboardText, // The response is the clipboard payload itself, so it carries no trailing
+                                       // newline.
       [this](const std::string&) -> std::string { return m_clipboardService.clipboardText().value_or(""); },
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
 
-  m_ipcService.bind(noctalia::cli::msg::dpmsOn, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::dpmsOn, [this](const std::string&) -> std::string {
     if (!m_compositorPlatform.setOutputPower(true)) {
       return "error: failed to execute dpms-on command\n";
     }
     return "ok\n";
   });
 
-  m_ipcService.bind(noctalia::cli::msg::dpmsOff, [this](const std::string&) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::dpmsOff, [this](const std::string&) -> std::string {
     if (!m_compositorPlatform.setOutputPower(false)) {
       return "error: failed to execute dpms-off command\n";
     }
     return "ok\n";
   });
 
-  m_ipcService.bindCycle(noctalia::cli::msg::workspaceSwitch, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bindCycle(zynith::cli::msg::workspaceSwitch, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() != 1 || (parts[0] != "next" && parts[0] != "prev")) {
       return "error: workspace-switch requires <next|prev>\n";
     }
@@ -973,8 +971,8 @@ void Application::initIpc() {
     return "ok\n";
   });
 
-  m_ipcService.bindCycle(noctalia::cli::msg::keyboardLayoutCycle, [this](const std::string& args) -> std::string {
-    if (!noctalia::ipc::splitWords(args).empty()) {
+  m_ipcService.bindCycle(zynith::cli::msg::keyboardLayoutCycle, [this](const std::string& args) -> std::string {
+    if (!zynith::ipc::splitWords(args).empty()) {
       return "error: keyboard-layout-cycle takes no arguments\n";
     }
     if (!m_compositorPlatform.hasKeyboardLayoutBackend()) {
@@ -994,7 +992,7 @@ void Application::initIpc() {
     return StringUtils::join(tokens, "\n") + "\n";
   };
 
-  m_ipcService.bind(noctalia::cli::msg::workspaceAlertAdd, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::workspaceAlertAdd, [this](const std::string& args) -> std::string {
     const std::string workspace = StringUtils::trim(args);
     if (workspace.empty()) {
       return "error: workspace-alert-add requires <workspace>\n";
@@ -1010,8 +1008,8 @@ void Application::initIpc() {
     m_bar.refresh();
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::workspaceAlertAddWindow, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bind(zynith::cli::msg::workspaceAlertAddWindow, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() != 1) {
       return "error: workspace-alert-add-window requires <window-id>\n";
     }
@@ -1023,7 +1021,7 @@ void Application::initIpc() {
     m_bar.refresh();
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::workspaceAlertClear, [this](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::workspaceAlertClear, [this](const std::string& args) -> std::string {
     const std::string workspace = StringUtils::trim(args);
     if (workspace.empty()) {
       return "error: workspace-alert-clear requires <workspace>\n";
@@ -1032,8 +1030,8 @@ void Application::initIpc() {
     m_bar.refresh();
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::workspaceAlertClearAll, [this](const std::string& args) -> std::string {
-    if (!noctalia::ipc::splitWords(args).empty()) {
+  m_ipcService.bind(zynith::cli::msg::workspaceAlertClearAll, [this](const std::string& args) -> std::string {
+    if (!zynith::ipc::splitWords(args).empty()) {
       return "error: workspace-alert-clear-all takes no arguments\n";
     }
     m_workspaceAlertService.clearAll();
@@ -1041,9 +1039,9 @@ void Application::initIpc() {
     return "ok\n";
   });
   m_ipcService.bind(
-      noctalia::cli::msg::workspaceAlertStatus,
+      zynith::cli::msg::workspaceAlertStatus,
       [workspaceAlertStatus](const std::string& args) -> std::string {
-        if (!noctalia::ipc::splitWords(args).empty()) {
+        if (!zynith::ipc::splitWords(args).empty()) {
           return "error: workspace-alert-status takes no arguments\n";
         }
         return workspaceAlertStatus();
@@ -1081,32 +1079,32 @@ void Application::initIpc() {
   if (m_keyboardBacklightService != nullptr) {
     m_keyboardBacklightService->registerIpc(m_ipcService);
   }
-  m_ipcService.bind(noctalia::cli::msg::keyboardBacklightOsd, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bind(zynith::cli::msg::keyboardBacklightOsd, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() != 1) {
       return "error: keyboard-backlight-osd requires <value>\n";
     }
-    const auto value = noctalia::ipc::parseNormalizedOrPercent(parts[0]);
+    const auto value = zynith::ipc::parseNormalizedOrPercent(parts[0]);
     if (!value.has_value()) {
       return "error: invalid keyboard backlight value (use percent like 65 or 65%, or normalized like 0.65)\n";
     }
     m_keyboardBacklightOsd.showValue(*value);
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::brightnessOsd, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bind(zynith::cli::msg::brightnessOsd, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() != 1) {
       return "error: brightness-osd requires <value>\n";
     }
-    const auto value = noctalia::ipc::parseNormalizedOrPercent(parts[0]);
+    const auto value = zynith::ipc::parseNormalizedOrPercent(parts[0]);
     if (!value.has_value()) {
       return "error: invalid brightness value (use percent like 65 or 65%, or normalized like 0.65)\n";
     }
     m_brightnessOsd.showValue(*value);
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::volumeOsd, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bind(zynith::cli::msg::volumeOsd, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() > 1) {
       return "error: volume-osd accepts at most one optional [value]\n";
     }
@@ -1120,7 +1118,7 @@ void Application::initIpc() {
     float volume = sink->volume;
     if (parts.size() == 1) {
       const auto value =
-          noctalia::ipc::parseNormalizedOrPercent(parts[0], maxAudioVolume(m_configService.config().audio) * 100.0F);
+          zynith::ipc::parseNormalizedOrPercent(parts[0], maxAudioVolume(m_configService.config().audio) * 100.0F);
       if (!value.has_value()) {
         return "error: invalid volume value (use percent like 65 or 65%, or normalized like 0.65)\n";
       }
@@ -1129,8 +1127,8 @@ void Application::initIpc() {
     m_audioOsd.showOutputValue(volume, sink->muted);
     return "ok\n";
   });
-  m_ipcService.bind(noctalia::cli::msg::micVolumeOsd, [this](const std::string& args) -> std::string {
-    const auto parts = noctalia::ipc::splitWords(args);
+  m_ipcService.bind(zynith::cli::msg::micVolumeOsd, [this](const std::string& args) -> std::string {
+    const auto parts = zynith::ipc::splitWords(args);
     if (parts.size() > 1) {
       return "error: mic-volume-osd accepts at most one optional [value]\n";
     }
@@ -1144,7 +1142,7 @@ void Application::initIpc() {
     float volume = source->volume;
     if (parts.size() == 1) {
       const auto value =
-          noctalia::ipc::parseNormalizedOrPercent(parts[0], maxAudioVolume(m_configService.config().audio) * 100.0F);
+          zynith::ipc::parseNormalizedOrPercent(parts[0], maxAudioVolume(m_configService.config().audio) * 100.0F);
       if (!value.has_value()) {
         return "error: invalid mic volume value (use percent like 65 or 65%, or normalized like 0.65)\n";
       }
@@ -1155,13 +1153,13 @@ void Application::initIpc() {
   });
   m_configService.registerIpc(m_ipcService);
   scripting::PluginIpcRouter::instance().setPlatform(&m_compositorPlatform);
-  m_ipcService.bind(noctalia::cli::msg::plugin, [](const std::string& args) -> std::string {
+  m_ipcService.bind(zynith::cli::msg::plugin, [](const std::string& args) -> std::string {
     return scripting::PluginIpcRouter::instance().dispatch(args);
   });
   m_ipcService.bind(
-      noctalia::cli::msg::plugins,
+      zynith::cli::msg::plugins,
       [this](const std::string& args) -> std::string {
-        const auto parts = noctalia::ipc::splitWords(args);
+        const auto parts = zynith::ipc::splitWords(args);
         if (parts.empty()) {
           return "error: plugins <list|enable|disable> [author/plugin]\n";
         }
@@ -1330,7 +1328,7 @@ void Application::initIpc() {
   }
   m_screenshotService.registerIpc(m_ipcService, m_configService);
   m_windowSwitcher.registerIpc(m_ipcService);
-  for (const noctalia::cli::Command& command : noctalia::cli::kMsgCmd.subcommands) {
+  for (const zynith::cli::Command& command : zynith::cli::kMsgCmd.subcommands) {
     if (!m_ipcService.hasHandler(command.name))
       kLog.debug("IPC schema command '{}' has no registered handler", command.name);
   }

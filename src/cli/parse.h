@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   struct ParsedArgs {
     std::vector<std::pair<const Flag*, std::string_view>> flagValues;
@@ -29,4 +29,4 @@ namespace noctalia::cli {
   [[nodiscard]] std::optional<ParsedArgs>
   parseOrReport(const Command& command, std::string_view path, std::span<char* const> args);
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

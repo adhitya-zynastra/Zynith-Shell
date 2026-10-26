@@ -118,17 +118,17 @@ void DesktopWidgetsController::initialize(const DesktopWidgetsControllerServices
 }
 
 void DesktopWidgetsController::registerIpc(IpcService& ipc) {
-  ipc.bind(noctalia::cli::msg::desktopWidgetsEdit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsEdit, [this](const std::string&) -> std::string {
     enterEdit();
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::desktopWidgetsExit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsExit, [this](const std::string&) -> std::string {
     exitEdit();
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::desktopWidgetsToggleEdit, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsToggleEdit, [this](const std::string&) -> std::string {
     toggleEdit();
     return "ok\n";
   });
@@ -139,17 +139,17 @@ void DesktopWidgetsController::registerIpc(IpcService& ipc) {
   // widgets on demand without rewriting the user's saved preference on every keypress. `show` is a
   // force-show: it reveals widgets even when the saved setting is disabled, so an opt-in workflow
   // (saved default off, revealed only on demand) works without persisting transient state.
-  ipc.bind(noctalia::cli::msg::desktopWidgetsShow, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsShow, [this](const std::string&) -> std::string {
     setRuntimeVisibility(RuntimeVisibility::ForceShown);
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::desktopWidgetsHide, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsHide, [this](const std::string&) -> std::string {
     setRuntimeVisibility(RuntimeVisibility::ForceHidden);
     return "ok\n";
   });
 
-  ipc.bind(noctalia::cli::msg::desktopWidgetsToggle, [this](const std::string&) -> std::string {
+  ipc.bind(zynith::cli::msg::desktopWidgetsToggle, [this](const std::string&) -> std::string {
     toggleRuntimeVisibility();
     return isEffectivelyVisible() ? "shown\n" : "hidden\n";
   });

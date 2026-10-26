@@ -32,7 +32,7 @@ struct PowerProfilesState {
 
 enum class PowerProfilesChangeOrigin : std::uint8_t {
   External,
-  Noctalia,
+  Zynith,
 };
 
 class PowerProfilesService {

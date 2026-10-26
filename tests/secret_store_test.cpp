@@ -210,8 +210,8 @@ namespace {
     const security::SecretId id{.scope = "calendar", .owner = "personal", .name = "refresh-token"};
     const auto attributes = security::secretStoreAttributes(id);
     bool ok = true;
-    ok = expect(security::SecretStoreSchemaName == "dev.noctalia.Secret", "schema name changed") && ok;
-    ok = expect(attributes.application == "noctalia", "application attribute changed") && ok;
+    ok = expect(security::SecretStoreSchemaName == "dev.zynith.Secret", "schema name changed") && ok;
+    ok = expect(attributes.application == "zynith-shell", "application attribute changed") && ok;
     ok = expect(attributes.scope == "calendar", "scope attribute changed") && ok;
     ok = expect(attributes.owner == "personal", "owner attribute changed") && ok;
     ok = expect(attributes.name == "refresh-token", "name attribute changed") && ok;
@@ -261,14 +261,14 @@ namespace {
     bool ok = true;
 
     std::optional<SecretStoreStatus> status;
-    store.store(id, security::SecureBuffer(first), "Noctalia clipboard key", [&status](SecretStoreStatus value) {
+    store.store(id, security::SecureBuffer(first), "Zynith clipboard key", [&status](SecretStoreStatus value) {
       status = value;
     });
     ok = dispatchCompletion(store) && ok;
     ok = expect(status == SecretStoreStatus::Success, "binary store failed") && ok;
 
     status.reset();
-    store.store(id, security::SecureBuffer(replacement), "Noctalia clipboard key", [&status](SecretStoreStatus value) {
+    store.store(id, security::SecureBuffer(replacement), "Zynith clipboard key", [&status](SecretStoreStatus value) {
       status = value;
     });
     ok = dispatchCompletion(store) && ok;

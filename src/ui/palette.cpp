@@ -6,7 +6,7 @@
 
 #include <string>
 
-Palette palette = noctalia::theme::findBuiltinPalette("Zynith")->dark.palette;
+Palette palette = zynith::theme::findBuiltinPalette("Zynith")->dark.palette;
 bool g_resolvedThemeLight = false;
 
 namespace {

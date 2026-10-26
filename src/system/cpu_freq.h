@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <optional>
 
-namespace noctalia::system::cpu_freq {
+namespace zynith::system::cpu_freq {
 
   // curMhz: average clock across cores (scaling_cur_freq, kHz; zero reads skipped).
   // maxMhz: highest scaling_max_freq ceiling seen; normalizes graph/gauge values.
@@ -15,4 +15,4 @@ namespace noctalia::system::cpu_freq {
 
   [[nodiscard]] CpuFreqs readFreqs(const std::filesystem::path& root = "/sys/devices/system/cpu");
 
-} // namespace noctalia::system::cpu_freq
+} // namespace zynith::system::cpu_freq

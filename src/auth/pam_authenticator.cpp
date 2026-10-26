@@ -338,7 +338,7 @@ PamAuthenticator::Result PamAuthenticator::authenticateCurrentUser(
   }
 
   const char* helperArgv[] = {
-      "noctalia", "pam-helper", serviceCopy.c_str(), languageCopy.c_str(), nullptr,
+      "zynith-shell", "pam-helper", serviceCopy.c_str(), languageCopy.c_str(), nullptr,
   };
 
   const pid_t pid = ::fork();

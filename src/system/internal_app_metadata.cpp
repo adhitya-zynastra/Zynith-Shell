@@ -10,10 +10,10 @@ namespace internal_apps {
 
     constexpr InternalAppDefinition kInternalApps[] = {
         {
-            .appId = "dev.noctalia.Noctalia",
+            .appId = "dev.zynith.Shell",
             .windowTitle = "Zynith Settings",
             .displayName = "Zynith",
-            .iconAssetPath = "noctalia.svg",
+            .iconAssetPath = "zynith-shell.svg",
         },
     };
 

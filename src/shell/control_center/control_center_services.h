@@ -34,7 +34,7 @@ class Wallpaper;
 class WeatherService;
 class GammaService;
 
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 namespace scripting {
@@ -62,7 +62,7 @@ struct ControlCenterServices {
   SystemMonitorService* sysmon = nullptr;
   ScreenTimeService* screenTime = nullptr;
   GammaService* nightLight = nullptr;
-  noctalia::theme::ThemeService* theme = nullptr;
+  zynith::theme::ThemeService* theme = nullptr;
   IdleInhibitor* idleInhibitor = nullptr;
   DependencyService* dependencies = nullptr;
   CompositorPlatform* platform = nullptr;

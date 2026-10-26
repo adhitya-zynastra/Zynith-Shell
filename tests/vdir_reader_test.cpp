@@ -62,7 +62,7 @@ namespace {
                                            "END:VCALENDAR\r\n";
 
   bool testNestedDiscovery() {
-    const auto tempDir = createUniqueTempDir("noctalia_vdir_test_nested");
+    const auto tempDir = createUniqueTempDir("zynith_vdir_test_nested");
 
     // Create structure:
     // tempDir/
@@ -124,7 +124,7 @@ namespace {
   }
 
   bool testDirectCollectionDiscovery() {
-    const auto tempDir = createUniqueTempDir("noctalia_vdir_test_direct");
+    const auto tempDir = createUniqueTempDir("zynith_vdir_test_direct");
 
     writeFile(tempDir / "displayname", "Single Calendar\n");
     writeFile(tempDir / "color", "#FF5500\n");
@@ -145,7 +145,7 @@ namespace {
   }
 
   bool testTrailingSlashRootDiscovery() {
-    const auto tempDir = createUniqueTempDir("noctalia_vdir_test_slash");
+    const auto tempDir = createUniqueTempDir("zynith_vdir_test_slash");
     writeFile(tempDir / "subcal" / "event.ics", kSampleIcs1);
 
     const std::filesystem::path rootWithSlash = tempDir.string() + "/";
@@ -185,8 +185,8 @@ namespace {
 
   bool testPerFileRecurrenceBudgetIsolation() {
     constexpr int kFileCount = 16;
-    const auto oneDir = createUniqueTempDir("noctalia_vdir_test_budget_one");
-    const auto manyDir = createUniqueTempDir("noctalia_vdir_test_budget_many");
+    const auto oneDir = createUniqueTempDir("zynith_vdir_test_budget_one");
+    const auto manyDir = createUniqueTempDir("zynith_vdir_test_budget_many");
     writeFile(oneDir / "cal" / "0.ics", recurringIcs(0));
     for (int i = 0; i < kFileCount; ++i) {
       writeFile(manyDir / "cal" / std::format("{}.ics", i), recurringIcs(i));
@@ -221,7 +221,7 @@ namespace {
   }
 
   bool testEventBudgetStopsRead() {
-    const auto tempDir = createUniqueTempDir("noctalia_vdir_test_cap");
+    const auto tempDir = createUniqueTempDir("zynith_vdir_test_cap");
     writeFile(tempDir / "cal" / "0.ics", recurringIcs(0));
     writeFile(tempDir / "cal" / "1.ics", recurringIcs(1));
 

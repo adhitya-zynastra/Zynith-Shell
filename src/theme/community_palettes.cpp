@@ -18,7 +18,7 @@
 #include <system_error>
 #include <utility>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -167,7 +167,7 @@ namespace noctalia::theme {
     if (!state.empty()) {
       return std::filesystem::path(state) / "community-palettes";
     }
-    return std::filesystem::path("/tmp") / "noctalia" / "community-palettes";
+    return std::filesystem::path("/tmp") / "zynith-shell" / "community-palettes";
   }
 
   std::filesystem::path communityPaletteCachePath(std::string_view name) {
@@ -181,4 +181,4 @@ namespace noctalia::theme {
     return std::string(kPaletteUrlBase) + "/" + StringUtils::urlEncode(name);
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

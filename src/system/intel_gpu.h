@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace noctalia::system::intel_gpu {
+namespace zynith::system::intel_gpu {
 
   enum class Driver { I915, Xe };
 
@@ -68,4 +68,4 @@ namespace noctalia::system::intel_gpu {
     bool m_hasBaseline = false;
   };
 
-} // namespace noctalia::system::intel_gpu
+} // namespace zynith::system::intel_gpu

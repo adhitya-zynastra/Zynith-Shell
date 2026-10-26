@@ -1,6 +1,6 @@
 #include "config/config_origins.h"
 
-namespace noctalia::config {
+namespace zynith::config {
 
   void ConfigOriginIndex::record(const std::filesystem::path& file, const toml::table& tbl) {
     const std::string fileStr = file.string();
@@ -58,4 +58,4 @@ namespace noctalia::config {
     return schema::SourceOrigin{file.string(), src.begin.line, src.begin.column};
   }
 
-} // namespace noctalia::config
+} // namespace zynith::config

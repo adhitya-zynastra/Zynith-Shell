@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 
-namespace noctalia::system::cpu_stat {
+namespace zynith::system::cpu_stat {
 
   namespace {
 
@@ -107,4 +107,4 @@ namespace noctalia::system::cpu_stat {
     return cores;
   }
 
-} // namespace noctalia::system::cpu_stat
+} // namespace zynith::system::cpu_stat

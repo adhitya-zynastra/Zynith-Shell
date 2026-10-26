@@ -18,7 +18,7 @@ public:
   void create() override;
 
 private:
-  void onGestureDispatch(noctalia::bar::Gesture gesture, const noctalia::bar::WidgetAction& action) override;
+  void onGestureDispatch(zynith::bar::Gesture gesture, const zynith::bar::WidgetAction& action) override;
   void doLayout(Renderer& renderer, float containerWidth, float containerHeight) override;
   void doUpdate(Renderer& renderer) override;
   void refreshIndicatorState();

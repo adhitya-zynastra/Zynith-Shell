@@ -7,7 +7,7 @@ namespace {
     UPowerDeviceInfo info;
     info.path = "/org/freedesktop/UPower/devices/battery_BAT0";
     info.nativePath = "BAT0";
-    info.vendor = "Noctalia";
+    info.vendor = "Zynith";
     info.model = "Test Battery";
     info.serial = "battery-1";
     info.type = UPowerDeviceType::Battery;

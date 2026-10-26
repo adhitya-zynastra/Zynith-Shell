@@ -21,8 +21,8 @@ namespace {
 
   std::string_view powerProfileOriginName(PowerProfilesChangeOrigin origin) {
     switch (origin) {
-    case PowerProfilesChangeOrigin::Noctalia:
-      return "noctalia";
+    case PowerProfilesChangeOrigin::Zynith:
+      return "zynith-shell";
     case PowerProfilesChangeOrigin::External:
       return "external";
     }
@@ -133,7 +133,7 @@ void Application::onNetworkStateChangedForEvents(const NetworkState& state, Netw
   }
   const bool prev = *m_prevWirelessEnabledForEvents;
   if (prev != state.wirelessEnabled) {
-    if (origin != NetworkChangeOrigin::Noctalia) {
+    if (origin != NetworkChangeOrigin::Zynith) {
       m_osdOverlay.show(wifiOsdContent(state.wirelessEnabled));
     }
     if (state.wirelessEnabled) {
@@ -152,7 +152,7 @@ void Application::onBluetoothStateChangedForEvents(const BluetoothState& state, 
   }
   const bool prev = *m_prevBluetoothPoweredForEvents;
   if (prev != state.powered) {
-    if (origin != BluetoothStateChangeOrigin::Noctalia) {
+    if (origin != BluetoothStateChangeOrigin::Zynith) {
       m_osdOverlay.show(bluetoothOsdContent(state.powered));
     }
     if (state.powered) {
@@ -174,14 +174,14 @@ void Application::onPowerProfileChangedForEvents(const PowerProfilesState& state
   }
   const std::string prev = *m_prevPowerProfileActiveForEvents;
   if (prev != state.activeProfile) {
-    if (origin != PowerProfilesChangeOrigin::Noctalia) {
+    if (origin != PowerProfilesChangeOrigin::Zynith) {
       m_osdOverlay.show(powerProfileOsdContent(state.activeProfile));
     }
     m_hookManager.fire(
         HookKind::PowerProfileChanged,
-        {{"NOCTALIA_POWER_PROFILE", state.activeProfile},
-         {"NOCTALIA_POWER_PROFILE_PREVIOUS", prev},
-         {"NOCTALIA_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}}
+        {{"ZYNITH_POWER_PROFILE", state.activeProfile},
+         {"ZYNITH_POWER_PROFILE_PREVIOUS", prev},
+         {"ZYNITH_POWER_PROFILE_ORIGIN", std::string(powerProfileOriginName(origin))}}
     );
   }
   m_prevPowerProfileActiveForEvents = state.activeProfile;

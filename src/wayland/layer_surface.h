@@ -33,7 +33,7 @@ namespace LayerShellAnchor {
 } // namespace LayerShellAnchor
 
 struct LayerSurfaceConfig {
-  std::string nameSpace = "noctalia";
+  std::string nameSpace = "zynith-shell";
   LayerShellLayer layer = LayerShellLayer::Top;
   std::uint32_t anchor = 0;
   std::uint32_t width = 0;

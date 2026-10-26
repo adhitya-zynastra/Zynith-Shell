@@ -24,7 +24,7 @@ namespace {
   }
 
   std::filesystem::path makeTempDir() {
-    std::string pattern = (std::filesystem::temp_directory_path() / "noctalia-plugin-git-export-XXXXXX").string();
+    std::string pattern = (std::filesystem::temp_directory_path() / "zynith-shell-plugin-git-export-XXXXXX").string();
     std::vector<char> buffer(pattern.begin(), pattern.end());
     buffer.push_back('\0');
     char* result = ::mkdtemp(buffer.data());
@@ -102,7 +102,8 @@ int main() {
 
   std::filesystem::create_directories(source);
   ok = runGit({"git", "-C", source.string(), "init", "-q"}) && ok;
-  ok = writeText(source / "clock/plugin.toml", "id = \"noctalia/clock\"\nversion = \"1.0.0\"\nplugin_api = 3\n") && ok;
+  ok = writeText(source / "clock/plugin.toml", "id = \"zynith-shell/clock\"\nversion = \"1.0.0\"\nplugin_api = 3\n")
+      && ok;
   ok = writeText(source / "clock/main.luau", "barWidget.setText(\"ok\")\n") && ok;
   ok = runGit({"git", "-C", source.string(), "add", "clock/plugin.toml", "clock/main.luau"}) && ok;
   ok = runGit(
@@ -155,13 +156,13 @@ int main() {
 
   // A plugin whose tip moves past the supported API range must still be exportable at the
   // older revision a catalog release row names, straight out of the blobless clone.
-  ok =
-      writeText(
-          source / "clock/plugin.toml",
-          std::format(
-              "id = \"noctalia/clock\"\nversion = \"2.0.0\"\nplugin_api = {}\n", scripting::kCurrentPluginApiVersion + 1
-          )
-      )
+  ok = writeText(
+           source / "clock/plugin.toml",
+           std::format(
+               "id = \"zynith-shell/clock\"\nversion = \"2.0.0\"\nplugin_api = {}\n",
+               scripting::kCurrentPluginApiVersion + 1
+           )
+       )
       && ok;
   ok = runGit({"git", "-C", source.string(), "add", "clock/plugin.toml"}) && ok;
   ok = runGit(

@@ -24,20 +24,20 @@ namespace {
   // is written for the first time.
   void checkConfigSurvivesFirstSidecarWrite() {
     const std::filesystem::path root =
-        std::filesystem::temp_directory_path() / ("noctalia-wallpaper-config-file-" + std::to_string(::getpid()));
+        std::filesystem::temp_directory_path() / ("zynith-shell-wallpaper-config-file-" + std::to_string(::getpid()));
     std::filesystem::remove_all(root);
-    std::filesystem::create_directories(root / "config" / "noctalia");
-    std::filesystem::create_directories(root / "state" / "noctalia");
+    std::filesystem::create_directories(root / "config" / "zynith-shell");
+    std::filesystem::create_directories(root / "state" / "zynith-shell");
     std::filesystem::create_directories(root / "data");
-    ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
-    ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
-    ::setenv("NOCTALIA_DATA_HOME", (root / "data").c_str(), 1);
+    ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
+    ::setenv("ZYNITH_STATE_HOME", (root / "state").c_str(), 1);
+    ::setenv("ZYNITH_DATA_HOME", (root / "data").c_str(), 1);
 
     {
-      std::ofstream out(root / "config" / "noctalia" / "config.toml", std::ios::trunc);
+      std::ofstream out(root / "config" / "zynith-shell" / "config.toml", std::ios::trunc);
       out << "[wallpaper]\nenabled = true\n\n[wallpaper.default]\npath = \"/tmp/from-config.png\"\n";
     }
-    const auto sidecar = root / "state" / "noctalia" / "settings.toml";
+    const auto sidecar = root / "state" / "zynith-shell" / "settings.toml";
     expect(!std::filesystem::exists(sidecar), "state dir should start without settings.toml");
 
     ConfigService config;
@@ -51,26 +51,26 @@ namespace {
         "config.toml path was dropped by the first sidecar write"
     );
 
-    ::unsetenv("NOCTALIA_CONFIG_HOME");
-    ::unsetenv("NOCTALIA_STATE_HOME");
-    ::unsetenv("NOCTALIA_DATA_HOME");
+    ::unsetenv("ZYNITH_CONFIG_HOME");
+    ::unsetenv("ZYNITH_STATE_HOME");
+    ::unsetenv("ZYNITH_DATA_HOME");
     std::filesystem::remove_all(root);
   }
 
   // State settings loads last, so it should outranks config.toml
   void checkSidecarPathOutranksConfigFilePath() {
     const std::filesystem::path root =
-        std::filesystem::temp_directory_path() / ("noctalia-wallpaper-sidecar-" + std::to_string(::getpid()));
+        std::filesystem::temp_directory_path() / ("zynith-shell-wallpaper-sidecar-" + std::to_string(::getpid()));
     std::filesystem::remove_all(root);
-    std::filesystem::create_directories(root / "config" / "noctalia");
-    std::filesystem::create_directories(root / "state" / "noctalia");
+    std::filesystem::create_directories(root / "config" / "zynith-shell");
+    std::filesystem::create_directories(root / "state" / "zynith-shell");
     std::filesystem::create_directories(root / "data");
-    ::setenv("NOCTALIA_CONFIG_HOME", (root / "config").c_str(), 1);
-    ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
-    ::setenv("NOCTALIA_DATA_HOME", (root / "data").c_str(), 1);
+    ::setenv("ZYNITH_CONFIG_HOME", (root / "config").c_str(), 1);
+    ::setenv("ZYNITH_STATE_HOME", (root / "state").c_str(), 1);
+    ::setenv("ZYNITH_DATA_HOME", (root / "data").c_str(), 1);
 
     {
-      std::ofstream out(root / "config" / "noctalia" / "config.toml", std::ios::trunc);
+      std::ofstream out(root / "config" / "zynith-shell" / "config.toml", std::ios::trunc);
       out << "[wallpaper]\nenabled = true\n\n[wallpaper.default]\npath = \"/tmp/from-config.png\"\n";
     }
     ConfigService config;
@@ -85,9 +85,9 @@ namespace {
     expect(config.getWallpaperPath("DP-9") == "/tmp/dp9.png", "per-monitor path did not survive a reload");
     expect(config.getWallpaperPath("DP-8") == "/tmp/picked.png", "unconfigured monitor did not fall back to default");
 
-    ::unsetenv("NOCTALIA_CONFIG_HOME");
-    ::unsetenv("NOCTALIA_STATE_HOME");
-    ::unsetenv("NOCTALIA_DATA_HOME");
+    ::unsetenv("ZYNITH_CONFIG_HOME");
+    ::unsetenv("ZYNITH_STATE_HOME");
+    ::unsetenv("ZYNITH_DATA_HOME");
     std::filesystem::remove_all(root);
   }
 

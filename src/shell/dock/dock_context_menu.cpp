@@ -103,7 +103,7 @@ namespace shell::dock {
         popup.inputDispatcher.pointerMotion(static_cast<float>(event.sx), static_cast<float>(event.sy), 0);
         consumed = true;
       } else if (popup.pointerInside && event.surface != nullptr) {
-        // Grab may omit Leave when the pointer moves to another noctalia surface.
+        // Grab may omit Leave when the pointer moves to another zynith-shell surface.
         popup.pointerInside = false;
         popup.inputDispatcher.pointerLeave();
       }

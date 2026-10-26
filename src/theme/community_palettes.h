@@ -9,7 +9,7 @@
 
 class HttpClient;
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   struct AvailablePalette {
     struct PreviewMode {
@@ -52,4 +52,4 @@ namespace noctalia::theme {
   [[nodiscard]] std::filesystem::path communityPaletteCachePath(std::string_view name);
   [[nodiscard]] std::string communityPaletteDownloadUrl(std::string_view name);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

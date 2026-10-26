@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   struct GeneratedPalette;
   enum class Scheme;
@@ -13,4 +13,4 @@ namespace noctalia::theme {
   // `{"dark": {...}, "light": {...}}`; `Dark`/`Light` emit a flat token map.
   std::string toJson(const GeneratedPalette& palette, Scheme scheme, Variant variant);
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

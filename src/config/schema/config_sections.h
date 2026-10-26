@@ -15,7 +15,7 @@
 // exporter (config_export::serialize), the validator (config_validate), schema path
 // resolution and the round-trip test all iterate this table instead of restating the
 // sections, so a section cannot exist in one of them and be missing from another.
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
 
   // One row per schema-backed section. Every closure is derived from the same
   // member pointer + section schema, so a row cannot be half-wired (read but not
@@ -55,4 +55,4 @@ namespace noctalia::config::schema {
 
   [[nodiscard]] bool isKnownRootKey(std::string_view name);
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

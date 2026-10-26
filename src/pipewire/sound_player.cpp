@@ -195,9 +195,9 @@ void SoundPlayer::playBuffer(
 
   pw_properties* props = pw_properties_new(
       PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Notification", PW_KEY_APP_NAME,
-      noctalia::build_info::kProductName, nullptr
+      zynith::build_info::kProductName, nullptr
   );
-  active->stream = pw_stream_new_simple(m_loop, "noctalia-sound", props, &kStreamEvents, active.get());
+  active->stream = pw_stream_new_simple(m_loop, "zynith-shell-sound", props, &kStreamEvents, active.get());
   if (active->stream == nullptr) {
     delete active->listener;
     kLog.warn("failed to create stream for sound \"{}\"", name);

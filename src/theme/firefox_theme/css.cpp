@@ -8,7 +8,7 @@
 #include <sstream>
 #include <vector>
 
-namespace noctalia::theme::firefox_theme::css {
+namespace zynith::theme::firefox_theme::css {
   namespace {
 
     [[nodiscard]] std::string withCssExtension(std::string_view name) {
@@ -221,4 +221,4 @@ namespace noctalia::theme::firefox_theme::css {
     return true;
   }
 
-} // namespace noctalia::theme::firefox_theme::css
+} // namespace zynith::theme::firefox_theme::css

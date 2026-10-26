@@ -280,14 +280,6 @@ namespace settings {
     m_sortButton->setTooltip(i18n::tr(sortModeTooltipKey(m_sortMode)));
   }
 
-  std::optional<std::string> PluginStoreContent::detailPageUrl() const {
-    if (!m_detailIndex.has_value() || *m_detailIndex >= m_filteredIndices.size()) {
-      return std::nullopt;
-    }
-    const auto& storeEntry = m_catalog[m_filteredIndices[*m_detailIndex]];
-    return scripting::pluginWebsitePageUrl(storeEntry.source, storeEntry.entry.id);
-  }
-
   std::optional<std::string> PluginStoreContent::detailSourceUrl() const {
     if (!m_detailIndex.has_value() || *m_detailIndex >= m_filteredIndices.size()) {
       return std::nullopt;

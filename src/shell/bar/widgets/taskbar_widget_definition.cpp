@@ -33,11 +33,11 @@ namespace {
 
 } // namespace
 
-const noctalia::bar::WidgetDefinition<TaskbarWidgetOptions>& taskbarWidgetDefinition() {
-  using noctalia::bar::field;
+const zynith::bar::WidgetDefinition<TaskbarWidgetOptions>& taskbarWidgetDefinition() {
+  using zynith::bar::field;
   using Options = TaskbarWidgetOptions;
 
-  static const noctalia::bar::WidgetDefinition<Options>
+  static const zynith::bar::WidgetDefinition<Options>
       definition{
           .type = "taskbar",
           .fields =

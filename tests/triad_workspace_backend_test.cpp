@@ -79,7 +79,7 @@ namespace {
 
 int main() {
   unsetenv("TRIAD_SOCKET");
-  const std::string runtimeDir = "/tmp/noctalia-triad-workspace-test-" + std::to_string(getpid());
+  const std::string runtimeDir = "/tmp/zynith-shell-triad-workspace-test-" + std::to_string(getpid());
   setenv("XDG_RUNTIME_DIR", runtimeDir.c_str(), 1);
   compositors::triad::TriadRuntime runtime;
   TriadWorkspaceBackend backend(runtime);

@@ -17,7 +17,7 @@ class SystemMonitorService;
 
 namespace scripting {
 
-  // A connected output as exposed to plugin scripts via noctalia.outputs().
+  // A connected output as exposed to plugin scripts via zynith.outputs().
   struct ScriptOutputInfo {
     std::string name; // DRM connector name, e.g. "DP-1"
     std::string description;
@@ -100,7 +100,7 @@ namespace scripting {
       return m_clipboardText;
     }
 
-    // Shell [shell].time_format / date_format — mirrored for noctalia.timeFormat() / dateFormat().
+    // Shell [shell].time_format / date_format — mirrored for zynith.timeFormat() / dateFormat().
     void setTimeFormat(std::string format) {
       std::scoped_lock lock(m_mutex);
       m_timeFormat = std::move(format);

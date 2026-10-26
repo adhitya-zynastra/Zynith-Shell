@@ -851,7 +851,7 @@ void PluginWidget::reloadScript() {
   auto name = m_sourcePath.filename().string();
   if (source.empty() || !m_runtime) {
     kLog.warn("hot reload: failed to reload '{}'", name);
-    notify::error(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
+    notify::error(zynith::build_info::kProductName, i18n::tr("bar.widgets.scripted.reload-failed"), name);
     return;
   }
 
@@ -892,5 +892,5 @@ void PluginWidget::reloadScript() {
   startUpdateTimer();
   requestRedraw();
   kLog.info("hot reload: reloaded '{}'", name);
-  notify::info(noctalia::build_info::kProductName, i18n::tr("bar.widgets.scripted.reloaded"), name);
+  notify::info(zynith::build_info::kProductName, i18n::tr("bar.widgets.scripted.reloaded"), name);
 }

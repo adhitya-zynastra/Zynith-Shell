@@ -23,7 +23,7 @@
 #include <unordered_set>
 #include <utility>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -31,7 +31,7 @@ namespace noctalia::theme {
     // zynith: the community template catalogue was the upstream project's service; Zynith has none and makes no
     // request.
     constexpr std::string_view kCatalogUrl;
-    constexpr std::string_view kCacheMetadataFilename = ".noctalia-cache.json";
+    constexpr std::string_view kCacheMetadataFilename = ".zynith-shell-cache.json";
 
     struct CommunityTemplateFile {
       std::string name;
@@ -906,7 +906,7 @@ namespace noctalia::theme {
     const std::string state = FileUtils::stateDir();
     if (!state.empty())
       return std::filesystem::path(state) / "community-templates";
-    return std::filesystem::path("/tmp") / "noctalia" / "community-templates";
+    return std::filesystem::path("/tmp") / "zynith-shell" / "community-templates";
   }
 
   std::filesystem::path communityTemplateDir(std::string_view id) {
@@ -923,4 +923,4 @@ namespace noctalia::theme {
     });
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

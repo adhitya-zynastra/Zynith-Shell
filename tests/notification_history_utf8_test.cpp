@@ -45,7 +45,7 @@ namespace {
     explicit TempFile(const std::string& suffix)
         : path(
               std::filesystem::temp_directory_path()
-              / ("noctalia-test-" + std::to_string(static_cast<long long>(getpid())) + "-" + suffix)
+              / ("zynith-shell-test-" + std::to_string(static_cast<long long>(getpid())) + "-" + suffix)
           ) {
       std::filesystem::remove(path);
       std::filesystem::remove(path.string() + ".tmp");

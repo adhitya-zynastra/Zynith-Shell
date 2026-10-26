@@ -61,7 +61,7 @@ namespace security {
         if (fd < 0) {
           continue;
         }
-        writeString(fd, "\n[FATAL] noctalia: fatal signal ");
+        writeString(fd, "\n[FATAL] zynith-shell: fatal signal ");
         writeNumber(fd, sig);
         writeString(fd, " (");
         writeString(fd, sigabbrev_np(sig) != nullptr ? sigabbrev_np(sig) : "?");

@@ -5,7 +5,7 @@
 #include <linux/input-event-codes.h>
 #include <wayland-client-protocol.h>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   namespace {
 
@@ -135,4 +135,4 @@ namespace noctalia::bar {
     }
   }
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

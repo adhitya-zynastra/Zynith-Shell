@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   namespace {
 
@@ -96,4 +96,4 @@ namespace noctalia::theme {
     }
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

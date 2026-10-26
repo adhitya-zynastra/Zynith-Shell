@@ -9,7 +9,7 @@
 namespace {
 
   std::filesystem::path sentinelPath(const char* name) {
-    return std::filesystem::temp_directory_path() / (std::string("noctalia_hook_runner_") + name);
+    return std::filesystem::temp_directory_path() / (std::string("zynith_hook_runner_") + name);
   }
 
   std::string readSentinel(const std::filesystem::path& path) {
@@ -24,7 +24,7 @@ namespace {
     std::filesystem::remove(sentinel);
 
     {
-      noctalia::theme::HookRunner runner(2);
+      zynith::theme::HookRunner runner(2);
       for (int i = 0; i < 4; ++i) {
         runner.enqueue("printf x >> " + sentinel.string(), /*generation=*/1);
       }
@@ -42,7 +42,7 @@ namespace {
     std::filesystem::remove(sentinel);
 
     {
-      noctalia::theme::HookRunner runner(2);
+      zynith::theme::HookRunner runner(2);
       runner.invalidateBefore(2);
       // Generation 1 is already superseded: the hook must never run.
       runner.enqueue("printf stale > " + sentinel.string(), /*generation=*/1);
@@ -62,7 +62,7 @@ namespace {
     {
       // A single slot occupied by a long hook keeps the rest of the batch queued, so
       // invalidateBefore() has to discard them.
-      noctalia::theme::HookRunner runner(1);
+      zynith::theme::HookRunner runner(1);
       runner.enqueue("sleep 0.2", /*generation=*/1);
       runner.enqueue("printf stale > " + sentinel.string(), /*generation=*/1);
       runner.invalidateBefore(2);
@@ -80,7 +80,7 @@ namespace {
     std::filesystem::remove(queued);
 
     {
-      noctalia::theme::HookRunner runner(1);
+      zynith::theme::HookRunner runner(1);
       runner.enqueue("sleep 0.2; printf ran > " + running.string(), /*generation=*/1);
       runner.enqueue("printf ran > " + queued.string(), /*generation=*/1);
       runner.requestShutdown();
@@ -101,7 +101,7 @@ namespace {
     std::filesystem::remove(after);
 
     {
-      noctalia::theme::HookRunner runner(1);
+      zynith::theme::HookRunner runner(1);
       runner.enqueue("sleep 3", /*generation=*/1);
       const auto start = std::chrono::steady_clock::now();
       assert(!runner.waitIdle(200ms));

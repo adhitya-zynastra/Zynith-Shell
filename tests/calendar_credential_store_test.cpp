@@ -40,7 +40,7 @@ namespace {
   public:
     explicit TempCredentialFile(std::span<const std::uint8_t> contents) {
       std::array<char, 64> pattern{};
-      const std::string templatePath = "/tmp/noctalia-calendar-credential-XXXXXX";
+      const std::string templatePath = "/tmp/zynith-shell-calendar-credential-XXXXXX";
       std::ranges::copy(templatePath, pattern.begin());
       const int fd = ::mkstemp(pattern.data());
       if (fd < 0) {
@@ -467,7 +467,7 @@ namespace {
          )
         && ok;
     ok = expect(
-             calendar::readCredentialFile("/tmp/noctalia-calendar-credential-definitely-missing").status
+             calendar::readCredentialFile("/tmp/zynith-shell-calendar-credential-definitely-missing").status
                  == calendar::CredentialFileStatus::NotFound,
              "missing credential file status was not preserved"
          )

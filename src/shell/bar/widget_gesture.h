@@ -7,7 +7,7 @@
 #include <span>
 #include <string_view>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   // Pointer gestures a bar widget can bind an action to. The bar surface never holds keyboard
   // focus (layer surfaces are created with LayerShellKeyboard::None), so modifier chords such as
@@ -76,4 +76,4 @@ namespace noctalia::bar {
   // The scroll direction a gesture claims, or nullopt for the button gestures.
   [[nodiscard]] std::optional<InputArea::ScrollDirection> scrollDirectionForGesture(Gesture gesture) noexcept;
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

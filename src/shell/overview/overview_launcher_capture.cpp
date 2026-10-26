@@ -141,7 +141,7 @@ void OverviewLauncherCapture::ensureSurfaces() {
     }
 
     auto config = LayerSurfaceConfig{
-        .nameSpace = "noctalia-overview-launcher",
+        .nameSpace = "zynith-shell-overview-launcher",
         .layer = LayerShellLayer::Overlay,
         .anchor = LayerShellAnchor::Top | LayerShellAnchor::Left,
         .width = 1,

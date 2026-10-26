@@ -745,7 +745,7 @@ void TestPanel::create() {
 
     auto demoGlyph = ui::glyph({
         .out = &m_transformDemoGlyph,
-        .glyph = "noctalia",
+        .glyph = "zynith-shell",
         .glyphSize = 24.0F * scale,
         .color = colorSpecFromRole(ColorRole::Primary),
         .configure = [scale](Glyph& glyph) {

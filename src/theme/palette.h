@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   // A fully-generated palette, keyed by the token names from tokens.h. Values
   // are packed ARGB (0xffRRGGBB). Serialization to "#rrggbb" lives in
@@ -16,4 +16,4 @@ namespace noctalia::theme {
     bool operator==(const GeneratedPalette&) const = default;
   };
 
-} // namespace noctalia::theme
+} // namespace zynith::theme

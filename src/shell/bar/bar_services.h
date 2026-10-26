@@ -26,7 +26,7 @@ class UPowerService;
 class WeatherService;
 class GammaService;
 
-namespace noctalia::theme {
+namespace zynith::theme {
   class ThemeService;
 }
 namespace scripting {
@@ -53,7 +53,7 @@ struct BarServices {
   WeatherService* weather = nullptr;
   RenderContext* renderContext = nullptr;
   GammaService* nightLight = nullptr;
-  noctalia::theme::ThemeService* theme = nullptr;
+  zynith::theme::ThemeService* theme = nullptr;
   BluetoothService* bluetooth = nullptr;
   BrightnessService* brightness = nullptr;
   LockKeysService* lockKeys = nullptr;

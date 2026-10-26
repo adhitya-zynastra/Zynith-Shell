@@ -3,4 +3,4 @@
 #include "shell/bar/widget_definition.h"
 #include "shell/bar/widgets/wallpaper_widget.h"
 
-[[nodiscard]] const noctalia::bar::WidgetDefinition<WallpaperWidget::Options>& wallpaperWidgetDefinition();
+[[nodiscard]] const zynith::bar::WidgetDefinition<WallpaperWidget::Options>& wallpaperWidgetDefinition();

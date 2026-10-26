@@ -34,7 +34,7 @@ namespace {
   }
 
   TempDir makeTempDir() {
-    std::string pattern = (std::filesystem::temp_directory_path() / "noctalia-kde-colors-XXXXXX").string();
+    std::string pattern = (std::filesystem::temp_directory_path() / "zynith-shell-kde-colors-XXXXXX").string();
     std::vector<char> writable(pattern.begin(), pattern.end());
     writable.push_back('\0');
     char* result = ::mkdtemp(writable.data());
@@ -75,7 +75,7 @@ namespace {
       return false;
     }
 
-    const auto scheme = root.path / "noctalia.colors";
+    const auto scheme = root.path / "zynith.colors";
     const auto globals = root.path / "kdeglobals";
     bool ok = expect(
         writeFile(
@@ -97,8 +97,8 @@ namespace {
              writeFile(
                  scheme,
                  "[General]\n"
-                 "ColorScheme=Noctalia\n"
-                 "Name=noctalia\n"
+                 "ColorScheme=Zynith\n"
+                 "Name=zynith-shell\n"
                  "\n"
                  "[Colors:Button]\n"
                  "ForegroundNormal=9,8,7\n"
@@ -119,10 +119,10 @@ namespace {
     ok = expect(!permissionsError, "sets restrictive kdeglobals permissions") && ok;
 
     std::string error;
-    const bool merged = noctalia::theme::mergeKdeColorScheme(scheme, globals, &error);
+    const bool merged = zynith::theme::mergeKdeColorScheme(scheme, globals, &error);
     ok = expect(merged, error) && ok;
     ok = expect(keyValue(globals, "General", "ExistingKey") == "keep", "preserves an unrelated key") && ok;
-    ok = expect(keyValue(globals, "General", "ColorScheme") == "Noctalia", "replaces the active scheme") && ok;
+    ok = expect(keyValue(globals, "General", "ColorScheme") == "Zynith", "replaces the active scheme") && ok;
     ok = expect(keyValue(globals, "Colors:Button", "ForegroundNormal") == "9,8,7", "replaces scheme values") && ok;
     ok = expect(keyValue(globals, "Colors:Button", "BackgroundNormal") == "4,5,6", "adds scheme values") && ok;
     ok =
@@ -159,7 +159,7 @@ namespace {
     ok = expect(writeFile(globals, original), "writes protected kdeglobals fixture") && ok;
 
     std::string error;
-    ok = expect(!noctalia::theme::mergeKdeColorScheme(scheme, globals, &error), "rejects a malformed scheme") && ok;
+    ok = expect(!zynith::theme::mergeKdeColorScheme(scheme, globals, &error), "rejects a malformed scheme") && ok;
     ok = expect(!error.empty(), "reports the malformed scheme error") && ok;
     ok = expect(readFile(globals) == original, "does not overwrite kdeglobals after a parse failure") && ok;
     return ok;
@@ -173,7 +173,7 @@ namespace {
 
     std::string error;
     const bool merged =
-        noctalia::theme::mergeKdeColorScheme(root.path / "missing.colors", root.path / "kdeglobals", &error);
+        zynith::theme::mergeKdeColorScheme(root.path / "missing.colors", root.path / "kdeglobals", &error);
     return expect(!merged, "rejects a missing scheme")
         && expect(!error.empty(), "reports the missing scheme error")
         && expect(!std::filesystem::exists(root.path / "kdeglobals"), "does not create kdeglobals for missing input");
@@ -189,7 +189,7 @@ namespace {
     const auto globals = root.path / "kdeglobals";
     bool ok = expect(writeFile(scheme, "# no color groups\n"), "writes empty scheme fixture");
     std::string error;
-    ok = expect(!noctalia::theme::mergeKdeColorScheme(scheme, globals, &error), "rejects an empty scheme") && ok;
+    ok = expect(!zynith::theme::mergeKdeColorScheme(scheme, globals, &error), "rejects an empty scheme") && ok;
     ok = expect(!error.empty(), "reports the empty scheme error") && ok;
     ok = expect(!std::filesystem::exists(globals), "does not create kdeglobals for empty input") && ok;
     return ok;

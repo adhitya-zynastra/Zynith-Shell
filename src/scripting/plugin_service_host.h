@@ -26,7 +26,7 @@ namespace scripting {
   // Hosts headless [[service]] entries: one singleton runtime per service entry,
   // started at launch and ticked on its own interval. Services hold a plugin's
   // shared/background logic and publish to the per-plugin state store; the
-  // plugin's UI entries (widgets, panels) consume it via noctalia.state.
+  // plugin's UI entries (widgets, panels) consume it via zynith.state.
   class PluginServiceHost {
   public:
     PluginServiceHost(
@@ -51,12 +51,12 @@ namespace scripting {
 
     // Notify every service that the set/geometry of connected outputs changed, so a
     // service can reconcile (e.g. relaunch a per-output child). The current output
-    // list is read via noctalia.outputs() inside the callback.
+    // list is read via zynith.outputs() inside the callback.
     void onOutputChange();
 
   private:
     // A service is reachable by IPC via the `all` target (it is a singleton with no
-    // output): `noctalia msg plugin <author/plugin:entry> all <event> [payload]`.
+    // output): `zynith-shell msg plugin <author/plugin:entry> all <event> [payload]`.
     struct Service : public PluginIpcEndpoint {
       std::string entryId;
       std::filesystem::path sourcePath;

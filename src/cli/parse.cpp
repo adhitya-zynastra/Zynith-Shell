@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <print>
 
-namespace noctalia::cli {
+namespace zynith::cli {
 
   namespace {
 
@@ -166,4 +166,4 @@ namespace noctalia::cli {
     return std::move(*parsed);
   }
 
-} // namespace noctalia::cli
+} // namespace zynith::cli

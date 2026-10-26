@@ -91,10 +91,10 @@ namespace zynith {
       result.generation = generation;
 
       // the palette's decode (a 112x112 sample) runs beside the wallpaper's
-      std::future<std::optional<noctalia::theme::ThemeService::PrimedWallpaperPalette>> palette;
+      std::future<std::optional<zynith::theme::ThemeService::PrimedWallpaperPalette>> palette;
       if (!job.palettePath.empty()) {
         palette = std::async(std::launch::async, [path = job.palettePath, scheme = job.paletteScheme]() {
-          return noctalia::theme::ThemeService::computeWallpaperPalette(path, scheme);
+          return zynith::theme::ThemeService::computeWallpaperPalette(path, scheme);
         });
       }
       for (const auto& path : job.paths) {

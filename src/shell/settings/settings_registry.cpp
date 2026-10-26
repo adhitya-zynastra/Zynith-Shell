@@ -62,8 +62,8 @@ namespace settings {
 
     // What the dead zone does for a gesture nobody has bound, shown as the row's placeholder so an
     // empty field never reads as "does nothing".
-    [[nodiscard]] std::string deadZoneDefault(noctalia::bar::Gesture gesture) {
-      for (const auto& binding : noctalia::bar::deadZoneGestureDefaults()) {
+    [[nodiscard]] std::string deadZoneDefault(zynith::bar::Gesture gesture) {
+      for (const auto& binding : zynith::bar::deadZoneGestureDefaults()) {
         if (binding.gesture == gesture) {
           return std::string(binding.action);
         }
@@ -122,7 +122,7 @@ namespace settings {
     // one source. `integerValue` (write as int64) stays explicit: it is a UI/write
     // choice, not implied by the range's numeric type (e.g. transition_duration).
     template <typename V, typename T>
-    SliderSetting sliderFor(V value, const noctalia::config::schema::Range<T>& range, bool integerValue) {
+    SliderSetting sliderFor(V value, const zynith::config::schema::Range<T>& range, bool integerValue) {
       return SliderSetting{
           static_cast<double>(value), static_cast<double>(range.min.value()), static_cast<double>(range.max.value()),
           static_cast<double>(range.step.value()), integerValue
@@ -231,14 +231,14 @@ namespace settings {
       };
     }
 
-    ColorSwatchPreview builtinPalettePreview(const noctalia::theme::BuiltinPalette& palette, ThemeMode mode) {
+    ColorSwatchPreview builtinPalettePreview(const zynith::theme::BuiltinPalette& palette, ThemeMode mode) {
       return palettePreviewFromPalette(mode == ThemeMode::Light ? palette.light.palette : palette.dark.palette);
     }
 
     SelectSetting builtinPaletteSelect(std::string_view selected, ThemeMode mode) {
       std::vector<SelectOption> opts;
-      opts.reserve(noctalia::theme::builtinPalettes().size());
-      for (const auto& palette : noctalia::theme::builtinPalettes()) {
+      opts.reserve(zynith::theme::builtinPalettes().size());
+      for (const auto& palette : zynith::theme::builtinPalettes()) {
         opts.push_back(
             SelectOption{
                 .value = std::string(palette.name),
@@ -577,7 +577,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "interface", tr("settings.schema.appearance.corner-roundness.label"),
         tr("settings.schema.appearance.corner-roundness.description"), {"shell", "corner_radius_scale"},
-        sliderFor(cfg.shell.cornerRadiusScale, noctalia::config::schema::kCornerRadiusScaleRange, false),
+        sliderFor(cfg.shell.cornerRadiusScale, zynith::config::schema::kCornerRadiusScaleRange, false),
         "rounded corners radius"
     ));
     entries.push_back(makeEntry(
@@ -602,7 +602,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "accessibility", tr("settings.schema.appearance.ui-scale.label"),
         tr("settings.schema.appearance.ui-scale.description"), {"accessibility", "ui_scale"},
-        sliderFor(cfg.accessibility.uiScale, noctalia::config::schema::kScaleRange, false), "size scale text panels"
+        sliderFor(cfg.accessibility.uiScale, zynith::config::schema::kScaleRange, false), "size scale text panels"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "accessibility", tr("settings.schema.accessibility.high-contrast.label"),
@@ -617,7 +617,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "motion", tr("settings.schema.appearance.animation-speed.label"),
         tr("settings.schema.appearance.animation-speed.description"), {"shell", "animation", "speed"},
-        sliderFor(cfg.shell.animation.speed, noctalia::config::schema::kAnimationSpeedRange, false), "motion"
+        sliderFor(cfg.shell.animation.speed, zynith::config::schema::kAnimationSpeedRange, false), "motion"
     ));
     // Compositor-side motion lives in the same group as the shell's own, so "how fast does the
     // desktop feel" is one place rather than two settings surfaces that can disagree.
@@ -629,25 +629,25 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-open.label"),
         tr("settings.schema.appearance.motion-open.description"), {"shell", "animation", "niri_open"},
-        sliderFor(cfg.shell.animation.niriOpen, noctalia::config::schema::kMotionTrimRange, true),
+        sliderFor(cfg.shell.animation.niriOpen, zynith::config::schema::kMotionTrimRange, true),
         "motion niri window open"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-close.label"),
         tr("settings.schema.appearance.motion-close.description"), {"shell", "animation", "niri_close"},
-        sliderFor(cfg.shell.animation.niriClose, noctalia::config::schema::kMotionTrimRange, true),
+        sliderFor(cfg.shell.animation.niriClose, zynith::config::schema::kMotionTrimRange, true),
         "motion niri window close"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-movement.label"),
         tr("settings.schema.appearance.motion-movement.description"), {"shell", "animation", "niri_movement"},
-        sliderFor(cfg.shell.animation.niriMovement, noctalia::config::schema::kMotionTrimRange, true),
+        sliderFor(cfg.shell.animation.niriMovement, zynith::config::schema::kMotionTrimRange, true),
         "motion niri window movement resize workspace"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "motion", tr("settings.schema.appearance.motion-overview.label"),
         tr("settings.schema.appearance.motion-overview.description"), {"shell", "animation", "niri_overview"},
-        sliderFor(cfg.shell.animation.niriOverview, noctalia::config::schema::kMotionTrimRange, true),
+        sliderFor(cfg.shell.animation.niriOverview, zynith::config::schema::kMotionTrimRange, true),
         "motion niri overview"
     ));
     entries.push_back(makeEntry(
@@ -678,7 +678,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "effects", tr("settings.schema.shared.shadow-alpha.label"),
         tr("settings.schema.appearance.global-shadow-alpha.description"), {"shell", "shadow", "alpha"},
-        sliderFor(cfg.shell.shadow.alpha, noctalia::config::schema::kUnitRange, false), "shadow opacity", true
+        sliderFor(cfg.shell.shadow.alpha, zynith::config::schema::kUnitRange, false), "shadow opacity", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Appearance, "effects", tr("settings.schema.appearance.popup-shadows.label"),
@@ -835,15 +835,13 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Wallpaper, "transition", tr("settings.schema.wallpaper.transition-duration.label"),
         tr("settings.schema.wallpaper.transition-duration.description"), {"wallpaper", "transition_duration"},
-        sliderFor(
-            cfg.wallpaper.transitionDurationMs, noctalia::config::schema::kWallpaperTransitionDurationRange, true
-        ),
+        sliderFor(cfg.wallpaper.transitionDurationMs, zynith::config::schema::kWallpaperTransitionDurationRange, true),
         "fade animation"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Wallpaper, "transition", tr("settings.schema.wallpaper.edge-smoothness.label"),
         tr("settings.schema.wallpaper.edge-smoothness.description"), {"wallpaper", "edge_smoothness"},
-        sliderFor(cfg.wallpaper.edgeSmoothness, noctalia::config::schema::kUnitRange, false), "transition feathering",
+        sliderFor(cfg.wallpaper.edgeSmoothness, zynith::config::schema::kUnitRange, false), "transition feathering",
         true
     ));
     entries.push_back(makeEntry(
@@ -862,9 +860,9 @@ namespace settings {
         {"wallpaper", "automation", "interval_seconds"},
         StepperSetting{
             .value = cfg.wallpaper.automation.intervalSeconds,
-            .minValue = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.min.value()),
-            .maxValue = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.max.value()),
-            .step = static_cast<int>(noctalia::config::schema::kWallpaperAutomationIntervalRange.step.value()),
+            .minValue = static_cast<int>(zynith::config::schema::kWallpaperAutomationIntervalRange.min.value()),
+            .maxValue = static_cast<int>(zynith::config::schema::kWallpaperAutomationIntervalRange.max.value()),
+            .step = static_cast<int>(zynith::config::schema::kWallpaperAutomationIntervalRange.step.value()),
             .valueSuffix = "s",
         },
         "rotate slideshow"
@@ -891,7 +889,7 @@ namespace settings {
         ToggleSetting{cfg.theme.templates.enableBuiltinTemplates}, "theme templates"
     ));
     {
-      const auto availableTemplates = noctalia::theme::availableTemplates();
+      const auto availableTemplates = zynith::theme::availableTemplates();
       std::vector<SelectOption> templateOptions;
       templateOptions.reserve(availableTemplates.size());
       for (const auto& t : availableTemplates) {
@@ -900,7 +898,7 @@ namespace settings {
                 .value = t.id,
                 .label = t.displayName,
                 .description = t.category,
-                .tooltip = noctalia::theme::formatTemplateTooltip(t)
+                .tooltip = zynith::theme::formatTemplateTooltip(t)
             }
         );
       }
@@ -1047,57 +1045,57 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.dock.icon-size.label"),
         tr("settings.schema.dock.icon-size.description"), {"dock", "icon_size"},
-        sliderFor(cfg.dock.iconSize, noctalia::config::schema::kDockIconSizeRange, true), "apps"
+        sliderFor(cfg.dock.iconSize, zynith::config::schema::kDockIconSizeRange, true), "apps"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.shared.main-axis-padding.label"),
         tr("settings.schema.dock.main-axis-padding.description"), {"dock", "main_axis_padding"},
-        sliderFor(cfg.dock.mainAxisPadding, noctalia::config::schema::kDockPaddingRange, true), "inset"
+        sliderFor(cfg.dock.mainAxisPadding, zynith::config::schema::kDockPaddingRange, true), "inset"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.shared.cross-axis-padding.label"),
         tr("settings.schema.dock.cross-axis-padding.description"), {"dock", "cross_axis_padding"},
-        sliderFor(cfg.dock.crossAxisPadding, noctalia::config::schema::kDockPaddingRange, true), "inset"
+        sliderFor(cfg.dock.crossAxisPadding, zynith::config::schema::kDockPaddingRange, true), "inset"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.dock.item-spacing.label"),
         tr("settings.schema.dock.item-spacing.description"), {"dock", "item_spacing"},
-        sliderFor(cfg.dock.itemSpacing, noctalia::config::schema::kDockItemSpacingRange, true), "gap"
+        sliderFor(cfg.dock.itemSpacing, zynith::config::schema::kDockItemSpacingRange, true), "gap"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.shared.ends-margin.label"),
         tr("settings.schema.dock.ends-margin.description"), {"dock", "margin_ends"},
-        sliderFor(cfg.dock.marginEnds, noctalia::config::schema::kDockMarginEndsRange, true), "gap inset"
+        sliderFor(cfg.dock.marginEnds, zynith::config::schema::kDockMarginEndsRange, true), "gap inset"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "layout", tr("settings.schema.shared.edge-margin.label"),
         tr("settings.schema.dock.edge-margin.description"), {"dock", "margin_edge"},
-        sliderFor(cfg.dock.marginEdge, noctalia::config::schema::kDockMarginEdgeRange, true), "gap inset"
+        sliderFor(cfg.dock.marginEdge, zynith::config::schema::kDockMarginEdgeRange, true), "gap inset"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.shared.corner-radius.label"),
         tr("settings.schema.dock.corner-radius.description"), {"dock", "radius"},
-        sliderFor(cfg.dock.radius, noctalia::config::schema::kDockRadiusRange, true), "rounded"
+        sliderFor(cfg.dock.radius, zynith::config::schema::kDockRadiusRange, true), "rounded"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.shared.corner-top-left.label"),
         tr("settings.schema.dock.corner-top-left.description"), {"dock", "radius_top_left"},
-        sliderFor(cfg.dock.radiusTopLeft, noctalia::config::schema::kDockRadiusRange, true), "rounded corner", true
+        sliderFor(cfg.dock.radiusTopLeft, zynith::config::schema::kDockRadiusRange, true), "rounded corner", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.shared.corner-top-right.label"),
         tr("settings.schema.dock.corner-top-right.description"), {"dock", "radius_top_right"},
-        sliderFor(cfg.dock.radiusTopRight, noctalia::config::schema::kDockRadiusRange, true), "rounded corner", true
+        sliderFor(cfg.dock.radiusTopRight, zynith::config::schema::kDockRadiusRange, true), "rounded corner", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.shared.corner-bottom-left.label"),
         tr("settings.schema.dock.corner-bottom-left.description"), {"dock", "radius_bottom_left"},
-        sliderFor(cfg.dock.radiusBottomLeft, noctalia::config::schema::kDockRadiusRange, true), "rounded corner", true
+        sliderFor(cfg.dock.radiusBottomLeft, zynith::config::schema::kDockRadiusRange, true), "rounded corner", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.shared.corner-bottom-right.label"),
         tr("settings.schema.dock.corner-bottom-right.description"), {"dock", "radius_bottom_right"},
-        sliderFor(cfg.dock.radiusBottomRight, noctalia::config::schema::kDockRadiusRange, true), "rounded corner", true
+        sliderFor(cfg.dock.radiusBottomRight, zynith::config::schema::kDockRadiusRange, true), "rounded corner", true
     ));
     {
       auto e = makeEntry(
@@ -1116,12 +1114,12 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Dock, "shape", tr("settings.schema.dock.border-width.label"),
         tr("settings.schema.dock.border-width.description"), {"dock", "border_width"},
-        sliderFor(cfg.dock.borderWidth, noctalia::config::schema::kDockBorderWidthRange, false), "outline stroke", true
+        sliderFor(cfg.dock.borderWidth, zynith::config::schema::kDockBorderWidthRange, false), "outline stroke", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "effects", tr("settings.schema.shared.background-opacity.label"),
         tr("settings.schema.dock.background-opacity.description"), {"dock", "background_opacity"},
-        sliderFor(cfg.dock.backgroundOpacity, noctalia::config::schema::kUnitRange, false), "alpha"
+        sliderFor(cfg.dock.backgroundOpacity, zynith::config::schema::kUnitRange, false), "alpha"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "effects", tr("settings.schema.shared.shadow.label"),
@@ -1135,28 +1133,28 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Dock, "focus-styling", tr("settings.schema.dock.magnification-scale.label"),
         tr("settings.schema.dock.magnification-scale.description"), {"dock", "magnification_scale"},
-        sliderFor(cfg.dock.magnificationScale, noctalia::config::schema::kDockMagnificationScaleRange, false),
+        sliderFor(cfg.dock.magnificationScale, zynith::config::schema::kDockMagnificationScaleRange, false),
         "magnify zoom"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "focus-styling", tr("settings.schema.dock.active-icon-scale.label"),
         tr("settings.schema.dock.active-icon-scale.description"), {"dock", "active_scale"},
-        sliderFor(cfg.dock.activeScale, noctalia::config::schema::kDockActiveScaleRange, false), "focused", true
+        sliderFor(cfg.dock.activeScale, zynith::config::schema::kDockActiveScaleRange, false), "focused", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "focus-styling", tr("settings.schema.dock.inactive-icon-scale.label"),
         tr("settings.schema.dock.inactive-icon-scale.description"), {"dock", "inactive_scale"},
-        sliderFor(cfg.dock.inactiveScale, noctalia::config::schema::kDockInactiveScaleRange, false), "unfocused", true
+        sliderFor(cfg.dock.inactiveScale, zynith::config::schema::kDockInactiveScaleRange, false), "unfocused", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "focus-styling", tr("settings.schema.dock.active-icon-opacity.label"),
         tr("settings.schema.dock.active-icon-opacity.description"), {"dock", "active_opacity"},
-        sliderFor(cfg.dock.activeOpacity, noctalia::config::schema::kUnitRange, false), "focused alpha", true
+        sliderFor(cfg.dock.activeOpacity, zynith::config::schema::kUnitRange, false), "focused alpha", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "focus-styling", tr("settings.schema.dock.inactive-icon-opacity.label"),
         tr("settings.schema.dock.inactive-icon-opacity.description"), {"dock", "inactive_opacity"},
-        sliderFor(cfg.dock.inactiveOpacity, noctalia::config::schema::kUnitRange, false), "unfocused alpha", true
+        sliderFor(cfg.dock.inactiveOpacity, zynith::config::schema::kUnitRange, false), "unfocused alpha", true
     ));
     entries.push_back(makeEntry(
         SettingsSection::Dock, "pinned-apps", tr("settings.schema.dock.pinned-apps.label"),
@@ -1215,7 +1213,7 @@ namespace settings {
       auto opacity = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.opacity.label"),
           tr("settings.schema.glass.opacity.description"), {"shell", "glass", "opacity"},
-          sliderFor(cfg.shell.glass.opacity, noctalia::config::schema::kUnitRange, false),
+          sliderFor(cfg.shell.glass.opacity, zynith::config::schema::kUnitRange, false),
           "glass opacity transparency alpha custom"
       );
       opacity.visibleWhen = customOpacity;
@@ -1229,7 +1227,7 @@ namespace settings {
       auto strength = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.blur-strength.label"),
           tr("settings.schema.glass.blur-strength.description"), {"shell", "glass", "blur_strength"},
-          sliderFor(cfg.shell.glass.blurStrength, noctalia::config::schema::kGlassBlurStrengthRange, true),
+          sliderFor(cfg.shell.glass.blurStrength, zynith::config::schema::kGlassBlurStrengthRange, true),
           "glass blur strength radius niri"
       );
       strength.visibleWhen = blurOn;
@@ -1250,7 +1248,7 @@ namespace settings {
       auto tintStrength = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint-strength.label"),
           tr("settings.schema.glass.tint-strength.description"), {"shell", "glass", "tint_strength"},
-          sliderFor(cfg.shell.glass.tintStrength, noctalia::config::schema::kUnitRange, false),
+          sliderFor(cfg.shell.glass.tintStrength, zynith::config::schema::kUnitRange, false),
           "glass tint strength amount"
       );
       tintStrength.visibleWhen = tintOn;
@@ -1266,7 +1264,7 @@ namespace settings {
       auto borderOpacity = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.border-opacity.label"),
           tr("settings.schema.glass.border-opacity.description"), {"shell", "glass", "border_opacity"},
-          sliderFor(cfg.shell.glass.borderOpacity, noctalia::config::schema::kUnitRange, false),
+          sliderFor(cfg.shell.glass.borderOpacity, zynith::config::schema::kUnitRange, false),
           "glass border outline opacity"
       );
       borderOpacity.visibleWhen = bordersOn;
@@ -1369,7 +1367,7 @@ namespace settings {
     ));
     {
       const auto zynithOnly = [](const Config& c) { return c.shell.launcher.style == LauncherStyle::Zynith; };
-      SliderSetting width = sliderFor(cfg.shell.launcher.width, noctalia::config::schema::kLauncherWidthRange, true);
+      SliderSetting width = sliderFor(cfg.shell.launcher.width, zynith::config::schema::kLauncherWidthRange, true);
       width.valueSuffix = "px";
       auto widthEntry = makeEntry(
           SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-width.label"),
@@ -1378,7 +1376,7 @@ namespace settings {
       );
       widthEntry.visibleWhen = zynithOnly;
       entries.push_back(std::move(widthEntry));
-      SliderSetting height = sliderFor(cfg.shell.launcher.height, noctalia::config::schema::kLauncherHeightRange, true);
+      SliderSetting height = sliderFor(cfg.shell.launcher.height, zynith::config::schema::kLauncherHeightRange, true);
       height.valueSuffix = "px";
       auto heightEntry = makeEntry(
           SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-height.label"),
@@ -1387,8 +1385,7 @@ namespace settings {
       );
       heightEntry.visibleWhen = zynithOnly;
       entries.push_back(std::move(heightEntry));
-      SliderSetting icon =
-          sliderFor(cfg.shell.launcher.iconSize, noctalia::config::schema::kLauncherIconSizeRange, true);
+      SliderSetting icon = sliderFor(cfg.shell.launcher.iconSize, zynith::config::schema::kLauncherIconSizeRange, true);
       icon.valueSuffix = "px";
       auto iconEntry = makeEntry(
           SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-icon-size.label"),
@@ -1567,9 +1564,9 @@ namespace settings {
           {"control_center", "hover_open_delay_ms"},
           StepperSetting{
               .value = static_cast<int>(cfg.controlCenter.hoverOpenDelayMs),
-              .minValue = static_cast<int>(noctalia::config::schema::kHoverIntentRange.min.value()),
-              .maxValue = static_cast<int>(noctalia::config::schema::kHoverIntentRange.max.value()),
-              .step = static_cast<int>(noctalia::config::schema::kHoverIntentRange.step.value()),
+              .minValue = static_cast<int>(zynith::config::schema::kHoverIntentRange.min.value()),
+              .maxValue = static_cast<int>(zynith::config::schema::kHoverIntentRange.max.value()),
+              .step = static_cast<int>(zynith::config::schema::kHoverIntentRange.step.value()),
           },
           "hover clock delay"
       );
@@ -1577,8 +1574,7 @@ namespace settings {
       entries.push_back(std::move(e));
     }
     {
-      SliderSetting width =
-          sliderFor(cfg.controlCenter.width, noctalia::config::schema::kControlCenterWidthRange, true);
+      SliderSetting width = sliderFor(cfg.controlCenter.width, zynith::config::schema::kControlCenterWidthRange, true);
       width.valueSuffix = "px";
       entries.push_back(makeEntry(
           SettingsSection::Personalization, "control-center", tr("settings.schema.panels.control-center-width.label"),
@@ -1604,7 +1600,7 @@ namespace settings {
     ));
     {
       auto cardSlider =
-          sliderFor(cfg.wallpaper.carouselCardWidth, noctalia::config::schema::kCarouselCardWidthRange, true);
+          sliderFor(cfg.wallpaper.carouselCardWidth, zynith::config::schema::kCarouselCardWidthRange, true);
       cardSlider.valueSuffix = "px";
       auto cardWidth = makeEntry(
           SettingsSection::Personalization, "wallpaper-browser", tr("settings.schema.personalization.card-width.label"),
@@ -1691,7 +1687,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Desktop, "screen-corners", tr("settings.schema.desktop.screen-corners-size.label"),
         tr("settings.schema.desktop.screen-corners-size.description"), {"shell", "screen_corners", "size"},
-        sliderFor(cfg.shell.screenCorners.size, noctalia::config::schema::kScreenCornersSizeRange, true),
+        sliderFor(cfg.shell.screenCorners.size, zynith::config::schema::kScreenCornersSizeRange, true),
         "screen corners radius"
     ));
 
@@ -1702,7 +1698,7 @@ namespace settings {
     ));
     {
       auto delay = sliderFor(
-          static_cast<std::int64_t>(cfg.hotCorners.delayMs), noctalia::config::schema::kHotCornersDelayMsRange, true
+          static_cast<std::int64_t>(cfg.hotCorners.delayMs), zynith::config::schema::kHotCornersDelayMsRange, true
       );
       delay.valueSuffix = "ms";
       SettingEntry e = makeEntry(
@@ -1874,7 +1870,7 @@ namespace settings {
       auto e = makeEntry(
           SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.blur-intensity.label"),
           tr("settings.schema.lockscreen.blur-intensity.description"), {"lockscreen", "blur_intensity"},
-          sliderFor(cfg.lockscreen.blurIntensity, noctalia::config::schema::kUnitRange, false), "lock screen blur"
+          sliderFor(cfg.lockscreen.blurIntensity, zynith::config::schema::kUnitRange, false), "lock screen blur"
       );
       e.visibleWhen = lockscreenOn;
       entries.push_back(std::move(e));
@@ -1883,7 +1879,7 @@ namespace settings {
       auto e = makeEntry(
           SettingsSection::Security, "lock-screen", tr("settings.schema.lockscreen.tint-intensity.label"),
           tr("settings.schema.lockscreen.tint-intensity.description"), {"lockscreen", "tint_intensity"},
-          sliderFor(cfg.lockscreen.tintIntensity, noctalia::config::schema::kUnitRange, false), "lock screen tint"
+          sliderFor(cfg.lockscreen.tintIntensity, zynith::config::schema::kUnitRange, false), "lock screen tint"
       );
       e.visibleWhen = lockscreenOn;
       entries.push_back(std::move(e));
@@ -2017,9 +2013,9 @@ namespace settings {
           {"shell", "clipboard_history_max_entries"},
           StepperSetting{
               .value = cfg.shell.clipboardHistoryMaxEntries,
-              .minValue = static_cast<int>(noctalia::config::schema::kClipboardHistoryMaxEntriesRange.min.value()),
-              .maxValue = static_cast<int>(noctalia::config::schema::kClipboardHistoryMaxEntriesRange.max.value()),
-              .step = static_cast<int>(noctalia::config::schema::kClipboardHistoryMaxEntriesRange.step.value())
+              .minValue = static_cast<int>(zynith::config::schema::kClipboardHistoryMaxEntriesRange.min.value()),
+              .maxValue = static_cast<int>(zynith::config::schema::kClipboardHistoryMaxEntriesRange.max.value()),
+              .step = static_cast<int>(zynith::config::schema::kClipboardHistoryMaxEntriesRange.step.value())
           },
           "clipboard history limit entries"
       );
@@ -2217,7 +2213,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-scale.label"),
         tr("settings.schema.shell.osd-scale.description"), {"osd", "scale"},
-        sliderFor(cfg.osd.scale, noctalia::config::schema::kScaleRange, false),
+        sliderFor(cfg.osd.scale, zynith::config::schema::kScaleRange, false),
         "hud overlay volume brightness size scale multiplier"
     ));
     entries.push_back(makeEntry(
@@ -2235,7 +2231,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-background-opacity.label"),
         tr("settings.schema.shell.osd-background-opacity.description"), {"osd", "background_opacity"},
-        sliderFor(cfg.osd.backgroundOpacity, noctalia::config::schema::kUnitRange, false), "hud overlay popup opacity"
+        sliderFor(cfg.osd.backgroundOpacity, zynith::config::schema::kUnitRange, false), "hud overlay popup opacity"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "osd", tr("settings.schema.shell.osd-border.label"),
@@ -2247,9 +2243,9 @@ namespace settings {
         tr("settings.schema.personalization.osd-duration.description"), {"osd", "duration_ms"},
         StepperSetting{
             .value = static_cast<int>(cfg.osd.durationMs),
-            .minValue = static_cast<int>(noctalia::config::schema::kOsdDurationRange.min.value()),
-            .maxValue = static_cast<int>(noctalia::config::schema::kOsdDurationRange.max.value()),
-            .step = static_cast<int>(noctalia::config::schema::kOsdDurationRange.step.value()),
+            .minValue = static_cast<int>(zynith::config::schema::kOsdDurationRange.min.value()),
+            .maxValue = static_cast<int>(zynith::config::schema::kOsdDurationRange.max.value()),
+            .step = static_cast<int>(zynith::config::schema::kOsdDurationRange.step.value()),
             .valueSuffix = "ms",
         },
         "hud overlay duration hold time seconds"
@@ -2445,12 +2441,12 @@ namespace settings {
         entries.push_back(makeEntry(
             SettingsSection::Niri, "backdrop", tr("settings.schema.backdrop.blur-intensity.label"),
             tr("settings.schema.backdrop.blur-intensity.description"), {"backdrop", "blur_intensity"},
-            sliderFor(cfg.backdrop.blurIntensity, noctalia::config::schema::kUnitRange, false), "wallpaper"
+            sliderFor(cfg.backdrop.blurIntensity, zynith::config::schema::kUnitRange, false), "wallpaper"
         ));
         entries.push_back(makeEntry(
             SettingsSection::Niri, "backdrop", tr("settings.schema.backdrop.tint-intensity.label"),
             tr("settings.schema.backdrop.tint-intensity.description"), {"backdrop", "tint_intensity"},
-            sliderFor(cfg.backdrop.tintIntensity, noctalia::config::schema::kUnitRange, false), "wallpaper"
+            sliderFor(cfg.backdrop.tintIntensity, zynith::config::schema::kUnitRange, false), "wallpaper"
         ));
       }
     }
@@ -2461,7 +2457,7 @@ namespace settings {
         entries.push_back(makeEntry(
             SettingsSection::System, "battery", tr("settings.schema.system.battery-warning-threshold.label"),
             tr("settings.schema.system.battery-warning-threshold.description"), {"battery", "warning_threshold"},
-            sliderFor(cfg.battery.warningThreshold, noctalia::config::schema::kBatteryWarningThresholdRange, true),
+            sliderFor(cfg.battery.warningThreshold, zynith::config::schema::kBatteryWarningThresholdRange, true),
             "battery low warning threshold notification"
         ));
       }
@@ -2537,7 +2533,7 @@ namespace settings {
 
       // One dual-thumb range row per metric: low thumb = activity threshold, high thumb = critical.
       auto addThresholdPair = [&](std::string_view baseKey, std::string_view statLabelKey, double activityValue,
-                                  double criticalValue, noctalia::sysmon::ThresholdProfile profile, bool integerValue,
+                                  double criticalValue, zynith::sysmon::ThresholdProfile profile, bool integerValue,
                                   std::string valueSuffix) {
         const std::vector<std::string> activityPath = {
             "system", "monitor", std::string(baseKey) + "_activity_threshold"
@@ -2567,64 +2563,64 @@ namespace settings {
         entries.push_back(std::move(entry));
       };
 
-      using noctalia::sysmon::Stat;
+      using zynith::sysmon::Stat;
       addThresholdPair(
           "cpu_usage", "settings.schema.services.system-monitor.stats.cpu-usage", mon.cpuUsageActivityThreshold,
-          mon.cpuUsageCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::CpuUsage), true, "%"
+          mon.cpuUsageCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::CpuUsage), true, "%"
       );
       addThresholdPair(
           "cpu_temp", "settings.schema.services.system-monitor.stats.cpu-temp", mon.cpuTempActivityThreshold,
-          mon.cpuTempCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::CpuTemp), true, "°C"
+          mon.cpuTempCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::CpuTemp), true, "°C"
       );
       addThresholdPair(
           "cpu_freq", "settings.schema.services.system-monitor.stats.cpu-freq", mon.cpuFreqActivityThreshold,
-          mon.cpuFreqCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::CpuFreq), false, "GHz"
+          mon.cpuFreqCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::CpuFreq), false, "GHz"
       );
       addThresholdPair(
           "gpu_usage", "settings.schema.services.system-monitor.stats.gpu-usage", mon.gpuUsageActivityThreshold,
-          mon.gpuUsageCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::GpuUsage), true, "%"
+          mon.gpuUsageCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::GpuUsage), true, "%"
       );
       addThresholdPair(
           "gpu_temp", "settings.schema.services.system-monitor.stats.gpu-temp", mon.gpuTempActivityThreshold,
-          mon.gpuTempCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::GpuTemp), true, "°C"
+          mon.gpuTempCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::GpuTemp), true, "°C"
       );
       addThresholdPair(
           "gpu_vram", "settings.schema.services.system-monitor.stats.gpu-vram", mon.gpuVramActivityThreshold,
-          mon.gpuVramCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::GpuVram), true, "%"
+          mon.gpuVramCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::GpuVram), true, "%"
       );
       addThresholdPair(
           "ram_pct", "settings.schema.services.system-monitor.stats.ram-usage", mon.ramPctActivityThreshold,
-          mon.ramPctCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::RamPct), true, "%"
+          mon.ramPctCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::RamPct), true, "%"
       );
       addThresholdPair(
           "swap_pct", "settings.schema.services.system-monitor.stats.swap-usage", mon.swapPctActivityThreshold,
-          mon.swapPctCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::SwapPct), true, "%"
+          mon.swapPctCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::SwapPct), true, "%"
       );
       addThresholdPair(
           "disk_used_pct", "settings.schema.services.system-monitor.stats.disk-used-pct",
           mon.diskUsedPctActivityThreshold, mon.diskUsedPctCriticalThreshold,
-          noctalia::sysmon::thresholdProfile(Stat::DiskUsedPct), true, "%"
+          zynith::sysmon::thresholdProfile(Stat::DiskUsedPct), true, "%"
       );
       addThresholdPair(
           "disk_used", "settings.schema.services.system-monitor.stats.disk-used", mon.diskUsedActivityThreshold,
-          mon.diskUsedCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::DiskUsed), true, "%"
+          mon.diskUsedCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::DiskUsed), true, "%"
       );
       addThresholdPair(
           "disk_free_pct", "settings.schema.services.system-monitor.stats.disk-free-pct",
           mon.diskFreePctActivityThreshold, mon.diskFreePctCriticalThreshold,
-          noctalia::sysmon::thresholdProfile(Stat::DiskFreePct), true, "%"
+          zynith::sysmon::thresholdProfile(Stat::DiskFreePct), true, "%"
       );
       addThresholdPair(
           "disk_free", "settings.schema.services.system-monitor.stats.disk-free", mon.diskFreeActivityThreshold,
-          mon.diskFreeCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::DiskFree), true, "%"
+          mon.diskFreeCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::DiskFree), true, "%"
       );
       addThresholdPair(
           "net_rx", "settings.schema.services.system-monitor.stats.network-rx", mon.netRxActivityThreshold,
-          mon.netRxCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::NetRx), false, "MB/s"
+          mon.netRxCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::NetRx), false, "MB/s"
       );
       addThresholdPair(
           "net_tx", "settings.schema.services.system-monitor.stats.network-tx", mon.netTxActivityThreshold,
-          mon.netTxCriticalThreshold, noctalia::sysmon::thresholdProfile(Stat::NetTx), false, "MB/s"
+          mon.netTxCriticalThreshold, zynith::sysmon::thresholdProfile(Stat::NetTx), false, "MB/s"
       );
     }
 
@@ -2743,7 +2739,7 @@ namespace settings {
       auto e = makeEntry(
           SettingsSection::Location, "weather", tr("settings.schema.services.weather-refresh-interval.label"),
           tr("settings.schema.services.weather-refresh-interval.description"), {"weather", "refresh_minutes"},
-          sliderFor(cfg.weather.refreshMinutes, noctalia::config::schema::kRefreshMinutesRange, true), "forecast"
+          sliderFor(cfg.weather.refreshMinutes, zynith::config::schema::kRefreshMinutesRange, true), "forecast"
       );
       e.visibleWhen = weatherOn;
       entries.push_back(std::move(e));
@@ -2884,7 +2880,7 @@ namespace settings {
       auto e = makeEntry(
           SettingsSection::Services, "calendar", tr("settings.schema.services.calendar-refresh-interval.label"),
           tr("settings.schema.services.calendar-refresh-interval.description"), {"calendar", "refresh_minutes"},
-          sliderFor(cfg.calendar.refreshMinutes, noctalia::config::schema::kRefreshMinutesRange, true), "calendar sync"
+          sliderFor(cfg.calendar.refreshMinutes, zynith::config::schema::kRefreshMinutesRange, true), "calendar sync"
       );
       e.visibleWhen = calendarOn;
       entries.push_back(std::move(e));
@@ -2903,7 +2899,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "sounds", tr("settings.schema.services.sound-volume.label"),
         tr("settings.schema.services.sound-volume.description"), {"audio", "sound_volume"},
-        sliderFor(cfg.audio.soundVolume, noctalia::config::schema::kUnitRange, false), "sound"
+        sliderFor(cfg.audio.soundVolume, zynith::config::schema::kUnitRange, false), "sound"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "sounds", tr("settings.schema.services.volume-change-sound.label"),
@@ -2948,7 +2944,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Services, "brightness", tr("settings.schema.services.minimum-brightness.label"),
         tr("settings.schema.services.minimum-brightness.description"), {"brightness", "minimum_brightness"},
-        sliderFor(cfg.brightness.minimumBrightness, noctalia::config::schema::kUnitRange, false), "floor clamp"
+        sliderFor(cfg.brightness.minimumBrightness, zynith::config::schema::kUnitRange, false), "floor clamp"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Services, "brightness", tr("settings.schema.services.sync-monitor-brightness.label"),
@@ -2994,9 +2990,9 @@ namespace settings {
           tr("settings.schema.power.session-grid-columns.description"), {"shell", "session", "grid_columns"},
           StepperSetting{
               .value = static_cast<int>(cfg.shell.session.gridColumns),
-              .minValue = static_cast<int>(noctalia::config::schema::kSessionGridColumnsRange.min.value()),
-              .maxValue = static_cast<int>(noctalia::config::schema::kSessionGridColumnsRange.max.value()),
-              .step = static_cast<int>(noctalia::config::schema::kSessionGridColumnsRange.step.value()),
+              .minValue = static_cast<int>(zynith::config::schema::kSessionGridColumnsRange.min.value()),
+              .maxValue = static_cast<int>(zynith::config::schema::kSessionGridColumnsRange.max.value()),
+              .step = static_cast<int>(zynith::config::schema::kSessionGridColumnsRange.step.value()),
           },
           "session panel grid columns per row"
       );
@@ -3162,7 +3158,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.scale.label"),
         tr("settings.schema.notifications.scale.description"), {"notification", "scale"},
-        sliderFor(cfg.notification.scale, noctalia::config::schema::kScaleRange, false), "toast size scale"
+        sliderFor(cfg.notification.scale, zynith::config::schema::kScaleRange, false), "toast size scale"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Notifications, "toasts", tr("settings.schema.notifications.offset-x.label"),
@@ -3191,7 +3187,7 @@ namespace settings {
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.toast-opacity.label"),
         tr("settings.schema.notifications.toast-opacity.description"), {"notification", "background_opacity"},
-        sliderFor(cfg.notification.backgroundOpacity, noctalia::config::schema::kUnitRange, false), "popup"
+        sliderFor(cfg.notification.backgroundOpacity, zynith::config::schema::kUnitRange, false), "popup"
     ));
     entries.push_back(makeEntry(
         SettingsSection::Personalization, "notifications", tr("settings.schema.notifications.border.label"),
@@ -3310,7 +3306,7 @@ namespace settings {
       entries.push_back(makeEntry(
           section, "layout", tr("settings.schema.bar.font-scale.label"),
           tr("settings.schema.bar.font-scale.description"), path("font_scale"),
-          sliderFor(bar.fontScale, noctalia::config::schema::kBarFontScaleRange, false), "text zoom size"
+          sliderFor(bar.fontScale, zynith::config::schema::kBarFontScaleRange, false), "text zoom size"
       ));
       entries.push_back(makeEntry(
           section, "layout", tr("settings.schema.shared.ends-margin.label"),
@@ -3543,11 +3539,11 @@ namespace settings {
       ));
       // One row per gesture, from the same closed set widget actions use. An unset row shows the
       // built-in default as its placeholder, so "empty" never reads as "does nothing".
-      for (const auto gesture : noctalia::bar::allGestures()) {
-        const std::string key(noctalia::bar::gestureConfigKey(gesture));
+      for (const auto gesture : zynith::bar::allGestures()) {
+        const std::string key(zynith::bar::gestureConfigKey(gesture));
         const auto configured = bar.deadZone.actions.find(key);
         entries.push_back(makeEntry(
-            section, "dead-zone", tr(std::string(noctalia::bar::gestureLabelKey(gesture))),
+            section, "dead-zone", tr(std::string(zynith::bar::gestureLabelKey(gesture))),
             tr("settings.schema.bar.dead-zone-action.description"),
             std::vector<std::string>{"bar", bar.name, "dead_zone", "actions", key},
             GestureActionSetting{
@@ -3635,7 +3631,7 @@ namespace settings {
         entries.push_back(makeEntry(
             section, "layout", tr("settings.schema.bar.font-scale.label"),
             tr("settings.schema.bar.font-scale.description"), monitorPath("font_scale"),
-            sliderFor(ovr.fontScale.value_or(bar.fontScale), noctalia::config::schema::kBarFontScaleRange, false),
+            sliderFor(ovr.fontScale.value_or(bar.fontScale), zynith::config::schema::kBarFontScaleRange, false),
             "text zoom size"
         ));
         entries.push_back(makeEntry(
@@ -3863,8 +3859,8 @@ namespace settings {
             tr("settings.schema.bar.end-widgets.description"), monitorPath("end"),
             ListSetting{.items = ovr.endWidgets.value_or(bar.endWidgets)}, "right"
         ));
-        for (const auto gesture : noctalia::bar::allGestures()) {
-          const std::string key(noctalia::bar::gestureConfigKey(gesture));
+        for (const auto gesture : zynith::bar::allGestures()) {
+          const std::string key(zynith::bar::gestureConfigKey(gesture));
           std::vector<std::string> gesturePath = root;
           gesturePath.emplace_back("dead_zone");
           gesturePath.emplace_back("actions");
@@ -3880,7 +3876,7 @@ namespace settings {
           }
           const auto inherited = bar.deadZone.actions.find(key);
           entries.push_back(makeEntry(
-              section, "dead-zone", tr(std::string(noctalia::bar::gestureLabelKey(gesture))),
+              section, "dead-zone", tr(std::string(zynith::bar::gestureLabelKey(gesture))),
               tr("settings.schema.bar.dead-zone-action.description"), std::move(gesturePath),
               GestureActionSetting{
                   .gestureKey = key,
@@ -3903,7 +3899,7 @@ namespace settings {
         verified = true;
         const Logger log("settings");
         const auto verify = [&](const std::vector<std::string>& path, std::string_view what) {
-          if (!path.empty() && !noctalia::config::schema::isKnownConfigPath(path)) {
+          if (!path.empty() && !zynith::config::schema::isKnownConfigPath(path)) {
             std::string dotted;
             for (const auto& seg : path) {
               dotted += (dotted.empty() ? "" : ".") + seg;

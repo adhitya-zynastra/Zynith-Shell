@@ -9,7 +9,7 @@
 #include <array>
 #include <utility>
 
-namespace noctalia::bar {
+namespace zynith::bar {
 
   namespace {
 
@@ -82,4 +82,4 @@ namespace noctalia::bar {
     return false;
   }
 
-} // namespace noctalia::bar
+} // namespace zynith::bar

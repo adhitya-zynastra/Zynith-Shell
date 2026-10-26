@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace noctalia::config::schema {
+namespace zynith::config::schema {
 
   // Optional numeric constraint carried by a Field. Single source for parse-time
   // clamping, GUI slider bounds, and range validation. Either bound may be
@@ -416,4 +416,4 @@ namespace noctalia::config::schema {
     };
   }
 
-} // namespace noctalia::config::schema
+} // namespace zynith::config::schema

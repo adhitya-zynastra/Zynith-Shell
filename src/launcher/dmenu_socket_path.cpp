@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-namespace noctalia::launcher {
+namespace zynith::launcher {
 
   DmenuSocketPathResult resolveDmenuSocketPath() {
     const char* runtime = std::getenv("XDG_RUNTIME_DIR");
@@ -15,7 +15,7 @@ namespace noctalia::launcher {
       return {.path = {}, .error = "WAYLAND_DISPLAY is not set"};
     }
 
-    return {.path = std::string(runtime) + "/noctalia-dmenu-" + display + ".sock", .error = {}};
+    return {.path = std::string(runtime) + "/zynith-shell-dmenu-" + display + ".sock", .error = {}};
   }
 
-} // namespace noctalia::launcher
+} // namespace zynith::launcher

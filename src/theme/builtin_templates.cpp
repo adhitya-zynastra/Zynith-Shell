@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <filesystem>
 
-namespace noctalia::theme {
+namespace zynith::theme {
 
   std::vector<BuiltinTemplateInfo> loadBuiltinTemplateInfo(std::string* err) {
     const std::filesystem::path configPath = paths::assetPath("templates/builtin.toml");
@@ -111,4 +111,4 @@ namespace noctalia::theme {
     return out;
   }
 
-} // namespace noctalia::theme
+} // namespace zynith::theme
