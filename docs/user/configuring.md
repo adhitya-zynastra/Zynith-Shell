@@ -18,7 +18,7 @@ read is reported and left as it is. Nothing is replaced behind your back.
 | `zynith.toml` | which surfaces the Zynith UI draws, and your profile |
 
 The compositor's own settings (outputs, input, key bindings) are in `~/.config/niri/`. The native shell keeps its
-configuration in `~/.config/noctalia/`; that directory name is a compatibility name kept from the shell's origin.
+configuration in `~/.config/zynith-shell/`.
 
 ## Official configurations
 

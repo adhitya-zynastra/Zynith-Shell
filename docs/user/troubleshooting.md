@@ -13,7 +13,7 @@ zynith-ui log               # the UI's log
 |---|---|
 | No bars, panels or notifications | `zynith-ui restart` |
 | No lock screen, wallpaper or volume and brightness controls | `zynith-ui native restart` |
-| The native shell keeps crashing | after five quick failures its supervisor stops and shows a notification; read `$XDG_RUNTIME_DIR/zynith/native.log` and `coredumpctl info noctalia`, then `zynith-ui native start` |
+| The native shell keeps crashing | after five quick failures its supervisor stops and shows a notification; read `$XDG_RUNTIME_DIR/zynith/native.log` and `coredumpctl info zynith-shell`, then `zynith-ui native start` |
 | The desktop does not appear after logging in | press `Ctrl+Alt+F3`, log in on the text console, and read `journalctl --user -b`; `niri validate` checks the compositor's configuration. The **niri** session in the login screen starts niri with the same configuration. |
 | A setting has no effect | the file may not parse: Settings says so, and `zynith-ui log` names the file and line |
 | Everything looks wrong after editing files by hand | move `~/.config/zynith` aside and log in again; new accounts' defaults are copied back on login |

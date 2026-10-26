@@ -12,7 +12,7 @@ from gi.repository import Gtk
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Richer GTK/AppIndicator tray compatibility harness for Noctalia submenu testing."
+        description="Richer GTK/AppIndicator tray compatibility harness for Zynith submenu testing."
     )
     parser.add_argument(
         "--force-appindicator",
@@ -282,7 +282,7 @@ class CompatTrayHarness:
     def setup(self) -> None:
         if self.backend_module is None:
             self.status_icon = Gtk.StatusIcon()
-            self.status_icon.set_name("noctalia-tray-appindicator-compat-test")
+            self.status_icon.set_name("zynith-shell-tray-appindicator-compat-test")
             self.status_icon.set_from_icon_name("applications-system")
             self.status_icon.set_visible(True)
             self.status_icon.connect("popup-menu", self.on_popup_menu)
@@ -290,7 +290,7 @@ class CompatTrayHarness:
             return
 
         self.indicator = self.backend_module.Indicator.new(
-            "noctalia-tray-appindicator-compat-test",
+            "zynith-shell-tray-appindicator-compat-test",
             "applications-system",
             self.backend_module.IndicatorCategory.APPLICATION_STATUS,
         )

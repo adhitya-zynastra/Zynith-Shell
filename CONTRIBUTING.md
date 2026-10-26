@@ -82,10 +82,9 @@ D-Bus wire names stay as the protocol defines them.
 **QML** follows the existing files: one owner per piece of state (a `Services/` singleton), pure logic in tested
 `Common/*.js` modules, and no polling — work is driven by events and stops when nothing is on screen.
 
-**Names.** The product is Zynith. Several of the native shell's identifiers keep their historical name for
-compatibility — the `noctalia` command, `~/.config/noctalia/` and `~/.local/state/noctalia/`, the C++ namespace and
-D-Bus names such as `dev.noctalia.Debug`. Do not rename them in passing; a rename needs a migration and is its own
-change.
+**Names.** The product is Zynith. The native shell's command is `zynith-shell`; its files are in
+`~/.config/zynith-shell/`, `~/.local/state/zynith-shell/` and `~/.cache/zynith-shell/`; its C++ namespace is `zynith`
+and its D-Bus names are `dev.zynith.*`. The UI's files are in `~/.config/zynith/` and `~/.local/state/zynith/`.
 
 **Strings.** New user-facing strings of the native shell go in `assets/translations/en.json` only; run
 `python3 tools/i18n-check.py` after adding or renaming keys.
@@ -105,8 +104,8 @@ frame-time cost to an animation, should say what it costs and how that was measu
 The native shell exposes a debug D-Bus service at runtime:
 
 ```sh
-gdbus call --session --dest dev.noctalia.Debug --object-path /dev/noctalia/Debug \
-  --method dev.noctalia.Debug.SetVerboseLogs true
+gdbus call --session --dest dev.zynith.Debug --object-path /dev/zynith/Debug \
+  --method dev.zynith.Debug.SetVerboseLogs true
 ```
 
 `zynith-ui log` prints the UI's log; `zynith-ui native status` and `zynith-ui status` show what is running. When

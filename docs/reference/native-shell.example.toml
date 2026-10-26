@@ -1,5 +1,5 @@
 # The Zynith native shell's configuration: all settings at their defaults.
-# Copy to ~/.config/noctalia/config.toml and edit what you need.
+# Copy to ~/.config/zynith-shell/config.toml and edit what you need.
 # Most changes are hot-reloaded via inotify; startup-only settings are noted inline.
 
 # ── Shell ─────────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ clipboard_keep_from_closed_apps = true # keep the last copied item pasteable aft
 clipboard_auto_paste  = "auto"       # off | auto | ctrl_v | ctrl_shift_v | shift_insert
 clipboard_image_action_command = ""  # image preview action: gimp {path}, or satty -f - via stdin
 # IPC example:
-# noctalia msg clipboard-clear
+# zynith-shell msg clipboard-clear
 shared_gl_context     = true         # startup-only; false isolates GPU contexts for broken drivers
 # lang                = "en"
 # avatar_path         = "~/Pictures/avatar.png"
@@ -138,9 +138,9 @@ recursive                  = true    # include subdirectories when picking rando
 [theme]
 mode   = "dark"                     # dark | light | auto
 source = "builtin"                  # builtin | wallpaper | community
-builtin = "Noctalia"                # Ayu | Catppuccin | Dracula | Eldritch | Gruvbox |
-                                    # Kanagawa | Noctalia | Nord | Rosé Pine | Tokyo-Night
-# community_palette = "Noctalia"    # fetched from api.noctalia.dev, cached locally
+builtin = "Zynith"                # Ayu | Catppuccin | Dracula | Eldritch | Gruvbox |
+                                    # Kanagawa | Zynith | Nord | Rosé Pine | Tokyo-Night
+# community_palette = ""          # a palette already in the community palette cache (there is no catalogue)
 # wallpaper_scheme  = "m3-content"  # m3-tonal-spot | m3-content | m3-fruit-salad |
                                     # m3-rainbow | m3-monochrome | vibrant | faithful |
                                     # dysfunctional | muted
@@ -149,9 +149,9 @@ pure_black_dark = false             # anchor dark surfaces to true black (OLED);
 
 [theme.templates]
 enable_builtin_templates            = true
-builtin_ids                = []     # opt-in; list ids with: noctalia theme --list-templates
+builtin_ids                = []     # opt-in; list ids with: zynith-shell theme --list-templates
 enable_community_templates = true
-community_ids              = []     # fetched from api.noctalia.dev/templates, cached locally
+community_ids              = []     # templates already in the community template cache (there is no catalogue)
 
 # User-defined templates are declared directly in config.
 # [theme.templates.user.my_app]
@@ -187,9 +187,9 @@ offset_y           = 8              # absolute vertical margin from the screen e
 # bypass_dnd      = false            # bypass DND for matching notifications; play_sound still controls sound
 # allowed_urgencies = ["normal", "critical"]  # omit or list all three to allow every level
 # IPC examples:
-# noctalia msg notification-invoke-latest
-# noctalia msg notification-clear-active
-# noctalia msg notification-clear-history
+# zynith-shell msg notification-invoke-latest
+# zynith-shell msg notification-clear-active
+# zynith-shell msg notification-clear-history
 
 # ── OSD ───────────────────────────────────────────────────────────────────────
 
@@ -282,7 +282,7 @@ enable_ddcutil = false
 # Per-monitor backend override:
 # [brightness.monitor.eDP-1]
 # backend = "backlight"             # auto | none | backlight | ddcutil
-# backlight_device = "intel_backlight"  # explicit sysfs device name or path; run: noctalia msg brightness-list-backlight-devices
+# backlight_device = "intel_backlight"  # explicit sysfs device name or path; run: zynith-shell msg brightness-list-backlight-devices
 # [brightness.monitor.DP-1]
 # backend = "ddcutil"
 # [brightness.monitor.DP-2]
@@ -485,7 +485,7 @@ enabled = false
 # started           = "notify-send 'Zynith' 'Shell started'"
 # wallpaper_changed = []
 # colors_changed    = []
-# theme_mode_changed = "notify-send 'Zynith' \"Theme mode: $NOCTALIA_THEME_MODE\""
+# theme_mode_changed = "notify-send 'Zynith' \"Theme mode: $ZYNITH_THEME_MODE\""
 # session_locked    = []
 # session_unlocked  = []
 # logging_out       = []
@@ -495,9 +495,9 @@ enabled = false
 # wifi_disabled     = []
 # bluetooth_enabled  = []
 # bluetooth_disabled = []
-# battery_state_changed   = "notify-send 'Power' \"Battery: $NOCTALIA_BATTERY_STATE\""
-# battery_under_threshold = "notify-send 'Power' \"Battery at ${NOCTALIA_BATTERY_PERCENT}%\""
-# power_profile_changed   = "notify-send 'Power' \"Profile: $NOCTALIA_POWER_PROFILE\""
+# battery_state_changed   = "notify-send 'Power' \"Battery: $ZYNITH_BATTERY_STATE\""
+# battery_under_threshold = "notify-send 'Power' \"Battery at ${ZYNITH_BATTERY_PERCENT}%\""
+# power_profile_changed   = "notify-send 'Power' \"Profile: $ZYNITH_POWER_PROFILE\""
 # [widget.launcher]
 # custom_image = "/path/to/image.png"
 # custom_image_colorize = false
@@ -539,7 +539,7 @@ enabled = false
 # type                = "custom_button"
 # glyph               = "lock"
 # tooltip             = "Lock screen"
-# command             = "noctalia msg session lock"
+# command             = "zynith-shell msg session lock"
 # right_command       = ""
 # middle_command      = ""
 # scroll_up_command   = ""

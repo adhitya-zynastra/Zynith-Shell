@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Static i18n checks for noctalia.
+Static i18n checks for zynith-shell.
 
   1) Missing keys (always on): every i18n::tr / i18n::trp string literal key must exist
      in assets/translations/en.json. Exit 1 when any are missing.
@@ -79,7 +79,7 @@ RAW_UI_LITERAL_RE = re.compile(
 HAS_I18N = re.compile(r"i18n::tr(?:p)?\s*\(")
 IGNORE_LINE_MARK = re.compile(r"//\s*check-i18n:ignore-line\b|//\s*i18n:ignore-line\b")
 SKIP_LINE_HINT = re.compile(
-    r"(assert\s*\(|static_assert\s*\(|\bkLog\w*\.|\buiAssert|\bLogger\b|\bstd::cerr\b|\bspdlog::|\bNOCTALIA_DEBUG\b|\bthrow\b)",
+    r"(assert\s*\(|static_assert\s*\(|\bkLog\w*\.|\buiAssert|\bLogger\b|\bstd::cerr\b|\bspdlog::|\bZYNITH_DEBUG\b|\bthrow\b)",
 )
 
 # Any "..." literal on a code line (after stripping // comments); used for wide scan
@@ -155,14 +155,14 @@ def _ascii_letter_count(s: str) -> int:
 
 
 def is_placeholder_or_internal_literal(s: str) -> bool:
-    """Non–user-copy literals (empty, gauges, paths, noctalia: commands, etc.)."""
+    """Non–user-copy literals (empty, gauges, paths, zynith-shell: commands, etc.)."""
     t = s.strip()
     if not t:
         return True
     low = t.lower()
     if low in _IGNORE_LITERAL_LOWER:
         return True
-    if low.startswith("noctalia:"):
+    if low.startswith("zynith-shell:"):
         return True
     # digits / percent / separators only (e.g. "660", "0%", "100%")
     if re.fullmatch(r"[\d.\s%+-]+", t):

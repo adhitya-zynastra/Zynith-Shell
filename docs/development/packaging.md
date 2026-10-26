@@ -4,7 +4,7 @@ Zynith is packaged as RPMs for Fedora 44 from one spec, [`packaging/rpm/zynith.s
 
 | Package | Contains | Notes |
 |---|---|---|
-| `zynith-shell` | the native shell (`/usr/bin/noctalia`), its assets and translations, the UI sounds | conflicts with Fedora's `noctalia`, which installs the same command |
+| `zynith-shell` | the native shell (`/usr/bin/zynith-shell`), its assets and translations, the UI sounds | conflicts with Fedora's `zynith-shell`, which installs the same command |
 | `zynith-ui` | the UI (`/usr/share/zynith/ui`), `/usr/bin/zynith-ui`, the `Zynith.Native` plugin, the Settings desktop entry, the icon | requires Quickshell ≥ 0.3.1 |
 | `zynith-desktop` | the session (`zynith.desktop`, `zynith-session`, `zynith-firstrun`) and the defaults new accounts get | pulls in niri, portals, PipeWire, NetworkManager, Bluetooth, power profiles, a terminal (kitty) and a file manager (Thunar) |
 | `zynith-live` | the live-image session setup (`livesys-zynith`) | only for the ISO |

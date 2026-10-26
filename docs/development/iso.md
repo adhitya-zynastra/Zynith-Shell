@@ -208,5 +208,3 @@ kickstart erases the VM's own blank virtual disk, and it is not part of the imag
   installation.
 - Live wallpapers (animated) need a renderer that is not packaged.
 - The native shell's plugins come from upstream catalogues and have not been curated for Zynith.
-- Some optional features of the native shell use services run by the Noctalia project. See
-  [SECURITY](../../SECURITY.md#network-services).

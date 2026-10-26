@@ -155,7 +155,7 @@ Security problems: [SECURITY](SECURITY.md), never a public issue. Everyone takin
 
 Zynith is free software under the **GNU General Public License v3.0 only** ([`LICENSE`](LICENSE)).
 
-The native shell began as a fork of [Noctalia](https://github.com/noctalia-dev/noctalia) 5.1.0 (MIT; its notice is
-kept in [`LICENSES/`](LICENSES/)), and is developed as part of Zynith. Vendored code in [`third_party/`](third_party/)
-keeps its own licences. The UI's fonts (Inter, Space Grotesk, Sora) are under the SIL Open Font License; icons are
-Tabler Icons (MIT). See [CREDITS](CREDITS.md).
+The native shell includes MIT-licensed code from the shell it was first built from; that notice is kept in
+[`LICENSES/`](LICENSES/), and its authors are credited in [CREDITS](CREDITS.md). Vendored code in
+[`third_party/`](third_party/) keeps its own licences. The UI's fonts (Inter, Space Grotesk, Sora) are under the SIL
+Open Font License; icons are Tabler Icons (MIT).

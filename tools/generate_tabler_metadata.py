@@ -13,7 +13,7 @@ UNCATEGORIZED = "Uncategorized"
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Generate Noctalia Tabler glyph metadata.")
+    parser = argparse.ArgumentParser(description="Generate Zynith Tabler glyph metadata.")
     parser.add_argument("--tabler-root", required=True, help="Path to the local tabler-icons checkout")
     parser.add_argument("--output", required=True, help="Path to write tabler.json")
     return parser.parse_args()

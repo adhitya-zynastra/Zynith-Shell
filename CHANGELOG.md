@@ -5,8 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/) once releases beg
 
 ## [Unreleased] — 0.1.0
 
-No version has been released yet. This is everything since development began on 2026-09-19 from Noctalia 5.1.0
-(Fedora's `noctalia-5.1.0-1.fc44` source package; it is the repository's first commit).
+No version has been released yet. This is everything since development began on 2026-09-19 from an MIT-licensed
+shell (see [CREDITS](CREDITS.md)); its source is the repository's first commit.
 
 ### Added
 

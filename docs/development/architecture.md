@@ -5,7 +5,7 @@ session.
 
 ```
  niri (compositor, window manager)
-  ├─ spawn-at-startup: zynith-ui native supervise ──► noctalia  (the native shell: services, lock, wallpaper)
+  ├─ spawn-at-startup: zynith-ui native supervise ──► zynith-shell  (the native shell: services, lock, wallpaper)
   └─ spawn-at-startup: zynith-ui start ─────────────► quickshell -p ui/shell.qml  (the Zynith UI)
                                                          └─ Zynith.Native (C++ QML plugin)
 ```
@@ -13,14 +13,12 @@ session.
 | Part | Source | Runs as | Responsibility |
 |---|---|---|---|
 | **niri** | Fedora's `niri` package, unmodified | the compositor | windows, workspaces, outputs, input, blur, animations |
-| **native shell** | `src/` (C++23, meson) | `noctalia` | long-running services (PipeWire audio, NetworkManager, UPower, Bluetooth, brightness, idle), the notification bus hand-over, the lock screen (PAM), the wallpaper renderer, the theme engine that derives a palette from the wallpaper, IPC (`noctalia msg …`) |
+| **native shell** | `src/` (C++23, meson) | `zynith-shell` | long-running services (PipeWire audio, NetworkManager, UPower, Bluetooth, brightness, idle), the notification bus hand-over, the lock screen (PAM), the wallpaper renderer, the theme engine that derives a palette from the wallpaper, IPC (`zynith-shell msg …`) |
 | **Zynith UI** | `ui/` (QML) | `quickshell -p …/shell.qml` | everything drawn on screen: bars, Zynith Island, Control Panel, launcher, notifications, OSD, desktop widgets; and the Settings app (`settings.qml`) |
 | **Zynith.Native** | `ui/native/` (C++, cmake) | a QML plugin loaded by the UI | what QML cannot do cheaply or safely: niri state and config writes, display configuration, audio spectrum, network details, backlight, the config file store, thumbnails |
 | **zynith-ui** | `ui/zynith-ui` (bash) | from niri and key bindings | starts and supervises both processes, restarts the native shell if it dies, routes commands to the UI (`zynith-ui ipc …`) |
 
-The native shell began as a fork of Noctalia 5.1.0. Its command, configuration directory, C++ namespace and D-Bus
-names keep that historical name (`noctalia`, `~/.config/noctalia/`, `dev.noctalia.*`) so that configuration and
-scripts keep working; see [Names](#names).
+The native shell includes MIT-licensed code from the shell it was first built from (see [CREDITS](../../CREDITS.md)).
 
 ## Source tree
 
@@ -62,9 +60,9 @@ On a source install (`deploy/install.sh`) the session is the user's own niri con
 | `~/.config/zynith/*.toml` | the user, through Settings (`Services/Config`) | the UI's configuration; an invalid file is reported, never replaced |
 | `~/.config/niri/config.kdl`, `rice/binds.kdl`, `rice/rules.kdl` | the user | Zynith edits `config.kdl` only to change an output's orientation from Settings → Displays, after a backup and `niri validate` |
 | `~/.config/niri/rice/{animations,glass,layout,materials,wallpaper}.kdl` | generated | written by the native shell or the UI from the user's settings |
-| `~/.config/niri/noctalia.kdl` | generated | palette colours for niri; the last include |
-| `~/.config/noctalia/*.toml` | the user | the native shell's configuration |
-| `~/.local/state/noctalia/settings.toml` | the native shell's own settings window | |
+| `~/.config/niri/zynith-shell.kdl` | generated | palette colours for niri; the last include |
+| `~/.config/zynith-shell/*.toml` | the user | the native shell's configuration |
+| `~/.local/state/zynith-shell/settings.toml` | the native shell's own settings window | |
 | `~/.local/state/zynith/` | generated | palette, launcher usage counts, notification history (mode 0600), first-run marker |
 | `$XDG_RUNTIME_DIR/zynith/` | runtime | pids, logs, the UI's command socket |
 
@@ -73,23 +71,16 @@ overwrite.
 
 ## Names
 
-The product is **Zynith**. These names are kept from the native shell's origin because changing them would break
-configuration, scripts or other programs, and are not branding:
-
-| Name | Where | Why it stays |
-|---|---|---|
-| `noctalia` | the native shell's command (`noctalia msg …`, `noctalia config validate`) | key bindings and scripts call it |
-| `~/.config/noctalia/`, `~/.local/state/noctalia/` | configuration and state | existing configuration |
-| `noctalia::` | C++ namespace | internal |
-| `dev.noctalia.*` | D-Bus names, the desktop file id `dev.noctalia.Noctalia.desktop` | bus clients and notification matching |
-| `noctalia-wallpaper`, `noctalia-backdrop` | Wayland layer namespaces | niri window rules match them |
-| `noctalia.kdl` | the generated niri include | user configurations include it |
-| "Noctalia" palette | a built-in colour palette | a palette name stored in configurations |
-| "Noctalia" in theme templates | the colour scheme name and include markers the theme templates write into other programs' configuration (WezTerm, Hyprland …) | the templates' undo scripts find and remove what they wrote by these names |
-| `NOCTALIA_*` | environment variables passed to hooks | user hook scripts read them |
-| "Noctalia Greeter" | an external login greeter the native shell can configure | another project's name |
-
-The package `zynith-shell` conflicts with Fedora's `noctalia` package, which installs the same command.
+| Name | What |
+|---|---|
+| `zynith-shell` | the native shell's command (`zynith-shell msg …`, `zynith-shell config validate`) and package |
+| `~/.config/zynith-shell/`, `~/.local/state/zynith-shell/`, `~/.cache/zynith-shell/` | the native shell's configuration, state and cache |
+| `~/.config/zynith/`, `~/.local/state/zynith/` | the UI's configuration and state |
+| `zynith::` | the native shell's C++ namespace |
+| `dev.zynith.*` | D-Bus names; the desktop file is `dev.zynith.Shell.desktop` |
+| `zynith-shell-*` | the native shell's Wayland layer namespaces (`zynith-shell-wallpaper`, `zynith-shell-backdrop` …); the UI's are `zynith-*` |
+| `zynith-shell.kdl` | the niri include the native shell generates |
+| `ZYNITH_*` | environment variables passed to hooks |
 
 ## Resource use
 

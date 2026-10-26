@@ -36,7 +36,7 @@ There are three ways to run Zynith. Each has its own section below.
 ```sh
 deploy/install.sh --check          # what is installed, from where, whether niri's configuration is valid
 deploy/install.sh                  # build the UI plugin (build/ui-native) and link ~/.local/bin/zynith-ui
-deploy/install.sh --shell          # also build the native shell (build/shell) and install it to ~/.local/opt/noctalia
+deploy/install.sh --shell          # also build the native shell (build/shell) and install it to ~/.local/opt/zynith-shell
 deploy/install.sh --shell --restart
 ```
 
@@ -44,8 +44,8 @@ What `deploy/install.sh` does and does not do:
 
 - It installs only into your home directory.
 - It refuses to run while the session is locked.
-- It never writes `~/.config/zynith`, `~/.config/niri` or `~/.local/state/noctalia`.
-- When it replaces the native shell's binary it keeps the previous one beside it, as `noctalia.pre-install-<date>`.
+- It never writes `~/.config/zynith`, `~/.config/niri` or `~/.local/state/zynith-shell`.
+- When it replaces the native shell's binary it keeps the previous one beside it, as `zynith-shell.pre-install-<date>`.
 - It builds at low priority on half the cores.
 
 The UI runs straight from `ui/` in this tree: `~/.local/bin/zynith-ui` is a link to `ui/zynith-ui`, which starts
@@ -70,7 +70,7 @@ zynith-ui start | stop | restart | status | log
 zynith-ui native start | stop | restart | status
 zynith-ui settings [page]          # the Settings app, e.g. zynith-ui settings displays
 zynith-ui ipc <method> [args]      # the UI's IPC
-noctalia msg status                # the native shell
+zynith-shell msg status                # the native shell
 ```
 
 After a large change, such as switching branches, restart the UI (`zynith-ui restart`) rather than relying on the
@@ -82,7 +82,7 @@ live reload.
 |---|---|
 | No bar, panels or notifications | `zynith-ui status`, then `zynith-ui log`; `zynith-ui restart` |
 | No lock screen, wallpaper or audio controls | `zynith-ui native status`; `zynith-ui native restart` |
-| The native shell keeps crashing | after five exits within seconds of starting, its supervisor stops and shows a notification; read `$XDG_RUNTIME_DIR/zynith/native.log` and `coredumpctl info noctalia`, then `zynith-ui native start` |
+| The native shell keeps crashing | after five exits within seconds of starting, its supervisor stops and shows a notification; read `$XDG_RUNTIME_DIR/zynith/native.log` and `coredumpctl info zynith-shell`, then `zynith-ui native start` |
 | The desktop does not come up at all | switch to a text console (Ctrl+Alt+F3), log in, and read `journalctl --user -b` and `$XDG_RUNTIME_DIR/zynith/*.log`; `niri validate` checks the compositor's configuration |
 | A configuration file is broken | Settings reports it and leaves the file as it is; fix it, or move it aside to start from the defaults |
 
