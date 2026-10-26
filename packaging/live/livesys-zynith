@@ -1,0 +1,31 @@
+#!/usr/bin/sh
+#
+# livesys-zynith: Zynith specific setup for livesys (the live image only; livesys does nothing on an installed system)
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Run by livesys-scripts at live boot when /etc/sysconfig/livesys says livesys_session="zynith". Modelled on
+# Fedora's livesys-sway.
+
+ZYNITH_SESSION_FILE="zynith.desktop"
+
+# log the live user straight into the Zynith session
+if [ -f /etc/sddm.conf ]; then
+    sed -i 's/^#User=.*/User=liveuser/' /etc/sddm.conf
+    sed -i "s/^#Session=.*/Session=${ZYNITH_SESSION_FILE}/" /etc/sddm.conf
+else
+    cat > /etc/sddm.conf << SDDM_EOF
+[Autologin]
+User=liveuser
+Session=${ZYNITH_SESSION_FILE}
+SDDM_EOF
+fi
+
+# the installer: in the app launcher (Mod+D, "Install to Hard Drive") — it is hidden by default
+mkdir -p /home/liveuser/.local/share/applications/
+cp /usr/share/applications/liveinst.desktop /home/liveuser/.local/share/applications/
+sed -i 's/NoDisplay=true/NoDisplay=false/' /home/liveuser/.local/share/applications/liveinst.desktop
+
+# and a word in every terminal
+echo "echo 'Zynith live session. To install, open the launcher (Super+D) and choose \"Install to Hard Drive\", or type: liveinst'" >> /home/liveuser/.bashrc
+
+chown --recursive liveuser:liveuser /home/liveuser/
