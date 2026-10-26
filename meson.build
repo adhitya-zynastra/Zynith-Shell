@@ -1,5 +1,5 @@
 project('zynith-shell', ['c', 'cpp'],
-  version: '5.1.0',
+  version: '0.1.0',
   default_options: [
     'cpp_std=c++23',
     'cpp_extensions=false',
