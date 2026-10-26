@@ -1,62 +1,41 @@
 name: CI
 
+# Every stage is tools/ci/check.sh, run in Fedora 44 (Zynith's platform). Run the same checks locally with
+# tools/ci/local.sh.
+
 on:
   push:
-    branches: [main, master]
+    branches: [master, "feature/**"]
   pull_request:
 
-# Cancel in-progress runs for the same branch/PR when new commits land.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  format:
-    name: clang-format
+  check:
+    name: ${{ matrix.stage }}
     runs-on: ubuntu-latest
     container:
-      image: archlinux:latest
+      image: registry.fedoraproject.org/fedora:44
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: [hygiene, format, packaging, native, ui]
     steps:
-      - name: Install tools
-        run: |
-          pacman -Syu --noconfirm --needed git clang
+      - name: Install git
+        run: dnf -y -q install git-core
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
-      - name: Check formatting
-        run: |
-          mapfile -d '' files < <(find src \( -name '*.cpp' -o -name '*.h' \) -print0)
-          clang-format --dry-run -Werror "${files[@]}"
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-  build:
-    name: Build (debug)
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    steps:
       - name: Install dependencies
-        run: |
-          pacman -Syu --noconfirm --needed \
-            base-devel git meson ninja pkgconf \
-            wayland wayland-protocols \
-            libglvnd freetype2 fontconfig noto-fonts \
-            cairo pango harfbuzz \
-            libxkbcommon glib2 \
-            libsecret libsodium \
-            sdbus-cpp libpipewire wireplumber polkit \
-            pam curl libwebp libjxl libsndfile librsvg \
-            libqalculate libxml2 \
-            md4c tomlplusplus libical \
-            nlohmann-json stb \
-            jemalloc just clang
+        run: tools/ci/check.sh deps ${{ matrix.stage }}
 
-      - uses: actions/checkout@v6
-
-      - name: Build
-        run: just build
-
-      - name: Test
-        run: just test debug --print-errorlogs
-
-      - name: Lint
-        run: just lint
+      - name: Check
+        run: tools/ci/check.sh ${{ matrix.stage }}
