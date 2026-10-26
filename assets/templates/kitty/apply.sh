@@ -3,8 +3,8 @@ set -euo pipefail
 
 kitty_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/kitty"
 config_file="$kitty_config_dir/kitty.conf"
-theme_file="$kitty_config_dir/themes/noctalia.conf"
-include_line='include themes/noctalia.conf'
+theme_file="$kitty_config_dir/themes/zynith-shell.conf"
+include_line='include themes/zynith-shell.conf'
 
 mkdir -p "$kitty_config_dir"
 touch "$config_file"

@@ -3,13 +3,13 @@ set -euo pipefail
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/labwc"
 config_file="$config_dir/rc.xml"
-theme_file="$config_dir/noctalia.conf"
-openbox_theme="${XDG_DATA_HOME:-$HOME/.local/share}/themes/noctalia/openbox-3/themerc"
+theme_file="$config_dir/zynith-shell.conf"
+openbox_theme="${XDG_DATA_HOME:-$HOME/.local/share}/themes/zynith-shell/openbox-3/themerc"
 
 if [ -f "$config_file" ]; then
     tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
     trap 'rm -f "$tmp_file"' EXIT
-    awk '!/<name>[[:space:]]*noctalia[[:space:]]*<\/name>/' "$config_file" >"$tmp_file"
+    awk '!/<name>[[:space:]]*zynith-shell[[:space:]]*<\/name>/' "$config_file" >"$tmp_file"
     if ! cmp -s "$config_file" "$tmp_file"; then
         cat "$tmp_file" >"$config_file"
     fi

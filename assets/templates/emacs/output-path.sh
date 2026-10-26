@@ -5,7 +5,7 @@ set -euo pipefail
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
 for root in "${config_dir}/doom" "${config_dir}/emacs" "${HOME}/.emacs.d"; do
   if [[ -d "$root" ]]; then
-    printf '%s/themes/noctalia-theme.el\n' "$root"
+    printf '%s/themes/zynith-shell-theme.el\n' "$root"
     exit 0
   fi
 done

@@ -16,15 +16,15 @@ write_if_changed() {
     rm -f "$tmp"
 }
 
-if grep -qE '^color_theme\s*=\s*"noctalia"' "$config_file"; then
+if grep -qE '^color_theme\s*=\s*"zynith-shell"' "$config_file"; then
     :
 elif grep -qE '^color_theme\s*=' "$config_file"; then
     tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
-    sed -E 's/^color_theme\s*=.*/color_theme = "noctalia"/' "$config_file" >"$tmp_file"
+    sed -E 's/^color_theme\s*=.*/color_theme = "zynith-shell"/' "$config_file" >"$tmp_file"
     write_if_changed "$config_file" "$tmp_file"
 else
     [ -s "$config_file" ] && [ -n "$(tail -c1 "$config_file")" ] && echo >>"$config_file"
-    echo 'color_theme = "noctalia"' >>"$config_file"
+    echo 'color_theme = "zynith-shell"' >>"$config_file"
 fi
 
 if pgrep -x btop >/dev/null; then

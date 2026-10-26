@@ -90,21 +90,21 @@ category = "terminal"
 [templates.alacritty]
 requires_command = "alacritty"
 input_path = "./alacritty/alacritty.toml"
-output_path = "$XDG_CONFIG_HOME/alacritty/themes/noctalia.toml"
+output_path = "$XDG_CONFIG_HOME/alacritty/themes/zynith-shell.toml"
 post_hook = "bash '{{ config_dir }}/alacritty/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/alacritty/undo.sh'"
 
 [templates.btop]
 requires_command = "btop"
 input_path = "./btop/btop.theme"
-output_path = "$XDG_CONFIG_HOME/btop/themes/noctalia.theme"
+output_path = "$XDG_CONFIG_HOME/btop/themes/zynith-shell.theme"
 post_hook = "bash '{{ config_dir }}/btop/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/btop/undo.sh'"
 
 [templates.cava]
 requires_command = "cava"
 input_path = "./cava/cava.ini"
-output_path = "$XDG_CONFIG_HOME/cava/themes/noctalia"
+output_path = "$XDG_CONFIG_HOME/cava/themes/zynith-shell"
 post_hook = "bash '{{ config_dir }}/cava/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/cava/undo.sh'"
 
@@ -118,20 +118,20 @@ undo_hook = "bash '{{ config_dir }}/emacs/undo.sh'"
 [templates.foot]
 requires_command = "foot"
 input_path = "./foot/foot"
-output_path = "$XDG_CONFIG_HOME/foot/themes/noctalia"
+output_path = "$XDG_CONFIG_HOME/foot/themes/zynith-shell"
 post_hook = "bash '{{ config_dir }}/foot/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/foot/undo.sh'"
 
 [templates.ghostty]
 requires_command = "ghostty"
 input_path = "./ghostty/ghostty"
-output_path = "$XDG_CONFIG_HOME/ghostty/themes/noctalia"
+output_path = "$XDG_CONFIG_HOME/ghostty/themes/zynith-shell"
 post_hook = "bash '{{ config_dir }}/ghostty/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/ghostty/undo.sh'"
 
 [templates.gtk3]
 input_path = "./gtk/gtk3.css"
-output_path = "$XDG_CONFIG_HOME/gtk-3.0/noctalia.css"
+output_path = "$XDG_CONFIG_HOME/gtk-3.0/zynith-shell.css"
 # gtk3 and gtk4 drive the same apply.sh, which rewrites both gtk.css files: keep the two
 # invocations from overlapping.
 post_hook = "bash '{{ config_dir }}/gtk/apply.sh' {{ mode }}"
@@ -140,7 +140,7 @@ undo_hook = "bash '{{ config_dir }}/gtk/undo-gtk3.sh'"
 
 [templates.gtk4]
 input_path = "./gtk/gtk4.css"
-output_path = "$XDG_CONFIG_HOME/gtk-4.0/noctalia.css"
+output_path = "$XDG_CONFIG_HOME/gtk-4.0/zynith-shell.css"
 post_hook = "bash '{{ config_dir }}/gtk/apply.sh' {{ mode }}"
 hook_async = false
 undo_hook = "bash '{{ config_dir }}/gtk/undo-gtk4.sh'"
@@ -148,26 +148,26 @@ undo_hook = "bash '{{ config_dir }}/gtk/undo-gtk4.sh'"
 [templates.helix]
 requires_command = ["hx", "helix"]
 input_path = "./helix/helix.toml"
-output_path = "$XDG_CONFIG_HOME/helix/themes/noctalia.toml"
+output_path = "$XDG_CONFIG_HOME/helix/themes/zynith-shell.toml"
 undo_hook = "bash '{{ config_dir }}/helix/undo.sh'"
 
 [templates.kcolorscheme]
 input_path = "./kde/kcolorscheme.colors"
-output_path = "$XDG_DATA_HOME/color-schemes/noctalia.colors"
+output_path = "$XDG_DATA_HOME/color-schemes/zynith.colors"
 post_action = "kde-color-scheme"
 undo_hook = "bash '{{ config_dir }}/kde/undo.sh'"
 
 [templates.kitty]
 requires_command = "kitty"
 input_path = "./kitty/kitty.conf"
-output_path = "$XDG_CONFIG_HOME/kitty/themes/noctalia.conf"
+output_path = "$XDG_CONFIG_HOME/kitty/themes/zynith-shell.conf"
 post_hook = "bash '{{ config_dir }}/kitty/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/kitty/undo.sh'"
 
 [templates.labwc]
 requires_command = "labwc"
 input_path = "./labwc/labwc.conf"
-output_path = "$XDG_CONFIG_HOME/labwc/noctalia.conf"
+output_path = "$XDG_CONFIG_HOME/labwc/zynith-shell.conf"
 post_hook = "bash '{{ config_dir }}/labwc/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/labwc/undo.sh'"
 
@@ -188,47 +188,47 @@ undo_hook = "bash '{{ config_dir }}/hyprland/undo.sh'"
 [templates.mango]
 requires_command = "mango"
 input_path = "./mango/mango.conf"
-output_path = "$XDG_CONFIG_HOME/mango/noctalia.conf"
+output_path = "$XDG_CONFIG_HOME/mango/zynith-shell.conf"
 post_hook = "bash '{{ config_dir }}/mango/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/mango/undo.sh'"
 
 [templates.qt]
 requires_command = ["qt5ct", "qt6ct"]
 input_path = "./qt/qtct.conf"
-output_path = ["$XDG_CONFIG_HOME/qt5ct/colors/noctalia.conf", "$XDG_CONFIG_HOME/qt6ct/colors/noctalia.conf"]
+output_path = ["$XDG_CONFIG_HOME/qt5ct/colors/zynith-shell.conf", "$XDG_CONFIG_HOME/qt6ct/colors/zynith-shell.conf"]
 undo_hook = "bash '{{ config_dir }}/qt/undo.sh'"
 
 [templates.scroll]
 requires_command = "scroll"
 input_path = "./scroll/scroll"
-output_path = "$XDG_CONFIG_HOME/scroll/noctalia"
+output_path = "$XDG_CONFIG_HOME/scroll/zynith-shell"
 post_hook = "bash '{{ config_dir }}/scroll/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/scroll/undo.sh'"
 
 [templates.sway]
 requires_command = "sway"
 input_path = "./sway/sway"
-output_path = "$XDG_CONFIG_HOME/sway/noctalia"
+output_path = "$XDG_CONFIG_HOME/sway/zynith-shell"
 post_hook = "bash '{{ config_dir }}/sway/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/sway/undo.sh'"
 
 [templates.umbriel]
 requires_command = "umbriel"
 input_path = "./umbriel/umbriel.toml"
-output_path = "$XDG_CONFIG_HOME/umbriel/noctalia.toml"
+output_path = "$XDG_CONFIG_HOME/umbriel/zynith-shell.toml"
 post_hook = "bash '{{ config_dir }}/umbriel/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/umbriel/undo.sh'"
 
 [templates.starship]
 requires_command = "starship"
 input_path = "./starship/starship.toml"
-output_path = "$XDG_CACHE_HOME/noctalia/starship-palette.toml"
+output_path = "$XDG_CACHE_HOME/zynith-shell/starship-palette.toml"
 post_hook = "bash '{{ config_dir }}/starship/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/starship/undo.sh'"
 
 [templates.wezterm]
 requires_command = "wezterm"
 input_path = "./wezterm/wezterm.toml"
-output_path = "$XDG_CONFIG_HOME/wezterm/colors/Noctalia.toml"
+output_path = "$XDG_CONFIG_HOME/wezterm/colors/Zynith.toml"
 post_hook = "bash '{{ config_dir }}/wezterm/apply.sh'"
 undo_hook = "bash '{{ config_dir }}/wezterm/undo.sh'"

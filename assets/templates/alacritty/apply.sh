@@ -6,9 +6,9 @@ config_file="$config_dir/alacritty/alacritty.toml"
 
 # alacritty expands ~ in import paths; keep it tilde'd so the path stays portable.
 if [[ "$config_dir" == "$HOME"/* ]]; then
-    theme_path="~/${config_dir#"$HOME"/}/alacritty/themes/noctalia.toml"
+    theme_path="~/${config_dir#"$HOME"/}/alacritty/themes/zynith-shell.toml"
 else
-    theme_path="$config_dir/alacritty/themes/noctalia.toml"
+    theme_path="$config_dir/alacritty/themes/zynith-shell.toml"
 fi
 
 mkdir -p "$(dirname "$config_file")"
@@ -38,8 +38,8 @@ fi
 tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
 trap 'rm -f "$tmp_file"' EXIT
 
-if grep -q 'noctalia\.toml' "$config_file"; then
-    sed -E 's|"themes/noctalia.toml"|"'"$theme_path"'"|g' "$config_file" >"$tmp_file"
+if grep -q 'zynith-shell\.toml' "$config_file"; then
+    sed -E 's|"themes/zynith-shell.toml"|"'"$theme_path"'"|g' "$config_file" >"$tmp_file"
 elif grep -q '^\[general\]' "$config_file"; then
     if grep -q '^import\s*=' "$config_file"; then
         sed '/^import\s*=\s*\[/,/\]/{/\]/s|]|    "'"$theme_path"'",\n]|}' "$config_file" >"$tmp_file"

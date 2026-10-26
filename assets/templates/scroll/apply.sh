@@ -10,7 +10,7 @@ if [[ "$config_dir" == "$HOME"/* ]]; then
 else
     include_dir="$config_dir"
 fi
-include_line="include $include_dir/scroll/noctalia"
+include_line="include $include_dir/scroll/zynith-shell"
 
 mkdir -p "$(dirname "$config_file")"
 
@@ -19,6 +19,6 @@ if [ ! -f "$config_file" ]; then
     exit 0
 fi
 
-if ! grep -q '^include .*noctalia' "$config_file"; then
+if ! grep -q '^include .*zynith-shell' "$config_file"; then
     printf '\n%s\n' "$include_line" >>"$config_file"
 fi

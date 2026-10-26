@@ -2,7 +2,7 @@
 set -euo pipefail
 
 config_file="${XDG_CONFIG_HOME:-$HOME/.config}/wezterm/wezterm.lua"
-scheme_line='config.color_scheme = "Noctalia"'
+scheme_line='config.color_scheme = "Zynith"'
 
 if [ ! -f "$config_file" ]; then
     echo "Error: wezterm.lua not found at $config_file" >&2
@@ -17,12 +17,12 @@ write_if_changed() {
     rm -f "$tmp"
 }
 
-if ! grep -q "^\s*config\.color_scheme\s*=\s*['\"]Noctalia['\"]\s*" "$config_file"; then
+if ! grep -q "^\s*config\.color_scheme\s*=\s*['\"]Zynith['\"]\s*" "$config_file"; then
     tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
     trap 'rm -f "$tmp_file"' EXIT
 
     if grep -q '^\s*config\.color_scheme\s*=' "$config_file"; then
-        sed "s|^\(\s*config\.color_scheme\s*=\s*\).*$|\1\"Noctalia\"|" "$config_file" >"$tmp_file"
+        sed "s|^\(\s*config\.color_scheme\s*=\s*\).*$|\1\"Zynith\"|" "$config_file" >"$tmp_file"
         trap - EXIT
         write_if_changed "$config_file" "$tmp_file"
     elif grep -q '^\s*return\s*config' "$config_file"; then

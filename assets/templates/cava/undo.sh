@@ -3,13 +3,13 @@ set -euo pipefail
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/cava"
 config_file="$config_dir/config"
-theme_file="$config_dir/themes/noctalia"
+theme_file="$config_dir/themes/zynith-shell"
 changed=0
 
 if [ -f "$config_file" ]; then
     tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
     trap 'rm -f "$tmp_file"' EXIT
-    awk '!/^[[:space:]]*theme[[:space:]]*=[[:space:]]*"noctalia"/' "$config_file" >"$tmp_file"
+    awk '!/^[[:space:]]*theme[[:space:]]*=[[:space:]]*"zynith-shell"/' "$config_file" >"$tmp_file"
     if ! cmp -s "$config_file" "$tmp_file"; then
         cat "$tmp_file" >"$config_file"
         changed=1

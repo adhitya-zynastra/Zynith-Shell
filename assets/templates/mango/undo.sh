@@ -3,13 +3,13 @@ set -euo pipefail
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/mango"
 config_file="$config_dir/config.conf"
-theme_file="$config_dir/noctalia.conf"
+theme_file="$config_dir/zynith-shell.conf"
 changed=0
 
 if [ -f "$config_file" ]; then
     tmp_file="$(mktemp "${config_file}.tmp.XXXXXX")"
     trap 'rm -f "$tmp_file"' EXIT
-    awk '!/^[[:space:]]*source(-optional)?[[:space:]]*=[[:space:]]*.*noctalia\.conf/' "$config_file" >"$tmp_file"
+    awk '!/^[[:space:]]*source(-optional)?[[:space:]]*=[[:space:]]*.*zynith-shell\.conf/' "$config_file" >"$tmp_file"
     if ! cmp -s "$config_file" "$tmp_file"; then
         cat "$tmp_file" >"$config_file"
         changed=1

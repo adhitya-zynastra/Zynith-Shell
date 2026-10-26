@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GTK_IMPORT='@import url("noctalia.css");'
+GTK_IMPORT='@import url("zynith-shell.css");'
 
 theme_exists() {
     local name="$1"
@@ -27,14 +27,14 @@ ensure_gtk_css_import() {
     local gtk_css="$1" colors_file="$2" label="$3"
 
     if [ ! -f "$colors_file" ]; then
-        echo "Error: $label noctalia.css not found at $colors_file" >&2
+        echo "Error: $label zynith-shell.css not found at $colors_file" >&2
         return 1
     fi
 
     if [ -e "$gtk_css" ] || [ -L "$gtk_css" ]; then
         local content
         content=$(cat "$gtk_css")
-        if [[ "$content" == *"noctalia.css"* ]] && [[ "$content" == *"@import"* ]]; then
+        if [[ "$content" == *"zynith-shell.css"* ]] && [[ "$content" == *"@import"* ]]; then
             return 0
         fi
         local target="$gtk_css"
@@ -49,10 +49,10 @@ ensure_gtk_css_import() {
             fi
         fi
         printf '%s\n\n%s\n' "$content" "$GTK_IMPORT" > "$target"
-        echo "Appended $label noctalia.css import to gtk.css"
+        echo "Appended $label zynith-shell.css import to gtk.css"
     else
         printf '%s\n' "$GTK_IMPORT" > "$gtk_css"
-        echo "Created $label gtk.css with noctalia.css import"
+        echo "Created $label gtk.css with zynith-shell.css import"
     fi
 }
 
@@ -132,11 +132,11 @@ main() {
 
     local gtk3_ok=true gtk4_ok=true
     if ! ensure_gtk_css_import \
-            "$config_dir/gtk-3.0/gtk.css" "$config_dir/gtk-3.0/noctalia.css" "GTK3"; then
+            "$config_dir/gtk-3.0/gtk.css" "$config_dir/gtk-3.0/zynith-shell.css" "GTK3"; then
         gtk3_ok=false
     fi
     if ! ensure_gtk_css_import \
-            "$config_dir/gtk-4.0/gtk.css" "$config_dir/gtk-4.0/noctalia.css" "GTK4"; then
+            "$config_dir/gtk-4.0/gtk.css" "$config_dir/gtk-4.0/zynith-shell.css" "GTK4"; then
         gtk4_ok=false
     fi
 

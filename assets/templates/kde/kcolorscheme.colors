@@ -2,8 +2,8 @@
 contrast=4
 
 [General]
-ColorScheme=Noctalia
-Name=noctalia
+ColorScheme=Zynith
+Name=zynith-shell
 
 [ColorEffects:Disabled]
 Color={{colors.surface_container_lowest.default.rgb_csv}}

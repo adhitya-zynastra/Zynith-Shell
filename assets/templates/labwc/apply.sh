@@ -2,9 +2,9 @@
 set -euo pipefail
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/labwc"
-theme_dir="${XDG_DATA_HOME:-$HOME/.local/share}/themes/noctalia/openbox-3"
+theme_dir="${XDG_DATA_HOME:-$HOME/.local/share}/themes/zynith-shell/openbox-3"
 theme_file="$theme_dir/themerc"
-source_theme="$config_dir/noctalia.conf"
+source_theme="$config_dir/zynith-shell.conf"
 rc_file="$config_dir/rc.xml"
 
 mkdir -p "$config_dir" "$theme_dir"
@@ -30,7 +30,7 @@ if [ ! -f "$rc_file" ]; then
 <?xml version="1.0" encoding="UTF-8"?>
 <labwc_config>
   <theme>
-    <name>noctalia</name>
+    <name>zynith-shell</name>
   </theme>
 </labwc_config>
 EOF
@@ -54,10 +54,10 @@ if grep -q '<theme>' "$rc_file"; then
         sed '/<theme>/,/<\/theme>/ {
             /<font[[:space:]>].*<\/font>/b
             /<font[[:space:]>]/,/<\/font>/b
-            s|<name>.*</name>|<name>noctalia</name>|
+            s|<name>.*</name>|<name>zynith-shell</name>|
         }' "$rc_file" >"$tmp_file"
     else
-        sed '/<theme>/a\    <name>noctalia</name>' "$rc_file" >"$tmp_file"
+        sed '/<theme>/a\    <name>zynith-shell</name>' "$rc_file" >"$tmp_file"
     fi
 else
     if ! grep -qE '<labwc_config([[:space:]>])' "$rc_file"; then
@@ -65,7 +65,7 @@ else
         exit 1
     fi
 
-    sed '/<labwc_config[[:space:]>]/a\  <theme>\n    <name>noctalia</name>\n  </theme>' "$rc_file" >"$tmp_file"
+    sed '/<labwc_config[[:space:]>]/a\  <theme>\n    <name>zynith-shell</name>\n  </theme>' "$rc_file" >"$tmp_file"
 fi
 
 trap - EXIT

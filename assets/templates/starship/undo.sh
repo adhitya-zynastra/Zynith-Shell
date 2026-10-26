@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-palette_file="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
-marker_begin="# >>> NOCTALIA STARSHIP PALETTE >>>"
-marker_end="# <<< NOCTALIA STARSHIP PALETTE <<<"
+palette_file="${XDG_CACHE_HOME:-$HOME/.cache}/zynith-shell/starship-palette.toml"
+marker_begin="# >>> ZYNITH STARSHIP PALETTE >>>"
+marker_end="# <<< ZYNITH STARSHIP PALETTE <<<"
 
 expand_tilde() {
     case "$1" in
@@ -67,7 +67,7 @@ if [ -f "$config_file" ]; then
         $0 == begin { in_block = 1; next }
         in_block && $0 == end { in_block = 0; next }
         in_block { next }
-        /^[[:space:]]*palette[[:space:]]*=[[:space:]]*"noctalia"/ { next }
+        /^[[:space:]]*palette[[:space:]]*=[[:space:]]*"zynith-shell"/ { next }
         { print }
     ' "$config_file" >"$tmp_file"
     if ! cmp -s "$config_file" "$tmp_file"; then

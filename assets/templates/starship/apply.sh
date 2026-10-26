@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-palette_file="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/starship-palette.toml"
-marker_begin="# >>> NOCTALIA STARSHIP PALETTE >>>"
-marker_end="# <<< NOCTALIA STARSHIP PALETTE <<<"
+palette_file="${XDG_CACHE_HOME:-$HOME/.cache}/zynith-shell/starship-palette.toml"
+marker_begin="# >>> ZYNITH STARSHIP PALETTE >>>"
+marker_end="# <<< ZYNITH STARSHIP PALETTE <<<"
 
 expand_tilde() {
     case "$1" in
@@ -35,7 +35,7 @@ discover_starship_config() {
         return 0
     fi
 
-    # Noctalia applies templates from its daemon, which does not inherit shell-only
+    # Zynith applies templates from its daemon, which does not inherit shell-only
     # exports from .bashrc/.zshrc. Recover STARSHIP_CONFIG from the user session.
     if command -v systemctl >/dev/null 2>&1; then
         local from_systemd
@@ -83,14 +83,14 @@ trap cleanup EXIT
 # ! -f covers a missing path and a dangling symlink (write-through creates the target).
 if [ ! -f "$config_file" ]; then
     {
-        echo 'palette = "noctalia"'
+        echo 'palette = "zynith-shell"'
         echo ""
         echo "$marker_begin"
         cat "$palette_file"
         echo "$marker_end"
     } >"$tmp_file"
 else
-    # Strip the previous noctalia palette block and any palette= line, keep the rest.
+    # Strip the previous zynith-shell palette block and any palette= line, keep the rest.
     body_file="$(mktemp "${config_file}.body.XXXXXX")"
     cleanup_body() {
         rm -f "$tmp_file" "$body_file"
@@ -118,7 +118,7 @@ else
                 /^"\$schema"/ {
                     print
                     if (!inserted) {
-                        print "palette = \"noctalia\""
+                        print "palette = \"zynith-shell\""
                         inserted = 1
                     }
                     next
@@ -126,7 +126,7 @@ else
                 { print }
             ' "$body_file"
         else
-            echo 'palette = "noctalia"'
+            echo 'palette = "zynith-shell"'
             cat "$body_file"
         fi
         echo ""
