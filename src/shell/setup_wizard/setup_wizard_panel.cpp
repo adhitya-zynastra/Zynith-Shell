@@ -182,38 +182,6 @@ void SetupWizardPanel::create() {
 
   content->addChild(ui::separator());
 
-  // Telemetry
-  {
-    auto card = makeCard(scale, panelCardOpacity());
-
-    auto row = makeRow(scale);
-    {
-      auto col = makeTextColumn();
-      col->addChild(makeLabel(
-          i18n::tr("settings.schema.shell.telemetry.label"), Style::fontSizeBody * scale,
-          colorSpecFromRole(ColorRole::OnSurface), FontWeight::Bold
-      ));
-      auto description = makeLabel(
-          i18n::tr("settings.schema.shell.telemetry.description"), Style::fontSizeCaption * scale,
-          colorSpecFromRole(ColorRole::OnSurfaceVariant)
-      );
-      description->setMaxLines(8);
-      col->addChild(std::move(description));
-      row->addChild(std::move(col));
-    }
-    {
-      row->addChild(
-          ui::toggle({
-              .out = &m_telemetryToggle,
-              .checked = cfg.shell.telemetryEnabled,
-              .scale = scale,
-          })
-      );
-    }
-    card->addChild(std::move(row));
-    content->addChild(std::move(card));
-  }
-
   // Wallpaper
   {
     auto card = makeCard(scale, panelCardOpacity());
@@ -482,9 +450,6 @@ void SetupWizardPanel::configureThemeOptionSelect() {
 }
 
 void SetupWizardPanel::commit() {
-  if (m_telemetryToggle != nullptr) {
-    m_config->setOverride({"shell", "telemetry_enabled"}, m_telemetryToggle->checked());
-  }
   // Theme/palette overrides are written live by the select callbacks only when
   // the user actually changes them, so commit must not force any defaults here.
   if (m_config != nullptr) {

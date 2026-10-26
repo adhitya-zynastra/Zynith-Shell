@@ -292,7 +292,7 @@ void Application::run(std::function<void()> startupReadyCallback) {
         list += (list.empty() ? "" : ", ") + item;
       }
       notify::info(
-          "Noctalia", i18n::tr("notifications.internal.plugin-updates-title"),
+          noctalia::build_info::kProductName, i18n::tr("notifications.internal.plugin-updates-title"),
           i18n::tr("notifications.internal.plugin-updates-body", "source", sourceName, "plugins", list)
       );
     });
@@ -304,9 +304,6 @@ void Application::run(std::function<void()> startupReadyCallback) {
   runStartupPhase("startup hooks", [this]() {
     m_hookManager.reload(m_configService.config().hooks);
     m_hookManager.fire(HookKind::Started);
-  });
-  runStartupPhase("telemetry enqueue", [this]() {
-    m_telemetryService.maybeSend(m_configService, m_httpClient, m_wayland);
   });
 
 #ifdef __GLIBC__

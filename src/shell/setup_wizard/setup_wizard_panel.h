@@ -10,7 +10,6 @@ class Flex;
 class Image;
 class Label;
 class Select;
-class Toggle;
 class WaylandConnection;
 enum class PaletteSource : std::uint8_t;
 
@@ -36,7 +35,6 @@ private:
   ConfigService* m_config = nullptr;
   Flex* m_root = nullptr;
   Image* m_logo = nullptr;
-  Toggle* m_telemetryToggle = nullptr;
   Select* m_modeSelect = nullptr;
   Select* m_themeSourceSelect = nullptr;
   Label* m_themeOptionLabel = nullptr;
