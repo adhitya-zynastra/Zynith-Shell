@@ -37,7 +37,7 @@ deps() {
         dnf -y -q builddep packaging/rpm/zynith.spec
         "${dnf[@]}" dbus-daemon ;;
     ui) "${dnf[@]}" git-core cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg \
-        qt6-rpm-macros ;;
+        qt6-rpm-macros diffutils "pkgconfig(libpipewire-0.3)" "pkgconfig(tomlplusplus)" ;;
     *) echo "unknown stage $1" >&2; exit 2 ;;
     esac
 }
