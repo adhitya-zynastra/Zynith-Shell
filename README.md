@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="#download-zynith">Download</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#features">Features</a> ·
   <a href="#official-configurations">Configurations</a> ·
   <a href="docs/README.md">Documentation</a> ·
@@ -21,6 +22,10 @@
 </p>
 
 ---
+
+<p align="center">
+  <img src="assets/screenshots/control-panel.webp" alt="The Zynith desktop with the Control Panel open" width="900">
+</p>
 
 Zynith turns niri into a complete desktop. Every surface — bars, the Zynith Island, the Control Panel, the launcher,
 notifications, on-screen displays, desktop widgets, the lock screen — follows one set of materials, motion and type,
@@ -82,6 +87,22 @@ deploy/install.sh --shell        # builds and installs into your home directory 
 [Building and running](docs/development/building.md) covers the requirements, starting Zynith from niri and
 recovering a session that does not start.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![The desktop: one bar and the default wallpaper](assets/screenshots/desktop.webp) | ![The launcher: applications, search and calculator](assets/screenshots/launcher.webp) |
+| **Desktop** — one bar, the default wallpaper | **Launcher** — applications, calculator, emoji, windows, wallpapers |
+| ![Notification popups](assets/screenshots/notifications.webp) | ![The notification centre, grouped by app](assets/screenshots/notification-centre.webp) |
+| **Notifications** — popups at the top right | **Notification centre** — grouped by app, searchable |
+| ![Settings: the home page](assets/screenshots/settings.webp) | ![Settings: Appearance, with Glass, Solid and Blur](assets/screenshots/settings-appearance.webp) |
+| **Settings** — every option in one app | **Appearance** — the surface material, colour, shape and type |
+| ![The session menu](assets/screenshots/session-menu.webp) | ![The Control Panel](assets/screenshots/control-panel.webp) |
+| **Session menu** — lock, sleep, log out, restart, shut down | **Control Panel** — quick settings, audio, media, notifications |
+
+These are unedited captures of the live ISO's session (1920×1080, in a virtual machine), with the default
+configuration and test notifications.
+
 ## Features
 
 | Feature | What it does | State |
@@ -113,6 +134,13 @@ Four curated starting points for how Zynith looks and how much it spends:
 | **Zynith Solid** | opaque surfaces, defined edges | follows power |
 | **Zynith Minimal** | opaque, borderless, short motion | saves even when plugged in |
 | **Zynith Max Experience** | frosted, compositor-blurred surfaces | keeps effects on battery; needs a capable GPU |
+
+| | |
+|---|---|
+| ![Zynith Glass](assets/screenshots/config-glass.webp) | ![Zynith Solid](assets/screenshots/config-solid.webp) |
+| **Glass** — the wallpaper shows through | **Solid** — opaque, defined edges |
+| ![Zynith Minimal](assets/screenshots/config-minimal.webp) | ![Zynith Max Experience](assets/screenshots/config-max-experience.webp) |
+| **Minimal** — opaque, borderless | **Max Experience** — frosted by the compositor |
 
 ```sh
 zynith-config list
