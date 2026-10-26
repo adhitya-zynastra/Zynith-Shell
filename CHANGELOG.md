@@ -39,10 +39,11 @@ shell (see [CREDITS](CREDITS.md)); its source is the repository's first commit.
 
 ### Changed
 
-- The product presents itself as Zynith everywhere it is named to the user: notifications, window titles, About,
-  translations, desktop entries, the default wallpaper and the icon. Compatibility identifiers keep their historical
-  name (see [docs/development/architecture.md](docs/development/architecture.md#names)).
+- The product is named Zynith throughout: notifications, window titles, About, translations, desktop entries, the
+  default wallpaper and the icon. The native shell is `zynith-shell`, and its files, D-Bus names, environment
+  variables and C++ namespace follow (see [docs/development/architecture.md](docs/development/architecture.md#names)).
 - Plugins from third-party sources update only on request (`notify` mode by default).
+- The live image's user has a login keyring without a password, so the live session no longer asks for one.
 
 ### Removed
 
