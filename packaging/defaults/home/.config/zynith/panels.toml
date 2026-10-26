@@ -1,0 +1,6 @@
+# Panels: the launcher, the Control Panel and the OSD. Settings writes the rest of this file as you change things.
+
+[media]
+# Lyrics are looked up on lrclib.net (the artist, title, album and length of what is playing) only while they are on
+# screen. Off until you turn them on in Settings.
+lyrics = false

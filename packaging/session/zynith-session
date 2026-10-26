@@ -1,0 +1,11 @@
+#!/bin/sh
+# zynith-session — the Zynith desktop session (a display manager's "Zynith" entry runs this).
+#
+# niri is the compositor; its own session launcher (niri-session) starts it as a systemd user service, which
+# imports the session environment and starts the portals. Zynith's own pieces — the native shell and the UI —
+# are started by niri from the user's niri configuration (spawn-at-startup), exactly as on a hand-built setup.
+#
+# Before that, a user who has none of Zynith's configuration yet gets the defaults (zynith-firstrun copies only
+# what is missing and never overwrites a file).
+/usr/libexec/zynith/zynith-firstrun || echo "zynith-session: first-run setup failed; continuing" >&2
+exec niri-session "$@"

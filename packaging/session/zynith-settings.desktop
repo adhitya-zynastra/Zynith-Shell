@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Zynith Settings
+Comment=Appearance, bars, panels, wallpaper, displays and every other Zynith setting
+Exec=zynith-ui settings
+Icon=zynith
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=settings;preferences;appearance;wallpaper;bar;zynith;
+StartupNotify=false

@@ -1,0 +1,13 @@
+# Zynith. Which visible surfaces the Zynith UI draws ("zynith") and which the native shell still does
+# ("native"). The native shell reads [surfaces] when it starts.
+
+[surfaces]
+bar = 'zynith'
+clipboard = 'zynith'
+control_center = 'zynith'
+desktop_widgets = 'zynith'
+launcher = 'zynith'
+notifications = 'zynith'
+osd = 'zynith'
+session = 'zynith'
+wallpaper = 'zynith'

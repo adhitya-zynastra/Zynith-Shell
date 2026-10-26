@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Zynith
+Comment=The Zynith desktop on the niri Wayland compositor
+Exec=zynith-session
+Type=Application
+DesktopNames=niri

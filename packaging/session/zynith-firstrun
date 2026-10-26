@@ -1,0 +1,38 @@
+#!/bin/sh
+# zynith-firstrun — put Zynith's default per-user configuration in place, without overwriting anything.
+#
+# Copies /usr/share/zynith/defaults/home/ into $HOME file by file, skipping every file that already exists, so it
+# is safe to run at every login (zynith-session does) and after upgrades: a user's own settings are never replaced.
+# New defaults that a later version adds appear for users who do not have that file yet.
+#
+#   zynith-firstrun          copy what is missing
+#   zynith-firstrun --list   only print what would be copied
+set -eu
+
+SRC=/usr/share/zynith/defaults/home
+[ -d "$SRC" ] || exit 0
+[ -n "${HOME:-}" ] && [ -d "$HOME" ] || { echo "zynith-firstrun: no home directory" >&2; exit 1; }
+list=0
+[ "${1:-}" = "--list" ] && list=1
+
+copied=0
+cd "$SRC"
+find . -type f | sort | while read -r rel; do
+    rel=${rel#./}
+    dest="$HOME/$rel"
+    [ -e "$dest" ] || [ -L "$dest" ] && continue
+    if [ "$list" -eq 1 ]; then
+        echo "$rel"
+        continue
+    fi
+    mkdir -p "$(dirname "$dest")"
+    cp -p "$SRC/$rel" "$dest"
+    copied=$((copied + 1))
+done
+
+if [ "$list" -eq 0 ]; then
+    state="${XDG_STATE_HOME:-$HOME/.local/state}/zynith"
+    mkdir -p "$state"
+    # which defaults this user has seen (for later versions that need to add to them carefully)
+    cat /usr/share/zynith/release 2>/dev/null >"$state/firstrun-version" || true
+fi

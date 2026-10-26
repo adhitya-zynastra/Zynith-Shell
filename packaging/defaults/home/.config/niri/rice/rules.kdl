@@ -1,0 +1,111 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Window + layer rules — the Zynith defaults ("dark glass, readable content"). Yours to edit.
+//  Rule order matters: later matching rules override earlier ones.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Base: every window ───────────────────────────────────────────────────────
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+    // Don't paint the border colour behind semitransparent windows (avoids a tint).
+    draw-border-with-background false
+    // Xray blur of the wallpaper behind any see-through part of a window.
+    background-effect {
+        blur true
+    }
+}
+
+// Inactive windows recede slightly (Hyprland inactive_opacity, but gentler).
+window-rule {
+    match is-active=false
+    opacity 0.93
+}
+
+// ── Terminals: transparency comes from the app itself (text stays crisp) ─────
+// kitty: background_opacity in kitty.conf; Alacritty: window.opacity.
+window-rule {
+    match app-id="^kitty$"
+    match app-id="^Alacritty$"
+    match app-id="^com\\.mitchellh\\.ghostty$"
+    match app-id="^foot$"
+    default-column-width { proportion 0.5; }
+}
+
+// Drop-down terminal (Super+Shift+Return), like Hyprland's Dropterminal.sh.
+window-rule {
+    match app-id="^dropterm$"
+    open-floating true
+    default-column-width { proportion 0.6; }
+    default-window-height { proportion 0.5; }
+    default-floating-position x=0 y=48 relative-to="top"
+}
+
+// ── Browser: nearly opaque, glass only at the edges of perception ────────────
+window-rule {
+    match app-id="firefox$"
+    opacity 0.97
+    default-column-width { proportion 0.66667; }
+}
+window-rule {
+    match app-id="firefox$" is-active=false
+    opacity 0.94
+}
+
+// ── Never transparent: media, images, games, screen sharing ──────────────────
+window-rule {
+    match app-id="^mpv$"
+    match app-id="^vlc$"
+    match app-id="^steam_app_"
+    match title="^Picture-in-Picture$"
+    match is-window-cast-target=true
+    opacity 1.0
+}
+
+// ── Floating utilities / dialogs ─────────────────────────────────────────────
+window-rule {
+    match title="^Picture-in-Picture$"
+    open-floating true
+    default-floating-position x=24 y=24 relative-to="bottom-right"
+}
+window-rule {
+    match app-id="^org\\.pulseaudio\\.pavucontrol$"
+    match app-id="^pavucontrol$"
+    match app-id="^blueman-manager$"
+    match app-id="^nm-connection-editor$"
+    match app-id="^qalculate-gtk$"
+    match app-id="^xdg-desktop-portal"
+    match title="^(Open|Save|Choose) (File|Files|Folder)"
+    open-floating true
+}
+// Floating windows sit above tiles → use real (non-xray) blur so they read as glass
+// over the windows beneath them. (Experimental in 26.04: skipped during open/close anim.)
+window-rule {
+    match is-floating=true
+    background-effect {
+        xray false
+    }
+}
+
+// Privacy: hide password managers from screencasts.
+window-rule {
+    match app-id="^org\\.keepassxc\\.KeePassXC$"
+    match app-id="^org\\.gnome\\.World\\.Secrets$"
+    block-out-from "screen-capture"
+}
+
+// ── Layer rules (the native shell) ───────────────────────────────────────────────────
+// Blurred copy of the wallpaper lives in the overview backdrop.
+layer-rule {
+    match namespace="^noctalia-backdrop"
+    place-within-backdrop true
+}
+
+// Notification toasts read as glass. Observed on niri 26.04: this layer blurs the live content
+// behind it (the xray hint is not honoured for it), which still stays dark and legible because the
+// card fill is a palette surface at 0.68. Only alive while a toast is on screen.
+layer-rule {
+    match namespace="^noctalia-notification$"
+    background-effect {
+        blur true
+    }
+}
