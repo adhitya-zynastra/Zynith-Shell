@@ -58,6 +58,6 @@ body:
     attributes:
       label: Logs
       description: |
-        `zynith-ui log` (the UI), `journalctl --user -b | grep -i -E "zynith-shell|zynith|niri"` (the shell and the
+        `zynith-ui log` (the UI), `journalctl --user -b | grep -i -E "zynith|niri"` (the shell and the
         compositor). For a crash: `coredumpctl info` for the crashed process.
       render: text
