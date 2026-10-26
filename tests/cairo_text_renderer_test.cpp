@@ -86,7 +86,6 @@ namespace {
     return 0;
   }
 
-
   // zynith typography: a family may carry " #tnum=1" (tabular figures). The renderer must split it
   // into family + OpenType features. Two properties, measured:
   //   1. the featured family is still the same font — letters (unaffected by tnum) measure identically,
@@ -96,24 +95,34 @@ namespace {
     constexpr float fontSize = 20.0F;
     constexpr std::string_view plain = "Montserrat";
     constexpr std::string_view tabular = "Montserrat #tnum=1";
-    const float lettersPlain = renderer.measure(1.0F, "Wolf", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
-    const float lettersTab = renderer.measure(1.0F, "Wolf", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
+    const float lettersPlain =
+        renderer.measure(1.0F, "Wolf", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
+    const float lettersTab =
+        renderer.measure(1.0F, "Wolf", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
     if (std::abs(lettersPlain - lettersTab) > 0.01F) {
-      std::println(stderr, "cairo_text_renderer_test: FAIL: featured family resolved to a different font ({} vs {})",
-                   lettersPlain, lettersTab);
+      std::println(
+          stderr, "cairo_text_renderer_test: FAIL: featured family resolved to a different font ({} vs {})",
+          lettersPlain, lettersTab
+      );
       return 1;
     }
-    const float onesPlain = renderer.measure(1.0F, "1111", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
-    const float zerosPlain = renderer.measure(1.0F, "0000", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
-    const float onesTab = renderer.measure(1.0F, "1111", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
-    const float zerosTab = renderer.measure(1.0F, "0000", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
+    const float onesPlain =
+        renderer.measure(1.0F, "1111", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
+    const float zerosPlain =
+        renderer.measure(1.0F, "0000", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, plain).width;
+    const float onesTab =
+        renderer.measure(1.0F, "1111", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
+    const float zerosTab =
+        renderer.measure(1.0F, "0000", fontSize, FontWeight::Normal, 0.0F, 0, TextAlign::Start, tabular).width;
     if (std::abs(onesPlain - zerosPlain) < 0.5F) {
       // The resolved font already has tabular digits (Montserrat absent): nothing to distinguish.
       std::println("cairo_text_renderer_test: note: proportional digits unavailable; tnum check skipped");
       return 0;
     }
     if (std::abs(onesTab - zerosTab) > 0.01F) {
-      std::println(stderr, "cairo_text_renderer_test: FAIL: tnum digits not tabular (1111 {} vs 0000 {})", onesTab, zerosTab);
+      std::println(
+          stderr, "cairo_text_renderer_test: FAIL: tnum digits not tabular (1111 {} vs 0000 {})", onesTab, zerosTab
+      );
       return 1;
     }
     return 0;

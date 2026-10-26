@@ -96,18 +96,18 @@
 
 #include <algorithm>
 #include <chrono>
-#include <iterator>
-#include <unistd.h>
-#include <ctime>
-#include <sstream>
-#include <fstream>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <limits>
 #include <malloc.h>
+#include <sstream>
+#include <unistd.h>
 #ifdef NOCTALIA_USE_JEMALLOC
 #include <jemalloc/jemalloc.h>
 #endif

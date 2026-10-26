@@ -67,7 +67,10 @@ struct ColorSpec {
 };
 
 constexpr bool operator==(const ColorSpec& a, const ColorSpec& b) noexcept {
-  return a.role == b.role && a.fixed == b.fixed && a.alpha == b.alpha && a.tint == b.tint
+  return a.role == b.role
+      && a.fixed == b.fixed
+      && a.alpha == b.alpha
+      && a.tint == b.tint
       && a.tintStrength == b.tintStrength;
 }
 

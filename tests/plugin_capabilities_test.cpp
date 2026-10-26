@@ -20,8 +20,10 @@ namespace {
   }
 
   bool allowed(const std::filesystem::path& path, FileAccess access, CapabilitySet caps) {
-    return fileAccessAllowed(path, access, "/tmp/zcap/home/.local/share/noctalia/plugins/me",
-                             "/tmp/zcap/home/.local/state/noctalia/plugins/data/me/plugin", caps, nullptr);
+    return fileAccessAllowed(
+        path, access, "/tmp/zcap/home/.local/share/noctalia/plugins/me",
+        "/tmp/zcap/home/.local/state/noctalia/plugins/data/me/plugin", caps, nullptr
+    );
   }
 
 } // namespace
@@ -59,8 +61,10 @@ int main() {
   expect(!allowed(home / ".bashrc", FileAccess::Write, files), "shell startup file write refused");
   expect(!allowed(home / ".config/zynith/plugin-grants.toml", FileAccess::Write, files), "grants file write refused");
   expect(!allowed(home / ".config/niri/config.kdl", FileAccess::Write, files), "niri config write refused");
-  expect(!allowed(home / ".local/share/noctalia/plugins/other/x.luau", FileAccess::Write, files),
-         "other plugin's code write refused");
+  expect(
+      !allowed(home / ".local/share/noctalia/plugins/other/x.luau", FileAccess::Write, files),
+      "other plugin's code write refused"
+  );
   expect(allowed(home / ".config/niri/config.kdl", FileAccess::Read, files), "niri config readable with files");
 
   // env
@@ -82,8 +86,10 @@ int main() {
   expect(registry.grant("me/plugin", parseCapabilityList("files network"), &error), "grant written");
   expect(registry.effective("me/plugin") == files, "effective is declared ∩ granted");
   registry.reloadGrants();
-  expect(registry.granted("me/plugin") == (files | static_cast<CapabilitySet>(Capability::Network)),
-         "grants survive a reload from disk");
+  expect(
+      registry.granted("me/plugin") == (files | static_cast<CapabilitySet>(Capability::Network)),
+      "grants survive a reload from disk"
+  );
   expect(registry.revoke("me/plugin", files, &error), "revoke written");
   expect(registry.effective("me/plugin") == 0, "revoked capability gone");
 

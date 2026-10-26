@@ -96,7 +96,9 @@ void MotionValue::setTarget(float target) {
   );
 }
 
-void MotionRect::bind(AnimationManager* animations, const void* owner, motion::Role role, std::function<void()> onChange) {
+void MotionRect::bind(
+    AnimationManager* animations, const void* owner, motion::Role role, std::function<void()> onChange
+) {
   auto forward = [onChange = std::move(onChange)](float) {
     if (onChange) {
       onChange();

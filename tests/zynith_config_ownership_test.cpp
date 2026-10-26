@@ -52,8 +52,8 @@ int main() {
       "[shell.animation]\n"
       "preset = \"cinematic\"\n"
       "speed = 1.0\n"
-      "niri_open = 0\n"      // below the floor: clamped to 50
-      "niri_close = 900\n"   // above the ceiling: clamped to 200
+      "niri_open = 0\n"    // below the floor: clamped to 50
+      "niri_close = 900\n" // above the ceiling: clamped to 200
       "\n"
       "[shell.glass]\n"
       "tint = true\n"
@@ -90,15 +90,19 @@ int main() {
     expect(config.clearOverride({"shell", "animation", "preset"}), "clear preset override");
     expect(anim().preset == MotionPreset::Cinematic, "after reset the rice.toml preset is back");
     expect(!config.hasOverride({"shell", "animation", "preset"}), "no override remains");
-    expect(readFile(settingsToml).find("preset") == std::string::npos,
-           "reset REMOVES the key from settings.toml rather than writing today's value");
+    expect(
+        readFile(settingsToml).find("preset") == std::string::npos,
+        "reset REMOVES the key from settings.toml rather than writing today's value"
+    );
 
     expect(config.clearOverride({"shell", "glass", "tint"}), "clear glass override");
     expect(glass().tint, "glass falls back to the preset layer after reset");
 
     // --- a changed preset reaches a key that was reset, i.e. nothing was frozen --------------
-    writeFile(root / "config" / "noctalia" / "rice.toml",
-              "[shell.animation]\npreset = \"smooth\"\n\n[shell.glass]\ntint = true\n");
+    writeFile(
+        root / "config" / "noctalia" / "rice.toml",
+        "[shell.animation]\npreset = \"smooth\"\n\n[shell.glass]\ntint = true\n"
+    );
     config.forceReload();
     expect(anim().preset == MotionPreset::Smooth, "a later preset change reaches the reset key");
   }
@@ -109,8 +113,12 @@ int main() {
   // the preset gained a widget hides it for good — until lockscreen-widgets-reset clears the table.
   {
     const auto widget = [](std::string_view id, std::string_view type, int cy) {
-      return std::string("[lockscreen_widgets.widget.") + std::string(id) + "]\ntype = \"" + std::string(type)
-          + "\"\noutput = \"eDP-1\"\ncx = 960.0\ncy = " + std::to_string(cy)
+      return std::string("[lockscreen_widgets.widget.")
+          + std::string(id)
+          + "]\ntype = \""
+          + std::string(type)
+          + "\"\noutput = \"eDP-1\"\ncx = 960.0\ncy = "
+          + std::to_string(cy)
           + ".0\nbox_width = 200.0\nbox_height = 60.0\nrotation = 0.0\nplacement_width = 1920.0\n"
             "placement_height = 1200.0\n\n";
     };
@@ -139,19 +147,25 @@ int main() {
 
     expect(config.clearOverride({"lockscreen_widgets"}), "reset clears the lock layout overrides");
     expect(widgetCount() == 2, "after reset the preset's widgets are back");
-    expect(readFile(settingsToml).find("lockscreen_widgets") == std::string::npos,
-           "reset leaves no lock layout in settings.toml");
+    expect(
+        readFile(settingsToml).find("lockscreen_widgets") == std::string::npos,
+        "reset leaves no lock layout in settings.toml"
+    );
     expect(!config.clearOverride({"lockscreen_widgets"}), "a second reset reports nothing to clear");
-    expect(!config.stashOverrideTable("lockscreen_widgets", &error) && error.empty(),
-           "with nothing to stash, stash reports false without an error (the earlier stash is kept)");
+    expect(
+        !config.stashOverrideTable("lockscreen_widgets", &error) && error.empty(),
+        "with nothing to stash, stash reports false without an error (the earlier stash is kept)"
+    );
 
     expect(config.restoreStashedOverrideTable("lockscreen_widgets", &error), "restore succeeds");
     expect(widgetCount() == 1, "restore brings the saved layout back (it shadows the preset again)");
     expect(config.config().lockscreenWidgets == afterSave, "the restored layout equals the one that was reset");
 
     std::filesystem::remove(stash);
-    expect(!config.restoreStashedOverrideTable("lockscreen_widgets", &error) && !error.empty(),
-           "restore without a stash fails with a reason");
+    expect(
+        !config.restoreStashedOverrideTable("lockscreen_widgets", &error) && !error.empty(),
+        "restore without a stash fails with a reason"
+    );
   }
 
   std::filesystem::remove_all(root);

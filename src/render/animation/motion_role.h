@@ -60,10 +60,10 @@ namespace motion {
   struct RoleSpec {
     std::string_view name;
     Model model = Model::Tween;
-    float durationMs = 0.0F;   // tweens; base value at tempo 1
+    float durationMs = 0.0F; // tweens; base value at tempo 1
     Easing easing = Easing::EaseOutCubic;
-    SpringParams spring{};     // springs; omega at tempo 1
-    float delayMs = 0.0F;      // start delay, scaled by tempo like the duration
+    SpringParams spring{}; // springs; omega at tempo 1
+    float delayMs = 0.0F;  // start delay, scaled by tempo like the duration
     ReducedMotion reduced = ReducedMotion::Snap;
     float reducedDurationMs = 0.0F; // fixed; not scaled by tempo
   };

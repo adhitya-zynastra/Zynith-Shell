@@ -110,9 +110,9 @@ public:
   void endSession(SessionId session);
 
   struct Stats {
-    std::size_t decodes = 0;    // images sent to a worker
-    std::size_t idleHits = 0;   // re-acquired from the idle set (decode avoided)
-    std::size_t evictions = 0;  // idle entries dropped for budget
+    std::size_t decodes = 0;   // images sent to a worker
+    std::size_t idleHits = 0;  // re-acquired from the idle set (decode avoided)
+    std::size_t evictions = 0; // idle entries dropped for budget
     std::size_t peakIdleBytes = 0;
   };
   [[nodiscard]] const Stats& stats() const noexcept { return m_stats; }

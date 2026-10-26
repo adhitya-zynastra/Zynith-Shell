@@ -5,10 +5,10 @@
 #include "ui/signal.h"
 
 #include <chrono>
-#include <optional>
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>

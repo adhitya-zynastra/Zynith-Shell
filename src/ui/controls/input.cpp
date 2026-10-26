@@ -1,7 +1,5 @@
 #include "ui/controls/input.h"
 
-#include "security/sensitive_string.h"
-
 #include "core/deferred_call.h"
 #include "core/input/key_chord.h"
 #include "core/input/key_modifiers.h"
@@ -17,6 +15,7 @@
 #include "render/scene/input_area.h"
 #include "render/scene/rect_node.h"
 #include "render/text/glyph_registry.h"
+#include "security/sensitive_string.h"
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/style.h"

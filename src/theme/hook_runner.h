@@ -5,9 +5,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <map>
 #include <string>
 
 namespace noctalia::theme {

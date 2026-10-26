@@ -59,26 +59,29 @@ namespace zynith::settings_bridge {
                   {"valueType", selectValueType(c.valueType)},
               };
             } else if constexpr (std::is_same_v<T, settings::SearchPickerSetting>) {
-              return {{"kind", "select"}, {"value", c.selectedValue}, {"options", optionsJson(c.options)}, {"search", true}};
+              return {
+                  {"kind", "select"}, {"value", c.selectedValue}, {"options", optionsJson(c.options)}, {"search", true}
+              };
             } else if constexpr (std::is_same_v<T, settings::SliderSetting>) {
               return {
-                  {"kind", "slider"}, {"value", c.value}, {"min", c.minValue}, {"max", c.maxValue},
+                  {"kind", "slider"}, {"value", c.value},          {"min", c.minValue},       {"max", c.maxValue},
                   {"step", c.step},   {"integer", c.integerValue}, {"suffix", c.valueSuffix},
               };
             } else if constexpr (std::is_same_v<T, settings::RangeSliderSetting>) {
               return {
-                  {"kind", "range"}, {"low", c.lowValue},         {"high", c.highValue}, {"min", c.minValue},
-                  {"max", c.maxValue}, {"step", c.step},          {"integer", c.integerValue},
-                  {"suffix", c.valueSuffix}, {"highPath", c.highPath},
+                  {"kind", "range"},           {"low", c.lowValue},       {"high", c.highValue},
+                  {"min", c.minValue},         {"max", c.maxValue},       {"step", c.step},
+                  {"integer", c.integerValue}, {"suffix", c.valueSuffix}, {"highPath", c.highPath},
               };
             } else if constexpr (std::is_same_v<T, settings::TextSetting>) {
               return {
                   {"kind", "text"},
                   {"value", c.value},
                   {"placeholder", c.placeholder},
-                  {"browse", c.browseMode == settings::TextSettingBrowseMode::SelectFolder ? "folder"
-                             : c.browseMode == settings::TextSettingBrowseMode::OpenFile   ? "file"
-                                                                                            : ""},
+                  {"browse",
+                   c.browseMode == settings::TextSettingBrowseMode::SelectFolder   ? "folder"
+                       : c.browseMode == settings::TextSettingBrowseMode::OpenFile ? "file"
+                                                                                   : ""},
               };
             } else if constexpr (std::is_same_v<T, settings::OptionalNumberSetting>) {
               return {
@@ -91,13 +94,14 @@ namespace zynith::settings_bridge {
             } else if constexpr (std::is_same_v<T, settings::OptionalStepperSetting>) {
               return {
                   {"kind", "stepper"}, {"value", c.value ? json(*c.value) : json(nullptr)},
-                  {"min", c.minValue}, {"max", c.maxValue}, {"step", c.step}, {"fallback", c.fallbackValue},
+                  {"min", c.minValue}, {"max", c.maxValue},
+                  {"step", c.step},    {"fallback", c.fallbackValue},
                   {"optional", true},  {"unsetLabel", c.unsetLabel},
               };
             } else if constexpr (std::is_same_v<T, settings::StepperSetting>) {
               return {
-                  {"kind", "stepper"}, {"value", c.value}, {"min", c.minValue}, {"max", c.maxValue},
-                  {"step", c.step},    {"suffix", c.valueSuffix},
+                  {"kind", "stepper"}, {"value", c.value}, {"min", c.minValue},
+                  {"max", c.maxValue}, {"step", c.step},   {"suffix", c.valueSuffix},
               };
             } else if constexpr (std::is_same_v<T, settings::ListSetting>) {
               return {{"kind", "list"}, {"value", c.items}, {"options", optionsJson(c.suggestedOptions)}};
@@ -242,7 +246,9 @@ namespace zynith::settings_bridge {
                 return;
               }
               put(v.get<std::string>());
-            } else if constexpr (std::is_same_v<T, settings::SliderSetting> || std::is_same_v<T, settings::RangeSliderSetting>) {
+            } else if constexpr (
+                std::is_same_v<T, settings::SliderSetting> || std::is_same_v<T, settings::RangeSliderSetting>
+            ) {
               const auto n = number(v);
               if (!n) {
                 out.error = "a slider takes a number";
@@ -278,7 +284,9 @@ namespace zynith::settings_bridge {
                 return;
               }
               put(std::clamp(*n, c.minValue, c.maxValue));
-            } else if constexpr (std::is_same_v<T, settings::OptionalStepperSetting> || std::is_same_v<T, settings::StepperSetting>) {
+            } else if constexpr (
+                std::is_same_v<T, settings::OptionalStepperSetting> || std::is_same_v<T, settings::StepperSetting>
+            ) {
               if (v.is_null()) {
                 if constexpr (std::is_same_v<T, settings::OptionalStepperSetting>) {
                   out.clear = true;
@@ -418,7 +426,8 @@ namespace zynith::settings_bridge {
     return config.setOverrides(std::move(c.set)) ? "ok\n" : "error: not written\n";
   }
 
-  std::string reset(const std::vector<settings::SettingEntry>& entries, ConfigService& config, std::string_view request) {
+  std::string
+  reset(const std::vector<settings::SettingEntry>& entries, ConfigService& config, std::string_view request) {
     const json req = json::parse(request, nullptr, false);
     const auto path = pathOf(req);
     if (!path) {

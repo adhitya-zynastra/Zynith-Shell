@@ -1,7 +1,6 @@
 #include "pipewire/sound_player.h"
 
 #include "core/deferred_call.h"
-
 #include "core/log.h"
 
 #include <algorithm>
@@ -170,8 +169,10 @@ void SoundPlayer::playBuffer(
         continue;
       }
       if (now - active->startedAt < kRetriggerMin) {
-        kLog.debug("sound \"{}\": coalesced into the play started {} ms ago", name,
-                   std::chrono::duration_cast<std::chrono::milliseconds>(now - active->startedAt).count());
+        kLog.debug(
+            "sound \"{}\": coalesced into the play started {} ms ago", name,
+            std::chrono::duration_cast<std::chrono::milliseconds>(now - active->startedAt).count()
+        );
         return;
       }
       if (!active->draining) {
@@ -284,9 +285,11 @@ void SoundPlayer::processStream(ActiveStream& streamState) {
   if (!streamState.firstBufferLogged) {
     // How long a new stream takes to be asked for audio: the latency a cue adds to its event.
     streamState.firstBufferLogged = true;
-    kLog.debug("sound stream: first buffer {} ms after play",
-               std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()
-                                                                     - streamState.startedAt).count());
+    kLog.debug(
+        "sound stream: first buffer {} ms after play",
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - streamState.startedAt)
+            .count()
+    );
   }
 
   spa_buffer* spaBuffer = pwBuffer->buffer;

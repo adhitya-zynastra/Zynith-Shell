@@ -38,7 +38,7 @@ namespace ui::carousel {
   }
 
   struct ArcFit {
-    std::size_t perSide = 0; // visible cards on each side of the focus
+    std::size_t perSide = 0;        // visible cards on each side of the focus
     float angleStep = kArcAngleRad; // angle between neighbouring cards
   };
 

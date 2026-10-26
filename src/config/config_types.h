@@ -147,7 +147,7 @@ struct BarConfig {
   bool showOnWorkspaceSwitch = true; // with auto_hide: briefly reveal when the active workspace changes
 
   [[nodiscard]] constexpr bool isAutoHideEnabled() const noexcept { return autoHide || smartAutoHide; }
-  bool reserveSpace = true;  // reserve compositor exclusive zone; applies with or without auto_hide
+  bool reserveSpace = true; // reserve compositor exclusive zone; applies with or without auto_hide
   // See PositionReference; ignored while reserve_space is on.
   PositionReference reference = PositionReference::Workspace;
   std::string layer = "top"; // top | overlay; attached panels use the same layer
@@ -785,7 +785,7 @@ struct OsdConfig {
   std::string orientation = "horizontal";
   float scale = 1.0F;
   float backgroundOpacity = 0.97F;
-  bool border = true; // outline around OSD popup cards
+  bool border = true;             // outline around OSD popup cards
   std::int32_t durationMs = 1400; // on-screen hold after the last event, before the fade
   // zynith: what "centre" means for the OSD — see PositionReference. Match the bar it sits near.
   PositionReference reference = PositionReference::Workspace;
@@ -1193,9 +1193,9 @@ struct ShellConfig {
     std::string providerPrefix = "/";
     // Zynith presentation (style = zynith). Classic ignores these and keeps its fixed geometry.
     LauncherStyle style = LauncherStyle::Zynith;
-    std::int32_t width = 640;     // logical px, before UI scale; the host clamps to the output
-    std::int32_t height = 540;    // logical px, before UI scale
-    std::int32_t iconSize = 32;   // result icon, logical px
+    std::int32_t width = 640;   // logical px, before UI scale; the host clamps to the output
+    std::int32_t height = 540;  // logical px, before UI scale
+    std::int32_t iconSize = 32; // result icon, logical px
     LayoutDensity density = LayoutDensity::Comfortable;
     /// Paste shortcut after a copy-style launcher activation (calculator, emoji, …).
     ClipboardAutoPasteMode autoPaste = ClipboardAutoPasteMode::Auto;
@@ -1298,14 +1298,14 @@ struct ShellConfig {
   // Border and shadow on/off stay owned by [shell.panel].borders / .shadow — glass adds only
   // what those keys could not already express, so no property has two owners.
   struct GlassConfig {
-    float opacity = 0.55F;       // fill alpha; used only when shell.panel.transparency_mode = "custom"
-    bool blur = true;            // request compositor blur behind translucent shell surfaces
+    float opacity = 0.55F;          // fill alpha; used only when shell.panel.transparency_mode = "custom"
+    bool blur = true;               // request compositor blur behind translucent shell surfaces
     std::int32_t blurStrength = 50; // 0-100, compositor-global; 50 reproduces niri passes 3 / offset 4.0
     bool tint = false;
     GlassTintRole tintRole = GlassTintRole::Primary;
-    float tintStrength = 0.10F;  // 0-1 mix of the tint role into the surface fill
+    float tintStrength = 0.10F; // 0-1 mix of the tint role into the surface fill
     GlassBorderRole borderRole = GlassBorderRole::Outline;
-    float borderOpacity = 1.0F;  // relative to the fill opacity, as the border has always been
+    float borderOpacity = 1.0F; // relative to the fill opacity, as the border has always been
 
     bool operator==(const GlassConfig&) const = default;
   };

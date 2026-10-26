@@ -165,13 +165,12 @@ void NiriFragmentWriter::State::onFragmentValidated(
           .onExit =
               [weak, gen, previous = std::move(previous)](process::RunResult result) mutable {
                 const bool okFull = static_cast<bool>(result);
-                DeferredCall::callLater(
-                    [weak, gen, previous = std::move(previous), okFull, err = std::move(result.err)]() mutable {
-                      if (auto state = weak.lock()) {
-                        state->onFullConfigValidated(gen, std::move(previous), okFull, std::move(err));
-                      }
-                    }
-                );
+                DeferredCall::callLater([weak, gen, previous = std::move(previous), okFull,
+                                         err = std::move(result.err)]() mutable {
+                  if (auto state = weak.lock()) {
+                    state->onFullConfigValidated(gen, std::move(previous), okFull, std::move(err));
+                  }
+                });
               },
       },
       process::RunOptions{.timeout = kValidateTimeout, .maxOutputBytes = kValidateOutputLimit}

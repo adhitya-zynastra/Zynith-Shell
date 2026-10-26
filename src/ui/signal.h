@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
-#include <deque>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <utility>

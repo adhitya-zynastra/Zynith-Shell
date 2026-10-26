@@ -80,9 +80,9 @@ public:
 private:
   void startLeg(
       int direction, float carry, std::function<void(float)> onFrame, std::function<void()> onSettle,
-      const std::function<AnimationManager::Id(
-          AnimationManager&, std::function<void(float)>, std::function<void()>, const void*
-      )>& launch
+      const std::function<
+          AnimationManager::Id(AnimationManager&, std::function<void(float)>, std::function<void()>, const void*)>&
+          launch
   );
 
   AnimationManager* m_animations = nullptr;
@@ -93,5 +93,4 @@ private:
   float m_progress = 1.0F;
   int m_direction = 1;
   float m_carry = 0.0F;
-
 };

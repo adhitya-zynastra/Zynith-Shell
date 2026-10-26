@@ -27,7 +27,11 @@ namespace ui::type {
          .weight = FontWeight::Medium,
          .face = Face::Interface,
          .tabular = true},
-        {.name = "data", .size = Style::fontSizeCaption, .weight = FontWeight::Normal, .face = Face::Data, .tabular = true},
+        {.name = "data",
+         .size = Style::fontSizeCaption,
+         .weight = FontWeight::Normal,
+         .face = Face::Data,
+         .tabular = true},
     }};
 
     std::string g_interface = "sans-serif";

@@ -1,7 +1,5 @@
 #include "shell/lockscreen/lock_surface.h"
 
-#include "security/sensitive_string.h"
-
 #include "capture/screencopy_capture.h"
 #include "core/ui_phase.h"
 #include "dbus/mpris/mpris_art.h"
@@ -13,6 +11,7 @@
 #include "render/core/shared_texture_cache.h"
 #include "render/render_context.h"
 #include "render/scene/wallpaper_node.h"
+#include "security/sensitive_string.h"
 #include "shell/lockscreen/lockscreen_login_box.h"
 #include "shell/lockscreen/lockscreen_widgets_host.h"
 #include "shell/session/session_action_meta.h"
@@ -1387,7 +1386,7 @@ void LockSurface::playEntrance() {
   }
   std::ranges::stable_sort(nodes, {}, [](const Node* node) { return node->y(); });
 
-  constexpr float kBaseDelayMs = 70.0F;  // let the compositor crossfade reveal the wallpaper first
+  constexpr float kBaseDelayMs = 70.0F; // let the compositor crossfade reveal the wallpaper first
   constexpr float kStepMs = 20.0F;
   constexpr float kFadeMs = 210.0F;
   float delayMs = kBaseDelayMs;

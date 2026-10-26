@@ -47,9 +47,9 @@ namespace live::wallpaper_engine {
   parseProject(std::string_view jsonText, std::string_view id, const std::filesystem::path& directory);
 
   struct Layout {
-    std::vector<std::filesystem::path> libraries;       // canonical, de-duplicated
-    std::vector<std::filesystem::path> workshopDirs;    // existing <lib>/steamapps/workshop/content/431960
-    std::optional<std::filesystem::path> assetsDir;     // first existing wallpaper_engine/assets
+    std::vector<std::filesystem::path> libraries;    // canonical, de-duplicated
+    std::vector<std::filesystem::path> workshopDirs; // existing <lib>/steamapps/workshop/content/431960
+    std::optional<std::filesystem::path> assetsDir;  // first existing wallpaper_engine/assets
   };
 
   // Resolves the layout from `steamRoots` (already expanded; missing entries are skipped). Touches the

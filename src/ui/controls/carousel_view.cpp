@@ -213,9 +213,7 @@ CarouselView::PathSample CarouselView::samplePath(float u) const noexcept {
   return sample;
 }
 
-float CarouselView::offsetForIndex(std::size_t index) const noexcept {
-  return static_cast<float>(index) * m_stride;
-}
+float CarouselView::offsetForIndex(std::size_t index) const noexcept { return static_cast<float>(index) * m_stride; }
 
 void CarouselView::setFocusedIndex(std::size_t index, bool animated) {
   const std::size_t count = m_adapter == nullptr ? 0U : m_adapter->itemCount();
@@ -349,8 +347,9 @@ std::optional<std::size_t> CarouselView::indexAt(float localX, float localY) con
   return best == nullptr ? std::nullopt : std::optional<std::size_t>{best->index};
 }
 
-bool CarouselView::slotRectForIndex(std::size_t index, float& outX, float& outY, float& outW, float& outH)
-    const noexcept {
+bool CarouselView::slotRectForIndex(
+    std::size_t index, float& outX, float& outY, float& outW, float& outH
+) const noexcept {
   for (const SlotGeometry& slot : m_slotGeometry) {
     if (slot.index != index) {
       continue;
@@ -373,9 +372,10 @@ void CarouselView::onPointerMotion(float localX, float localY) {
     float w = 0.0F;
     float h = 0.0F;
     if (slotRectForIndex(*idx, x, y, w, h)
-        && m_adapter->overlayHitTest(*idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
-                                     (localY - y) / std::max(0.01F, h) * m_cellHeightResolved,
-                                     m_cellWidthResolved, m_cellHeightResolved)) {
+        && m_adapter->overlayHitTest(
+            *idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
+            (localY - y) / std::max(0.01F, h) * m_cellHeightResolved, m_cellWidthResolved, m_cellHeightResolved
+        )) {
       overlayIdx = idx;
     }
   }
@@ -414,9 +414,10 @@ void CarouselView::onPointerPress(float localX, float localY) {
   float h = 0.0F;
   const bool haveRect = slotRectForIndex(*idx, x, y, w, h);
   const bool overlayTook = haveRect
-      && m_adapter->onPointerPress(*idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
-                                   (localY - y) / std::max(0.01F, h) * m_cellHeightResolved, m_cellWidthResolved,
-                                   m_cellHeightResolved);
+      && m_adapter->onPointerPress(
+          *idx, (localX - x) / std::max(0.01F, w) * m_cellWidthResolved,
+          (localY - y) / std::max(0.01F, h) * m_cellHeightResolved, m_cellWidthResolved, m_cellHeightResolved
+      );
   if (overlayTook) {
     notifyDataChanged();
     return;
@@ -474,9 +475,8 @@ void CarouselView::doLayout(Renderer& renderer) {
   // applied when drawing. One detent is still exactly one item.
   const float lead = std::max(0.0F, (m_viewportWidth - cellW) * 0.5F);
   m_leadPadding = lead;
-  m_virtualWidth = m_itemCount == 0
-      ? m_viewportWidth
-      : (2.0F * lead + cellW + static_cast<float>(m_itemCount - 1) * m_stride);
+  m_virtualWidth =
+      m_itemCount == 0 ? m_viewportWidth : (2.0F * lead + cellW + static_cast<float>(m_itemCount - 1) * m_stride);
   m_canvas->setVirtualSize(m_virtualWidth, m_viewportHeight);
 
   if (m_pendingFocusScroll) {
@@ -501,11 +501,9 @@ void CarouselView::doLayout(Renderer& renderer) {
   const auto centre = static_cast<long>(std::lround(focusPosition));
   const auto reach = static_cast<long>(m_visiblePerSide + m_preloadCount);
   const long firstIdx = std::max<long>(0, centre - reach);
-  const long lastIdx =
-      m_itemCount == 0 ? -1 : std::min<long>(centre + reach, static_cast<long>(m_itemCount) - 1);
-  const std::size_t desiredPoolSize = lastIdx < firstIdx
-      ? 0U
-      : std::min<std::size_t>(kMaxPoolSize, static_cast<std::size_t>(lastIdx - firstIdx + 1));
+  const long lastIdx = m_itemCount == 0 ? -1 : std::min<long>(centre + reach, static_cast<long>(m_itemCount) - 1);
+  const std::size_t desiredPoolSize =
+      lastIdx < firstIdx ? 0U : std::min<std::size_t>(kMaxPoolSize, static_cast<std::size_t>(lastIdx - firstIdx + 1));
 
   while (m_pool.size() < desiredPoolSize) {
     const std::size_t slot = m_pool.size();

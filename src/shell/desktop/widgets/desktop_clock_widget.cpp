@@ -1,16 +1,15 @@
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 
-#include "render/text/font_spec.h"
-#include "ui/typography.h"
-
 #include "render/core/color.h"
 #include "render/core/renderer.h"
 #include "render/scene/node.h"
 #include "render/scene/rect_node.h"
+#include "render/text/font_spec.h"
 #include "time/time_format.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
+#include "ui/typography.h"
 
 #include <chrono>
 #include <cmath>
@@ -638,8 +637,7 @@ void DesktopClockWidget::updateStableDigitalWidth(Renderer& renderer, const std:
   }
   m_stableSample = sample;
 
-  const float width =
-      renderer.measureText(sample, fontSize, m_weight, 0.0F, 0, TextAlign::Start, metricsFamily).width;
+  const float width = renderer.measureText(sample, fontSize, m_weight, 0.0F, 0, TextAlign::Start, metricsFamily).width;
   if (std::abs(width - m_stableWidth) > 0.5F) {
     m_stableWidth = width;
     m_label->setMinWidth(m_stableWidth);

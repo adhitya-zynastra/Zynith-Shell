@@ -1,14 +1,11 @@
 #include "shell/launcher/launcher_panel.h"
-#include "zynith/ui_events.h"
-
-#include <nlohmann/json.hpp>
 
 #include "config/config_service.h"
 #include "core/deferred_call.h"
-#include "core/log.h"
 #include "core/input/key_modifiers.h"
 #include "core/input/key_symbols.h"
 #include "core/input/keybind_matcher.h"
+#include "core/log.h"
 #include "core/ui_phase.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "i18n/i18n.h"
@@ -28,6 +25,7 @@
 #include "ui/style.h"
 #include "util/fuzzy_match.h"
 #include "util/string_utils.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
 #include <chrono>
@@ -35,6 +33,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <string_view>
 #include <tuple>
 
@@ -1167,32 +1166,31 @@ void LauncherPanel::create() {
   // hairline — the one element that is always focused, so it carries the focus colour. Classic:
   // the stock framed input.
   const float searchHeight = (zynith ? Style::controlHeightLg * 1.15F : Style::controlHeight) * scale;
-  auto input =
-      ui::input({
-          .out = &m_input,
-          .placeholder = m_scopedPlaceholder.empty() ? i18n::tr("launcher.search-placeholder") : m_scopedPlaceholder,
-          .fontSize = (zynith ? Style::fontSizeTitle : Style::fontSizeBody) * scale,
-          .controlHeight = searchHeight,
-          .horizontalPadding = (zynith ? 0.0F : Style::spaceMd) * scale,
-          .clearButtonEnabled = true,
-          .lineEditing = true,
-          .frameVisible = !zynith,
-          .surfaceOpacity = panelCardOpacity(),
-          .flexGrow = zynith ? 1.0F : 0.0F,
-          .onChange =
-              [this](const std::string& text) {
-                onInputChanged(text);
-                if (m_input == nullptr) {
-                  return;
-                }
-                const std::string preview = singleLinePreview(text);
-                if (preview != text) {
-                  m_input->setValue(preview);
-                }
-              },
-          .onSubmit = [this](const std::string& /*text*/) { activateSelected(); },
-          .onKeyEvent = [this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); },
-      });
+  auto input = ui::input({
+      .out = &m_input,
+      .placeholder = m_scopedPlaceholder.empty() ? i18n::tr("launcher.search-placeholder") : m_scopedPlaceholder,
+      .fontSize = (zynith ? Style::fontSizeTitle : Style::fontSizeBody) * scale,
+      .controlHeight = searchHeight,
+      .horizontalPadding = (zynith ? 0.0F : Style::spaceMd) * scale,
+      .clearButtonEnabled = true,
+      .lineEditing = true,
+      .frameVisible = !zynith,
+      .surfaceOpacity = panelCardOpacity(),
+      .flexGrow = zynith ? 1.0F : 0.0F,
+      .onChange =
+          [this](const std::string& text) {
+            onInputChanged(text);
+            if (m_input == nullptr) {
+              return;
+            }
+            const std::string preview = singleLinePreview(text);
+            if (preview != text) {
+              m_input->setValue(preview);
+            }
+          },
+      .onSubmit = [this](const std::string& /*text*/) { activateSelected(); },
+      .onKeyEvent = [this](std::uint32_t sym, std::uint32_t modifiers) { return handleKeyEvent(sym, modifiers); },
+  });
   if (zynith) {
     auto searchBar = ui::row({
         .out = &m_searchBar,
@@ -1206,11 +1204,13 @@ void LauncherPanel::create() {
         .fillWidth = true,
         .height = searchHeight,
     });
-    searchBar->addChild(ui::glyph({
-        .glyph = "search",
-        .glyphSize = Style::fontSizeTitle * scale,
-        .color = colorSpecFromRole(ColorRole::Primary),
-    }));
+    searchBar->addChild(
+        ui::glyph({
+            .glyph = "search",
+            .glyphSize = Style::fontSizeTitle * scale,
+            .color = colorSpecFromRole(ColorRole::Primary),
+        })
+    );
     searchBar->addChild(std::move(input));
     container->addChild(std::move(searchBar));
   } else {
@@ -2504,7 +2504,8 @@ std::string LauncherPanel::zynithQueryJson(std::string_view providerId, std::str
   return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
 }
 
-std::string LauncherPanel::zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text) {
+std::string
+LauncherPanel::zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text) {
   for (const auto& p : m_providers) {
     if (p->id() != providerId) {
       continue;

@@ -11,9 +11,9 @@
 #include "ui/controls/label.h"
 #include "ui/palette.h"
 #include "ui/semantic_color.h"
+#include "ui/style.h"
 #include "ui/tokens.h"
 #include "ui/typography.h"
-#include "ui/style.h"
 #include "util/string_utils.h"
 
 #include <chrono>
@@ -53,7 +53,9 @@ DesktopSessionActionsWidget::lockScreenActions(const std::vector<SessionPanelAct
 }
 
 bool DesktopSessionActionsWidget::needsConfirmation(const SessionPanelActionConfig& action) noexcept {
-  return action.action == "logout" || action.action == "reboot" || action.action == "shutdown"
+  return action.action == "logout"
+      || action.action == "reboot"
+      || action.action == "shutdown"
       || action.variant == SessionActionButtonVariant::Destructive;
 }
 
@@ -68,16 +70,20 @@ void DesktopSessionActionsWidget::create() {
   for (std::size_t i = 0; i < m_actions.size(); ++i) {
     const auto& action = m_actions[i];
     Button* button = nullptr;
-    const std::string glyph =
-        action.glyph.has_value() && !action.glyph->empty() ? *action.glyph : session_action::defaultGlyph(action.action);
-    const std::string label =
-        action.label.has_value() && !action.label->empty() ? *action.label : i18n::tr(session_action::labelKey(action.action));
-    row->addChild(ui::button({
-        .out = &button,
-        .text = m_options.showLabels ? label : std::string{},
-        .glyph = glyph,
-        .onClick = [this, i]() { onPressed(i); },
-    }));
+    const std::string glyph = action.glyph.has_value() && !action.glyph->empty()
+        ? *action.glyph
+        : session_action::defaultGlyph(action.action);
+    const std::string label = action.label.has_value() && !action.label->empty()
+        ? *action.label
+        : i18n::tr(session_action::labelKey(action.action));
+    row->addChild(
+        ui::button({
+            .out = &button,
+            .text = m_options.showLabels ? label : std::string{},
+            .glyph = glyph,
+            .onClick = [this, i]() { onPressed(i); },
+        })
+    );
     if (m_animations != nullptr) {
       button->setAnimationManager(m_animations);
     }
@@ -92,14 +98,16 @@ void DesktopSessionActionsWidget::create() {
       break;
     }
   }
-  column->addChild(ui::label({
-      .out = &m_hint,
-      .text = reserve,
-      .fontSize = Style::fontSizeCaption,
-      .color = colorSpecFromRole(ColorRole::Error),
-      .visible = false,
-      .participatesInLayout = !reserve.empty(),
-  }));
+  column->addChild(
+      ui::label({
+          .out = &m_hint,
+          .text = reserve,
+          .fontSize = Style::fontSizeCaption,
+          .color = colorSpecFromRole(ColorRole::Error),
+          .visible = false,
+          .participatesInLayout = !reserve.empty(),
+      })
+  );
   setRoot(std::move(column));
   syncVisuals();
   if (m_editorPreview) {
@@ -162,8 +170,8 @@ void DesktopSessionActionsWidget::syncVisuals() {
     Button::ButtonPalette colors;
     colors.borderWidth = ui::tokens::kHairline;
     const ColorSpec bg = armed ? ui::color::spec(ui::color::Semantic::Error) : clearColorSpec();
-    const ColorSpec fg = armed ? ui::color::spec(ui::color::Semantic::OnError)
-                               : ui::color::spec(ui::color::Semantic::Muted);
+    const ColorSpec fg =
+        armed ? ui::color::spec(ui::color::Semantic::OnError) : ui::color::spec(ui::color::Semantic::Muted);
     const ColorSpec edge = armed ? ui::color::spec(ui::color::Semantic::Error) : clearColorSpec();
     colors.normal = {.bg = bg, .border = edge, .label = fg};
     colors.hover = {

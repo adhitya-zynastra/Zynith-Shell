@@ -49,8 +49,10 @@ int main() {
     expect(ControlCenterConfig{}.style == ControlCenterStyle::Zynith, "the Zynith Control Center is the default");
     expect(ShellConfig{}.displayFontFamily.empty(), "no display face: display text uses the interface font");
     const BarConfig bar;
-    expect(bar.reference == PositionReference::Workspace && !barUsesOutputReference(bar),
-           "bars keep the workspace reference unless asked");
+    expect(
+        bar.reference == PositionReference::Workspace && !barUsesOutputReference(bar),
+        "bars keep the workspace reference unless asked"
+    );
   }
 
   const std::filesystem::path root =
@@ -60,8 +62,8 @@ int main() {
       root / "config" / "noctalia" / "rice.toml",
       "[shell.launcher]\n"
       "style = \"classic\"\n"
-      "width = 2000\n"     // above the ceiling: clamped to 1200
-      "icon_size = 10\n"   // below the floor: clamped to 20
+      "width = 2000\n"   // above the ceiling: clamped to 1200
+      "icon_size = 10\n" // below the floor: clamped to 20
       "density = \"spacious\"\n"
       "\n"
       "[osd]\n"
@@ -91,8 +93,10 @@ int main() {
     expect(config.config().osd.durationMs == 600, "OSD duration is clamped to its floor");
     expect(config.config().osd.reference == PositionReference::Output, "OSD position reference is read");
     expect(config.config().controlCenter.anchorBar == "Time", "Control Center anchor bar is read");
-    expect(config.config().controlCenter.style == ControlCenterStyle::Classic,
-           "a preset can select the classic Control Center");
+    expect(
+        config.config().controlCenter.style == ControlCenterStyle::Classic,
+        "a preset can select the classic Control Center"
+    );
     expect(config.config().shell.displayFontFamily == "Space Grotesk", "the display font family is read");
 
     // --- a GUI override wins, and reset falls back to the preset ------------------------------
@@ -103,7 +107,9 @@ int main() {
     expect(config.setOverride({"control_center", "style"}, std::string("zynith")), "set CC style override");
     expect(config.config().controlCenter.style == ControlCenterStyle::Zynith, "the CC style override wins");
     expect(config.clearOverride({"control_center", "style"}), "reset the CC style override");
-    expect(config.config().controlCenter.style == ControlCenterStyle::Classic, "CC style reset falls back to the preset");
+    expect(
+        config.config().controlCenter.style == ControlCenterStyle::Classic, "CC style reset falls back to the preset"
+    );
   }
 
   std::filesystem::remove_all(root);

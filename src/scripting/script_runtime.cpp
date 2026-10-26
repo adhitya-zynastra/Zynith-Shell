@@ -1,4 +1,3 @@
-#include "scripting/plugin_capabilities.h"
 #include "scripting/script_runtime.h"
 
 #include "core/deferred_call.h"
@@ -7,6 +6,7 @@
 #include "notification/notifications.h"
 #include "scripting/luau_host.h"
 #include "scripting/plugin_bindings.h"
+#include "scripting/plugin_capabilities.h"
 #include "scripting/plugin_id.h"
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"

@@ -107,7 +107,7 @@ private:
 
   std::string m_wallpaperPath;
   std::unique_ptr<ScreencopyImage> m_capture;
-  TextureHandle m_sourceTexture{};  // wallpaper (cache-owned) or capture upload (owned)
+  TextureHandle m_sourceTexture{}; // wallpaper (cache-owned) or capture upload (owned)
   bool m_sourceFromCache = false;
   TextureHandle m_blurredTexture{};
   BlurCache m_blurCache;

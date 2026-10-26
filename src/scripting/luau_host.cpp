@@ -1,4 +1,3 @@
-#include "scripting/plugin_capabilities.h"
 #include "scripting/luau_host.h"
 
 #include "compositors/compositor_platform.h"
@@ -13,6 +12,7 @@
 #include "render/core/color.h"
 #include "render/text/font_registry.h"
 #include "scripting/plugin_bindings.h"
+#include "scripting/plugin_capabilities.h"
 #include "scripting/plugin_id.h"
 #include "scripting/plugin_state_store.h"
 #include "scripting/script_api_context.h"
@@ -31,8 +31,6 @@
 #include "util/string_utils.h"
 
 #include <algorithm>
-#include <set>
-#include <mutex>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -41,7 +39,9 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <mutex>
 #include <nlohmann/json.hpp>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -969,9 +969,8 @@ namespace {
   }
 
   // zynith: resolveHostPath plus the file policy (scripting/plugin_capabilities.h)
-  std::filesystem::path checkedHostPath(
-      lua_State* L, LuauHost* host, std::string_view path, scripting::FileAccess access, const char* what
-  ) {
+  std::filesystem::path
+  checkedHostPath(lua_State* L, LuauHost* host, std::string_view path, scripting::FileAccess access, const char* what) {
     auto resolved = resolveHostPath(host, path);
     if (resolved.empty()) {
       return resolved;
@@ -1069,7 +1068,9 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "readFile", std::string_view(path, len));
-    std::ifstream file(checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "readFile"), std::ios::binary);
+    std::ifstream file(
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "readFile"), std::ios::binary
+    );
     if (!file) {
       lua_pushnil(L);
       lua_pushstring(L, "cannot open file");
@@ -1093,7 +1094,9 @@ namespace {
     }
 
     const int callbackRef = lua_ref(L, 2);
-    const bool accepted = host->startAsyncFileRead(checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "readFileAsync"), callbackRef);
+    const bool accepted = host->startAsyncFileRead(
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "readFileAsync"), callbackRef
+    );
     if (!accepted) {
       lua_unref(L, callbackRef);
     }
@@ -1111,7 +1114,9 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "loadFont", std::string_view(path, len));
-    const std::string family = text::registerFontFile(checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "loadFont"));
+    const std::string family = text::registerFontFile(
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Read, "loadFont")
+    );
     if (family.empty()) {
       lua_pushnil(L);
       lua_pushstring(L, "failed to load font");
@@ -1133,7 +1138,10 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "writeFile", std::string_view(path, pathLen));
-    std::ofstream file(checkedHostPath(L, host, std::string_view(path, pathLen), scripting::FileAccess::Write, "writeFile"), std::ios::binary | std::ios::trunc);
+    std::ofstream file(
+        checkedHostPath(L, host, std::string_view(path, pathLen), scripting::FileAccess::Write, "writeFile"),
+        std::ios::binary | std::ios::trunc
+    );
     if (!file) {
       lua_pushboolean(L, 0);
       lua_pushstring(L, "cannot open file for writing");
@@ -1154,7 +1162,8 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "mkdirAll", std::string_view(path, len));
-    const std::filesystem::path dir = checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Write, "mkdirAll");
+    const std::filesystem::path dir =
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Write, "mkdirAll");
     std::error_code ec;
     std::filesystem::create_directories(dir, ec);
     if (ec) {
@@ -1181,7 +1190,8 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "removeFile", std::string_view(path, len));
-    const std::filesystem::path file = checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Write, "removeFile");
+    const std::filesystem::path file =
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Write, "removeFile");
     std::error_code ec;
     if (std::filesystem::is_directory(file, ec)) {
       lua_pushboolean(L, 0);
@@ -1211,7 +1221,8 @@ namespace {
     const BudgetCrossingScope budgetScope(host, "renameFile", std::string_view(from, fromLen));
     std::error_code ec;
     std::filesystem::rename(
-        checkedHostPath(L, host, std::string_view(from, fromLen), scripting::FileAccess::Write, "renameFile"), checkedHostPath(L, host, std::string_view(to, toLen), scripting::FileAccess::Write, "renameFile"), ec
+        checkedHostPath(L, host, std::string_view(from, fromLen), scripting::FileAccess::Write, "renameFile"),
+        checkedHostPath(L, host, std::string_view(to, toLen), scripting::FileAccess::Write, "renameFile"), ec
     );
     if (ec) {
       lua_pushboolean(L, 0);
@@ -1232,7 +1243,8 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "fileInfo", std::string_view(path, len));
-    const std::filesystem::path target = checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "fileInfo");
+    const std::filesystem::path target =
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "fileInfo");
     std::error_code ec;
     const auto status = std::filesystem::status(target, ec);
     if (ec || !std::filesystem::exists(status)) {
@@ -1274,7 +1286,14 @@ namespace {
     }
     const BudgetCrossingScope budgetScope(host, "fileExists", std::string_view(path, len));
     std::error_code ec;
-    lua_pushboolean(L, std::filesystem::exists(checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "fileExists"), ec) ? 1 : 0);
+    lua_pushboolean(
+        L,
+        std::filesystem::exists(
+            checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "fileExists"), ec
+        )
+            ? 1
+            : 0
+    );
     return 1;
   }
 
@@ -1288,7 +1307,8 @@ namespace {
       return 2;
     }
     const BudgetCrossingScope budgetScope(host, "listDir", std::string_view(path, len));
-    const std::filesystem::path dir = checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "listDir");
+    const std::filesystem::path dir =
+        checkedHostPath(L, host, std::string_view(path, len), scripting::FileAccess::Inspect, "listDir");
     std::error_code ec;
     if (!std::filesystem::is_directory(dir, ec)) {
       lua_pushnil(L);
@@ -1526,7 +1546,8 @@ namespace {
       return 1;
     }
 
-    const std::string destPath = checkedHostPath(L, host, std::string_view(dest, destLen), scripting::FileAccess::Write, "download").string();
+    const std::string destPath =
+        checkedHostPath(L, host, std::string_view(dest, destLen), scripting::FileAccess::Write, "download").string();
     const int callbackRef = lua_ref(L, 3);
     const bool ok = host->startAsyncDownload(std::string(url, urlLen), destPath, callbackRef);
     if (!ok) {

@@ -1,5 +1,4 @@
 #include "app/main_loop.h"
-#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
@@ -91,6 +90,7 @@
 #include "ui/style.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
 #include <chrono>
@@ -722,8 +722,7 @@ void Application::initPanelManagerAndPanels() {
   m_panelManager.registerPanel(
       "wallpaper",
       std::make_unique<WallpaperPanel>(
-          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService,
-          &m_liveWallpaper
+          &m_wayland, &m_configService, &m_thumbnailService, &m_wallpaperScanner, &m_themeService, &m_liveWallpaper
       )
   );
   m_panelManager.registerPanel("tray-drawer", std::make_unique<TrayDrawerPanel>(m_trayService.get(), &m_configService));

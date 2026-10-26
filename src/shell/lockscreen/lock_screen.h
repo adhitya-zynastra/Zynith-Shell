@@ -166,7 +166,7 @@ private:
   const WeatherService* m_weather = nullptr;
   HttpClient* m_httpClient = nullptr;
   Timer m_suspendTimeoutTimer;
-  Timer m_unlockTransitionTimer; // lockfade: defers unlock() until the lock UI has faded out
+  Timer m_unlockTransitionTimer;                          // lockfade: defers unlock() until the lock UI has faded out
   std::vector<std::unique_ptr<ScreenVeil>> m_unlockVeils; // lockfade: live only for the handoff
   Timer m_unlockVeilSafetyTimer;                          // lockfade: guarantees veils are removed
 };

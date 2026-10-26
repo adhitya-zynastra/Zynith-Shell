@@ -40,7 +40,6 @@ using namespace control_center;
 
 namespace {
 
-
   constexpr auto kMprisRefreshMinInterval = std::chrono::milliseconds(750);
   // Full-height cards need room for rounded-rect AA before the tab viewport clips them.
   constexpr float kTabViewportClipInset = 1.0F;
@@ -203,19 +202,21 @@ void ControlCenterPanel::create() {
     sidebarNav->setGap(Style::spaceXs * scale);
     m_sidebarNav = sidebarNav.get();
     const float commandItemHeight = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
-    sidebarNav->addChild(ui::box({
-        .out = &m_navIndicator,
-        .fill = ui::color::spec(ui::color::Semantic::SelectionFill),
-        .configure = [this, scale, commandItemHeight](Box& box) {
-          box.setBorder(ui::color::spec(ui::color::Semantic::SelectionEdge), Style::borderWidth * scale);
-          // In the command bar the indicator is a capsule: it has to read as one object whether it
-          // wraps an icon (a circle) or an icon and its label (a pill).
-          box.setRadius(m_commandBar ? ui::tokens::pill(commandItemHeight) : Style::scaledRadiusLg(scale));
-          box.setParticipatesInLayout(false);
-          box.setHitTestVisible(false);
-          box.setZIndex(-1);
-        },
-    }));
+    sidebarNav->addChild(
+        ui::box({
+            .out = &m_navIndicator,
+            .fill = ui::color::spec(ui::color::Semantic::SelectionFill),
+            .configure = [this, scale, commandItemHeight](Box& box) {
+              box.setBorder(ui::color::spec(ui::color::Semantic::SelectionEdge), Style::borderWidth * scale);
+              // In the command bar the indicator is a capsule: it has to read as one object whether it
+              // wraps an icon (a circle) or an icon and its label (a pill).
+              box.setRadius(m_commandBar ? ui::tokens::pill(commandItemHeight) : Style::scaledRadiusLg(scale));
+              box.setParticipatesInLayout(false);
+              box.setHitTestVisible(false);
+              box.setZIndex(-1);
+            },
+        })
+    );
     // A new panel instance places its indicator immediately (reset), then moves it by ElementMove.
     // Owner = the indicator node, so destroying the node cancels any glide in flight.
     m_indicatorMotion.reset();
@@ -318,11 +319,13 @@ void ControlCenterPanel::create() {
     }
     rootLayout->addChild(std::move(sidebar));
     if (m_commandBar) {
-      rootLayout->addChild(ui::box({
-          .out = &m_commandRule,
-          .fill = ui::color::spec(ui::color::Semantic::Hairline),
-          .height = ui::tokens::kHairline * scale,
-      }));
+      rootLayout->addChild(
+          ui::box({
+              .out = &m_commandRule,
+              .fill = ui::color::spec(ui::color::Semantic::Hairline),
+              .height = ui::tokens::kHairline * scale,
+          })
+      );
     }
   }
 
@@ -366,8 +369,8 @@ void ControlCenterPanel::create() {
             .text = i18n::tr("control-center.tabs.home"),
             .fontSize = (zynith ? Style::fontSizeHeader : Style::fontSizeTitle) * scale,
             .fontWeight = zynith ? FontWeight::Medium : FontWeight::Bold,
-            .fontFamily = zynith && !displayFont.empty() ? std::optional<std::string>{displayFont}
-                                                         : std::optional<std::string>{},
+            .fontFamily =
+                zynith && !displayFont.empty() ? std::optional<std::string>{displayFont} : std::optional<std::string>{},
             .color = colorSpecFromRole(zynith ? ColorRole::OnSurface : ColorRole::Primary),
             .flexGrow = 1.0F,
         })
@@ -960,12 +963,13 @@ void ControlCenterPanel::layoutCommandBarNav(Renderer& renderer, float barWidth)
       continue;
     }
     widestText = std::max(
-        widestText, renderer
-                        .measureText(
-                            i18n::tr(meta.titleKey), ui::type::size(ui::type::Role::Label, scale), labelSpec.weight,
-                            0.0F, 0, TextAlign::Start, ui::type::familyFor(ui::type::Role::Label)
-                        )
-                        .width
+        widestText,
+        renderer
+            .measureText(
+                i18n::tr(meta.titleKey), ui::type::size(ui::type::Role::Label, scale), labelSpec.weight, 0.0F, 0,
+                TextAlign::Start, ui::type::familyFor(ui::type::Role::Label)
+            )
+            .width
     );
   }
   const float maxItem = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);

@@ -8,10 +8,10 @@
 #include "core/build_info.h"
 #include "core/log.h"
 #include "core/process/process_fds.h"
-#include "security/process_hardening.h"
 #include "ipc/cli.h"
 #include "launcher/dmenu_cli.h"
 #include "scripting/plugin_lint.h"
+#include "security/process_hardening.h"
 #include "theme/cli.h"
 #include "theme/firefox_theme/firefox_theme.h"
 

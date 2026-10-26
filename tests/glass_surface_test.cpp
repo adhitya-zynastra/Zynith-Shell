@@ -47,7 +47,9 @@ int main() {
     check(near(fill, 0.55F), "glass mode keeps its 0.55 fill");
     const auto s = panelSurface(c, fill);
     check(s.fill == colorSpecFromRole(ColorRole::Surface, 0.55F), "default fill is exactly the old Surface@0.55");
-    check(s.borderColor == colorSpecFromRole(ColorRole::Outline, 0.55F), "default border is exactly the old Outline@fill");
+    check(
+        s.borderColor == colorSpecFromRole(ColorRole::Outline, 0.55F), "default border is exactly the old Outline@fill"
+    );
     check(s.blur, "translucent glass requests blur");
   }
 
@@ -63,8 +65,10 @@ int main() {
     check(near(fillOpacity(c), 0.30F), "custom uses glass.opacity");
     c.shell.glass.opacity = 1.7F;
     check(near(fillOpacity(c), 1.0F), "custom opacity is clamped");
-    check(near(panelCardOpacityForTransparencyMode(PanelTransparencyMode::Custom, 0.30F), 0.40F),
-          "custom cards sit one step more opaque than the panel");
+    check(
+        near(panelCardOpacityForTransparencyMode(PanelTransparencyMode::Custom, 0.30F), 0.40F),
+        "custom cards sit one step more opaque than the panel"
+    );
   }
 
   // --- blur gate: switched off, or behind an opaque fill, means no blur request -------------
@@ -85,8 +89,10 @@ int main() {
     const auto s = panelSurface(c, 0.5F);
     check(s.fill.tint == ColorRole::Primary, "tint is stored as a role, not a baked colour");
     const Color resolved = resolveColorSpec(s.fill);
-    check(near(resolved.r, 0.25F) && near(resolved.g, 0.25F) && near(resolved.b, 0.25F),
-          "black surface + white primary at 0.25 resolves to 0.25 grey");
+    check(
+        near(resolved.r, 0.25F) && near(resolved.g, 0.25F) && near(resolved.b, 0.25F),
+        "black surface + white primary at 0.25 resolves to 0.25 grey"
+    );
     check(near(resolved.a, 0.5F), "tint never changes opacity");
 
     // The wallpaper changes: the same spec now resolves against the new palette.

@@ -223,12 +223,9 @@ namespace desktop_settings {
     bgOpacity.visibleWhen = backgroundOn;
 
     return {
-        anchorSpec(),
-        boolSpec("background", backgroundDefault),
-        std::move(bgColor),
-        std::move(bgOpacity),
-        std::move(bgRadius),
-        std::move(bgPadding),
+        anchorSpec(),        boolSpec("background", backgroundDefault),
+        std::move(bgColor),  std::move(bgOpacity),
+        std::move(bgRadius), std::move(bgPadding),
     };
   }
 

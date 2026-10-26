@@ -100,10 +100,14 @@ int main() {
       }
     }
     using motion::Role;
-    check(motion::spec(Role::SurfaceDismiss).durationMs < motion::spec(Role::SurfaceReveal).durationMs,
-          "a dismissal is always shorter than the reveal");
-    check(motion::spec(Role::ContentDismiss).durationMs < motion::spec(Role::ContentReveal).durationMs,
-          "content leaves faster than it arrives");
+    check(
+        motion::spec(Role::SurfaceDismiss).durationMs < motion::spec(Role::SurfaceReveal).durationMs,
+        "a dismissal is always shorter than the reveal"
+    );
+    check(
+        motion::spec(Role::ContentDismiss).durationMs < motion::spec(Role::ContentReveal).durationMs,
+        "content leaves faster than it arrives"
+    );
     check(motion::spec(Role::ContentReveal).delayMs > 0.0F, "content waits for its surface");
     check(motion::spec(Role::ElementMove).reduced == motion::ReducedMotion::Snap, "spatial roles snap when reduced");
   }
@@ -143,15 +147,16 @@ int main() {
     anim.tick(20.0F);
     const float dt = std::chrono::duration<float>(std::chrono::steady_clock::now() - t0).count();
     const motion::SpringParams p = motion::spec(motion::Role::ElementMove).spring;
-    const float kept =
-        motion::step({.position = before->value, .velocity = before->velocity}, 300.0F, p, dt).position;
+    const float kept = motion::step({.position = before->value, .velocity = before->velocity}, 300.0F, p, dt).position;
     const float reset = motion::step({.position = before->value, .velocity = 0.0F}, 300.0F, p, dt).position;
     const auto observed = anim.sample(id);
     check(observed.has_value(), "the retargeted spring is still moving");
     if (observed.has_value()) {
       check(std::abs(reset - kept) > 5.0F, "the two hypotheses are distinguishable at this interval");
-      check(std::abs(observed->value - kept) < std::abs(observed->value - reset),
-            "after a retarget the motion continues with its velocity (no reset to rest)");
+      check(
+          std::abs(observed->value - kept) < std::abs(observed->value - reset),
+          "after a retarget the motion continues with its velocity (no reset to rest)"
+      );
       check(std::abs(observed->value - kept) < 3.0F, "the retargeted path matches the kept-state physics");
     }
     step(anim, 400.0F);
@@ -297,8 +302,10 @@ int main() {
     rect.setTarget({.x = 40.0F, .y = 0.0F, .width = 30.0F, .height = 30.0F});
     check(rect.value() == mid, "redirecting the rect does not move it");
     step(anim, 500.0F);
-    check(rect.value() == (MotionRectValue{.x = 40.0F, .y = 0.0F, .width = 30.0F, .height = 30.0F}),
-          "the rect settles on the redirected target");
+    check(
+        rect.value() == (MotionRectValue{.x = 40.0F, .y = 0.0F, .width = 30.0F, .height = 30.0F}),
+        "the rect settles on the redirected target"
+    );
     check(changes > 0 && !rect.animating() && !anim.hasActive(), "rect settles and the manager goes idle");
   }
 

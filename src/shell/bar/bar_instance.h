@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/timer_manager.h"
 #include "config/config_service.h"
+#include "core/timer_manager.h"
 #include "render/animation/animation_manager.h"
 #include "render/scene/input_area.h"
 #include "render/scene/input_dispatcher.h"

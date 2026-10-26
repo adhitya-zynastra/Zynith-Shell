@@ -37,12 +37,12 @@ public:
   };
 
   struct Exit {
-    bool requested = false;       // stop() was called
-    bool duringStartup = false;   // died inside the startup grace period
-    int exitCode = -1;            // -1 when killed by a signal
-    int signal = 0;               // 0 when it exited normally
+    bool requested = false;     // stop() was called
+    bool duringStartup = false; // died inside the startup grace period
+    int exitCode = -1;          // -1 when killed by a signal
+    int signal = 0;             // 0 when it exited normally
     std::chrono::milliseconds uptime{0};
-    std::string outputTail;       // last lines of stdout/stderr, for diagnostics
+    std::string outputTail; // last lines of stdout/stderr, for diagnostics
   };
 
   using StartedCallback = std::function<void()>;

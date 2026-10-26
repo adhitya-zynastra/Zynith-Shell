@@ -1,7 +1,5 @@
 #include "shell/lockscreen/lock_screen.h"
 
-#include "security/sensitive_string.h"
-
 #include "auth/fingerprint_authenticator.h"
 #include "capture/screencopy_util.h"
 #include "compositors/compositor_detect.h"
@@ -15,12 +13,13 @@
 #include "core/log.h"
 #include "ext-session-lock-v1-client-protocol.h"
 #include "i18n/i18n.h"
+#include "render/animation/motion_role.h"
 #include "render/animation/motion_service.h"
 #include "render/render_context.h"
+#include "security/sensitive_string.h"
 #include "shell/desktop/desktop_widget_layout.h"
 #include "shell/keyboard_layout_label.h"
 #include "shell/lockscreen/lock_surface.h"
-#include "render/animation/motion_role.h"
 #include "shell/veil/screen_veil.h"
 #include "ui/palette.h"
 #include "wayland/wayland_connection.h"
@@ -959,11 +958,9 @@ void LockScreen::beginUnlockTransition() {
   const auto& motion = MotionService::instance();
   const float exitMs = motion.enabled() ? exitEndBaseMs / std::max(0.05F, motion.speed()) : 0.0F;
   kLog.info("unlock: authenticated; lock exit animation {:.0f} ms before the session unlocks", exitMs);
-  m_unlockTransitionTimer.start(
-      std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
-        unlock();
-      }
-  );
+  m_unlockTransitionTimer.start(std::chrono::milliseconds(static_cast<int>(std::lround(exitMs))), [this]() {
+    unlock();
+  });
 }
 
 void LockScreen::createUnlockVeils() {

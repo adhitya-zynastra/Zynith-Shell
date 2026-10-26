@@ -1,11 +1,7 @@
 #include "shell/panel/panel_manager.h"
-#include "zynith/surfaces.h"
-#include "zynith/ui_events.h"
 
 #include "capture/screencopy_capture.h"
 #include "capture/screencopy_util.h"
-#include "shell/veil/screen_veil.h"
-
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
 #include "core/deferred_call.h"
@@ -23,8 +19,11 @@
 #include "shell/panel/panel.h"
 #include "shell/panel/panel_surface_style.h"
 #include "shell/screen_position.h"
+#include "shell/spatial/spatial_model.h"
 #include "shell/surface/shadow.h"
+#include "shell/surface/surface_role.h"
 #include "shell/tooltip/tooltip_manager.h"
+#include "shell/veil/screen_veil.h"
 #include "ui/builders.h"
 #include "ui/controls/box.h"
 #include "ui/controls/context_menu_popup.h"
@@ -38,8 +37,8 @@
 #include "wayland/layer_surface.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
-#include "shell/spatial/spatial_model.h"
-#include "shell/surface/surface_role.h"
+#include "zynith/surfaces.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
 #include <cmath>
@@ -52,7 +51,6 @@ PanelManager* PanelManager::s_instance = nullptr;
 namespace {
   // zynith: panels share the toast/wallpaper-browser silhouette — the Surface radius token.
   [[nodiscard]] float zynithPanelRadius(float scale) { return ui::tokens::radius(ui::tokens::Radius::Surface, scale); }
-
 
   constexpr Logger kLog("panel");
   constexpr auto kKeyboardRelaxDelay = std::chrono::milliseconds(100);
@@ -624,8 +622,13 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
   // a different bar's widget moves the panel to that bar — its anchor and position reference — rather
   // than switching sections inside a panel attached somewhere else.
   const bool sameSourceBar = request.sourceBarName.empty() || request.sourceBarName == m_sourceBarName;
-  if (isOpen() && !m_closing && m_activePanel != nullptr && m_activePanelId == panelId
-      && m_output == request.output && sameSourceBar && m_activePanel->retargetOpen(request.context)) {
+  if (isOpen()
+      && !m_closing
+      && m_activePanel != nullptr
+      && m_activePanelId == panelId
+      && m_output == request.output
+      && sameSourceBar
+      && m_activePanel->retargetOpen(request.context)) {
     requestLayout();
     requestRedraw();
     return;
@@ -1374,7 +1377,8 @@ void PanelManager::showModalBackdrop(wl_output* output) {
   ScreencopyCapture capture(wayland);
   ScreencopyImage image;
   std::string error;
-  if (!capture.available() || !screencopy::captureOutputBlocking(capture, wayland, output, image, error)
+  if (!capture.available()
+      || !screencopy::captureOutputBlocking(capture, wayland, output, image, error)
       || !screencopy::orientCaptureNative(image, wayland, output)) {
     kLog.debug("panel manager: modal backdrop capture unavailable ({}); showing panel without it", error);
     return;
@@ -2951,7 +2955,9 @@ void PanelManager::registerIpc(IpcService& ipc) {
         }
         // Output left unset: openPanel resolves it (focus source, else compositor probe). The request
         // came from a command (IPC or a keybinding running it): no spatial source to grow from.
-        togglePanel(panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}});
+        togglePanel(
+            panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}}
+        );
         return "ok\n";
       }
   );
@@ -2990,7 +2996,9 @@ void PanelManager::registerIpc(IpcService& ipc) {
         }
 
         // Output left unset: openPanel resolves it (focus source, else compositor probe).
-        openPanel(panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}});
+        openPanel(
+            panelId, PanelOpenRequest{.context = context, .origin = {.kind = shell::spatial::OriginKind::Command}}
+        );
         return "ok\n";
       }
   );

@@ -15,7 +15,7 @@ namespace noctalia::config::schema {
   inline constexpr Range<std::int64_t> kRefreshMinutesRange{5, 240, 5}; // calendar/weather refresh interval
 
   // Shell.
-  inline constexpr Range<std::int64_t> kHoverIntentRange{0, 2000, 50};   // clock hover-open delay (ms)
+  inline constexpr Range<std::int64_t> kHoverIntentRange{0, 2000, 50}; // clock hover-open delay (ms)
   inline constexpr Range<float> kAnimationSpeedRange{0.1F, 4.0F, 0.05F};
   // Per-category trim on a motion preset, as a percentage of its baseline. 100 = preset unmodified.
   // Floor of 50, not 0: niri durations are derived as base / (factor * trim), so a 0 % trim divides

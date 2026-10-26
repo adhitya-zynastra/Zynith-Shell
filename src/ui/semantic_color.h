@@ -16,13 +16,13 @@
 namespace ui::color {
 
   enum class Semantic : std::uint8_t {
-    Accent,        // the one emphasised thing: primary
-    OnAccent,      // content on a solid accent
-    Surface,       // the base tone of surfaces
-    OnSurface,     // primary content
-    Muted,         // secondary content: on_surface_variant
-    Hairline,      // edges and dividers: on_surface at a low alpha
-    Error,         // destructive, armed or failed states
+    Accent,    // the one emphasised thing: primary
+    OnAccent,  // content on a solid accent
+    Surface,   // the base tone of surfaces
+    OnSurface, // primary content
+    Muted,     // secondary content: on_surface_variant
+    Hairline,  // edges and dividers: on_surface at a low alpha
+    Error,     // destructive, armed or failed states
     OnError,
     Warning,       // cautionary state; the palette has no warning role yet, so it is Error (as the
                    // battery widget already does) — see the design-token docs
@@ -45,7 +45,7 @@ namespace ui::color {
   struct Legible {
     Color color;
     float ratio = 1.0F;
-    bool meets = false;     // `ratio` reaches the requested minimum
+    bool meets = false;      // `ratio` reaches the requested minimum
     bool needsScrim = false; // neither candidate reached it: put a local scrim behind the text
   };
   // The preferred colour if it reaches `minRatio` against `background`; otherwise whichever of
@@ -55,6 +55,7 @@ namespace ui::color {
       const Color& background, const Color& preferred, float minRatio, const Color& light, const Color& dark
   ) noexcept;
   // The same against the current palette: preferred role first, then on_surface / surface.
-  [[nodiscard]] Legible legibleOn(const Color& background, ColorRole preferred, float minRatio = kContrastText) noexcept;
+  [[nodiscard]] Legible
+  legibleOn(const Color& background, ColorRole preferred, float minRatio = kContrastText) noexcept;
 
 } // namespace ui::color

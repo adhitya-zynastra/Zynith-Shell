@@ -1,11 +1,10 @@
 #include "shell/wallpaper/live/wallpaper_engine_catalog.h"
 
-#include <nlohmann/json.hpp>
-
 #include <algorithm>
 #include <cctype>
 #include <fstream>
 #include <iterator>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <system_error>
 #include <unordered_set>

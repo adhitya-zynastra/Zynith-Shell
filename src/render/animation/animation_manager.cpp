@@ -13,12 +13,12 @@ namespace {
   // A spring is "at rest" within 0.4 % of its travel (never less than 0.001, never more than half a
   // unit): for pixel geometry that is at most half a pixel, so the final snap onto the target is
   // invisible, and the entry stops requesting frames promptly after it looks finished.
-  float springRestEpsilon(float span) {
-    return std::clamp(std::abs(span) * 0.004F, 0.001F, 0.5F);
-  }
+  float springRestEpsilon(float span) { return std::clamp(std::abs(span) * 0.004F, 0.001F, 0.5F); }
 
   std::chrono::steady_clock::duration msDuration(float ms) {
-    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<float, std::milli>(ms));
+    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+        std::chrono::duration<float, std::milli>(ms)
+    );
   }
 } // namespace
 
@@ -42,8 +42,7 @@ AnimationManager::Id AnimationManager::animateTimer(
 
 AnimationManager::Id AnimationManager::animateInternal(
     float from, float to, float durationMs, Easing easing, std::function<void(float)> setter,
-    std::function<void()> onComplete, const void* owner, bool scaleDuration, bool respectMotionEnabled,
-    float delayMs
+    std::function<void()> onComplete, const void* owner, bool scaleDuration, bool respectMotionEnabled, float delayMs
 ) {
   const auto& motion = MotionService::instance();
   const bool reduceMotion = respectMotionEnabled && !motion.enabled();
@@ -73,7 +72,8 @@ AnimationManager::Id AnimationManager::animateInternal(
 
   Id id = m_nextId++;
   // A role delay postpones the start; tick() holds the value at `from` until then.
-  const float effectiveDelayMs = reduceMotion ? 0.0F : std::max(0.0F, scaleDuration ? delayMs / motion.speed() : delayMs);
+  const float effectiveDelayMs =
+      reduceMotion ? 0.0F : std::max(0.0F, scaleDuration ? delayMs / motion.speed() : delayMs);
   const auto now = std::chrono::steady_clock::now() + msDuration(effectiveDelayMs);
   // Started from inside a setter? Park it until the tick finishes walking.
   std::vector<Entry>& sink = m_tickDepth > 0 ? m_pending : m_animations;
@@ -110,8 +110,8 @@ AnimationManager::Id AnimationManager::animate(
     // a short fade on real time, independent of the (disabled) motion settings.
     if (spec.reduced == motion::ReducedMotion::Shorten && spec.reducedDurationMs > 0.0F) {
       return animateInternal(
-          from, to, spec.reducedDurationMs, Easing::EaseOutQuad, std::move(setter), std::move(onComplete), owner,
-          false, false
+          from, to, spec.reducedDurationMs, Easing::EaseOutQuad, std::move(setter), std::move(onComplete), owner, false,
+          false
       );
     }
     return animateInternal(from, to, 0.0F, spec.easing, std::move(setter), std::move(onComplete), owner, true, true);
@@ -298,8 +298,9 @@ void AnimationManager::reduceMotion() {
   }
   --m_tickDepth;
   if (!m_pending.empty()) {
-    m_animations.insert(m_animations.end(), std::make_move_iterator(m_pending.begin()),
-                        std::make_move_iterator(m_pending.end()));
+    m_animations.insert(
+        m_animations.end(), std::make_move_iterator(m_pending.begin()), std::make_move_iterator(m_pending.end())
+    );
     m_pending.clear();
   }
 }
@@ -395,8 +396,7 @@ void AnimationManager::tick(float /*deltaMs*/) {
 
     // Re-read: the setter may have marked this entry dead (node destroyed, or an
     // explicit cancel), in which case its completion must not fire.
-    if (finished && i < m_animations.size() && !m_animations[i].dead
-        && m_animations[i].animation.onComplete) {
+    if (finished && i < m_animations.size() && !m_animations[i].dead && m_animations[i].animation.onComplete) {
       completedCallbacks.push_back(std::move(m_animations[i].animation.onComplete));
     }
   }
@@ -405,8 +405,9 @@ void AnimationManager::tick(float /*deltaMs*/) {
 
   std::erase_if(m_animations, [](const Entry& e) { return e.animation.finished || e.dead; });
   if (!m_pending.empty()) {
-    m_animations.insert(m_animations.end(), std::make_move_iterator(m_pending.begin()),
-                        std::make_move_iterator(m_pending.end()));
+    m_animations.insert(
+        m_animations.end(), std::make_move_iterator(m_pending.begin()), std::make_move_iterator(m_pending.end())
+    );
     m_pending.clear();
   }
 

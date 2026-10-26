@@ -54,7 +54,8 @@ int main() {
   TEST_CHECK(nested[1] == "/mnt/games/Steam \"Library\"");
 
   // Legacy flat format.
-  const auto legacy = we::parseLibraryFolderPaths(R"("LibraryFolders" { "TimeNextStatsReport" "1" "1" "/mnt/steam2" })");
+  const auto legacy =
+      we::parseLibraryFolderPaths(R"("LibraryFolders" { "TimeNextStatsReport" "1" "1" "/mnt/steam2" })");
   TEST_CHECK(legacy.size() == 1 && legacy[0] == "/mnt/steam2");
 
   // ── project.json ──────────────────────────────────────────────────────────
@@ -106,10 +107,16 @@ int main() {
   fs::create_directories(second / "steamapps/workshop/content/431960/42");
   writeFile(
       steam / "steamapps/libraryfolders.vdf",
-      "\"libraryfolders\" { \"0\" { \"path\" \"" + steam.string() + "\" } \"1\" { \"path\" \"" + second.string()
+      "\"libraryfolders\" { \"0\" { \"path\" \""
+          + steam.string()
+          + "\" } \"1\" { \"path\" \""
+          + second.string()
           + "\" } }"
   );
-  writeFile(second / "steamapps/workshop/content/431960/42/project.json", R"({"title":"Far","type":"video","preview":"p.jpg"})");
+  writeFile(
+      second / "steamapps/workshop/content/431960/42/project.json",
+      R"({"title":"Far","type":"video","preview":"p.jpg"})"
+  );
   writeFile(second / "steamapps/workshop/content/431960/42/p.jpg", "x");
 
   const we::Layout layout = we::resolveLayout({steam, root / "missing"});

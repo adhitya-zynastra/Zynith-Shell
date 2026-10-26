@@ -40,11 +40,19 @@ namespace {
     return engine.processConfigFile(configPath);
   }
 
-  std::string entry(const std::string& name, const std::filesystem::path& output, const std::string& requiresCommand,
-                    const std::filesystem::path& hookMarker) {
-    return "[templates." + name + "]\ninput_path = \"input.tmpl\"\noutput_path = \"" + output.string() + "\"\n"
-        + (requiresCommand.empty() ? "" : "requires_command = " + requiresCommand + "\n") + "post_hook = \"touch "
-        + hookMarker.string() + "\"\nhook_async = false\n\n";
+  std::string entry(
+      const std::string& name, const std::filesystem::path& output, const std::string& requiresCommand,
+      const std::filesystem::path& hookMarker
+  ) {
+    return "[templates."
+        + name
+        + "]\ninput_path = \"input.tmpl\"\noutput_path = \""
+        + output.string()
+        + "\"\n"
+        + (requiresCommand.empty() ? "" : "requires_command = " + requiresCommand + "\n")
+        + "post_hook = \"touch "
+        + hookMarker.string()
+        + "\"\nhook_async = false\n\n";
   }
 
 } // namespace
@@ -91,8 +99,10 @@ int main() {
   {
     const auto out = kRoot / "second" / "theme.conf";
     const auto marker = kRoot / "second.hook";
-    const bool ok = process(entry("first", kRoot / "x" / "y", "\"zynith-definitely-not-installed\"", kRoot / "first.hook")
-                            + entry("second", out, "", marker));
+    const bool ok = process(
+        entry("first", kRoot / "x" / "y", "\"zynith-definitely-not-installed\"", kRoot / "first.hook")
+        + entry("second", out, "", marker)
+    );
     check(ok, "a mixed pass succeeds");
     check(std::filesystem::exists(out) && std::filesystem::exists(marker), "the entry after a skipped one applies");
   }

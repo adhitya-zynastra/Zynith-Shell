@@ -1,5 +1,4 @@
 #include "shell/wallpaper/live/live_wallpaper_controller.h"
-#include "zynith/ui_events.h"
 
 #include "cli/schema_msg.h"
 #include "config/config_service.h"
@@ -12,11 +11,12 @@
 #include "shell/wallpaper/wallpaper.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
-#include <nlohmann/json.hpp>
 #include <charconv>
 #include <format>
+#include <nlohmann/json.hpp>
 #include <random>
 #include <system_error>
 
@@ -402,8 +402,7 @@ void LiveWallpaperController::onRendererExited(const LiveRendererProcess::Exit& 
     const Pending failed = std::move(*m_pending);
     m_pending.reset();
     setError(
-        "\"" + failed.item.title + "\" failed to start"
-        + (detail.empty() ? std::string() : std::string(": ") + detail)
+        "\"" + failed.item.title + "\" failed to start" + (detail.empty() ? std::string() : std::string(": ") + detail)
     );
     restoreStatic();
     m_activeItem.reset();
@@ -427,7 +426,8 @@ void LiveWallpaperController::onRendererExited(const LiveRendererProcess::Exit& 
   const auto now = std::chrono::steady_clock::now();
   const bool mayRestart = crashed.has_value()
       && exit.uptime >= kAutoRestartMinUptime
-      && (m_lastAutoRestart == std::chrono::steady_clock::time_point{} || now - m_lastAutoRestart >= kAutoRestartWindow);
+      && (m_lastAutoRestart == std::chrono::steady_clock::time_point{}
+          || now - m_lastAutoRestart >= kAutoRestartWindow);
   if (mayRestart) {
     m_lastAutoRestart = now;
     setError("Live wallpaper renderer crashed; restarting it");
@@ -442,7 +442,8 @@ void LiveWallpaperController::onRendererExited(const LiveRendererProcess::Exit& 
   } else {
     setError(
         "Live wallpaper renderer stopped unexpectedly"
-        + (detail.empty() ? std::string() : std::string(": ") + detail) + " — showing the static wallpaper"
+        + (detail.empty() ? std::string() : std::string(": ") + detail)
+        + " — showing the static wallpaper"
     );
   }
   notify();
@@ -797,12 +798,12 @@ std::string LiveWallpaperController::statusJson() const {
       "  \"carousel\": {{\"enabled\": {}, \"interval\": {}, \"order\": \"{}\", \"collection\": {}}},\n"
       "  \"favorites\": {},\n  \"catalog\": {{\"discovered\": {}, \"items\": {}, \"unsupported\": {}}},\n"
       "  \"palette_source\": \"{}\",\n  \"error\": \"{}\"\n}}\n",
-      m_mode == Mode::Live ? "live" : "static", m_provider != nullptr ? m_provider->id() : "",
-      jsonEscape(m_currentId), jsonEscape(title), kind, stateName(m_process.state()), m_process.pid(),
-      m_process.uptime().count(), outputs, m_managedOutputs.size(),
-      m_pending.has_value() ? jsonEscape(m_pending->item.id) : std::string(), m_carouselEnabled ? "true" : "false",
-      m_carouselInterval, m_carouselOrder == CarouselOrder::Shuffle ? "shuffle" : "sequential", m_collection.size(),
-      m_favorites.size(), m_provider != nullptr && m_provider->discovered() ? "true" : "false",
+      m_mode == Mode::Live ? "live" : "static", m_provider != nullptr ? m_provider->id() : "", jsonEscape(m_currentId),
+      jsonEscape(title), kind, stateName(m_process.state()), m_process.pid(), m_process.uptime().count(), outputs,
+      m_managedOutputs.size(), m_pending.has_value() ? jsonEscape(m_pending->item.id) : std::string(),
+      m_carouselEnabled ? "true" : "false", m_carouselInterval,
+      m_carouselOrder == CarouselOrder::Shuffle ? "shuffle" : "sequential", m_collection.size(), m_favorites.size(),
+      m_provider != nullptr && m_provider->discovered() ? "true" : "false",
       m_provider != nullptr ? m_provider->items().size() : 0, unsupportedCount(),
       m_config != nullptr ? jsonEscape(m_config->paletteSourceOverride()) : std::string(), jsonEscape(m_lastError)
   );
@@ -840,7 +841,7 @@ void LiveWallpaperController::registerIpc(IpcService& ipc) {
   ipc.bind(msg::wallpaperLiveList, [this](const std::string& args) -> std::string {
     const std::string source = args.empty() ? std::string("collection") : args;
     const std::vector<std::string>* ids = source == "favorites" ? &m_favorites
-                                          : source == "recent"  ? &m_recent
+        : source == "recent"                                    ? &m_recent
                                                                 : &m_collection;
     nlohmann::json out = nlohmann::json::array();
     for (const std::string& id : *ids) {

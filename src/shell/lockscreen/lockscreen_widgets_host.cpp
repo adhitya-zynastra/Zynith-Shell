@@ -323,7 +323,9 @@ void LockscreenWidgetsHost::syncSurfaceFrameTick(LockSurface* surfacePtr) {
 
     bool needsContinuousRedraw = needsRedraw;
     for (auto& instance : host->m_instances) {
-      if (instance == nullptr || instance->surface != surfacePtr || instance->widget == nullptr
+      if (instance == nullptr
+          || instance->surface != surfacePtr
+          || instance->widget == nullptr
           || !instance->widget->needsFrameTick()) {
         continue;
       }

@@ -86,9 +86,8 @@ float SessionPanel::preferredWidth() const {
   const std::size_t n = visibleColumnCount();
   const float gap = Style::spaceMd;
   const float cellWidth = modalStyle() ? kOrbCellWidth : kButtonMinWidth;
-  const float w = cellWidth * static_cast<float>(n)
-      + gap * static_cast<float>(n > 1 ? n - 1 : 0)
-      + Style::panelPadding * 2.0F;
+  const float w =
+      cellWidth * static_cast<float>(n) + gap * static_cast<float>(n > 1 ? n - 1 : 0) + Style::panelPadding * 2.0F;
   return scaled(w);
 }
 
@@ -173,13 +172,15 @@ void SessionPanel::create() {
             .gap = Style::spaceSm * scale,
         });
         cell->addChild(std::unique_ptr<Button>(b));
-        cell->addChild(ui::label({
-            .text = cfg.label.has_value() && !cfg.label->empty() ? *cfg.label
-                                                                   : i18n::tr(session_action::labelKey(cfg.action)),
-            .fontSize = Style::fontSizeBody * scale,
-            .color = colorSpecFromRole(ColorRole::OnSurface),
-            .textAlign = TextAlign::Center,
-        }));
+        cell->addChild(
+            ui::label({
+                .text = cfg.label.has_value() && !cfg.label->empty() ? *cfg.label
+                                                                     : i18n::tr(session_action::labelKey(cfg.action)),
+                .fontSize = Style::fontSizeBody * scale,
+                .color = colorSpecFromRole(ColorRole::OnSurface),
+                .textAlign = TextAlign::Center,
+            })
+        );
         rootLayout->addChild(std::move(cell));
       } else {
         rootLayout->addChild(std::unique_ptr<Button>(b));

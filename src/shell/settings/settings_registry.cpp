@@ -550,7 +550,8 @@ namespace settings {
       ));
       // zynith: the display face, next to the UI face it falls back to.
       SettingControl displayFontControl = TextSetting{
-          .value = cfg.shell.displayFontFamily, .placeholder = tr("settings.schema.appearance.display-font.placeholder"),
+          .value = cfg.shell.displayFontFamily,
+          .placeholder = tr("settings.schema.appearance.display-font.placeholder"),
           .browseFileExtensions = {}
       };
       if (!env.fontFamilies.empty()) {
@@ -1222,8 +1223,8 @@ namespace settings {
 
       entries.push_back(makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.blur.label"),
-          tr("settings.schema.glass.blur.description"), {"shell", "glass", "blur"},
-          ToggleSetting{cfg.shell.glass.blur}, "glass blur frosted background effect"
+          tr("settings.schema.glass.blur.description"), {"shell", "glass", "blur"}, ToggleSetting{cfg.shell.glass.blur},
+          "glass blur frosted background effect"
       ));
       auto strength = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.blur-strength.label"),
@@ -1236,8 +1237,8 @@ namespace settings {
 
       entries.push_back(makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint.label"),
-          tr("settings.schema.glass.tint.description"), {"shell", "glass", "tint"},
-          ToggleSetting{cfg.shell.glass.tint}, "glass tint colour wallpaper accent"
+          tr("settings.schema.glass.tint.description"), {"shell", "glass", "tint"}, ToggleSetting{cfg.shell.glass.tint},
+          "glass tint colour wallpaper accent"
       ));
       auto tintRole = makeEntry(
           SettingsSection::Personalization, "glass", tr("settings.schema.glass.tint-role.label"),
@@ -1368,8 +1369,7 @@ namespace settings {
     ));
     {
       const auto zynithOnly = [](const Config& c) { return c.shell.launcher.style == LauncherStyle::Zynith; };
-      SliderSetting width =
-          sliderFor(cfg.shell.launcher.width, noctalia::config::schema::kLauncherWidthRange, true);
+      SliderSetting width = sliderFor(cfg.shell.launcher.width, noctalia::config::schema::kLauncherWidthRange, true);
       width.valueSuffix = "px";
       auto widthEntry = makeEntry(
           SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-width.label"),
@@ -1378,8 +1378,7 @@ namespace settings {
       );
       widthEntry.visibleWhen = zynithOnly;
       entries.push_back(std::move(widthEntry));
-      SliderSetting height =
-          sliderFor(cfg.shell.launcher.height, noctalia::config::schema::kLauncherHeightRange, true);
+      SliderSetting height = sliderFor(cfg.shell.launcher.height, noctalia::config::schema::kLauncherHeightRange, true);
       height.valueSuffix = "px";
       auto heightEntry = makeEntry(
           SettingsSection::Personalization, "launcher", tr("settings.schema.personalization.launcher-height.label"),
@@ -1550,8 +1549,7 @@ namespace settings {
     // behaves, so they sit in Personalization beside motion and glass. The feature sections keep
     // functional options (tabs, shortcuts, sidebar modes, placement). Moved, never copied.
     entries.push_back(makeEntry(
-        SettingsSection::Personalization, "control-center",
-        tr("settings.schema.panels.control-center-top-nav.label"),
+        SettingsSection::Personalization, "control-center", tr("settings.schema.panels.control-center-top-nav.label"),
         tr("settings.schema.panels.control-center-top-nav.description"), {"control_center", "top_nav"},
         ToggleSetting{cfg.controlCenter.topNav}, "sections top navigation row"
     ));

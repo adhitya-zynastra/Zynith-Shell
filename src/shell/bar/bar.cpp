@@ -1,6 +1,4 @@
-#include "zynith/surfaces.h"
 #include "shell/bar/bar.h"
-#include "shell/surface/glass.h"
 
 #include "compositors/compositor_platform.h"
 #include "config/config_service.h"
@@ -23,14 +21,16 @@
 #include "shell/bar/widgets/taskbar_widget.h"
 #include "shell/bar/widgets/tray_widget.h"
 #include "shell/panel/panel_manager.h"
+#include "shell/spatial/spatial_model.h"
+#include "shell/surface/glass.h"
 #include "shell/surface/shadow.h"
 #include "shell/tooltip/tooltip_manager.h"
-#include "shell/spatial/spatial_model.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
+#include "zynith/surfaces.h"
 
 #include <algorithm>
 #include <cerrno>
@@ -369,7 +369,8 @@ namespace {
                       .kind = shell::spatial::OriginKind::BarArea,
                       .sourceBar = std::string(sourceBarName),
                       .rect = {.x = anchorX, .y = anchorY, .width = 1.0F, .height = 1.0F},
-                      .edge = shell::spatial::edgeFromBarPosition(instance.barConfig.position)},
+                      .edge = shell::spatial::edgeFromBarPosition(instance.barConfig.position)
+                  },
         }
     );
   }
@@ -2729,7 +2730,8 @@ void Bar::attachWidgetsToSections(BarInstance& instance) {
         // then clicked it. That click is the one the hover pre-empted, so it confirms the panel
         // (retargeting to the clicked section) rather than toggling it shut.
         const bool confirmsHoverOpen = activation == Widget::PanelActivation::Toggle
-            && inst->hoverOpenedControlCenter && panelId == "control-center"
+            && inst->hoverOpenedControlCenter
+            && panelId == "control-center"
             && PanelManager::instance().isOpenPanel(panelId);
         inst->hoverOpenedControlCenter = false;
         if (activation == Widget::PanelActivation::Open || confirmsHoverOpen) {
@@ -3211,9 +3213,8 @@ void Bar::applyBackgroundPalette(BarInstance& instance) {
   auto style = instance.bg->style();
   // zynith: the glass tint reaches the bar too (captured in backgroundFill); its alpha stays
   // [bar].background_opacity.
-  style.fill = instance.backgroundFillSet
-      ? resolveColorSpec(instance.backgroundFill)
-      : colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
+  style.fill = instance.backgroundFillSet ? resolveColorSpec(instance.backgroundFill)
+                                          : colorForRole(ColorRole::Surface, instance.barConfig.backgroundOpacity);
   style.border = resolveColorSpec(instance.barConfig.border);
   style.borderWidth = instance.barConfig.borderWidth;
   instance.bg->setStyle(style);

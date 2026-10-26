@@ -59,7 +59,9 @@ namespace scripting {
         return false;
       }
       const auto rest = std::string_view(s).substr(6);
-      return rest.starts_with("self") || rest.starts_with("thread-self") || (!rest.empty() && rest[0] >= '0' && rest[0] <= '9');
+      return rest.starts_with("self")
+          || rest.starts_with("thread-self")
+          || (!rest.empty() && rest[0] >= '0' && rest[0] <= '9');
     }
 
     std::vector<std::filesystem::path> secretLocations() {
@@ -293,7 +295,8 @@ namespace scripting {
     std::error_code ec;
     std::filesystem::create_directories(path.parent_path(), ec);
     std::ostringstream out;
-    out << "# What each Luau plugin may do beyond drawing itself. Written by `noctalia msg plugins grant|revoke`;\n"
+    out
+        << "# What each Luau plugin may do beyond drawing itself. Written by `noctalia msg plugins grant|revoke`;\n"
         << "# a plugin gets only what it declares in its plugin.toml AND what is granted here.\n"
         << "# Capabilities: exec shell network files notifications clipboard env\n\n[grants]\n";
     for (const auto& [id, set] : m_granted) {
@@ -370,8 +373,9 @@ namespace scripting {
         return deny("secret store");
       }
     }
-    const bool own = within(target, resolvedPath(pluginDir)) || target == resolvedPath(pluginDir)
-                     || (!dataDir.empty() && (within(target, resolvedPath(dataDir)) || target == resolvedPath(dataDir)));
+    const bool own = within(target, resolvedPath(pluginDir))
+        || target == resolvedPath(pluginDir)
+        || (!dataDir.empty() && (within(target, resolvedPath(dataDir)) || target == resolvedPath(dataDir)));
     if (own) {
       return true;
     }
@@ -390,8 +394,8 @@ namespace scripting {
 
   bool envAllowedWithoutCapability(std::string_view name) noexcept {
     static constexpr std::array<std::string_view, 12> kPlain{
-        "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "SHELL", "TERM", "TZ", "PATH", "WAYLAND_DISPLAY", "DISPLAY",
-        "DESKTOP_SESSION",
+        "HOME", "USER", "LOGNAME",         "LANG",    "LANGUAGE",        "SHELL", "TERM",
+        "TZ",   "PATH", "WAYLAND_DISPLAY", "DISPLAY", "DESKTOP_SESSION",
     };
     for (const auto plain : kPlain) {
       if (name == plain) {

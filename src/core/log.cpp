@@ -1,8 +1,7 @@
 #include "core/log.h"
 
-#include <atomic>
-
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>

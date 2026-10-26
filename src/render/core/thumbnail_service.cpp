@@ -415,8 +415,7 @@ void ThumbnailService::prefetch(const std::string& path, int targetPx) {
   enqueueDecodeIfNeeded(key);
 }
 
-ThumbnailService::SessionId
-ThumbnailService::beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries) {
+ThumbnailService::SessionId ThumbnailService::beginSession(std::size_t idleBudgetBytes, std::size_t idleBudgetEntries) {
   m_activeSession = m_nextSession++;
   m_idleBudgetBytes = std::max(kMaxIdleBytes, idleBudgetBytes);
   m_idleBudgetEntries = std::max(kMaxIdleEntries, idleBudgetEntries);

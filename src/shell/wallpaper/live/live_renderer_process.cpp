@@ -130,7 +130,7 @@ bool LiveRendererProcess::start(const live::LaunchSpec& spec, std::string& error
     sigset_t none;
     ::sigemptyset(&none);
     ::sigprocmask(SIG_SETMASK, &none, nullptr);
-    struct sigaction dfl {};
+    struct sigaction dfl{};
     dfl.sa_handler = SIG_DFL;
     for (const int sig : {SIGPIPE, SIGINT, SIGTERM, SIGHUP, SIGQUIT, SIGCHLD, SIGUSR1, SIGUSR2}) {
       ::sigaction(sig, &dfl, nullptr);
@@ -381,8 +381,8 @@ void LiveRendererProcess::finishExit() {
     kLog.info("renderer pid {} stopped after {} ms", pid, exit.uptime.count());
   } else {
     kLog.warn(
-        "renderer pid {} exited unexpectedly after {} ms (code {}, signal {})", pid, exit.uptime.count(),
-        exit.exitCode, exit.signal
+        "renderer pid {} exited unexpectedly after {} ms (code {}, signal {})", pid, exit.uptime.count(), exit.exitCode,
+        exit.signal
     );
     if (!exit.outputTail.empty()) {
       kLog.warn("renderer output tail:\n{}", exit.outputTail);

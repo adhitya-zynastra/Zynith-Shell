@@ -21,7 +21,7 @@ namespace shell::spatial {
 
   // What summoned a surface.
   enum class OriginKind : std::uint8_t {
-    None,     // unknown (internal opens that do not state one)
+    None,      // unknown (internal opens that do not state one)
     BarWidget, // a widget on a bar: the strongest origin — it has an identity and a rectangle
     BarArea,   // an empty part of a bar (dead-zone gesture): a point on the bar's edge
     Command,   // IPC or a keybinding (Shift+Super+E runs IPC): no spatial source
@@ -44,9 +44,9 @@ namespace shell::spatial {
 
   struct Origin {
     OriginKind kind = OriginKind::None;
-    std::string sourceBar; // bar name for BarWidget / BarArea
-    std::string sourceId;  // widget config name (or type) / surface id
-    OriginRect rect;       // output-local logical px, captured when the request is made
+    std::string sourceBar;  // bar name for BarWidget / BarArea
+    std::string sourceId;   // widget config name (or type) / surface id
+    OriginRect rect;        // output-local logical px, captured when the request is made
     Edge edge = Edge::None; // the screen edge the origin sits on
 
     [[nodiscard]] bool spatial() const noexcept { return rect.valid(); }

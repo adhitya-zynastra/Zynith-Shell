@@ -172,8 +172,10 @@ int main() {
     ShellConfig::GlassConfig g;
     const auto out = renderGlass(g);
     const std::string_view block = "blur {\n    passes 3\n    offset 4.0\n    noise 0.025\n    saturation 1.25\n}\n";
-    check(out.size() >= block.size() && out.substr(out.size() - block.size()) == block,
-          "default glass reproduces the blur block config.kdl carried before it moved");
+    check(
+        out.size() >= block.size() && out.substr(out.size() - block.size()) == block,
+        "default glass reproduces the blur block config.kdl carried before it moved"
+    );
   }
 
   // --- number formatting identical to the plugin's fmt() ---------------------------------------

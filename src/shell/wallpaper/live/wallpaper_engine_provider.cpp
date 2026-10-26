@@ -69,8 +69,7 @@ namespace {
     return "fill";
   }
 
-  [[nodiscard]] std::vector<std::pair<fs::path, fs::file_time_type>>
-  stampsFor(const std::vector<fs::path>& dirs) {
+  [[nodiscard]] std::vector<std::pair<fs::path, fs::file_time_type>> stampsFor(const std::vector<fs::path>& dirs) {
     std::vector<std::pair<fs::path, fs::file_time_type>> stamps;
     for (const fs::path& dir : dirs) {
       std::error_code ec;
@@ -167,8 +166,7 @@ void WallpaperEngineProvider::refresh(bool force) {
       return order != 0 ? order < 0 : a.id < b.id;
     });
     result.stamps = stampsFor(result.layout.workshopDirs);
-    result.elapsedMs =
-        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count();
+    result.elapsedMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - begin).count();
 
     // Hand the result to the main thread; the provider may have been destroyed meanwhile.
     auto shared = std::make_shared<ScanResult>(std::move(result));
@@ -251,7 +249,10 @@ std::expected<live::LaunchSpec, std::string> WallpaperEngineProvider::launchSpec
 ) {
   if (item.kind == live::ItemKind::Preset) {
     return std::unexpected(
-        "\"" + item.title + "\" is a Wallpaper Engine preset (built on item " + item.dependency
+        "\""
+        + item.title
+        + "\" is a Wallpaper Engine preset (built on item "
+        + item.dependency
         + "), which linux-wallpaperengine cannot render"
     );
   }
@@ -274,7 +275,8 @@ std::expected<live::LaunchSpec, std::string> WallpaperEngineProvider::launchSpec
   if (!renderer.has_value()) {
     return std::unexpected(
         "linux-wallpaperengine not found (set [wallpaper.live] renderer, currently \""
-        + (config.renderer.empty() ? std::string(kDefaultRenderer) : config.renderer) + "\")"
+        + (config.renderer.empty() ? std::string(kDefaultRenderer) : config.renderer)
+        + "\")"
     );
   }
 
@@ -318,7 +320,8 @@ std::expected<live::LaunchSpec, std::string> WallpaperEngineProvider::launchSpec
   // Its own directory is the neutral choice (it holds the bundled CEF resources anyway) rather than
   // wherever the shell happened to be started from.
   spec.workingDir = renderer->parent_path();
-  spec.scratchDir = scratchRoot() / ("renderer-" + std::to_string(::getpid()) + "-" + std::to_string(++m_scratchCounter));
+  spec.scratchDir =
+      scratchRoot() / ("renderer-" + std::to_string(::getpid()) + "-" + std::to_string(++m_scratchCounter));
   spec.env.emplace_back("TMPDIR", spec.scratchDir.string());
   return spec;
 }

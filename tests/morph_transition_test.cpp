@@ -84,17 +84,13 @@ int main() {
 
     bool firstSettled = false;
     bool secondSettled = false;
-    morph.start(
-        1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { firstSettled = true; }
-    );
+    morph.start(1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { firstSettled = true; });
     step(anim, 16.0F);
     const float mid = morph.progress();
     check(mid > 0.0F && mid < 1.0F, "interrupted part-way through the first leg");
 
     // Retarget in the opposite direction, carrying the visual state observed at `mid`.
-    morph.start(
-        -1, mid, 40.0F, Easing::Linear, [](float) {}, [&]() { secondSettled = true; }
-    );
+    morph.start(-1, mid, 40.0F, Easing::Linear, [](float) {}, [&]() { secondSettled = true; });
     check(morph.direction() == -1, "direction updated on retarget");
     check(morph.carry() == mid, "carry is the state handed in at retarget");
     check(morph.progress() == 0.0F, "the new leg restarts its own progress at 0");
@@ -113,8 +109,7 @@ int main() {
     int settles = 0;
     for (int i = 0; i < 60; ++i) {
       morph.start(
-          (i % 2 == 0) ? 1 : -1, morph.progress(), 40.0F, Easing::EaseOutQuint, [](float) {},
-          [&]() { ++settles; }
+          (i % 2 == 0) ? 1 : -1, morph.progress(), 40.0F, Easing::EaseOutQuint, [](float) {}, [&]() { ++settles; }
       );
       step(anim, 8.0F); // never long enough to finish
     }
@@ -137,9 +132,7 @@ int main() {
       // Re-enter start() from the running leg's own setter, a few times.
       if (p > 0.3F && retargets < 3) {
         ++retargets;
-        morph.start(
-            -morph.direction(), p, 40.0F, Easing::Linear, frame, [&]() { settled = true; }
-        );
+        morph.start(-morph.direction(), p, 40.0F, Easing::Linear, frame, [&]() { settled = true; });
       }
     };
     morph.start(1, 0.0F, 40.0F, Easing::Linear, frame, [&]() { settled = true; });
@@ -156,9 +149,7 @@ int main() {
 
     bool settled = false;
     int frames = 0;
-    morph.start(
-        1, 0.0F, 40.0F, Easing::Linear, [&](float) { ++frames; }, [&]() { settled = true; }
-    );
+    morph.start(1, 0.0F, 40.0F, Easing::Linear, [&](float) { ++frames; }, [&]() { settled = true; });
     step(anim, 16.0F);
     const int framesAtCancel = frames;
     morph.cancel();
@@ -176,9 +167,7 @@ int main() {
     {
       MorphTransition morph;
       morph.bind(&anim, nullptr);
-      morph.start(
-          1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { settled = true; }
-      );
+      morph.start(1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { settled = true; });
       step(anim, 16.0F);
     } // destructor cancels the in-flight leg
     step(anim, 70.0F);
@@ -194,9 +183,7 @@ int main() {
     morph.bind(&anim, &owner);
 
     bool settled = false;
-    morph.start(
-        1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { settled = true; }
-    );
+    morph.start(1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { settled = true; });
     step(anim, 16.0F);
     anim.cancelForOwner(&owner);
     step(anim, 70.0F);
@@ -213,9 +200,7 @@ int main() {
 
     bool settled = false;
     float lastProgress = -1.0F;
-    morph.start(
-        1, 0.0F, 40.0F, Easing::Linear, [&](float p) { lastProgress = p; }, [&]() { settled = true; }
-    );
+    morph.start(1, 0.0F, 40.0F, Easing::Linear, [&](float p) { lastProgress = p; }, [&]() { settled = true; });
     anim.tick(1.0F);
     check(settled, "with motion disabled the leg settles immediately");
     check(lastProgress == 1.0F, "and lands on the end state rather than a half-applied one");
@@ -228,9 +213,7 @@ int main() {
     MorphTransition morph; // never bound
     bool settled = false;
     float lastProgress = -1.0F;
-    morph.start(
-        1, 0.0F, 40.0F, Easing::Linear, [&](float p) { lastProgress = p; }, [&]() { settled = true; }
-    );
+    morph.start(1, 0.0F, 40.0F, Easing::Linear, [&](float p) { lastProgress = p; }, [&]() { settled = true; });
     check(settled, "unbound morph settles synchronously");
     check(lastProgress == 1.0F, "unbound morph lands on the end state");
     check(!morph.active(), "unbound morph is not left active");
@@ -244,9 +227,7 @@ int main() {
     for (int i = 0; i < 8; ++i) {
       auto m = std::make_unique<MorphTransition>();
       m->bind(&anim, nullptr);
-      m->start(
-          1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { ++settles; }
-      );
+      m->start(1, 0.0F, 40.0F, Easing::Linear, [](float) {}, [&]() { ++settles; });
       morphs.push_back(std::move(m));
     }
     step(anim, 70.0F);

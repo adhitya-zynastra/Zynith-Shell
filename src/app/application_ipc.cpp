@@ -1,5 +1,3 @@
-#include "zynith/settings_bridge.h"
-#include "zynith/surfaces.h"
 #include "app/main_loop.h"
 #include "application.h"
 #include "application_internal.h"
@@ -11,7 +9,6 @@
 #include "core/files/resource_paths.h"
 #include "core/input/keybind_matcher.h"
 #include "core/log.h"
-#include "security/process_hardening.h"
 #include "core/process/process.h"
 #include "cursor-shape-v1-client-protocol.h"
 #include "dbus/accounts/accounts_service.h"
@@ -66,6 +63,7 @@
 #include "scripting/plugin_panel_shell.h"
 #include "scripting/plugin_registry.h"
 #include "scripting/plugin_runtime_context.h"
+#include "security/process_hardening.h"
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
@@ -95,6 +93,8 @@
 #include "ui/style.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
+#include "zynith/settings_bridge.h"
+#include "zynith/surfaces.h"
 
 #include <algorithm>
 #include <chrono>
@@ -141,7 +141,8 @@ void Application::initIpc() {
         json += m_lockScreen.isActive() ? "true" : "false";
         // zynith: toggles another UI shows while the shell still owns them
         json += std::format(
-            ",\n  \"caffeine\": {},\n  \"nightlight\": {{\"enabled\": {}, \"forced\": {}, \"active\": {}}},\n  \"dnd\": {}",
+            ",\n  \"caffeine\": {},\n  \"nightlight\": {{\"enabled\": {}, \"forced\": {}, \"active\": {}}},\n  "
+            "\"dnd\": {}",
             m_idleInhibitor.enabled() ? "true" : "false", m_gammaService.enabled() ? "true" : "false",
             m_gammaService.forceEnabled() ? "true" : "false", m_gammaService.active() ? "true" : "false",
             m_notificationManager.doNotDisturb() ? "true" : "false"
@@ -456,8 +457,7 @@ void Application::initIpc() {
           {"image", entry.isImage()},
           {"bytes", entry.byteSize},
           {"pinned", entry.pinned},
-          {"time",
-           std::chrono::duration_cast<std::chrono::milliseconds>(entry.capturedAt.time_since_epoch()).count()},
+          {"time", std::chrono::duration_cast<std::chrono::milliseconds>(entry.capturedAt.time_since_epoch()).count()},
       });
     }
     return out.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n";
@@ -531,32 +531,34 @@ void Application::initIpc() {
   });
 
   // zynith: the selected text entry, whole up to 16 KB, for the preview pane; nothing else leaves
-  m_ipcService.bind(noctalia::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
-    constexpr std::size_t kMaxPreviewText = 16U * 1024U;
-    const auto index = historyIndex(StringUtils::trim(args));
-    if (!index) {
-      return "error: no clipboard entry " + args + "\n";
-    }
-    if (m_clipboardService.history()[*index].isImage()) {
-      return "error: not text\n";
-    }
-    if (!m_clipboardService.ensureEntryLoaded(*index)) {
-      return "error: entry unavailable\n";
-    }
-    const ClipboardEntry& entry = m_clipboardService.history()[*index];
-    std::string text(entry.data.begin(), entry.data.end());
-    if (text.size() > kMaxPreviewText) {
-      std::size_t cut = kMaxPreviewText;
-      while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
-        --cut;
+  m_ipcService.bind(
+      noctalia::cli::msg::clipboardEntryText, [this, historyIndex](const std::string& args) -> std::string {
+        constexpr std::size_t kMaxPreviewText = 16U * 1024U;
+        const auto index = historyIndex(StringUtils::trim(args));
+        if (!index) {
+          return "error: no clipboard entry " + args + "\n";
+        }
+        if (m_clipboardService.history()[*index].isImage()) {
+          return "error: not text\n";
+        }
+        if (!m_clipboardService.ensureEntryLoaded(*index)) {
+          return "error: entry unavailable\n";
+        }
+        const ClipboardEntry& entry = m_clipboardService.history()[*index];
+        std::string text(entry.data.begin(), entry.data.end());
+        if (text.size() > kMaxPreviewText) {
+          std::size_t cut = kMaxPreviewText;
+          while (cut > 0 && (static_cast<unsigned char>(text[cut]) & 0xC0) == 0x80) {
+            --cut;
+          }
+          text.resize(cut);
+        }
+        if (!m_panelManager.isOpenPanel("clipboard")) {
+          m_clipboardService.evictEntryPayload(*index);
+        }
+        return text;
       }
-      text.resize(cut);
-    }
-    if (!m_panelManager.isOpenPanel("clipboard")) {
-      m_clipboardService.evictEntryPayload(*index);
-    }
-    return text;
-  });
+  );
 
   // zynith: what the Control Panel's screen-time module shows
   m_ipcService.bind(noctalia::cli::msg::screenTime, [this](const std::string& args) -> std::string {
@@ -680,7 +682,12 @@ void Application::initIpc() {
     nlohmann::json diskOut = nlohmann::json::object();
     for (const auto& path : disks) {
       if (const auto d = m_systemMonitor->diskStats(path)) {
-        diskOut[path] = {{"used_pct", d->usagePercent}, {"total", d->totalBytes}, {"free", d->freeBytes}, {"available", d->availableBytes}};
+        diskOut[path] = {
+            {"used_pct", d->usagePercent},
+            {"total", d->totalBytes},
+            {"free", d->freeBytes},
+            {"available", d->availableBytes}
+        };
       }
     }
     nlohmann::json out{
@@ -898,8 +905,11 @@ void Application::initIpc() {
   m_ipcService.bind(noctalia::cli::msg::surfacesSync, [this](const std::string&) -> std::string {
     m_bar.onOutputChange(); // re-syncs instances, which consults the ownership file
     m_desktopWidgetsController.syncOwnership();
-    return std::string("ok: bar ") + (zynith::uiOwns("bar") ? "zynith" : "native") + ", desktop_widgets "
-        + (zynith::uiOwns("desktop_widgets") ? "zynith" : "native") + "\n";
+    return std::string("ok: bar ")
+        + (zynith::uiOwns("bar") ? "zynith" : "native")
+        + ", desktop_widgets "
+        + (zynith::uiOwns("desktop_widgets") ? "zynith" : "native")
+        + "\n";
   });
 
   m_ipcService.bind(
@@ -1204,16 +1214,20 @@ void Application::initIpc() {
           std::string unknown;
           const auto caps = scripting::parseCapabilityList(words, &unknown);
           if (!unknown.empty()) {
-            return "error: unknown capability '" + unknown + "' (exec shell network files notifications clipboard env)\n";
+            return "error: unknown capability '"
+                + unknown
+                + "' (exec shell network files notifications clipboard env)\n";
           }
           auto& registry = scripting::PluginCapabilities::instance();
           std::string error;
-          const bool ok = cmd == "grant" ? registry.grant(parts[1], caps, &error) : registry.revoke(parts[1], caps, &error);
+          const bool ok =
+              cmd == "grant" ? registry.grant(parts[1], caps, &error) : registry.revoke(parts[1], caps, &error);
           if (!ok) {
             return "error: " + error + "\n";
           }
           return std::format(
-              "ok: {} granted {} · effective {}\n", parts[1], scripting::describeCapabilities(registry.granted(parts[1])),
+              "ok: {} granted {} · effective {}\n", parts[1],
+              scripting::describeCapabilities(registry.granted(parts[1])),
               scripting::describeCapabilities(registry.effective(parts[1]))
           );
         }
@@ -1227,7 +1241,8 @@ void Application::initIpc() {
             }
             // a plugin that has not run yet (a lock screen widget while unlocked) is read from its manifest
             const auto dir = scripting::PluginRegistry::instance().findPluginDir(s.id);
-            const scripting::CapabilitySet declared = dir ? scripting::declaredCapabilities(*dir) : registry.declared(s.id);
+            const scripting::CapabilitySet declared =
+                dir ? scripting::declaredCapabilities(*dir) : registry.declared(s.id);
             const scripting::CapabilitySet granted = registry.granted(s.id);
             out += std::format(
                 "{} declared {} · granted {} · effective {}\n", s.id, scripting::describeCapabilities(declared),
@@ -1419,4 +1434,3 @@ void Application::sysmonExpireLeases() {
     m_sysmonLeaseTimer.stop();
   }
 }
-

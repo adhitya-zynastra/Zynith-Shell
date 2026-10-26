@@ -4,12 +4,11 @@
 #include "core/log.h"
 #include "render/core/image_file_loader.h"
 
-#include <stb/stb_image_resize2.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <future>
+#include <stb/stb_image_resize2.h>
 #include <utility>
 
 namespace zynith {
@@ -22,7 +21,8 @@ namespace zynith {
       if (boundsW <= 0 || boundsH <= 0 || image.width <= 0 || image.height <= 0) {
         return;
       }
-      const double scale = std::max(static_cast<double>(boundsW) / image.width, static_cast<double>(boundsH) / image.height);
+      const double scale =
+          std::max(static_cast<double>(boundsW) / image.width, static_cast<double>(boundsH) / image.height);
       if (scale >= 1.0) {
         return;
       }
@@ -107,9 +107,9 @@ namespace zynith {
           continue;
         }
         coverResize(*loaded, job.coverWidth, job.coverHeight);
-        result.images.push_back(Image{
-            .path = path, .rgba = std::move(loaded->rgba), .width = loaded->width, .height = loaded->height
-        });
+        result.images.push_back(
+            Image{.path = path, .rgba = std::move(loaded->rgba), .width = loaded->width, .height = loaded->height}
+        );
       }
       if (palette.valid()) {
         result.palette = palette.get();

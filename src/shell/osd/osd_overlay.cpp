@@ -13,6 +13,7 @@
 #include "render/scene/node.h"
 #include "shell/surface/edge_inset.h"
 #include "shell/surface/glass.h"
+#include "shell/surface/surface_role.h"
 #include "ui/builders.h"
 #include "ui/palette.h"
 #include "ui/style.h"
@@ -21,11 +22,9 @@
 #include "zynith/surfaces.h"
 #include "zynith/ui_events.h"
 
-#include <nlohmann/json.hpp>
-#include "shell/surface/surface_role.h"
-
 #include <algorithm>
 #include <cmath>
+#include <nlohmann/json.hpp>
 
 namespace {
 
@@ -936,8 +935,8 @@ void OsdOverlay::updateBlurRegion(Instance& inst) const {
   if (inst.surface == nullptr || inst.background == nullptr || inst.sceneRoot == nullptr) {
     return;
   }
-  const bool idle = !inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0
-      && !inst.holdTimer.active();
+  const bool idle =
+      !inst.visible && !inst.showPending && inst.showAnimId == 0 && inst.hideAnimId == 0 && !inst.holdTimer.active();
   if (idle || !osdSurfaceStyle(m_config, osdBackgroundOpacity(m_config)).blur) {
     inst.surface->clearBlurRegion();
     return;
@@ -1043,26 +1042,28 @@ void OsdOverlay::animateInstance(Instance& inst) {
 
   // zynith: hold with an event-loop timer (no frames while the OSD just sits there).
   inst.holdTimer.start(std::chrono::milliseconds(osdHoldMs(m_config)), [this, &inst]() {
-        inst.hideAnimId = inst.animations.animate(
-            1.0F, 0.0F, Style::animExit, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
-            [this, &inst]() {
-              inst.hideAnimId = 0;
-              inst.visible = false;
-              DeferredCall::callLater([this]() {
-                const bool allIdle = std::ranges::all_of(m_instances, [](const auto& i) {
-                  return !i->visible && !i->showPending && i->showAnimId == 0 && i->hideAnimId == 0
-                      && !i->holdTimer.active();
-                });
-                if (allIdle) {
-                  destroySurfaces();
-                }
-              });
+    inst.hideAnimId = inst.animations.animate(
+        1.0F, 0.0F, Style::animExit, Easing::EaseInQuad, [this, &inst](float v) { applyReveal(inst, v); },
+        [this, &inst]() {
+          inst.hideAnimId = 0;
+          inst.visible = false;
+          DeferredCall::callLater([this]() {
+            const bool allIdle = std::ranges::all_of(m_instances, [](const auto& i) {
+              return !i->visible
+                  && !i->showPending
+                  && i->showAnimId == 0
+                  && i->hideAnimId == 0
+                  && !i->holdTimer.active();
+            });
+            if (allIdle) {
+              destroySurfaces();
             }
-        );
-        // Started outside a frame: ask for one so the hide animation begins ticking.
-        if (inst.surface != nullptr) {
-          inst.surface->requestRedraw();
+          });
         }
-      }
-  );
+    );
+    // Started outside a frame: ask for one so the hide animation begins ticking.
+    if (inst.surface != nullptr) {
+      inst.surface->requestRedraw();
+    }
+  });
 }

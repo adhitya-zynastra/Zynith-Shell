@@ -47,33 +47,54 @@ int main() {
 
   check(security::isDumpable(), "a fresh process is dumpable");
 
-  check(exitedWith(inChild([] { return security::disableCoreDumps() && !security::isDumpable() ? 0 : 1; }), 0),
-        "disableCoreDumps makes the process non-dumpable");
+  check(
+      exitedWith(inChild([] { return security::disableCoreDumps() && !security::isDumpable() ? 0 : 1; }), 0),
+      "disableCoreDumps makes the process non-dumpable"
+  );
 
-  check(exitedWith(inChild([] {
-          ::setenv("ZYNITH_ALLOW_COREDUMP", "1", 1);
-          return !security::disableCoreDumps() && security::isDumpable() ? 0 : 1;
-        }), 0),
-        "ZYNITH_ALLOW_COREDUMP=1 opts out");
+  check(
+      exitedWith(
+          inChild([] {
+            ::setenv("ZYNITH_ALLOW_COREDUMP", "1", 1);
+            return !security::disableCoreDumps() && security::isDumpable() ? 0 : 1;
+          }),
+          0
+      ),
+      "ZYNITH_ALLOW_COREDUMP=1 opts out"
+  );
 
   // Scope: a program executed by a non-dumpable process is dumpable again, so apps launched from the shell keep
   // their own core dumps. From inside, a dumpable process owns its /proc/self/fd; a non-dumpable one does not.
-  check(exitedWith(inChild([] {
-          security::disableCoreDumps();
-          ::execl("/bin/sh", "sh", "-c", "test -O /proc/self/fd", static_cast<char*>(nullptr));
-          return 99;
-        }), 0),
-        "an executed program is not affected (exec resets dumpability)");
+  check(
+      exitedWith(
+          inChild([] {
+            security::disableCoreDumps();
+            ::execl("/bin/sh", "sh", "-c", "test -O /proc/self/fd", static_cast<char*>(nullptr));
+            return 99;
+          }),
+          0
+      ),
+      "an executed program is not affected (exec resets dumpability)"
+  );
 
   // Self-inspection works while non-dumpable (this is what `noctalia msg status` reports).
-  check(exitedWith(inChild([] {
-          security::disableCoreDumps();
-          const auto res = security::readSelfResources();
-          const bool ok = res.pid == static_cast<long>(::getpid()) && res.rssKb > 0 && res.threads >= 1
-              && res.fds >= 3 && res.cpuTicks >= 0 && !res.dumpable;
-          return ok ? 0 : 1;
-        }), 0),
-        "readSelfResources reports pid, rss, threads, fds and dumpable while non-dumpable");
+  check(
+      exitedWith(
+          inChild([] {
+            security::disableCoreDumps();
+            const auto res = security::readSelfResources();
+            const bool ok = res.pid == static_cast<long>(::getpid())
+                && res.rssKb > 0
+                && res.threads >= 1
+                && res.fds >= 3
+                && res.cpuTicks >= 0
+                && !res.dumpable;
+            return ok ? 0 : 1;
+          }),
+          0
+      ),
+      "readSelfResources reports pid, rss, threads, fds and dumpable while non-dumpable"
+  );
 
   // The crash handler writes a backtrace, then the process still dies of the original signal.
   {
@@ -100,8 +121,10 @@ int main() {
     ::waitpid(pid, &status, 0);
     check(WIFSIGNALED(status) && WTERMSIG(status) == SIGSEGV, "the process still dies of SIGSEGV");
     check(out.find("[FATAL] noctalia: fatal signal 11 (SEGV)") != std::string::npos, "the signal is reported");
-    check(out.find("backtrace") != std::string::npos && out.find("process_hardening_test") != std::string::npos,
-          "a backtrace naming the executable is written");
+    check(
+        out.find("backtrace") != std::string::npos && out.find("process_hardening_test") != std::string::npos,
+        "a backtrace naming the executable is written"
+    );
   }
 
   // wipeString zeroes the whole capacity (leftovers of an earlier, longer value included) and keeps the buffer.
@@ -118,8 +141,10 @@ int main() {
       allZero = allZero && buffer[i] == '\0';
     }
     check(allZero, "every byte of the buffer is zero after wipeString");
-    check(secret.empty() && secret.data() == buffer && secret.capacity() == capacity,
-          "wipeString leaves the string empty with its buffer kept (no reallocation)");
+    check(
+        secret.empty() && secret.data() == buffer && secret.capacity() == capacity,
+        "wipeString leaves the string empty with its buffer kept (no reallocation)"
+    );
     std::string empty;
     security::wipeString(empty); // no buffer: must not crash
     check(empty.empty(), "wiping an empty string is harmless");

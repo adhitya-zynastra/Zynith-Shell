@@ -62,14 +62,17 @@ int main() {
     check(tokens::concentric(16.0F, 12.0F) == 4.0F && tokens::concentric(20.0F, 8.0F) == 12.0F, "concentric radii");
     check(tokens::pill(38.0F) == 19.0F, "pill = half height");
     check(tokens::controlHeight(tokens::Size::Medium) == Style::controlHeight, "control heights are Style's");
-    check(tokens::iconContainer(tokens::Size::Large) == 48.0F && tokens::iconSize(tokens::Size::Small) == 16.0F,
-          "icon sizes and containers");
+    check(
+        tokens::iconContainer(tokens::Size::Large) == 48.0F && tokens::iconSize(tokens::Size::Small) == 16.0F,
+        "icon sizes and containers"
+    );
   }
 
   // --- typography ---------------------------------------------------------------------------------
   {
     using type::Role;
-    const Role ramp[] = {Role::Display, Role::Headline, Role::Title, Role::Subtitle, Role::Body, Role::Label, Role::Micro};
+    const Role ramp[] = {Role::Display, Role::Headline, Role::Title, Role::Subtitle,
+                         Role::Body,    Role::Label,    Role::Micro};
     for (std::size_t i = 1; i < std::size(ramp); ++i) {
       check(type::spec(ramp[i - 1]).size > type::spec(ramp[i]).size, "the type ramp strictly descends");
     }
@@ -80,15 +83,21 @@ int main() {
     check(type::spec(Role::Micro).size == Style::fontSizeMini, "micro = the old mini size");
     check(type::spec(Role::Display).weight == FontWeight::Light, "display is set light");
     check(type::spec(Role::Data).face == type::Face::Data && type::spec(Role::Data).tabular, "data is mono + tabular");
-    check(type::spec(Role::Numeric).tabular && type::spec(Role::Numeric).face == type::Face::Interface,
-          "numeric is the interface face with tabular figures");
+    check(
+        type::spec(Role::Numeric).tabular && type::spec(Role::Numeric).face == type::Face::Interface,
+        "numeric is the interface face with tabular figures"
+    );
 
     type::setFamilies("Montserrat", "");
     check(type::family(type::Face::Interface) == "Montserrat", "interface face is the configured font");
-    check(type::family(type::Face::Display) == "Space Grotesk,Montserrat",
-          "display falls back through Space Grotesk to the interface face");
+    check(
+        type::family(type::Face::Display) == "Space Grotesk,Montserrat",
+        "display falls back through Space Grotesk to the interface face"
+    );
     type::setFamilies("Montserrat", "Sora");
-    check(type::family(type::Face::Display) == "Sora,Montserrat", "a configured display face wins, still with fallback");
+    check(
+        type::family(type::Face::Display) == "Sora,Montserrat", "a configured display face wins, still with fallback"
+    );
     check(type::familyFor(Role::Title) == "Montserrat", "non-tabular roles carry no feature suffix");
     const std::string numeric = type::familyFor(Role::Numeric);
     const auto parts = font_spec::split(numeric);
@@ -104,9 +113,13 @@ int main() {
     const auto sel = color::spec(Semantic::SelectionFill);
     check(sel.role == ColorRole::Primary && near(sel.alpha, 0.16F), "selection fill = primary @ 0.16");
     check(color::spec(Semantic::SelectionEdge).role == ColorRole::Primary, "selection edge is primary");
-    check(color::spec(Semantic::Warning).role == ColorRole::Error, "warning is the error role until the palette has one");
-    check(color::spec(Semantic::Hairline).role == ColorRole::OnSurface && color::spec(Semantic::Hairline).alpha < 0.2F,
-          "hairlines are faint on-surface");
+    check(
+        color::spec(Semantic::Warning).role == ColorRole::Error, "warning is the error role until the palette has one"
+    );
+    check(
+        color::spec(Semantic::Hairline).role == ColorRole::OnSurface && color::spec(Semantic::Hairline).alpha < 0.2F,
+        "hairlines are faint on-surface"
+    );
     check(color::spec(Semantic::Muted).role == ColorRole::OnSurfaceVariant, "muted = on_surface_variant");
 
     const Color white = rgba(1, 1, 1, 1);
@@ -118,25 +131,34 @@ int main() {
     check(keep.meets && keep.color.r == 1.0F, "a legible preferred colour is kept");
     const auto swap = color::legibleOn(white, rgba(0.9F, 0.9F, 0.9F, 1), color::kContrastText, white, black);
     check(swap.meets && swap.color.r == 0.0F, "an illegible colour falls back to the better candidate");
-    const auto scrim =
-        color::legibleOn(midGrey, rgba(0.5F, 0.5F, 0.5F, 1), 7.0F, rgba(0.62F, 0.62F, 0.62F, 1), rgba(0.35F, 0.35F, 0.35F, 1));
+    const auto scrim = color::legibleOn(
+        midGrey, rgba(0.5F, 0.5F, 0.5F, 1), 7.0F, rgba(0.62F, 0.62F, 0.62F, 1), rgba(0.35F, 0.35F, 0.35F, 1)
+    );
     check(!scrim.meets && scrim.needsScrim, "when nothing reaches the ratio, a scrim is requested");
   }
 
   // --- surface hierarchy ------------------------------------------------------------------------------
   {
-    using shell::surface::Role;
     using shell::surface::Lifetime;
+    using shell::surface::Role;
     namespace ss = shell::surface;
     const Role order[] = {Role::Scene, Role::Atmosphere, Role::Frame, Role::Surface, Role::Overlay, Role::Floating};
     for (std::size_t i = 1; i < std::size(order); ++i) {
       check(ss::info(order[i - 1]).depth < ss::info(order[i]).depth, "depth strictly rises through the hierarchy");
     }
-    check(ss::info(Role::Embedded).depth == ss::info(Role::Surface).depth, "embedded plates sit in their surface's plane");
-    check(ss::info(Role::Frame).lifetime == Lifetime::Persistent && ss::info(Role::Scene).lifetime == Lifetime::Persistent,
-          "scene and frame are persistent");
-    check(ss::info(Role::Surface).lifetime == Lifetime::Transient && ss::info(Role::Floating).lifetime == Lifetime::Transient,
-          "surfaces and floating feedback are transient");
+    check(
+        ss::info(Role::Embedded).depth == ss::info(Role::Surface).depth, "embedded plates sit in their surface's plane"
+    );
+    check(
+        ss::info(Role::Frame).lifetime == Lifetime::Persistent
+            && ss::info(Role::Scene).lifetime == Lifetime::Persistent,
+        "scene and frame are persistent"
+    );
+    check(
+        ss::info(Role::Surface).lifetime == Lifetime::Transient
+            && ss::info(Role::Floating).lifetime == Lifetime::Transient,
+        "surfaces and floating feedback are transient"
+    );
     // The layers the shell already used, now read from the roles.
     check(ss::layer(Role::Scene) == LayerShellLayer::Background, "the wallpaper is on Background");
     check(ss::layer(Role::Atmosphere) == LayerShellLayer::Bottom, "desktop widgets are on Bottom");
@@ -151,20 +173,29 @@ int main() {
     config.shell.popupShadows = false;
     const auto glassStyle = shell::glass::panelSurface(config, shell::glass::fillOpacity(config));
     const auto surface = ss::material(Role::Surface, config);
-    check(surface.fill == glassStyle.fill && surface.blur == glassStyle.blur && surface.border == glassStyle.border,
-          "Surface material is exactly Glass's panel surface (one owner)");
+    check(
+        surface.fill == glassStyle.fill && surface.blur == glassStyle.blur && surface.border == glassStyle.border,
+        "Surface material is exactly Glass's panel surface (one owner)"
+    );
     check(surface.shadow, "Surface shadow follows [shell.panel].shadow");
     check(!ss::material(Role::Floating, config).shadow, "Floating shadow follows [shell].popup_shadows");
     const auto atmosphere = ss::material(Role::Atmosphere, config);
-    check(!atmosphere.blur && !atmosphere.shadow && atmosphere.fill.alpha == 1.0F && !atmosphere.fill.role.has_value()
-              && atmosphere.fill.fixed.a == 0.0F,
-          "atmosphere has no chrome at all (not everything is glass)");
+    check(
+        !atmosphere.blur
+            && !atmosphere.shadow
+            && atmosphere.fill.alpha == 1.0F
+            && !atmosphere.fill.role.has_value()
+            && atmosphere.fill.fixed.a == 0.0F,
+        "atmosphere has no chrome at all (not everything is glass)"
+    );
     const auto embedded = ss::material(Role::Embedded, config);
     check(!embedded.blur && !embedded.shadow, "embedded plates add tone, not blur or shadow");
     check(!ss::material(Role::Frame, config, 1.0F).blur, "an opaque frame requests no blur");
     check(ss::material(Role::Frame, config, 0.5F).blur, "a translucent frame requests blur when glass blur is on");
-    check(ss::material(Role::Frame, config, 0.5F, true).shadow && !ss::material(Role::Frame, config, 0.5F, false).shadow,
-          "a frame's shadow is its own flag");
+    check(
+        ss::material(Role::Frame, config, 0.5F, true).shadow && !ss::material(Role::Frame, config, 0.5F, false).shadow,
+        "a frame's shadow is its own flag"
+    );
   }
 
   if (failures == 0) {

@@ -53,7 +53,7 @@ namespace live {
   // One discovered item. All paths point into the provider's canonical location (for Wallpaper Engine, the
   // Steam library); none of them is ever a Zynith-owned copy.
   struct Item {
-    std::string id;                  // stable provider id (Workshop id)
+    std::string id; // stable provider id (Workshop id)
     std::string title;
     ItemKind kind = ItemKind::Unsupported;
     std::filesystem::path directory; // canonical content folder

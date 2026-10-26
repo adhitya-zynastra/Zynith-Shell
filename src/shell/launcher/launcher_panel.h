@@ -54,7 +54,8 @@ public:
   // (event launcher), and the UI asks again.
   [[nodiscard]] std::string zynithProvidersJson() const;
   [[nodiscard]] std::string zynithQueryJson(std::string_view providerId, std::string_view text) const;
-  [[nodiscard]] std::string zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text);
+  [[nodiscard]] std::string
+  zynithActivate(std::string_view providerId, std::string_view resultId, std::string_view text);
 
   // Invoked after a terminal close when the activation copied text and the provider
   // supports auto-paste. The host schedules virtual-keyboard paste (clipboard path).

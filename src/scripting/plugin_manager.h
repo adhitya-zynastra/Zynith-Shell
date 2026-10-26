@@ -82,7 +82,8 @@ namespace scripting {
     // HEAD instead of showing the previous revision's files.
     // zynith: notify-only checks report the enabled plugins that have a newer version waiting, as
     // "author/plugin version" strings; nothing has been installed when this runs (main thread).
-    void setOnUpdatesAvailable(std::function<void(const std::string& sourceName, std::vector<std::string> pending)> cb) {
+    void
+    setOnUpdatesAvailable(std::function<void(const std::string& sourceName, std::vector<std::string> pending)> cb) {
       m_onUpdatesAvailable = std::move(cb);
     }
     void setOnSourceUpdated(std::function<void(const std::string& sourceName)> cb) {

@@ -70,11 +70,13 @@ bool ScreenVeil::create(wl_output* output, const Style& style, float initialOpac
     m_image = static_cast<WallpaperNode*>(m_root->addChild(std::move(image)));
     m_image->setZIndex(0);
   }
-  m_root->addChild(ui::box({
-      .out = &m_tint,
-      .visible = m_style.tintIntensity > 0.0F,
-      .configure = [](Box& box) { box.setZIndex(1); },
-  }));
+  m_root->addChild(
+      ui::box({
+          .out = &m_tint,
+          .visible = m_style.tintIntensity > 0.0F,
+          .configure = [](Box& box) { box.setZIndex(1); },
+      })
+  );
   m_root->setAnimationManager(&m_animations);
 
   auto config = LayerSurfaceConfig{
@@ -116,8 +118,8 @@ void ScreenVeil::fadeTo(float opacity, float durationMs, Easing easing, std::fun
   Node* root = m_root.get();
   m_animations.cancelForOwner(root);
   m_animations.animate(
-      root->opacity(), std::clamp(opacity, 0.0F, 1.0F), durationMs, easing,
-      [root](float v) { root->setOpacity(v); }, std::move(onDone), root
+      root->opacity(), std::clamp(opacity, 0.0F, 1.0F), durationMs, easing, [root](float v) { root->setOpacity(v); },
+      std::move(onDone), root
   );
   if (m_surface != nullptr) {
     m_surface->requestRedraw();
@@ -131,7 +133,8 @@ void ScreenVeil::fadeOutOnPresent(motion::Role role, std::function<void()> onDon
     }
     return;
   }
-  m_pendingFade = PendingFade{.role = role, .onDone = std::move(onDone), .requestedAt = std::chrono::steady_clock::now()};
+  m_pendingFade =
+      PendingFade{.role = role, .onDone = std::move(onDone), .requestedAt = std::chrono::steady_clock::now()};
   if (m_surface != nullptr) {
     // An update (not just a redraw): prepareFrame(), which starts the fade, only runs for update/layout
     // requests. Deferred by the surface until the compositor releases its frame callback.
@@ -201,10 +204,12 @@ void ScreenVeil::prepareFrame(bool needsUpdate, bool needsLayout) {
     if (m_tint != nullptr) {
       m_tint->setPosition(0.0F, 0.0F);
       m_tint->setSize(w, h);
-      m_tint->setStyle(RoundedRectStyle{
-          .fill = colorForRole(ColorRole::Surface, m_style.tintIntensity),
-          .fillMode = FillMode::Solid,
-      });
+      m_tint->setStyle(
+          RoundedRectStyle{
+              .fill = colorForRole(ColorRole::Surface, m_style.tintIntensity),
+              .fillMode = FillMode::Solid,
+          }
+      );
     }
   }
 }
@@ -233,8 +238,8 @@ void ScreenVeil::applyContent() {
   if (m_sourceTexture.id == 0) {
     // Nothing to show: fall back to the fill colour so the veil still covers the handoff.
     m_image->setSources(
-        WallpaperSourceKind::Color, {}, m_style.fillColor, WallpaperSourceKind::Image, {},
-        rgba(0.0F, 0.0F, 0.0F, 1.0F), 0.0F, 0.0F, 0.0F, 0.0F
+        WallpaperSourceKind::Color, {}, m_style.fillColor, WallpaperSourceKind::Image, {}, rgba(0.0F, 0.0F, 0.0F, 1.0F),
+        0.0F, 0.0F, 0.0F, 0.0F
     );
     m_contentDirty = false;
     m_ready = true;

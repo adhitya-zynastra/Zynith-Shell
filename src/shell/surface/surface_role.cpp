@@ -21,12 +21,15 @@ namespace shell::surface {
     }};
 
     Material none() {
-      return Material{.fill = clearColorSpec(), .border = false, .borderColor = clearColorSpec(), .blur = false,
-                      .shadow = false};
+      return Material{
+          .fill = clearColorSpec(), .border = false, .borderColor = clearColorSpec(), .blur = false, .shadow = false
+      };
     }
 
     Material fromGlass(const glass::SurfaceStyle& s, bool shadow) {
-      return Material{.fill = s.fill, .border = s.border, .borderColor = s.borderColor, .blur = s.blur, .shadow = shadow};
+      return Material{
+          .fill = s.fill, .border = s.border, .borderColor = s.borderColor, .blur = s.blur, .shadow = shadow
+      };
     }
   } // namespace
 
@@ -69,11 +72,13 @@ namespace shell::surface {
     }
     case Role::Surface:
     case Role::Overlay:
-      return fromGlass(glass::panelSurface(config, ownOpacity.value_or(glass::fillOpacity(config))),
-                       config.shell.panel.shadow);
+      return fromGlass(
+          glass::panelSurface(config, ownOpacity.value_or(glass::fillOpacity(config))), config.shell.panel.shadow
+      );
     case Role::Floating:
-      return fromGlass(glass::panelSurface(config, ownOpacity.value_or(glass::fillOpacity(config))),
-                       config.shell.popupShadows);
+      return fromGlass(
+          glass::panelSurface(config, ownOpacity.value_or(glass::fillOpacity(config))), config.shell.popupShadows
+      );
     case Role::Embedded: {
       const float panel = ownOpacity.value_or(glass::fillOpacity(config));
       Material m = none();

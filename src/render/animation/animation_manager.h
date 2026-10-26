@@ -36,8 +36,8 @@ public:
   // zynith motion language. The role decides the model (tween or spring), its parameters, its start
   // delay and what reduced motion does (motion_role.h). Prefer this over raw animate() in new code.
   Id animate(
-      motion::Role role, float from, float to, std::function<void(float)> setter,
-      std::function<void()> onComplete = {}, const void* owner = nullptr
+      motion::Role role, float from, float to, std::function<void(float)> setter, std::function<void()> onComplete = {},
+      const void* owner = nullptr
   );
   // A damped spring from `from` toward `to`, starting with `initialVelocity` (units/s). Its frequency is
   // scaled by the global motion speed; reduced motion lands it on `to`. Same entry list, same tick,

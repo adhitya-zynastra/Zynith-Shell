@@ -1,8 +1,8 @@
 #include "shell/wallpaper/panel/wallpaper_panel.h"
 
 #include "config/config_service.h"
-#include "core/input/keybind_matcher.h"
 #include "core/deferred_call.h"
+#include "core/input/keybind_matcher.h"
 #include "core/log.h"
 #include "core/random.h"
 #include "core/ui_phase.h"
@@ -33,8 +33,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <memory>
 #include <random>
@@ -379,9 +379,8 @@ public:
     wt->setCurrent(
         m_entries != nullptr
         && index < m_entries->size()
-        && ((*m_entries)[index].liveId.empty()
-                ? wallpaperEntryIsCurrent((*m_entries)[index], m_currentWallpaperPath)
-                : (*m_entries)[index].liveId == m_currentLiveId)
+        && ((*m_entries)[index].liveId.empty() ? wallpaperEntryIsCurrent((*m_entries)[index], m_currentWallpaperPath)
+                                               : (*m_entries)[index].liveId == m_currentLiveId)
     );
     wt->setHoveredVisual(hovered && !selected);
   }
@@ -870,13 +869,12 @@ void WallpaperPanel::create() {
             .horizontalPadding = Style::spaceSm * scale,
             .glyphSize = Style::fontSizeCaption * scale,
             .surfaceOpacity = panelCardOpacity(),
-            .configure =
-                [this, scale](Select& select) {
-                  // One provider today; the source picker is where a second one appears.
-                  select.setOptions({m_live->provider().displayName()});
-                  select.setSelectedIndexSilently(0);
-                  select.setMinWidth(kFavoriteSelectMinWidth * scale);
-                },
+            .configure = [this, scale](Select& select) {
+              // One provider today; the source picker is where a second one appears.
+              select.setOptions({m_live->provider().displayName()});
+              select.setSelectedIndexSilently(0);
+              select.setMinWidth(kFavoriteSelectMinWidth * scale);
+            },
         })
     );
     liveRow->addChild(
@@ -920,12 +918,11 @@ void WallpaperPanel::create() {
             .minHeight = Style::controlHeightSm * scale,
             .padding = Style::spaceXs * scale,
             .radius = Style::scaledRadiusMd(scale),
-            .onClick =
-                [this]() {
-                  if (const std::string id = focusedLiveId(); !id.empty()) {
-                    m_live->toggleCollection(id);
-                  }
-                },
+            .onClick = [this]() {
+              if (const std::string id = focusedLiveId(); !id.empty()) {
+                m_live->toggleCollection(id);
+              }
+            },
         })
     );
     liveRow->addChild(ui::spacer());
@@ -941,12 +938,11 @@ void WallpaperPanel::create() {
         ui::toggle({
             .out = &m_liveCarouselToggle,
             .checked = m_live->carouselEnabled(),
-            .onChange =
-                [this](bool checked) {
-                  if (!m_syncingLiveControls) {
-                    m_live->setCarouselEnabled(checked);
-                  }
-                },
+            .onChange = [this](bool checked) {
+              if (!m_syncingLiveControls) {
+                m_live->setCarouselEnabled(checked);
+              }
+            },
         })
     );
     liveRow->addChild(
@@ -987,14 +983,13 @@ void WallpaperPanel::create() {
             .minHeight = Style::controlHeightSm * scale,
             .padding = Style::spaceXs * scale,
             .radius = Style::scaledRadiusMd(scale),
-            .onClick =
-                [this]() {
-                  m_live->setCarouselOrder(
-                      m_live->carouselOrder() == LiveWallpaperController::CarouselOrder::Shuffle
-                          ? LiveWallpaperController::CarouselOrder::Sequential
-                          : LiveWallpaperController::CarouselOrder::Shuffle
-                  );
-                },
+            .onClick = [this]() {
+              m_live->setCarouselOrder(
+                  m_live->carouselOrder() == LiveWallpaperController::CarouselOrder::Shuffle
+                      ? LiveWallpaperController::CarouselOrder::Sequential
+                      : LiveWallpaperController::CarouselOrder::Shuffle
+              );
+            },
         })
     );
     liveRow->addChild(
@@ -1095,34 +1090,34 @@ void WallpaperPanel::create() {
     m_carousel = static_cast<CarouselView*>(root->addChild(std::move(carousel)));
   } else {
     root->addChild(
-      ui::virtualGridView({
-          .out = &m_grid,
-          .contentScale = scale,
-          .minCellWidth = kMinTileWidth * scale,
-          .squareCells = false,
-          .columnGap = Style::spaceMd * scale,
-          .rowGap = Style::spaceMd * scale,
-          .overscanRows = 2,
-          .itemCursorShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER,
-          .adapter = m_adapter.get(),
-          .flexGrow = 1.0F,
-          .onSelectionChanged =
-              [this](std::optional<std::size_t> idx) {
-                if (m_syncingGridSelectionVisual) {
-                  return;
-                }
-                if (idx.has_value() && *idx < m_visibleEntries.size()) {
-                  m_selectedVisibleIndex = *idx;
-                } else {
-                  m_selectedVisibleIndex = kNoVisibleSelection;
-                }
-                syncThemeControls();
-                if (liveTab()) {
-                  syncLiveChrome();
-                }
-              },
-          .configure = [](VirtualGridView& grid) { grid.setFillWidth(true); },
-      })
+        ui::virtualGridView({
+            .out = &m_grid,
+            .contentScale = scale,
+            .minCellWidth = kMinTileWidth * scale,
+            .squareCells = false,
+            .columnGap = Style::spaceMd * scale,
+            .rowGap = Style::spaceMd * scale,
+            .overscanRows = 2,
+            .itemCursorShape = WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER,
+            .adapter = m_adapter.get(),
+            .flexGrow = 1.0F,
+            .onSelectionChanged =
+                [this](std::optional<std::size_t> idx) {
+                  if (m_syncingGridSelectionVisual) {
+                    return;
+                  }
+                  if (idx.has_value() && *idx < m_visibleEntries.size()) {
+                    m_selectedVisibleIndex = *idx;
+                  } else {
+                    m_selectedVisibleIndex = kNoVisibleSelection;
+                  }
+                  syncThemeControls();
+                  if (liveTab()) {
+                    syncLiveChrome();
+                  }
+                },
+            .configure = [](VirtualGridView& grid) { grid.setFillWidth(true); },
+        })
     );
   }
 
@@ -1214,12 +1209,11 @@ void WallpaperPanel::doLayout(Renderer& renderer, float width, float height) {
   // visible neighbours (ui/controls/carousel_geometry.h), while a narrow one shrinks the card
   // rather than the arc. Resolved here, on layout, never per frame.
   if (m_carousel != nullptr) {
-    const float preferred = m_config != nullptr
-        ? static_cast<float>(m_config->config().wallpaper.carouselCardWidth)
-        : 760.0F;
+    const float preferred =
+        m_config != nullptr ? static_cast<float>(m_config->config().wallpaper.carouselCardWidth) : 760.0F;
     const float cellW = ui::responsive::resolve(
-        {.min = kCarouselMinCardWidth, .preferred = preferred, .max = kCarouselMaxCardWidth}, width,
-        contentScale(), kCarouselMaxBandFraction
+        {.min = kCarouselMinCardWidth, .preferred = preferred, .max = kCarouselMaxCardWidth}, width, contentScale(),
+        kCarouselMaxBandFraction
     );
     // The view shrinks this to fit its own body height, keeping the aspect.
     m_carousel->setCellSize(cellW, cellW * kTileAspect);
@@ -1305,7 +1299,8 @@ void WallpaperPanel::onOpen(std::string_view /*context*/) {
   }
   if (m_live != nullptr) {
     // Open on Live while a live wallpaper is up; otherwise on the tab used last.
-    m_liveTab = m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active()
+    m_liveTab = m_live->mode() == LiveWallpaperController::Mode::Live
+        || m_live->process().active()
         || (m_config != nullptr && m_config->stateString("wallpaper_panel", "tab").value_or("") == "live");
     m_liveChangedConn = m_live->changed().connect([this]() { scheduleLiveRefresh(); });
     if (m_liveTab) {
@@ -1351,8 +1346,8 @@ void WallpaperPanel::onClose() {
   if (m_thumbnails != nullptr && m_thumbnailSession != 0) {
     const auto& stats = m_thumbnails->stats();
     kLog.debug(
-        "browse session: {} decodes, {} cache hits, {} evictions, peak idle {:.1f} MB", stats.decodes,
-        stats.idleHits, stats.evictions, static_cast<double>(stats.peakIdleBytes) / (1024.0 * 1024.0)
+        "browse session: {} decodes, {} cache hits, {} evictions, peak idle {:.1f} MB", stats.decodes, stats.idleHits,
+        stats.evictions, static_cast<double>(stats.peakIdleBytes) / (1024.0 * 1024.0)
     );
     m_thumbnails->endSession(m_thumbnailSession);
     m_thumbnailSession = 0;
@@ -1403,9 +1398,7 @@ void WallpaperPanel::onClose() {
   m_thumbnailRefreshPending = false;
 }
 
-bool WallpaperPanel::carouselMode() const {
-  return m_config != nullptr && m_config->config().wallpaper.carousel;
-}
+bool WallpaperPanel::carouselMode() const { return m_config != nullptr && m_config->config().wallpaper.carousel; }
 
 std::size_t WallpaperPanel::indexOfCurrentWallpaper() const {
   if (liveTab()) {
@@ -1438,8 +1431,9 @@ InputArea* WallpaperPanel::browseFocusArea() const {
 }
 
 bool WallpaperPanel::browseOwnsFocus(const InputArea* area) const {
-  return isDescendantOf(area, m_carousel != nullptr ? static_cast<const Node*>(m_carousel)
-                                                    : static_cast<const Node*>(m_grid));
+  return isDescendantOf(
+      area, m_carousel != nullptr ? static_cast<const Node*>(m_carousel) : static_cast<const Node*>(m_grid)
+  );
 }
 
 bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers, bool pressed, bool preedit) {
@@ -1473,8 +1467,10 @@ bool WallpaperPanel::handleGlobalKey(std::uint32_t sym, std::uint32_t modifiers,
     }
   }
 
-  if (m_filterInput != nullptr && focused == m_filterInput->inputArea()
-      && KeybindMatcher::matches(KeybindAction::Down, sym, modifiers) && browseFocusArea() != nullptr) {
+  if (m_filterInput != nullptr
+      && focused == m_filterInput->inputArea()
+      && KeybindMatcher::matches(KeybindAction::Down, sym, modifiers)
+      && browseFocusArea() != nullptr) {
     dispatcher.setFocus(browseFocusArea());
     if (!hasVisibleSelection() && !m_visibleEntries.empty()) {
       selectVisibleIndex(0);
@@ -1910,8 +1906,12 @@ void WallpaperPanel::applyFilter() {
 void WallpaperPanel::updatePromotionWindow() {
   // While the initial focus is pending, the carousel reports a provisional focus (index 0) as the
   // entries arrive; rebindGrid derives the window once the real one (the wallpaper in use) lands.
-  if (m_adapter == nullptr || m_thumbnails == nullptr || !m_carouselMode || m_visibleEntries.empty()
-      || !hasVisibleSelection() || m_pendingInitialFocus) {
+  if (m_adapter == nullptr
+      || m_thumbnails == nullptr
+      || !m_carouselMode
+      || m_visibleEntries.empty()
+      || !hasVisibleSelection()
+      || m_pendingInitialFocus) {
     return;
   }
   const auto focus = static_cast<long>(m_selectedVisibleIndex);
@@ -1991,9 +1991,9 @@ void WallpaperPanel::prefetchSessionThumbnails() {
 void WallpaperPanel::rebindGrid(bool resetScroll) {
   if (m_adapter != nullptr) {
     m_adapter->setCurrentWallpaperPath(liveTab() ? std::string() : currentWallpaperPathForSelection());
-    m_adapter->setCurrentLiveId(m_live != nullptr && m_live->mode() == LiveWallpaperController::Mode::Live
-                                    ? m_live->currentId()
-                                    : std::string());
+    m_adapter->setCurrentLiveId(
+        m_live != nullptr && m_live->mode() == LiveWallpaperController::Mode::Live ? m_live->currentId() : std::string()
+    );
   }
   if (m_carousel != nullptr) {
     m_carousel->notifyDataChanged();
@@ -2064,8 +2064,7 @@ void WallpaperPanel::applyWallpaperPath(const std::string& path, const Wallpaper
 
   // Choosing a static wallpaper ends Live mode: the static surfaces come back first, then the renderer
   // stops (LiveWallpaperController::switchToStatic), and the new image transitions in as usual.
-  if (m_live != nullptr
-      && (m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active())) {
+  if (m_live != nullptr && (m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active())) {
     m_live->switchToStatic();
   }
   const auto& choice = m_monitorChoices[m_selectedMonitorIndex];
@@ -2687,9 +2686,7 @@ void WallpaperPanel::syncLiveChrome() {
     );
   }
   if (m_liveStopButton != nullptr) {
-    m_liveStopButton->setEnabled(
-        m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active()
-    );
+    m_liveStopButton->setEnabled(m_live->mode() == LiveWallpaperController::Mode::Live || m_live->process().active());
   }
   if (m_liveStatusLabel != nullptr && live) {
     const LiveWallpaperProvider& provider = m_live->provider();
@@ -2717,7 +2714,8 @@ void WallpaperPanel::syncLiveChrome() {
       } else {
         text += "  ·  " + i18n::trp("wallpaper.panel.live-count", static_cast<long>(m_visibleEntries.size()));
         if (m_live->category() == LiveWallpaperController::Category::Installed && m_live->unsupportedCount() > 0) {
-          text += "  ·  " + i18n::tr("wallpaper.panel.live-hidden", "count", static_cast<long>(m_live->unsupportedCount()));
+          text +=
+              "  ·  " + i18n::tr("wallpaper.panel.live-hidden", "count", static_cast<long>(m_live->unsupportedCount()));
         }
       }
     }

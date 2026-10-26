@@ -1,8 +1,10 @@
 #include "app/main_loop.h"
-#include "zynith/ui_events.h"
 #include "application.h"
 #include "application_internal.h"
 #include "compositors/compositor_detect.h"
+#include "compositors/niri/niri_config_fragments.h"
+#include "compositors/niri/niri_fragment_writer.h"
+#include "compositors/niri/niri_runtime.h"
 #include "config/config_export.h"
 #include "config/config_types.h"
 #include "core/build_info.h"
@@ -17,11 +19,6 @@
 #include "dbus/idle/screensaver_poll_source.h"
 #include "dbus/idle/screensaver_service.h"
 #include "dbus/logind/logind_service.h"
-#include "compositors/compositor_detect.h"
-#include "compositors/niri/niri_config_fragments.h"
-#include "compositors/niri/niri_fragment_writer.h"
-#include "compositors/niri/niri_runtime.h"
-#include "wayland/surface.h"
 #include "dbus/modem/modem_manager_service.h"
 #include "dbus/mpris/mpris_service.h"
 #include "dbus/network/inetwork_service.h"
@@ -102,23 +99,24 @@
 #include "ui/typography.h"
 #include "util/file_utils.h"
 #include "util/string_utils.h"
+#include "wayland/surface.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
 #include <chrono>
-
-#include <nlohmann/json.hpp>
-#include <wayland-client-core.h>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <filesystem>
 #include <limits>
 #include <malloc.h>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
 #include <utility>
+#include <wayland-client-core.h>
 
 namespace {
   constexpr Logger kLog("app");

@@ -1,11 +1,10 @@
 #include "render/text/cairo_text_renderer.h"
 
-#include "render/text/font_spec.h"
-
 #include "core/log.h"
 #include "render/backend/render_backend.h"
 #include "render/core/texture_manager.h"
 #include "render/text/font_registry.h"
+#include "render/text/font_spec.h"
 #include "render/text/font_weight_catalog.h"
 
 #include <algorithm>

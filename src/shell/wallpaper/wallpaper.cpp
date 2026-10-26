@@ -1,6 +1,4 @@
 #include "shell/wallpaper/wallpaper.h"
-#include <nlohmann/json.hpp>
-#include "zynith/ui_events.h"
 
 #include "compositors/compositor_detect.h"
 #include "config/config_service.h"
@@ -15,6 +13,7 @@
 #include "render/core/render_styles.h"
 #include "render/core/shared_texture_cache.h"
 #include "render/render_context.h"
+#include "shell/surface/surface_role.h"
 #include "shell/wallpaper/wallpaper_geometry.h"
 #include "shell/wallpaper/wallpaper_instance.h"
 #include "shell/wallpaper/wallpaper_paths.h"
@@ -27,7 +26,7 @@
 #include "util/string_utils.h"
 #include "wayland/wayland_connection.h"
 #include "wayland/wayland_seat.h"
-#include "shell/surface/surface_role.h"
+#include "zynith/ui_events.h"
 
 #include <algorithm>
 #include <cctype>
@@ -35,6 +34,7 @@
 #include <cmath>
 #include <filesystem>
 #include <format>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string_view>
 #include <system_error>
@@ -776,7 +776,8 @@ void Wallpaper::registerIpc(IpcService& ipc) {
         const std::string trimmed = StringUtils::trim(args);
         const auto space = trimmed.find(' ');
         const std::string action = trimmed.substr(0, space);
-        const std::string path = space == std::string::npos ? std::string() : StringUtils::trim(trimmed.substr(space + 1));
+        const std::string path =
+            space == std::string::npos ? std::string() : StringUtils::trim(trimmed.substr(space + 1));
         if ((action != "add" && action != "remove") || path.empty() || path.front() != '/') {
           return "error: usage: wallpaper-favorite <add|remove> <absolute path>\n";
         }
@@ -793,25 +794,28 @@ void Wallpaper::registerIpc(IpcService& ipc) {
       IpcService::HandlerOptions{.actionEditorVisibility = IpcService::ActionEditorVisibility::Hidden}
   );
   // zynith: where the next change on an output was chosen (the wallpaper browser's card), as 0..1 of the output
-  ipc.bind(noctalia::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
-    const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
-    if (tokens.size() != 3) {
-      return "error: wallpaper-reveal <connector> <x> <y>\n";
-    }
-    if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
-      return error;
-    }
-    float x = 0.5F;
-    float y = 0.5F;
-    try {
-      x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
-      y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
-    } catch (...) {
-      return "error: x and y are numbers from 0 to 1\n";
-    }
-    m_revealOrigin = RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
-    return "ok\n";
-  });
+  ipc.bind(
+      noctalia::cli::msg::wallpaperReveal, [this, validateOutputConnector](const std::string& args) -> std::string {
+        const auto tokens = StringUtils::splitWhitespace(StringUtils::trim(args));
+        if (tokens.size() != 3) {
+          return "error: wallpaper-reveal <connector> <x> <y>\n";
+        }
+        if (const std::string error = validateOutputConnector(tokens[0]); !error.empty()) {
+          return error;
+        }
+        float x = 0.5F;
+        float y = 0.5F;
+        try {
+          x = std::clamp(std::stof(std::string(tokens[1])), 0.0F, 1.0F);
+          y = std::clamp(std::stof(std::string(tokens[2])), 0.0F, 1.0F);
+        } catch (...) {
+          return "error: x and y are numbers from 0 to 1\n";
+        }
+        m_revealOrigin =
+            RevealOrigin{.connector = std::string(tokens[0]), .x = x, .y = y, .at = std::chrono::steady_clock::now()};
+        return "ok\n";
+      }
+  );
 
   ipc.bind(
       noctalia::cli::msg::wallpaperSet, [this, &ipc, validateOutputConnector](const std::string& args) -> std::string {
@@ -943,7 +947,9 @@ std::vector<std::string> Wallpaper::upcomingImagePaths() const {
       continue;
     }
     const std::string path = displayPathFor(inst->connectorName);
-    if (path.empty() || path == inst->currentPath || path == inst->pendingPath
+    if (path.empty()
+        || path == inst->currentPath
+        || path == inst->pendingPath
         || std::find(out.begin(), out.end(), path) != out.end()) {
       continue;
     }
@@ -1487,7 +1493,9 @@ void Wallpaper::loadWallpaper(WallpaperInstance& instance, const std::string& pa
   if (instance.currentPath.empty()) {
     const auto& wpConfig = m_config->config().wallpaper;
     const bool instantTransient = m_transientInstant && !m_transientPath.empty() && path == m_transientPath;
-    if (wpConfig.transitionOnStartup && !wpConfig.transitions.empty() && !instantTransient
+    if (wpConfig.transitionOnStartup
+        && !wpConfig.transitions.empty()
+        && !instantTransient
         && !m_startupTransitionSuppressed) {
       instance.currentSourceKind = WallpaperSourceKind::Color;
       instance.currentTexture = {};
@@ -1561,7 +1569,8 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
       transitions[static_cast<std::size_t>(std::floor(randomFloat(0.0F, static_cast<float>(transitions.size()))))];
   // zynith: chosen at a point (wallpaper-reveal, a few seconds old at most): a disc grows from there, once
   std::optional<std::pair<float, float>> origin;
-  if (m_revealOrigin.has_value() && m_revealOrigin->connector == instance.connectorName
+  if (m_revealOrigin.has_value()
+      && m_revealOrigin->connector == instance.connectorName
       && std::chrono::steady_clock::now() - m_revealOrigin->at < std::chrono::seconds(5)) {
     picked = WallpaperTransition::Disc;
     origin = std::pair{m_revealOrigin->x, m_revealOrigin->y};
@@ -1574,7 +1583,8 @@ void Wallpaper::startTransition(WallpaperInstance& instance) {
     instance.transitionParams.centerY = origin->second;
   }
   kLog.info(
-      "transition on {}: {}{} over {:.0f} ms", instance.connectorName, origin.has_value() ? "disc from the chosen point" : "configured",
+      "transition on {}: {}{} over {:.0f} ms", instance.connectorName,
+      origin.has_value() ? "disc from the chosen point" : "configured",
       origin.has_value() ? std::format(" ({:.2f}, {:.2f})", origin->first, origin->second) : std::string{},
       wpConfig.transitionDurationMs
   );

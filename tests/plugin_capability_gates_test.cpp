@@ -31,8 +31,16 @@ int main() {
   ::setenv("NOCTALIA_STATE_HOME", (root / "state").c_str(), 1);
   ::setenv("ZYNITH_PLUGIN_GRANTS", (root / "grants.toml").c_str(), 1);
   ::setenv("ZYNITH_TEST_SECRET", "hunter2", 1);
-  { std::FILE* f = std::fopen((root / "home/notes.txt").c_str(), "w"); std::fputs("notes", f); std::fclose(f); }
-  { std::FILE* f = std::fopen((root / "home/.ssh/id_test").c_str(), "w"); std::fputs("key", f); std::fclose(f); }
+  {
+    std::FILE* f = std::fopen((root / "home/notes.txt").c_str(), "w");
+    std::fputs("notes", f);
+    std::fclose(f);
+  }
+  {
+    std::FILE* f = std::fopen((root / "home/.ssh/id_test").c_str(), "w");
+    std::fputs("key", f);
+    std::fclose(f);
+  }
 
   scripting::ScriptApiContext api;
   api.setConfigSnapshot(std::make_shared<const toml::table>(toml::parse("[shell]\noffline_mode = true")));

@@ -6,13 +6,13 @@
 #include "scripting/plugin_runtime_context.h"
 #include "shell/desktop/widgets/desktop_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_button_widget.h"
-#include "shell/desktop/widgets/desktop_session_actions_widget.h"
 #include "shell/desktop/widgets/desktop_calendar_widget.h"
 #include "shell/desktop/widgets/desktop_clock_widget.h"
 #include "shell/desktop/widgets/desktop_fancy_audio_visualizer_widget.h"
 #include "shell/desktop/widgets/desktop_label_widget.h"
 #include "shell/desktop/widgets/desktop_login_box_widget.h"
 #include "shell/desktop/widgets/desktop_media_player_widget.h"
+#include "shell/desktop/widgets/desktop_session_actions_widget.h"
 #include "shell/desktop/widgets/desktop_sticker_widget.h"
 #include "shell/desktop/widgets/desktop_sysmon_widget.h"
 #include "shell/desktop/widgets/desktop_volume_widget.h"
@@ -216,10 +216,12 @@ std::unique_ptr<DesktopWidget> DesktopWidgetFactory::create(
         .showCircle = getBoolSetting(settings, "circle", true),
         .centerText = getBoolSetting(settings, "center_text", true),
         .timezone = getStringSetting(settings, "timezone", ""),
-        .weight = [&settings]() {
-          const std::string weight = getStringSetting(settings, "weight", "bold");
-          return weight == "light" ? FontWeight::Light : (weight == "regular" ? FontWeight::Normal : FontWeight::Bold);
-        }(),
+        .weight =
+            [&settings]() {
+              const std::string weight = getStringSetting(settings, "weight", "bold");
+              return weight == "light" ? FontWeight::Light
+                                       : (weight == "regular" ? FontWeight::Normal : FontWeight::Bold);
+            }(),
         .face = DesktopClockWidget::faceFromSetting(getStringSetting(settings, "face", "custom")),
         .tabular = getBoolSetting(settings, "tabular", false),
     });

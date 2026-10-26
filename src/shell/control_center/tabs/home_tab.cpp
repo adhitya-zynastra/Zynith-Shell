@@ -145,8 +145,8 @@ namespace {
     colors.borderWidth = ui::tokens::kHairline;
     const ColorSpec fill = on ? ui::color::spec(ui::color::Semantic::SelectionFill)
                               : colorSpecFromRole(ColorRole::SurfaceVariant, fillOpacity * 0.72F);
-    const ColorSpec edge = on ? ui::color::spec(ui::color::Semantic::SelectionEdge)
-                              : ui::color::spec(ui::color::Semantic::Hairline);
+    const ColorSpec edge =
+        on ? ui::color::spec(ui::color::Semantic::SelectionEdge) : ui::color::spec(ui::color::Semantic::Hairline);
     const ColorSpec label = !enabled ? colorSpecFromRole(ColorRole::OnSurfaceVariant, 0.45F)
         : on                         ? ui::color::spec(ui::color::Semantic::Accent)
                                      : ui::color::spec(ui::color::Semantic::OnSurface);
@@ -680,56 +680,57 @@ std::unique_ptr<GridView> HomeTab::buildShortcutGrid(float scale) {
       }
     };
     const float chipHeight = ui::tokens::controlHeight(ui::tokens::Size::Medium, scale);
-    auto btn = m_zynith ? ui::button({
-        .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
-        .glyph = shortcut->displayIcon(),
-        .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
-        .contentAlign = showLabels ? ButtonContentAlign::Start : ButtonContentAlign::Center,
-        .minHeight = chipHeight,
-        .paddingV = 0.0F,
-        .paddingH = ui::tokens::space(ui::tokens::Space::Control, scale),
-        .gap = ui::tokens::space(ui::tokens::Space::Related, scale),
-        .radius = ui::tokens::pill(chipHeight),
-        .onClick = onChipClick,
-        .onRightClick = onChipRightClick,
-        .configure =
-            [enabled, isActive, fillOpacity = panelCardOpacity(), scale](Button& button) {
-              if (button.label() != nullptr) {
-                ui::type::apply(*button.label(), ui::type::Role::Label, scale);
-                button.label()->setMaxLines(1);
-              }
-              applyZynithChipStyle(button, enabled, isActive, fillOpacity);
-            },
-    }) : ui::button({
-        .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
-        .glyph = shortcut->displayIcon(),
-        .glyphSize = Style::fontSizeTitle * 1.35F * scale,
-        .contentAlign = showLabels ? ButtonContentAlign::Start : ButtonContentAlign::Center,
-        .minHeight = 0.0F,
-        .padding = Style::spaceSm * scale,
-        .gap = Style::spaceXs * scale,
-        .radius = Style::scaledRadiusXl(scale),
-        .onClick = onChipClick,
-        .onRightClick = onChipRightClick,
-        .configure =
-            [enabled, isActive, showLabels, fillOpacity = panelCardOpacity(), scale](Button& button) {
-              button.setDirection(FlexDirection::Vertical);
-              button.setJustify(FlexJustify::Center);
-              if (showLabels) {
-                // Stretch so the label width follows the cell; Center uses intrinsic text
-                // width and fights setMaxWidth.
-                button.setAlign(FlexAlign::Stretch);
-                if (button.label() != nullptr) {
-                  button.label()->setFontSize(Style::fontSizeMini * scale);
-                  button.label()->setMaxLines(1);
-                  button.label()->setTextAlign(TextAlign::Center);
+    auto btn = m_zynith
+        ? ui::button({
+              .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
+              .glyph = shortcut->displayIcon(),
+              .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
+              .contentAlign = showLabels ? ButtonContentAlign::Start : ButtonContentAlign::Center,
+              .minHeight = chipHeight,
+              .paddingV = 0.0F,
+              .paddingH = ui::tokens::space(ui::tokens::Space::Control, scale),
+              .gap = ui::tokens::space(ui::tokens::Space::Related, scale),
+              .radius = ui::tokens::pill(chipHeight),
+              .onClick = onChipClick,
+              .onRightClick = onChipRightClick,
+              .configure =
+                  [enabled, isActive, fillOpacity = panelCardOpacity(), scale](Button& button) {
+                    if (button.label() != nullptr) {
+                      ui::type::apply(*button.label(), ui::type::Role::Label, scale);
+                      button.label()->setMaxLines(1);
+                    }
+                    applyZynithChipStyle(button, enabled, isActive, fillOpacity);
+                  },
+          })
+        : ui::button({
+              .text = showLabels ? std::optional<std::string>{label} : std::nullopt,
+              .glyph = shortcut->displayIcon(),
+              .glyphSize = Style::fontSizeTitle * 1.35F * scale,
+              .contentAlign = showLabels ? ButtonContentAlign::Start : ButtonContentAlign::Center,
+              .minHeight = 0.0F,
+              .padding = Style::spaceSm * scale,
+              .gap = Style::spaceXs * scale,
+              .radius = Style::scaledRadiusXl(scale),
+              .onClick = onChipClick,
+              .onRightClick = onChipRightClick,
+              .configure = [enabled, isActive, showLabels, fillOpacity = panelCardOpacity(), scale](Button& button) {
+                button.setDirection(FlexDirection::Vertical);
+                button.setJustify(FlexJustify::Center);
+                if (showLabels) {
+                  // Stretch so the label width follows the cell; Center uses intrinsic text
+                  // width and fights setMaxWidth.
+                  button.setAlign(FlexAlign::Stretch);
+                  if (button.label() != nullptr) {
+                    button.label()->setFontSize(Style::fontSizeMini * scale);
+                    button.label()->setMaxLines(1);
+                    button.label()->setTextAlign(TextAlign::Center);
+                  }
+                } else {
+                  button.setAlign(FlexAlign::Center);
                 }
-              } else {
-                button.setAlign(FlexAlign::Center);
-              }
-              applyShortcutButtonStyle(button, enabled, isActive, fillOpacity);
-            },
-    });
+                applyShortcutButtonStyle(button, enabled, isActive, fillOpacity);
+              },
+          });
 
     Button* btnPtr = btn.get();
     if (auto* ia = btnPtr->inputArea(); ia != nullptr) {
@@ -1158,8 +1159,8 @@ void HomeTab::layoutWallpaperBackground(Renderer& renderer) {
   const float bw = Style::borderWidth;
   const float cw = std::max(0.0F, m_userCard->width() - bw * 2.0F);
   const float ch = std::max(0.0F, m_userCard->height() - bw * 2.0F);
-  const float outerRadius = m_zynith ? ui::tokens::radius(ui::tokens::Radius::Plate, contentScale())
-                                     : Style::scaledRadiusXl(contentScale());
+  const float outerRadius =
+      m_zynith ? ui::tokens::radius(ui::tokens::Radius::Plate, contentScale()) : Style::scaledRadiusXl(contentScale());
   const float radius = std::max(0.0F, outerRadius - bw);
 
   const Color surface = colorForRole(ColorRole::Surface);
@@ -1850,34 +1851,37 @@ std::unique_ptr<Flex> HomeTab::createZynith() {
       .out = &m_userCard,
       .fillWidth = true,
       .flexGrow = 1.0F,
-      .configure =
-          [scale, opacity, group, section](Flex& card) {
-            applySectionCardStyle(card, scale, opacity);
-            card.setJustify(FlexJustify::End);
-            card.setPadding(group, section);
-            card.setMinHeight(Style::controlHeightLg * 3.4F * scale);
-          },
+      .configure = [scale, opacity, group, section](Flex& card) {
+        applySectionCardStyle(card, scale, opacity);
+        card.setJustify(FlexJustify::End);
+        card.setPadding(group, section);
+        card.setMinHeight(Style::controlHeightLg * 3.4F * scale);
+      },
   });
   {
     const float wallpaperRadius =
         std::max(0.0F, ui::tokens::radius(ui::tokens::Radius::Plate, scale) - Style::borderWidth);
-    stage->addChild(ui::image({
-        .out = &m_wallpaperPlaceholder,
-        .fit = ImageFit::Cover,
-        .radius = wallpaperRadius,
-        .participatesInLayout = false,
-        .configure = [](Image& image) { image.setZIndex(-2); },
-    }));
-    stage->addChild(ui::image({
-        .out = &m_wallpaperBg,
-        .fit = ImageFit::Cover,
-        .radius = wallpaperRadius,
-        .participatesInLayout = false,
-        .configure = [](Image& image) {
-          image.setZIndex(-1);
-          image.setOpacity(0.0F);
-        },
-    }));
+    stage->addChild(
+        ui::image({
+            .out = &m_wallpaperPlaceholder,
+            .fit = ImageFit::Cover,
+            .radius = wallpaperRadius,
+            .participatesInLayout = false,
+            .configure = [](Image& image) { image.setZIndex(-2); },
+        })
+    );
+    stage->addChild(
+        ui::image({
+            .out = &m_wallpaperBg,
+            .fit = ImageFit::Cover,
+            .radius = wallpaperRadius,
+            .participatesInLayout = false,
+            .configure = [](Image& image) {
+              image.setZIndex(-1);
+              image.setOpacity(0.0F);
+            },
+        })
+    );
   }
 
   // The clock column: the focal readout. Above the stage's own click target (z) so it keeps its own.
@@ -1889,70 +1893,78 @@ std::unique_ptr<Flex> HomeTab::createZynith() {
       .flexGrow = 1.0F,
       .configure = [](Flex& column) { column.setZIndex(4); },
   });
-  clock->addChild(ui::label({
-      .out = &m_timeLabel,
-      .text = formatShellTime(m_config),
-      .color = ui::color::spec(ui::color::Semantic::OnSurface),
-      .configure = readoutShadow,
-  }));
-  clock->addChild(ui::row(
-      {.align = FlexAlign::Center, .gap = related},
+  clock->addChild(
       ui::label({
-          .out = &m_dateLabel,
-          .text = formatShellDate(m_config),
+          .out = &m_timeLabel,
+          .text = formatShellTime(m_config),
           .color = ui::color::spec(ui::color::Semantic::OnSurface),
           .configure = readoutShadow,
-      }),
-      ui::label({
-          .out = &m_dateSeparator,
-          .text = "·",
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-          .configure = readoutShadow,
-      }),
-      ui::glyph({
-          .out = &m_weatherGlyph,
-          .glyph = "weather-cloud-sun",
-          .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-      }),
-      ui::label({
-          .out = &m_weatherLine,
-          .text = "—",
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-          .configure = readoutShadow,
       })
-  ));
+  );
+  clock->addChild(
+      ui::row(
+          {.align = FlexAlign::Center, .gap = related},
+          ui::label({
+              .out = &m_dateLabel,
+              .text = formatShellDate(m_config),
+              .color = ui::color::spec(ui::color::Semantic::OnSurface),
+              .configure = readoutShadow,
+          }),
+          ui::label({
+              .out = &m_dateSeparator,
+              .text = "·",
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+              .configure = readoutShadow,
+          }),
+          ui::glyph({
+              .out = &m_weatherGlyph,
+              .glyph = "weather-cloud-sun",
+              .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Small, scale),
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+          }),
+          ui::label({
+              .out = &m_weatherLine,
+              .text = "—",
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+              .configure = readoutShadow,
+          })
+      )
+  );
 
   // Identity, opposite the time.
   const float avatarSize = ui::tokens::iconContainer(ui::tokens::Size::Large, scale);
   auto identity = ui::row({.out = &m_identity, .align = FlexAlign::Center, .gap = control});
-  identity->addChild(ui::column(
-      {.out = &m_userMain, .align = FlexAlign::End, .justify = FlexJustify::Center, .gap = inlineGap * 0.5F},
-      ui::label({
-          .out = &m_userName,
-          .text = sessionDisplayName(),
-          .color = ui::color::spec(ui::color::Semantic::OnSurface),
-          .configure = readoutShadow,
-      }),
-      ui::label({
-          .out = &m_userHost,
-          .text = userHostLine(),
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-          .configure = readoutShadow,
-      }),
-      ui::label({
-          .out = &m_userUptime,
-          .text = "…",
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-          .configure = readoutShadow,
-      })
-  ));
+  identity->addChild(
+      ui::column(
+          {.out = &m_userMain, .align = FlexAlign::End, .justify = FlexJustify::Center, .gap = inlineGap * 0.5F},
+          ui::label({
+              .out = &m_userName,
+              .text = sessionDisplayName(),
+              .color = ui::color::spec(ui::color::Semantic::OnSurface),
+              .configure = readoutShadow,
+          }),
+          ui::label({
+              .out = &m_userHost,
+              .text = userHostLine(),
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+              .configure = readoutShadow,
+          }),
+          ui::label({
+              .out = &m_userUptime,
+              .text = "…",
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+              .configure = readoutShadow,
+          })
+      )
+  );
   identity->addChild(buildAvatarArea(avatarSize, scale));
 
-  stage->addChild(ui::row(
-      {.out = &m_stageRow, .align = FlexAlign::End, .justify = FlexJustify::SpaceBetween, .gap = group},
-      std::move(clock), std::move(identity)
-  ));
+  stage->addChild(
+      ui::row(
+          {.out = &m_stageRow, .align = FlexAlign::End, .justify = FlexJustify::SpaceBetween, .gap = group},
+          std::move(clock), std::move(identity)
+      )
+  );
 
   Flex* stagePtr = stage.get();
   const auto stageHover = [stagePtr, scale](bool hovered) { applyZynithPlateHover(*stagePtr, hovered, scale); };
@@ -1967,18 +1979,15 @@ std::unique_ptr<Flex> HomeTab::createZynith() {
   // readout line instead of outlining anything.
   m_dateTimeCardArea = addCardOverlay(
       *m_dateTimeCard, []() { openControlCenterTab("weather"); },
-      {.keyboardFocus = true,
-       .pointerHitTest = true,
-       .onHover =
-           [this](bool hovered) {
-             const auto role = hovered ? ui::color::Semantic::OnSurface : ui::color::Semantic::Muted;
-             if (m_weatherLine != nullptr) {
-               m_weatherLine->setColor(ui::color::spec(role));
-             }
-             if (m_weatherGlyph != nullptr) {
-               m_weatherGlyph->setColor(ui::color::spec(role));
-             }
-           }}
+      {.keyboardFocus = true, .pointerHitTest = true, .onHover = [this](bool hovered) {
+         const auto role = hovered ? ui::color::Semantic::OnSurface : ui::color::Semantic::Muted;
+         if (m_weatherLine != nullptr) {
+           m_weatherLine->setColor(ui::color::spec(role));
+         }
+         if (m_weatherGlyph != nullptr) {
+           m_weatherGlyph->setColor(ui::color::spec(role));
+         }
+       }}
   );
   tab->addChild(std::move(stage));
 
@@ -1989,74 +1998,79 @@ std::unique_ptr<Flex> HomeTab::createZynith() {
       .align = FlexAlign::Center,
       .gap = control,
       .fillWidth = true,
-      .configure =
-          [scale, opacity, related, control](Flex& card) {
-            applySectionCardStyle(card, scale, opacity);
-            card.setDirection(FlexDirection::Horizontal);
-            card.setAlign(FlexAlign::Center);
-            card.setGap(control);
-            card.setPadding(related, control);
-          },
+      .configure = [scale, opacity, related, control](Flex& card) {
+        applySectionCardStyle(card, scale, opacity);
+        card.setDirection(FlexDirection::Horizontal);
+        card.setAlign(FlexAlign::Center);
+        card.setGap(control);
+        card.setPadding(related, control);
+      },
   });
-  band->addChild(ui::column(
-      {.out = &m_mediaArtSlot,
-       .align = FlexAlign::Center,
-       .justify = FlexJustify::Center,
-       .width = artSize,
-       .height = artSize},
-      ui::glyph({
-          .out = &m_mediaArtFallback,
-          .glyph = "disc-filled",
-          .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Medium, scale),
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-      }),
-      ui::image({
-          .out = &m_mediaArt,
-          .fit = ImageFit::Cover,
-          .radius = ui::tokens::radius(ui::tokens::Radius::Control, scale),
-          .width = artSize,
-          .height = artSize,
-          .participatesInLayout = false,
-          .configure = [](Image& image) { image.setZIndex(1); },
-      })
-  ));
-  band->addChild(ui::column(
-      {.out = &m_mediaText, .align = FlexAlign::Stretch, .gap = inlineGap * 0.5F, .flexGrow = 1.0F},
-      ui::label({
-          .out = &m_mediaTrack,
-          .text = "…",
-          .color = ui::color::spec(ui::color::Semantic::OnSurface),
-          .maxLines = 1,
-          .ellipsize = TextEllipsize::End,
-      }),
-      ui::label({
-          .out = &m_mediaArtist,
-          .text = i18n::tr("control-center.home.media.no-active-player"),
-          .color = ui::color::spec(ui::color::Semantic::Muted),
-          .maxLines = 1,
-          .ellipsize = TextEllipsize::End,
-      }),
-      ui::label({
-          .out = &m_mediaProgress,
-          .text = " ",
-          .maxLines = 1,
-          .visible = false,
-      })
-  ));
+  band->addChild(
+      ui::column(
+          {.out = &m_mediaArtSlot,
+           .align = FlexAlign::Center,
+           .justify = FlexJustify::Center,
+           .width = artSize,
+           .height = artSize},
+          ui::glyph({
+              .out = &m_mediaArtFallback,
+              .glyph = "disc-filled",
+              .glyphSize = ui::tokens::iconSize(ui::tokens::Size::Medium, scale),
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+          }),
+          ui::image({
+              .out = &m_mediaArt,
+              .fit = ImageFit::Cover,
+              .radius = ui::tokens::radius(ui::tokens::Radius::Control, scale),
+              .width = artSize,
+              .height = artSize,
+              .participatesInLayout = false,
+              .configure = [](Image& image) { image.setZIndex(1); },
+          })
+      )
+  );
+  band->addChild(
+      ui::column(
+          {.out = &m_mediaText, .align = FlexAlign::Stretch, .gap = inlineGap * 0.5F, .flexGrow = 1.0F},
+          ui::label({
+              .out = &m_mediaTrack,
+              .text = "…",
+              .color = ui::color::spec(ui::color::Semantic::OnSurface),
+              .maxLines = 1,
+              .ellipsize = TextEllipsize::End,
+          }),
+          ui::label({
+              .out = &m_mediaArtist,
+              .text = i18n::tr("control-center.home.media.no-active-player"),
+              .color = ui::color::spec(ui::color::Semantic::Muted),
+              .maxLines = 1,
+              .ellipsize = TextEllipsize::End,
+          }),
+          ui::label({
+              .out = &m_mediaProgress,
+              .text = " ",
+              .maxLines = 1,
+              .visible = false,
+          })
+      )
+  );
   // A technical readout: monospaced, tabular, so the position ticks without jitter.
-  band->addChild(ui::label({
-      .out = &m_mediaStatus,
-      .text = i18n::tr("control-center.home.media.idle"),
-      .color = ui::color::spec(ui::color::Semantic::Muted),
-      .maxLines = 1,
-      .ellipsize = TextEllipsize::End,
-  }));
+  band->addChild(
+      ui::label({
+          .out = &m_mediaStatus,
+          .text = i18n::tr("control-center.home.media.idle"),
+          .color = ui::color::spec(ui::color::Semantic::Muted),
+          .maxLines = 1,
+          .ellipsize = TextEllipsize::End,
+      })
+  );
   Flex* bandPtr = band.get();
   m_mediaCardArea = addCardOverlay(
       *m_mediaCard, []() { openControlCenterTab("media"); },
-      {.keyboardFocus = true,
-       .pointerHitTest = true,
-       .onHover = [bandPtr, scale](bool hovered) { applyZynithPlateHover(*bandPtr, hovered, scale); }}
+      {.keyboardFocus = true, .pointerHitTest = true, .onHover = [bandPtr, scale](bool hovered) {
+         applyZynithPlateHover(*bandPtr, hovered, scale);
+       }}
   );
   tab->addChild(std::move(band));
 

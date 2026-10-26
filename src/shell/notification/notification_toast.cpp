@@ -2444,15 +2444,17 @@ InputArea* NotificationToast::buildCard(
   if (!iconAssigned) {
     // zynith: no app icon — the glyph sits on the same accent disc the OSD uses, so the two
     // transient surfaces read as one family.
-    iconSlot->addChild(ui::box({
-        .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
-        .width = iconSize,
-        .height = iconSize,
-        .configure = [iconSize](Box& box) {
-          box.setRadius(iconSize * 0.5F);
-          box.setPosition(0.0F, 0.0F);
-        },
-    }));
+    iconSlot->addChild(
+        ui::box({
+            .fill = colorSpecFromRole(ColorRole::Primary, 0.16F),
+            .width = iconSize,
+            .height = iconSize,
+            .configure = [iconSize](Box& box) {
+              box.setRadius(iconSize * 0.5F);
+              box.setPosition(0.0F, 0.0F);
+            },
+        })
+    );
     iconSlot->addChild(
         ui::glyph({
             .glyph = "bell",
@@ -2478,23 +2480,27 @@ InputArea* NotificationToast::buildCard(
   });
   // zynith: the app identity leads as an accent caption instead of a grey footer.
   if (showAppName) {
-    textColumn->addChild(ui::label({
-        .text = entry.appName,
-        .fontSize = metaFontSize(scale),
-        .fontWeight = FontWeight::Medium,
-        .color = colorSpecFromRole(entry.urgency == Urgency::Critical ? ColorRole::Error : ColorRole::Primary),
-        .maxWidth = topTextMaxWidth,
-        .maxLines = 1,
-    }));
+    textColumn->addChild(
+        ui::label({
+            .text = entry.appName,
+            .fontSize = metaFontSize(scale),
+            .fontWeight = FontWeight::Medium,
+            .color = colorSpecFromRole(entry.urgency == Urgency::Critical ? ColorRole::Error : ColorRole::Primary),
+            .maxWidth = topTextMaxWidth,
+            .maxLines = 1,
+        })
+    );
   }
-  textColumn->addChild(ui::label({
-      .text = displaySummary,
-      .fontSize = summaryFontSize(scale),
-      .fontWeight = FontWeight::Bold,
-      .color = colorSpecFromRole(ColorRole::OnSurface),
-      .maxWidth = topTextMaxWidth,
-      .maxLines = kMaxSummaryLines,
-  }));
+  textColumn->addChild(
+      ui::label({
+          .text = displaySummary,
+          .fontSize = summaryFontSize(scale),
+          .fontWeight = FontWeight::Bold,
+          .color = colorSpecFromRole(ColorRole::OnSurface),
+          .maxWidth = topTextMaxWidth,
+          .maxLines = kMaxSummaryLines,
+      })
+  );
   std::unique_ptr<Flex> actionsRow;
   std::unique_ptr<Flex> inlineReplyRow;
   std::unique_ptr<Input> inlineReplyInput;

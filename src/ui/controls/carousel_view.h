@@ -121,7 +121,8 @@ private:
   [[nodiscard]] float offsetForIndex(std::size_t index) const noexcept;
   [[nodiscard]] std::optional<std::size_t> indexAt(float localX, float localY) const noexcept;
   // Drawn rect of a bound index, in canvas coordinates.
-  [[nodiscard]] bool slotRectForIndex(std::size_t index, float& outX, float& outY, float& outW, float& outH) const noexcept;
+  [[nodiscard]] bool
+  slotRectForIndex(std::size_t index, float& outX, float& outY, float& outW, float& outH) const noexcept;
   [[nodiscard]] std::size_t nearestIndexToCentre() const noexcept;
   void updateFocusFromOffset();
 
