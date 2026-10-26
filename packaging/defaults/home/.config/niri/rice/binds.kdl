@@ -2,7 +2,7 @@
 //  Key bindings — the Zynith defaults. Yours to edit: zynith-firstrun never overwrites this file.
 //  Mod is Super. Mod+H shows them all.
 //  Shell commands go through `zynith-ui cmd` (the Zynith UI, falling back to the native shell's own panel when the UI
-//  is not running) or the native shell's IPC (`noctalia msg …`, its command name), so they get OSDs and theming.
+//  is not running) or the native shell's IPC (`zynith-shell msg …`, its command name), so they get OSDs and theming.
 //  repeat=false on shell commands: a held key would otherwise repeat them ~50 times a second.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -22,19 +22,19 @@ binds {
     Mod+Alt+E repeat=false   hotkey-overlay-title="Emoji picker" { spawn "zynith-ui" "cmd" "launcher" ":"; }
     Mod+Alt+V repeat=false   hotkey-overlay-title="Clipboard history" { spawn "zynith-ui" "cmd" "clipboard"; }
     Mod+W repeat=false       hotkey-overlay-title="Wallpapers" { spawn "zynith-ui" "cmd" "wallpaper"; }
-    Ctrl+Alt+W repeat=false  hotkey-overlay-title="Random wallpaper" { spawn "noctalia" "msg" "wallpaper-random"; }
+    Ctrl+Alt+W repeat=false  hotkey-overlay-title="Random wallpaper" { spawn "zynith-shell" "msg" "wallpaper-random"; }
     Mod+Shift+E repeat=false hotkey-overlay-title="Control Panel" { spawn "zynith-ui" "cmd" "control"; }
     Mod+Shift+N repeat=false hotkey-overlay-title="Notifications" { spawn "zynith-ui" "cmd" "notifications"; }
     Mod+T repeat=false       hotkey-overlay-title="Settings" { spawn "zynith-ui" "settings"; }
-    Mod+N repeat=false       hotkey-overlay-title="Night light" { spawn "noctalia" "msg" "nightlight-force-toggle"; }
-    Mod+Ctrl+S repeat=false  hotkey-overlay-title="Window switcher" { spawn "noctalia" "msg" "window-switcher"; }
+    Mod+N repeat=false       hotkey-overlay-title="Night light" { spawn "zynith-shell" "msg" "nightlight-force-toggle"; }
+    Mod+Ctrl+S repeat=false  hotkey-overlay-title="Window switcher" { spawn "zynith-shell" "msg" "window-switcher"; }
     Mod+Alt+W repeat=false   hotkey-overlay-title="Edit desktop widgets" { spawn "zynith-ui" "cmd" "desktop-edit"; }
 
     // ── Session ─────────────────────────────────────────────────────────────
-    Ctrl+Alt+L repeat=false  hotkey-overlay-title="Lock screen" { spawn "noctalia" "msg" "session" "lock"; }
+    Ctrl+Alt+L repeat=false  hotkey-overlay-title="Lock screen" { spawn "zynith-shell" "msg" "session" "lock"; }
     Ctrl+Alt+P repeat=false  hotkey-overlay-title="Power menu" { spawn "zynith-ui" "cmd" "session"; }
     Ctrl+Alt+Delete          hotkey-overlay-title="Log out" { quit; }
-    Mod+Alt+R                hotkey-overlay-title="Reload niri and shell configuration" { spawn-sh "niri msg action load-config-file; noctalia msg config-reload"; }
+    Mod+Alt+R                hotkey-overlay-title="Reload niri and shell configuration" { spawn-sh "niri msg action load-config-file; zynith-shell msg config-reload"; }
     // recovery: restart the native shell and the Zynith UI (each waited out before its replacement starts)
     Mod+Ctrl+Alt+R repeat=false hotkey-overlay-title="Restart the shell" { spawn-sh "zynith-ui native restart; zynith-ui restart"; }
     Mod+Shift+P   hotkey-overlay-title="Monitors off" { power-off-monitors; }
@@ -116,24 +116,24 @@ binds {
     Print       hotkey-overlay-title="Screenshot (region)" { screenshot; }
     Mod+Print   hotkey-overlay-title="Screenshot (screen)" { spawn-sh "niri msg action screenshot-screen; pw-play --volume=0.5 /usr/share/zynith/sounds/screenshot.wav"; }
     Alt+Print   hotkey-overlay-title="Screenshot (window)" { spawn-sh "niri msg action screenshot-window; pw-play --volume=0.5 /usr/share/zynith/sounds/screenshot.wav"; }
-    Mod+Shift+S repeat=false hotkey-overlay-title="Screenshot + annotate" { spawn "noctalia" "msg" "screenshot-annotate"; }
+    Mod+Shift+S repeat=false hotkey-overlay-title="Screenshot + annotate" { spawn "zynith-shell" "msg" "screenshot-annotate"; }
 
     // ── Hardware keys (with on-screen indicators) ───────────────────────────
-    XF86AudioRaiseVolume allow-when-locked=true cooldown-ms=50 { spawn "noctalia" "msg" "volume-up"; }
-    XF86AudioLowerVolume allow-when-locked=true cooldown-ms=50 { spawn "noctalia" "msg" "volume-down"; }
-    XF86AudioMute        allow-when-locked=true repeat=false { spawn "noctalia" "msg" "volume-mute"; }
-    XF86AudioMicMute     allow-when-locked=true repeat=false { spawn "noctalia" "msg" "mic-mute"; }
+    XF86AudioRaiseVolume allow-when-locked=true cooldown-ms=50 { spawn "zynith-shell" "msg" "volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true cooldown-ms=50 { spawn "zynith-shell" "msg" "volume-down"; }
+    XF86AudioMute        allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "volume-mute"; }
+    XF86AudioMicMute     allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "mic-mute"; }
 
-    XF86AudioPlay  allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "toggle"; }
-    XF86AudioPause allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "toggle"; }
-    XF86AudioStop  allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "stop"; }
-    XF86AudioNext  allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "next"; }
-    XF86AudioPrev  allow-when-locked=true repeat=false { spawn "noctalia" "msg" "media" "previous"; }
+    XF86AudioPlay  allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "media" "toggle"; }
+    XF86AudioPause allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "media" "toggle"; }
+    XF86AudioStop  allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "media" "stop"; }
+    XF86AudioNext  allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "media" "next"; }
+    XF86AudioPrev  allow-when-locked=true repeat=false { spawn "zynith-shell" "msg" "media" "previous"; }
 
     XF86MonBrightnessUp   allow-when-locked=true cooldown-ms=50 { spawn "zynith-ui" "cmd" "brightness" "up"; }
     XF86MonBrightnessDown allow-when-locked=true cooldown-ms=50 { spawn "zynith-ui" "cmd" "brightness" "down"; }
-    XF86KbdBrightnessUp   allow-when-locked=true cooldown-ms=50 { spawn "noctalia" "msg" "keyboard-backlight-up"; }
-    XF86KbdBrightnessDown allow-when-locked=true cooldown-ms=50 { spawn "noctalia" "msg" "keyboard-backlight-down"; }
+    XF86KbdBrightnessUp   allow-when-locked=true cooldown-ms=50 { spawn "zynith-shell" "msg" "keyboard-backlight-up"; }
+    XF86KbdBrightnessDown allow-when-locked=true cooldown-ms=50 { spawn "zynith-shell" "msg" "keyboard-backlight-down"; }
 
-    XF86Sleep { spawn "noctalia" "msg" "session" "lock-and-suspend"; }
+    XF86Sleep { spawn "zynith-shell" "msg" "session" "lock-and-suspend"; }
 }

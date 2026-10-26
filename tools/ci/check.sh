@@ -80,7 +80,7 @@ packaging() {
     shell_scripts | xargs shellcheck --severity=warning --shell=bash || bad "shellcheck"
 
     say "desktop entries"
-    desktop-file-validate packaging/session/zynith-settings.desktop assets/dev.noctalia.Noctalia.desktop \
+    desktop-file-validate packaging/session/zynith-settings.desktop assets/dev.zynith.Shell.desktop \
         || bad "desktop-file-validate"
     # a wayland-session entry is not an application; validate what applies to it
     grep -q '^Exec=zynith-session$' packaging/session/zynith.desktop || bad "zynith.desktop: Exec"

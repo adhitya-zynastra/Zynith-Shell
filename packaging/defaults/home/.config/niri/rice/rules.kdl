@@ -96,7 +96,7 @@ window-rule {
 // ── Layer rules (the native shell) ───────────────────────────────────────────────────
 // Blurred copy of the wallpaper lives in the overview backdrop.
 layer-rule {
-    match namespace="^noctalia-backdrop"
+    match namespace="^zynith-shell-backdrop"
     place-within-backdrop true
 }
 
@@ -104,7 +104,7 @@ layer-rule {
 // behind it (the xray hint is not honoured for it), which still stays dark and legible because the
 // card fill is a palette surface at 0.68. Only alive while a toast is on screen.
 layer-rule {
-    match namespace="^noctalia-notification$"
+    match namespace="^zynith-shell-notification$"
     background-effect {
         blur true
     }

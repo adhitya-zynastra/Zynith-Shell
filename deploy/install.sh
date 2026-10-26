@@ -6,12 +6,12 @@
 #   deploy/install.sh --restart  also restart what was installed (native shell and/or UI), supervised
 #   deploy/install.sh --check    only report what is installed and where it comes from
 #
-# It never writes user configuration (~/.config/zynith, ~/.config/niri, ~/.local/state/noctalia/settings.toml),
+# It never writes user configuration (~/.config/zynith, ~/.config/niri, ~/.local/state/zynith-shell/settings.toml),
 # refuses while the session is locked, and stops at the first failure.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
-PREFIX="${ZYNITH_PREFIX:-$HOME/.local/opt/noctalia}"
+PREFIX="${ZYNITH_PREFIX:-$HOME/.local/opt/zynith-shell}"
 BIN="$HOME/.local/bin"
 SHELL_BUILD="$ROOT/build/shell"
 UI_BUILD="$ROOT/build/ui-native"
@@ -26,14 +26,14 @@ for a in "$@"; do
 done
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
 
-locked() { command -v noctalia >/dev/null && noctalia msg status 2>/dev/null | grep -q '"locked": true'; }
+locked() { command -v zynith-shell >/dev/null && zynith-shell msg status 2>/dev/null | grep -q '"locked": true'; }
 
 check() {
     say "Zynith at $ROOT ($(git -C "$ROOT" describe --always --dirty 2>/dev/null), branch $(git -C "$ROOT" branch --show-current))"
     echo "  launcher:     $(readlink -f "$BIN/zynith-ui" 2>/dev/null || echo 'not linked')"
-    echo "  native shell: $PREFIX/bin/noctalia ($(stat -c %y "$PREFIX/bin/noctalia" 2>/dev/null | cut -c1-19))"
-    if [[ -x "$SHELL_BUILD/noctalia" ]]; then
-        cmp -s "$SHELL_BUILD/noctalia" "$PREFIX/bin/noctalia" && echo "                = this tree's build" || echo "                ≠ this tree's build ($SHELL_BUILD/noctalia)"
+    echo "  native shell: $PREFIX/bin/zynith-shell ($(stat -c %y "$PREFIX/bin/zynith-shell" 2>/dev/null | cut -c1-19))"
+    if [[ -x "$SHELL_BUILD/zynith-shell" ]]; then
+        cmp -s "$SHELL_BUILD/zynith-shell" "$PREFIX/bin/zynith-shell" && echo "                = this tree's build" || echo "                ≠ this tree's build ($SHELL_BUILD/zynith-shell)"
     fi
     echo "  UI plugin:    $UI_BUILD/qml"
     # every desktop UI running (a test niri may run its own); the one from this tree is the installed one
@@ -60,11 +60,11 @@ if ((want_shell)); then
     [[ -f "$SHELL_BUILD/build.ninja" ]] || meson setup "$SHELL_BUILD" "$ROOT" --buildtype=release --prefix="$PREFIX" -Dtests=enabled >/dev/null
     # half the cores, lowest priority: a full build otherwise holds every core for minutes on the live desktop
     nice -n 19 meson compile -C "$SHELL_BUILD" -j "$(( $(nproc) / 2 > 1 ? $(nproc) / 2 : 1 ))" >/dev/null
-    if [[ -x "$PREFIX/bin/noctalia" ]] && cmp -s "$SHELL_BUILD/noctalia" "$PREFIX/bin/noctalia"; then
+    if [[ -x "$PREFIX/bin/zynith-shell" ]] && cmp -s "$SHELL_BUILD/zynith-shell" "$PREFIX/bin/zynith-shell"; then
         echo "  installed binary is already this build"
     else
-        keep="$PREFIX/bin/noctalia.pre-install-$(date +%Y%m%d-%H%M%S)"
-        [[ -x "$PREFIX/bin/noctalia" ]] && cp -p "$PREFIX/bin/noctalia" "$keep" && echo "  previous binary kept as $keep"
+        keep="$PREFIX/bin/zynith-shell.pre-install-$(date +%Y%m%d-%H%M%S)"
+        [[ -x "$PREFIX/bin/zynith-shell" ]] && cp -p "$PREFIX/bin/zynith-shell" "$keep" && echo "  previous binary kept as $keep"
         # meson replaces files by unlinking first, so a running binary is not "busy"; assets (translations) come too
         meson install -C "$SHELL_BUILD" --quiet
         echo "  installed $(git -C "$ROOT" describe --always --dirty)"

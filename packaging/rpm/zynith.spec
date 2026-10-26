@@ -16,7 +16,7 @@ Release:        %{zynith_release}.%{snapdate}git%{shortcommit}%{?dist}
 Summary:        Zynith, a desktop shell for the niri Wayland compositor
 ExcludeArch:    %{ix86}
 
-# Zynith is GPL-3.0-only. It includes code derived from Noctalia (MIT, notice kept in LICENSES/), and vendored code
+# Zynith is GPL-3.0-only. It includes MIT-licensed code whose notice is kept in LICENSES/, and vendored code
 # under third_party/ (fzy and luau: MIT; material_color_utilities: Apache-2.0; wuffs: Apache-2.0 AND MIT); protocol
 # XML under protocols/ keeps its own licences (BSD-3-Clause, HPND-sell-variant, LGPL-2.1-or-later, MIT); the bundled
 # UI fonts are OFL-1.1.
@@ -89,9 +89,6 @@ displays, desktop widgets and Settings.
 
 %package        shell
 Summary:        The Zynith native shell: services, lock screen, wallpaper and IPC
-# the native shell keeps its upstream command name (`noctalia`) for compatibility: it cannot share a system with the
-# upstream package that installs the same command
-Conflicts:      noctalia
 Requires:       hicolor-icon-theme
 Requires:       pipewire
 Requires:       git-core
@@ -105,8 +102,7 @@ Provides:       bundled(wuffs)
 
 %description    shell
 The native half of Zynith (C++): the long-running services, the lock screen, the wallpaper renderer, the theme
-engine and the command-line IPC. Its command is `noctalia` (kept from the codebase it derives from, for compatibility
-with existing configurations); `zynith-ui` supervises it.
+engine and the command-line IPC (`zynith-shell msg …`); `zynith-ui` supervises it.
 
 
 %package        ui
@@ -195,7 +191,7 @@ cp -a ui/Common ui/Components ui/Modules ui/Services ui/Widgets ui/templates ui/
       %{buildroot}%{_datadir}/zynith/ui/
 echo "%{version}-%{release} (%{commit})" > %{buildroot}%{_datadir}/zynith/ui/VERSION
 # the UI addresses the shared assets (icon font, emoji) as ../assets beside itself
-ln -s ../noctalia/assets %{buildroot}%{_datadir}/zynith/assets
+ln -s ../zynith-shell/assets %{buildroot}%{_datadir}/zynith/assets
 install -d %{buildroot}%{_bindir}
 ln -s ../share/zynith/ui/zynith-ui %{buildroot}%{_bindir}/zynith-ui
 install -d %{buildroot}%{_qt6_qmldir}/Zynith/Native
@@ -222,9 +218,9 @@ install -Dm0755 packaging/live/livesys-zynith %{buildroot}%{_libexecdir}/livesys
 
 
 %check
-desktop-file-validate %{buildroot}%{_datadir}/applications/dev.noctalia.Noctalia.desktop
+desktop-file-validate %{buildroot}%{_datadir}/applications/dev.zynith.Shell.desktop
 desktop-file-validate %{buildroot}%{_datadir}/applications/zynith-settings.desktop
-test -x %{buildroot}%{_bindir}/noctalia
+test -x %{buildroot}%{_bindir}/zynith-shell
 test -f %{buildroot}%{_qt6_qmldir}/Zynith/Native/qmldir
 test -f %{buildroot}%{_datadir}/zynith/sounds/notification.wav
 python3 %{buildroot}%{_datadir}/zynith/configs/official/zynith-config.py validate
@@ -233,10 +229,10 @@ python3 %{buildroot}%{_datadir}/zynith/configs/official/zynith-config.py validat
 
 %files shell
 %license LICENSE LICENSES/*
-%{_bindir}/noctalia
-%{_datadir}/applications/dev.noctalia.Noctalia.desktop
-%{_datadir}/icons/hicolor/scalable/apps/noctalia.svg
-%{_datadir}/noctalia
+%{_bindir}/zynith-shell
+%{_datadir}/applications/dev.zynith.Shell.desktop
+%{_datadir}/icons/hicolor/scalable/apps/zynith-shell.svg
+%{_datadir}/zynith-shell
 
 %files ui
 %license LICENSE ui/assets/fonts/OFL.txt
