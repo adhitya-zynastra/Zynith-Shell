@@ -87,9 +87,14 @@ int main() {
 
     writeConfig(configPath, "auto_locate = true\naddress = \"\"\nlatitude = 51.5072\nlongitude = -0.1276\n");
     config.forceReload();
-    expect(changes == 3, "enabling automatic location should publish a location change");
-    expect(location.resolving(), "automatic location should take priority over manual coordinates");
-    expect(!location.resolvedLocation().has_value(), "manual coordinates should not bypass automatic resolution");
+    // Zynith has no IP geolocation: auto_locate is accepted for older configurations but never starts a lookup
+    expect(changes == 3, "changing auto_locate should publish a location change");
+    expect(!location.resolving(), "auto_locate must not start a network lookup");
+    resolved = location.resolvedLocation();
+    expect(
+        resolved.has_value() && near(resolved->latitude, 51.5072) && near(resolved->longitude, -0.1276),
+        "manual coordinates should still apply when auto_locate is set"
+    );
 
     writeConfig(configPath, "auto_locate = false\naddress = \"\"\nlatitude = 51.5072\nlongitude = -0.1276\n");
     config.forceReload();
@@ -97,7 +102,7 @@ int main() {
     expect(changes == 4, "switching back to manual coordinates should publish a location change");
     expect(
         resolved.has_value() && near(resolved->latitude, 51.5072) && near(resolved->longitude, -0.1276),
-        "manual coordinates were not restored after disabling automatic location"
+        "manual coordinates were not kept after turning auto_locate off"
     );
   }
 

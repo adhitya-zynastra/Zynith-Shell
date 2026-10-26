@@ -70,8 +70,10 @@ int main() {
            "git registry root"
        )
       && ok;
-  ok = expect(isDefaultPluginSourceName("official"), "official source should be protected as a default source") && ok;
-  ok = expect(isDefaultPluginSourceName("community"), "community source should be protected as a default source") && ok;
+  // Zynith ships no built-in plugin sources, so no name is reserved: a user may add and remove these
+  ok = expect(defaultPluginSources().empty(), "no plugin source should be built in") && ok;
+  ok = expect(!isDefaultPluginSourceName("official"), "official should not be a protected source name") && ok;
+  ok = expect(!isDefaultPluginSourceName("community"), "community should not be a protected source name") && ok;
   ok = expect(!isDefaultPluginSourceName("dev"), "custom source should not be protected as a default source") && ok;
   ok = expect(
            scripting::plugin_paths::registryRoot(pathSource).string().ends_with("/dev/zynith-shell-plugins"),
