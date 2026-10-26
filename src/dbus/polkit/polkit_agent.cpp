@@ -29,7 +29,7 @@
 namespace {
 
   constexpr Logger kLog("polkit");
-  constexpr auto kAgentObjectPath = "/org/zynith-shell/PolkitAuthenticationAgent";
+  constexpr auto kAgentObjectPath = "/dev/zynith/PolkitAuthenticationAgent";
 
   // GObject dispatches these signal/vfunc callbacks through libffi (g_cclosure_marshal_generic),
   // so a C++ exception escaping one would unwind across the C ABI and call std::terminate. Run the

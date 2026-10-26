@@ -17,7 +17,7 @@ namespace {
 
   const sdbus::ServiceName kBluezBusName{"org.bluez"};
   const sdbus::ObjectPath kBluezRoot{"/org/bluez"};
-  const sdbus::ObjectPath kAgentObjectPath{"/org/zynith-shell/BluetoothAgent"};
+  const sdbus::ObjectPath kAgentObjectPath{"/dev/zynith/BluetoothAgent"};
   constexpr auto kAgentInterface = "org.bluez.Agent1";
   constexpr auto kAgentManagerInterface = "org.bluez.AgentManager1";
   constexpr auto kCapability = "KeyboardDisplay";
