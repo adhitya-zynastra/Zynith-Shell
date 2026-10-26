@@ -74,8 +74,8 @@ load_state() {
 # session's start line: it runs the shell as its child and blocks in `wait` (no polling). An exit it was not
 # asked for relaunches the shell; one asked for (`native stop`) does not. Failing again and again within
 # seconds of starting, it stops trying and says so, rather than spin.
-NATIVE_BIN="$HOME/.local/opt/noctalia/bin/noctalia"
-[[ -x "$NATIVE_BIN" ]] || NATIVE_BIN="$(command -v noctalia || true)"
+NATIVE_BIN="$HOME/.local/opt/zynith-shell/bin/zynith-shell"
+[[ -x "$NATIVE_BIN" ]] || NATIVE_BIN="$(command -v zynith-shell || true)"
 # the UI talks to the same binary (Paths.core)
 export ZYNITH_NATIVE="$NATIVE_BIN"
 NATIVE_SUP="$RUN/native.supervisor"
@@ -136,7 +136,7 @@ native_cmd() {
         if supervisor_alive; then echo "running (supervised by $(cat "$NATIVE_SUP"), shell $(native_pid))"; return 0; fi
         rm -f "$NATIVE_STOP"
         setsid -f "$0" native supervise >/dev/null 2>&1 </dev/null
-        for _ in $(seq 1 100); do [[ -n "$(native_pid)" ]] && noctalia msg status >/dev/null 2>&1 && { echo "started $(native_pid)"; return 0; }; sleep 0.1; done
+        for _ in $(seq 1 100); do [[ -n "$(native_pid)" ]] && zynith-shell msg status >/dev/null 2>&1 && { echo "started $(native_pid)"; return 0; }; sleep 0.1; done
         echo "the shell did not come up; see $NATIVE_LOG" >&2
         return 1
         ;;
@@ -148,7 +148,7 @@ native_cmd() {
             touch "$RUN/native.restart"
             kill -TERM "$old"
             wait_gone "$old" || { echo "the shell ($old) did not exit" >&2; return 1; }
-            for _ in $(seq 1 100); do local now; now="$(native_pid)"; [[ -n "$now" && "$now" != "$old" ]] && noctalia msg status >/dev/null 2>&1 && { echo "restarted $now"; return 0; }; sleep 0.1; done
+            for _ in $(seq 1 100); do local now; now="$(native_pid)"; [[ -n "$now" && "$now" != "$old" ]] && zynith-shell msg status >/dev/null 2>&1 && { echo "restarted $now"; return 0; }; sleep 0.1; done
             echo "the shell did not come back; see $NATIVE_LOG" >&2
             return 1
         fi

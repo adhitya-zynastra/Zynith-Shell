@@ -63,7 +63,7 @@ CoreClient::CoreClient(QObject* parent)
     : QObject(parent) {
     const QByteArray runtime = qgetenv("XDG_RUNTIME_DIR");
     const QByteArray display = qgetenv("WAYLAND_DISPLAY");
-    m_path = QString::fromUtf8(runtime.isEmpty() ? QByteArray("/tmp") : runtime) + QStringLiteral("/noctalia-")
+    m_path = QString::fromUtf8(runtime.isEmpty() ? QByteArray("/tmp") : runtime) + QStringLiteral("/zynith-shell-")
              + QString::fromUtf8(display.isEmpty() ? QByteArray("wayland-0") : display) + QStringLiteral(".sock");
 }
 

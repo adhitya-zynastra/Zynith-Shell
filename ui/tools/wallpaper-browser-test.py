@@ -5,7 +5,7 @@
 # shown. Memory of the UI and the native shell before and after. Restores the wallpaper and appearance.toml.
 import json, os, shutil, subprocess, sys, time
 
-UI = os.path.expanduser("~/.local/src/noctalia-lockfade/zynith-ui/ui/zynith-ui")
+UI = os.path.expanduser("~/.local/src/zynith-shell-lockfade/zynith-ui/ui/zynith-ui")
 WTYPE = os.environ.get("WTYPE", "wtype")
 APPEAR = os.path.expanduser("~/.config/zynith/appearance.toml")
 PAL = os.path.expanduser("~/.local/state/zynith/palette.json")
@@ -26,7 +26,7 @@ def keys(*names):
     subprocess.run([WTYPE, *args])
 
 def locked():
-    out = subprocess.run(["noctalia", "msg", "status"], capture_output=True, text=True).stdout
+    out = subprocess.run(["zynith-shell", "msg", "status"], capture_output=True, text=True).stdout
     return '"locked": false' not in out
 
 def rss(pid):
@@ -37,7 +37,7 @@ def rss(pid):
 
 def pids():
     ui_pid = subprocess.run(["pgrep", "-f", "quickshell -p .*zynith-ui/ui/shell.qml"], capture_output=True, text=True).stdout.split()[0]
-    nat = subprocess.run(["pgrep", "-x", "noctalia"], capture_output=True, text=True).stdout.split()[0]
+    nat = subprocess.run(["pgrep", "-x", "zynith-shell"], capture_output=True, text=True).stdout.split()[0]
     return int(ui_pid), int(nat)
 
 def settle(t0, timeout=12):
@@ -57,7 +57,7 @@ def report(tag, r):
 if locked():
     sys.exit("session locked; not testing")
 
-orig_wall = subprocess.run(["noctalia", "msg", "wallpaper-get"], capture_output=True, text=True).stdout.strip().splitlines()[0]
+orig_wall = subprocess.run(["zynith-shell", "msg", "wallpaper-get"], capture_output=True, text=True).stdout.strip().splitlines()[0]
 assert os.path.isfile(orig_wall), orig_wall
 mode = status()["core"]["wallpaperMode"]
 if mode != "static":

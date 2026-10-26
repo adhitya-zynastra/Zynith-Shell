@@ -696,7 +696,7 @@ Singleton {
     // the native shell's widget layout, read once to seed widgets.toml (never written: the Settings GUI owns it)
     ConfigFile {
         id: nativeLayout
-        path: widgetsFile.loaded && !widgetsFile.exists ? Paths.home + "/.local/state/noctalia/settings.toml" : ""
+        path: widgetsFile.loaded && !widgetsFile.exists ? Paths.home + "/.local/state/zynith-shell/settings.toml" : ""
         onLoadedChanged: {
             const dw = values.desktop_widgets;
             if (!loaded || !dw || widgetsFile.exists)
@@ -797,7 +797,7 @@ Singleton {
     // the native shell's niri blur strength as it stands (read only: the native shell owns settings.toml)
     property int nativeBlurStrength: -1
     FileView {
-        path: Paths.stateHome + "/noctalia/settings.toml"
+        path: Paths.stateHome + "/zynith-shell/settings.toml"
         printErrors: false
         onLoaded: {
             const m = text().match(/\[shell\.glass\][^\[]*?blur_strength\s*=\s*(\d+)/);

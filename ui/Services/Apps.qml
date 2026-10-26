@@ -184,14 +184,14 @@ Singleton {
     property int importStep: 0
     FileView {
         id: nativeUsage
-        path: root.importStep >= 1 ? Paths.home + "/.local/state/noctalia/usage_counts.json" : ""
+        path: root.importStep >= 1 ? Paths.home + "/.local/state/zynith-shell/usage_counts.json" : ""
         printErrors: false
         onLoaded: root.importStep = 2
         onLoadFailed: root.importStep = 2
     }
     FileView {
         id: nativeRecent
-        path: root.importStep >= 2 ? Paths.home + "/.local/state/noctalia/recently_used.json" : ""
+        path: root.importStep >= 2 ? Paths.home + "/.local/state/zynith-shell/recently_used.json" : ""
         printErrors: false
         onLoaded: root.importNative()
         onLoadFailed: root.importNative()

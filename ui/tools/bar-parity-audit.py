@@ -2,7 +2,7 @@
 """Bar customizability parity: every native bar option and bar-widget option against the Zynith UI.
 
 Native truth:
-  * per-bar settings: `noctalia msg settings-schema bar` (the native settings registry)
+  * per-bar settings: `zynith-shell msg settings-schema bar` (the native settings registry)
   * per-widget options: the `.key = "..."` fields of the native widget definitions
     (wallpaper-state/src/shell/bar/widgets/*_definition.cpp)
   * capsule groups: the BarCapsuleGroupStyle fields of the native config schema
@@ -47,7 +47,7 @@ def main():
     bar_qml = bar_qml.replace("b.enabled", "spec.enabled")
     page = read(os.path.join(UI, "Modules/Settings/BarsPage.qml"))
 
-    schema = json.loads(subprocess.run(["noctalia", "msg", "settings-schema", "bar"], capture_output=True, text=True, check=True).stdout)
+    schema = json.loads(subprocess.run(["zynith-shell", "msg", "settings-schema", "bar"], capture_output=True, text=True, check=True).stdout)
     per_bar = sorted({".".join(e["path"][2:]) for e in schema["entries"] if e["path"][:2] == ["bar", "default"]})
     for key in per_bar:
         if key.startswith("dead_zone.actions."):

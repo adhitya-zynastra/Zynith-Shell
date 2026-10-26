@@ -6,7 +6,7 @@ import Zynith.Native
 import qs.Common
 
 // One vocabulary for "do something": what a bar widget's gesture, a keybinding or a desktop button asks for.
-// It is the native shell's (noctalia msg ...) so bars and bindings carry over unchanged; what the Zynith UI
+// It is the native shell's (zynith-shell msg ...) so bars and bindings carry over unchanged; what the Zynith UI
 // draws is answered here, everything else goes on to the native shell as the command it already is.
 // Zynith adds: exec <shell command> · panel <id> [context] · launcher-mode <prefix> · desktop-edit
 //

@@ -136,7 +136,7 @@ Column {
                 }
             }
         }
-        // a command of your own (exec …, or any native `noctalia msg` verb)
+        // a command of your own (exec …, or any native `zynith-shell msg` verb)
         Column {
             visible: !root.panelsOnly
             width: root.width

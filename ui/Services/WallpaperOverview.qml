@@ -22,7 +22,7 @@ Singleton {
     function apply(): void {
         if (!writer || !Config.loaded)
             return;
-        NiriConfig.apply("wallpaper", header.arg(mode) + (mode === "live" ? live : "// The overview shows the blurred poster (rice/rules.kdl, noctalia-backdrop).\n"));
+        NiriConfig.apply("wallpaper", header.arg(mode) + (mode === "live" ? live : "// The overview shows the blurred poster (rice/rules.kdl, zynith-shell-backdrop).\n"));
     }
     onModeChanged: apply()
     onWriterChanged: apply()

@@ -16,8 +16,8 @@ Singleton {
     readonly property string runtime: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/zynith"
 
     // the native shell, which holds the core services (clipboard history, wallpaper, lock) during migration.
-    // zynith-ui says which one runs (ZYNITH_NATIVE): a user build in ~/.local/opt, or the installed /usr/bin/noctalia
-    readonly property string core: Quickshell.env("ZYNITH_NATIVE") || home + "/.local/opt/noctalia/bin/noctalia"
+    // zynith-ui says which one runs (ZYNITH_NATIVE): a user build in ~/.local/opt, or the installed /usr/bin/zynith-shell
+    readonly property string core: Quickshell.env("ZYNITH_NATIVE") || home + "/.local/opt/zynith-shell/bin/zynith-shell"
     // UI sounds (notification, screenshot …): the user's own if zynith-ui found them, else the installed ones
     readonly property string sounds: Quickshell.env("ZYNITH_SOUNDS") || home + "/.local/share/zynith/sounds"
 

@@ -23,7 +23,7 @@ Singleton {
         source: Paths.asset("fonts/Sora.ttf")
     }
     readonly property FontLoader iconFont: FontLoader {
-        source: Paths.repoAsset("fonts/noctalia-tabler.ttf")
+        source: Paths.repoAsset("fonts/zynith-shell-tabler.ttf")
     }
 
     // appearance.toml font_ui / font_display / font_mono choose others; empty keeps Zynith's own
@@ -37,7 +37,7 @@ Singleton {
     // the Nerd Font build carries the same letters plus glyphs a technical readout may use
     readonly property string bundledMono: Qt.fontFamilies().includes("JetBrainsMono Nerd Font") ? "JetBrainsMono Nerd Font" : "JetBrains Mono"
     readonly property string mono: (Config.appearance.font_mono ?? "") !== "" ? Config.appearance.font_mono : bundledMono
-    readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "noctalia-tabler-icons"
+    readonly property string icons: iconFont.status === FontLoader.Ready ? iconFont.name : "zynith-shell-tabler-icons"
 
     // pixel sizes, scaled by appearance.toml font_scale
     readonly property real scale: Math.max(0.8, Math.min(1.5, Config.appearance.font_scale ?? 1))

@@ -73,7 +73,7 @@ Singleton {
         { id: "native:security", title: "Privacy & security", icon: "shield", group: "Advanced", advanced: true, keywords: "network privacy security", section: "security", groups: ["Network", "Privacy"] },
         { id: "native:hooks", title: "Hooks", icon: "terminal-2", group: "Advanced", advanced: true, keywords: "hooks lifecycle theme network power commands", section: "hooks" },
         { id: "plugins", title: "Plugins", icon: "apps", group: "Advanced", advanced: true, keywords: "luau capabilities permissions" },
-        { id: "shell", title: "Every native setting", icon: "list", group: "Advanced", advanced: true, keywords: "native noctalia every setting registry all shell settings" }
+        { id: "shell", title: "Every native setting", icon: "list", group: "Advanced", advanced: true, keywords: "native zynith-shell every setting registry all shell settings" }
     ]
 
     function find(id: string): var {
