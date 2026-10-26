@@ -128,16 +128,7 @@ native() {
     meson compile -C "$b" -j "${JOBS:-$(nproc)}"
 
     say "native shell: unit tests"
-    # upower_charge_limit_integration is a known failure on current Fedora (docs/development/testing.md); it runs
-    # below, reported but not gating
-    local tests
-    mapfile -t tests < <(meson test -C "$b" --list 2>/dev/null | grep -vx 'upower_charge_limit_integration')
-    meson test -C "$b" --print-errorlogs --num-processes "${JOBS:-2}" "${tests[@]}" || bad "native unit tests"
-
-    say "native shell: known failure (not gating)"
-    meson test -C "$b" --print-errorlogs upower_charge_limit_integration \
-        && echo "upower_charge_limit_integration passed — remove it from the known failures" \
-        || echo "upower_charge_limit_integration failed (known)"
+    meson test -C "$b" --print-errorlogs --num-processes "${JOBS:-2}" || bad "native unit tests"
     return 0
 }
 
