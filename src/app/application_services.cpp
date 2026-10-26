@@ -112,6 +112,8 @@
 #include <malloc.h>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include "zynith/surfaces.h"
+
 #include <stdexcept>
 #include <string_view>
 #include <unordered_map>
@@ -172,7 +174,8 @@ void Application::syncNotificationDaemon() {
     return;
   }
 
-  const bool enabled = m_configService.config().notification.enableDaemon;
+  // zynith: the UI's notification centre takes the bus name when it draws notifications (zynith.toml [surfaces])
+  const bool enabled = m_configService.config().notification.enableDaemon && !zynith::uiOwns("notifications");
   const bool enabledChanged = !m_notificationDaemonEnabled.has_value() || *m_notificationDaemonEnabled != enabled;
   m_notificationDaemonEnabled = enabled;
 
@@ -219,7 +222,8 @@ void Application::syncNotificationDaemon() {
         m_notificationPollSource.setDbusService(nullptr);
         m_notificationDaemonInitFailed = true;
         m_notificationManager.addInternal(
-            "Noctalia", i18n::tr("notifications.internal.dbus-disabled"), kdeError.what(), Urgency::Low
+            noctalia::build_info::kProductName, i18n::tr("notifications.internal.dbus-disabled"), kdeError.what(),
+            Urgency::Low
         );
         return;
       }
@@ -230,7 +234,8 @@ void Application::syncNotificationDaemon() {
     m_notificationPollSource.setDbusService(nullptr);
     m_notificationDaemonInitFailed = true;
     m_notificationManager.addInternal(
-        "Noctalia", i18n::tr("notifications.internal.dbus-disabled"), ownerError.what(), Urgency::Low
+        noctalia::build_info::kProductName, i18n::tr("notifications.internal.dbus-disabled"), ownerError.what(),
+        Urgency::Low
     );
   }
 }
@@ -363,7 +368,7 @@ void Application::syncPolkitAgent() {
       DeferredCall::callLater([this, error]() {
         if (polkit_session::isNoSessionForPidError(error)) {
           notify::error(
-              "Noctalia", i18n::tr("notifications.internal.polkit-agent"),
+              noctalia::build_info::kProductName, i18n::tr("notifications.internal.polkit-agent"),
               i18n::tr("notifications.internal.polkit-no-session")
           );
         }
@@ -1626,7 +1631,8 @@ void Application::initSessionBusServices() {
   } catch (const std::exception& e) {
     kLog.warn("dbus disabled: {}", e.what());
     m_notificationManager.addInternal(
-        "Noctalia", i18n::tr("notifications.internal.session-bus-unavailable"), e.what(), Urgency::Low
+        noctalia::build_info::kProductName, i18n::tr("notifications.internal.session-bus-unavailable"), e.what(),
+        Urgency::Low
     );
   }
 
@@ -1667,7 +1673,7 @@ void Application::initSessionBusServices() {
       m_mprisService.reset();
       m_lockScreen.setLoginBoxServices(&m_sessionActionRunner, nullptr, &m_weatherService, &m_httpClient);
       m_notificationManager.addInternal(
-          "Noctalia", i18n::tr("notifications.internal.mpris-disabled"), e.what(), Urgency::Low
+          noctalia::build_info::kProductName, i18n::tr("notifications.internal.mpris-disabled"), e.what(), Urgency::Low
       );
     }
 
