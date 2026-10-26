@@ -855,7 +855,7 @@ namespace noctalia::cli {
         false
     };
     inline constexpr Command notificationShow{"notification-show",
-                                              "Show an internal Noctalia notification",
+                                              "Show an internal Zynith notification",
                                               {},
                                               {},
                                               {},
