@@ -45,11 +45,11 @@ Two suites need special handling:
 - `tst_display_session.qml` drives a running niri. Run it only inside a nested test niri, never against your real
   display. CI skips it.
 
-## Known failure
+## Assets in tests
 
-`upower_charge_limit_integration` crashes (segmentation fault) on Fedora 44. The failure predates the current
-development cycle and its cause has not been investigated yet. CI runs it separately and reports it without failing
-the stage. Any other failure is a regression.
+The native unit tests read translations, fonts and templates from this tree's `assets/` (`ZYNITH_ASSETS_DIR`, set by
+`meson.build`), never from an installed copy, so they behave the same on a clean machine. Every test gates; there are
+no known failures.
 
 ## Testing the packages and the image
 

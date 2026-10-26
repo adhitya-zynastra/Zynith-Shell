@@ -15,7 +15,7 @@
 |---|---|
 | [Architecture](development/architecture.md) | the parts of Zynith, how a session starts, and where configuration and state live |
 | [Building and running](development/building.md) | requirements, building and installing from source, running from the tree, recovery |
-| [Testing](development/testing.md) | the checks (the same in CI and locally), the test suites, the known failure |
+| [Testing](development/testing.md) | the checks (the same in CI and locally), the test suites |
 | [Packaging](development/packaging.md) | the RPMs, how they are built, Quickshell, installing and updating |
 | [The ISO](development/iso.md) | how the image is built and validated |
 | [Releases](development/releases.md) | versions, how a release is made, the ISO release checklist |

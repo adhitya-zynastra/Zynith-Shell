@@ -17,6 +17,6 @@
 
 ## Checklist
 
-- [ ] The relevant tests pass (and the known `upower_charge_limit_integration` failure is the only native failure).
+- [ ] The relevant tests pass.
 - [ ] No secrets, personal paths or machine-specific configuration are included.
 - [ ] Documentation is updated where behaviour, configuration or commands changed.

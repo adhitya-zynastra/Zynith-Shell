@@ -62,8 +62,8 @@ bash tools/tests/run-store-tests.sh
 meson test -C build/shell --num-processes 2
 ```
 
-One native test, `upower_charge_limit_integration`, fails on current Fedora and is a known, recorded failure; any other
-failure is a regression. [`docs/development/testing.md`](docs/development/testing.md) has the details.
+Every test is expected to pass; a failure is a regression. [`docs/development/testing.md`](docs/development/testing.md)
+has the details.
 
 ## Conventions
 
