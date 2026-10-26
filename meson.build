@@ -1292,6 +1292,10 @@ if build_tests
     'workspace_alert_service',
   ]
 
+  # tests read translations, fonts and templates from this tree, never from an installed copy
+  test_assets_env = environment()
+  test_assets_env.set('ZYNITH_ASSETS_DIR', meson.project_source_root() / 'assets')
+
   foreach test_name : _cpp_test_names
     if test_name == 'plugin_git_export' and not git_program.found()
       continue
@@ -1307,7 +1311,7 @@ if build_tests
     elif test_name == 'i18n_supported_languages'
       test_args = [meson.project_source_root() / 'assets' / 'translations']
     endif
-    test(test_name, test_exe, args: test_args)
+    test(test_name, test_exe, args: test_args, env: test_assets_env)
   endforeach
 
   upower_integration_exe = executable('upower_charge_limit_integration_test',
@@ -1324,6 +1328,7 @@ if build_tests
         'sh', upower_integration_exe.full_path(),
       ],
       depends: upower_integration_exe,
+      env: test_assets_env,
     )
   endif
 
