@@ -58,6 +58,10 @@ hygiene() {
     while IFS= read -r f; do bad "machine-specific file tracked: $f"; done < <(
         git ls-files | grep -E '(^|/)(\.env|id_[a-z0-9]+|.*\.pem|.*\.key|known_hosts|\.netrc|cookies\.sqlite|.*\.kdbx)$' || true)
 
+    say "D-Bus object paths"
+    # a path element may hold only [A-Za-z0-9_]; a hyphen makes registration fail at run time, not at build time
+    if git grep -nIE '"/(org|dev/zynith)/[^"]*-[^"]*"' -- src ui; then bad "a D-Bus object path contains a hyphen"; fi
+
     say "large files"
     while IFS= read -r f; do
         [[ -f "$f" ]] || continue
