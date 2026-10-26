@@ -25,6 +25,19 @@ mkdir -p /home/liveuser/.local/share/applications/
 cp /usr/share/applications/liveinst.desktop /home/liveuser/.local/share/applications/
 sed -i 's/NoDisplay=true/NoDisplay=false/' /home/liveuser/.local/share/applications/liveinst.desktop
 
+# a login keyring without a password: the live user logs in automatically, so nothing unlocks a keyring at login,
+# and the first program to store a secret (the shell's storage key) would get a "choose a password for the new
+# keyring" dialog. A keyring with no password is kept as plain text and opens unlocked; the live session has no
+# password and lives in memory. An installed system keeps its normal login keyring, unlocked by PAM.
+keyrings=/home/liveuser/.local/share/keyrings
+if [ ! -e "$keyrings/login.keyring" ]; then
+    mkdir -p "$keyrings"
+    chmod 700 "$keyrings"
+    printf '[keyring]\ndisplay-name=Login\nctime=0\nmtime=0\nlock-on-idle=false\nlock-after=false\n' > "$keyrings/login.keyring"
+    printf 'login' > "$keyrings/default"
+    chmod 600 "$keyrings/login.keyring" "$keyrings/default"
+fi
+
 # and a word in every terminal
 echo "echo 'Zynith live session. To install, open the launcher (Super+D) and choose \"Install to Hard Drive\", or type: liveinst'" >> /home/liveuser/.bashrc
 

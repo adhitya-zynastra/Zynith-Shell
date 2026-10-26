@@ -29,6 +29,8 @@ repository.
 - `root` is locked.
 - The live user (`liveuser`) has no password and passwordless `sudo`, as in Fedora's own live images. It exists
   only in the live session.
+- The live user's login keyring has no password either (it is kept in the session's memory, like the rest of the
+  live home), so storing a secret never asks for one. An installed system keeps a normal, password-protected keyring.
 - The installed system has only the accounts you create in the installer.
 - Booting the ISO never partitions, formats or writes to a disk. Only the installer writes, and only to the disk
   you select, after you confirm.
