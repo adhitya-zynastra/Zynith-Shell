@@ -767,13 +767,6 @@
       "dbus-disabled": "DBus 알림 비활성화됨",
       "desktop-widgets-editor": "위젯 편집기",
       "desktop-widgets-editor-enabled": "데스크톱 위젯 편집기가 켜져 있습니다. 빈 작업 공간으로 전환하여 편집기 오버레이를 확인하세요.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Greeter에 쓰기 위한 관리자 승인을 기다리는 중입니다.",
-      "greeter-sync-pending-console": "관리자 승인을 기다리는 중입니다. Zynith 또는 TTY/콘솔에서 polkit 프롬프트를 승인하거나 pkexec를 수동으로 실행하세요.",
-      "greeter-sync-pending-manual": "파일이 준비되었습니다. 터미널에서 실행하세요: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". 또는 shell.greeter_sync.privilege_command를 설정하고 (예: ghostty -e pkexec) 다시 동기화하세요.",
-      "greeter-sync-success": "모양이 동기화되었습니다. 변경 사항은 다음 로그인 화면에서 적용됩니다.",
-      "greeter-sync-timeout": "Greeter 동기화가 관리자 승인을 기다리고 있습니다. TTY나 콘솔에서 polkit 프롬프트를 확인하거나, 보안 설정에서 polkit 에이전트를 활성화하거나, pkexec를 수동으로 실행하세요.",
-      "greeter-sync-timeout-manual": "Greeter 동기화에 여전히 관리자 승인이 필요합니다. 터미널에서 실행하세요: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "이 단축키는 수정자 키 없이 단일 키만 허용합니다.",
       "keybind-invalid-printable": "인쇄 가능한 키(문자, 숫자, 기호)는 Ctrl 또는 Alt와 같은 수정자 키가 필요합니다.",
@@ -1131,9 +1124,6 @@
       },
       "reset-page": "일부 설정을 초기화하는 데 실패했습니다.",
       "support-report": "지원 보고서 저장에 실패했습니다.",
-      "sync-greeter": "Noctalia Greeter와 모양을 동기화할 수 없습니다.",
-      "sync-greeter-timeout": "Greeter 동기화가 관리자 승인을 기다리고 있습니다. TTY나 콘솔에서 polkit 프롬프트를 확인하거나, 보안 설정에서 polkit 에이전트를 활성화하거나, pkexec를 수동으로 실행하세요.",
-      "sync-greeter-timeout-manual": "Greeter 동기화에 여전히 관리자 승인이 필요합니다. 터미널에서 실행하세요: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "이름 있는 위젯의 이름을 변경할 수 없습니다."
       },
@@ -1204,7 +1194,6 @@
         "focus-styling": "포커스 스타일",
         "formats": "형식",
         "general": "일반",
-        "greeter": "Greeter",
         "grouping": "그룹화",
         "history": "기록",
         "home": "홈",
@@ -2825,14 +2814,6 @@
           "description": "연결의 공개 WAN IP를 확인하고 (api.noctalia.dev를 통해) 제어 센터 네트워크 탭에 표시",
           "label": "WAN IP 표시"
         },
-        "greeter-sync-auto": {
-          "description": "배경 화면, 색상 또는 테마 모드가 변경될 때마다 Greeter 자동 동기화",
-          "label": "Greeter 자동 동기화"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Greeter 지금 동기화에서 pkexec/run0을 교체합니다. apply 도우미 경로 및 스테이징 디렉토리는 자동으로 추가됩니다 (예: ghostty -e pkexec)",
-          "label": "Greeter 동기화 권한 명령어"
-        },
         "keyboard-layout-custom-labels": {
           "label": "키보드 레이아웃 라벨"
         },
@@ -3031,11 +3012,6 @@
         "show-location": {
           "description": "날씨 위젯에 위치 이름 표시",
           "label": "위치 표시"
-        },
-        "sync-greeter": {
-          "button": "지금 동기화",
-          "description": "현재 배경 화면과 색상을 Noctalia Greeter에 복사 (관리자 승인 필요)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "버전, OS, 컴포지터, 모니터 해상도, RAM, UI 배율이 포함된 소규모 익명 시작 핑을 전송합니다",

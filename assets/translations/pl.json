@@ -658,8 +658,6 @@
       "dbus-disabled": "Powiadomienia DBus wyłączone",
       "desktop-widgets-editor": "Edytor widżetów",
       "desktop-widgets-editor-enabled": "Edytor widżetów pulpitu jest włączony. Przejdź na pusty obszar roboczy, aby otwarte okna nie zasłaniały edytora.",
-      "greeter-sync": "Powitanie Zynith",
-      "greeter-sync-success": "Wygląd zsynchronizowany. Zmiany będą obowiązywać na następnym ekranie logowania.",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Ten skrót przyjmuje jeden klawisz bez modyfikatorów.",
       "keybind-invalid-printable": "Klawishe drukowalne (litery, cyfry, symbole) wymagają modyfikatora, takiego jak Ctrl lub Alt.",
@@ -922,7 +920,6 @@
       },
       "reset-page": "Nie udało się resetować niektórych ustawień.",
       "support-report": "Nie udało się zapisać raportu wsparcia.",
-      "sync-greeter": "Nie udało się zsynchronizować wyglądu z Noctalia Greeter.",
       "widget": {
         "rename": "Nie udało się zmienić nazwy nazwanego widżetu."
       },
@@ -2206,11 +2203,6 @@
         "show-location": {
           "description": "Pokazuj nazwę lokalizacji w widżetach pogody",
           "label": "Pokaż lokalizację"
-        },
-        "sync-greeter": {
-          "button": "Synchronizuj teraz",
-          "description": "Skopiuj bieżącą tapetę i kolory do Noctalia Greeter (wymaga zatwierdzenia administratora)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Wysyła małe anonimowe pingowanie startowe z wersją, systemem operacyjnym, compositorem, rozdzielczościami monitorów, pamięcią RAM i skalą interfejsu",

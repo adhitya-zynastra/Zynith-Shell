@@ -769,13 +769,6 @@
       "dbus-disabled": "DBus-Benachrichtigungen deaktiviert",
       "desktop-widgets-editor": "Widget-Editor",
       "desktop-widgets-editor-enabled": "Der Desktop-Widget-Editor ist aktiv. Wechsle zu einem leeren Arbeitsbereich, damit offene Fenster den Editor nicht verdecken.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Warte auf Administratorfreigabe zum Schreiben in den Greeter.",
-      "greeter-sync-pending-console": "Warte auf Administratorfreigabe. Bestätige die Polkit-Anfrage in Zynith, auf einem TTY oder einer Konsole oder führe pkexec manuell aus.",
-      "greeter-sync-pending-manual": "Dateien sind vorbereitet. Führe in einem Terminal aus: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Oder lege shell.greeter_sync.privilege_command fest (z. B. ghostty -e pkexec) und synchronisiere erneut.",
-      "greeter-sync-success": "Erscheinungsbild synchronisiert. Änderungen werden beim nächsten Anmeldebildschirm angewendet.",
-      "greeter-sync-timeout": "Die Greeter-Synchronisierung wartet weiterhin auf Administratorfreigabe. Prüfe einen TTY oder eine Konsole auf eine Polkit-Anfrage, aktiviere den Polkit-Agenten in den Sicherheitseinstellungen oder führe pkexec manuell aus.",
-      "greeter-sync-timeout-manual": "Die Greeter-Synchronisierung benötigt weiterhin Administratorfreigabe. Führe in einem Terminal aus: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Dieses Tastenkürzel akzeptiert eine einzelne Taste ohne Zusatztasten.",
       "keybind-invalid-printable": "Druckbare Tasten (Buchstaben, Zahlen, Symbole) benötigen einen Modifikator wie Ctrl oder Alt.",
@@ -1137,9 +1130,6 @@
       },
       "reset-page": "Zurücksetzen einiger Einstellungen fehlgeschlagen.",
       "support-report": "Speichern des Supportberichts fehlgeschlagen.",
-      "sync-greeter": "Erscheinungsbild konnte nicht mit Noctalia Greeter synchronisiert werden.",
-      "sync-greeter-timeout": "Die Greeter-Synchronisierung wartet weiterhin auf Administratorfreigabe. Prüfe einen TTY oder eine Konsole auf eine Polkit-Anfrage, aktiviere den Polkit-Agenten in den Sicherheitseinstellungen oder führe pkexec manuell aus.",
-      "sync-greeter-timeout-manual": "Die Greeter-Synchronisierung benötigt weiterhin Administratorfreigabe. Führe in einem Terminal aus: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Benanntes Widget konnte nicht umbenannt werden."
       },
@@ -1210,7 +1200,6 @@
         "focus-styling": "Fokus-Stil",
         "formats": "Formate",
         "general": "Allgemein",
-        "greeter": "Greeter",
         "grouping": "Gruppierung",
         "history": "Verlauf",
         "home": "Start",
@@ -2845,14 +2834,6 @@
           "description": "Löse die öffentliche WAN-IP der Verbindung auf (über api.noctalia.dev) und zeige sie im Netzwerk-Tab des Kontrollzentrums an",
           "label": "WAN-IP anzeigen"
         },
-        "greeter-sync-auto": {
-          "description": "Synchronisiere den Greeter automatisch, wenn sich Hintergrundbild, Farben oder Theme-Modus ändern",
-          "label": "Greeter automatisch synchronisieren"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Ersetzt pkexec/run0 für die Greeter-Synchronisierung; der Pfad des Apply-Helfers und das Staging-Verzeichnis werden automatisch angehängt (Beispiel: ghostty -e pkexec)",
-          "label": "Privilegienbefehl für Greeter-Synchronisierung"
-        },
         "keyboard-layout-custom-labels": {
           "description": "Weise Tastaturlayout-Namen Beschriftungen zu, die in der gesamten Shell verwendet werden",
           "label": "Tastaturlayout-Beschriftungen"
@@ -3053,11 +3034,6 @@
         "show-location": {
           "description": "Zeige den Standortnamen in Wetter-Widgets an",
           "label": "Standort anzeigen"
-        },
-        "sync-greeter": {
-          "button": "Jetzt synchronisieren",
-          "description": "Kopiere das aktuelle Hintergrundbild und die Farben in den Noctalia Greeter (erfordert Administratorgenehmigung)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Sendet einen kleinen anonymen Start-Ping mit Version, OS, Compositor, Monitorauflösungen, RAM und UI-Skalierung",

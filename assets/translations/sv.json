@@ -700,7 +700,6 @@
       "calendar-google-connect-failed-title": "Google Kalender koppling misslyckades",
       "calendar-google-connect-missing-account": "Inget konfigurerat Google Kalender konto matchar \"{account}\".",
       "calendar-google-connect-result-failed": "Kunde inte avsluta Google auktorisering. Påbörja kopplingen på nytt.",
-      "greeter-sync": "Noctalia Greeter",
       "keybind-app": "Zynith",
       "launcher-usage-reset": "Launcher",
       "screen-time-reset": "Skärmtid",

@@ -461,7 +461,6 @@
       "battery-device": "Amûrê betariyê",
       "battery-low-title": "Betarî kêm e",
       "calendar": "Salname",
-      "greeter-sync": "Silavkarê Zynith",
       "keybind-app": "Zynith"
     }
   },
@@ -687,7 +686,6 @@
         "dead-zone": "Herêma mirî",
         "effects": "Bandor",
         "general": "Giştî",
-        "greeter": "Silavkar",
         "home": "Rûpela sereke",
         "interface": "Navrû",
         "location": "Cih",

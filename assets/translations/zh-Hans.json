@@ -771,16 +771,6 @@
       "dbus-disabled": "DBus 通知已禁用",
       "desktop-widgets-editor": "桌面小组件编辑器",
       "desktop-widgets-editor-enabled": "桌面小组件编辑器已开启。请切换至空工作区，避免打开的窗口遮挡编辑器。",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "正在将外观同步到 Greeter。如果出现管理员授权提示，请予以确认；免密码授权由系统策略决定。",
-      "greeter-sync-pending-console": "正在将外观同步到 Greeter。如果需要授权，请在 Zynith、TTY 或控制台中确认 polkit 提示。",
-      "greeter-sync-pending-legacy": "正在通过需要身份验证的旧版辅助程序同步。需要管理员授权。",
-      "greeter-sync-pending-manual": "同步文件已暂存，等待通过身份验证的旧版同步。请在终端运行接受位置参数的同步辅助程序；如果使用自定义路径，请保留 NOCTALIA_GREETER_STATE_DIR，或配置 shell.greeter_sync.privilege_command 后重新同步。",
-      "greeter-sync-pending-manual-pkexec": "正在将外观同步到 Greeter。如果需要管理员授权但未出现提示，请在终端运行：pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"。",
-      "greeter-sync-success": "外观已同步。更改将在下次登录时生效。",
-      "greeter-sync-timeout": "Greeter 同步仍在等待授权。请检查 TTY 或控制台中的 polkit 提示，在“安全”设置中启用 polkit 代理，或手动运行 pkexec。",
-      "greeter-sync-timeout-manual": "通过身份验证的旧版同步仍需要管理员授权。请在终端运行接受位置参数的同步辅助程序；如果使用自定义路径，请保留 NOCTALIA_GREETER_STATE_DIR。",
-      "greeter-sync-timeout-manual-pkexec": "Greeter 同步仍需要授权。请在终端运行：pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "该快捷键仅接受不带修饰键的单键。",
       "keybind-invalid-printable": "字母、数字和符号键需要配合 Ctrl 或 Alt 等修饰键使用。",
@@ -1144,10 +1134,6 @@
       },
       "reset-page": "部分设置重置失败。",
       "support-report": "诊断报告保存失败。",
-      "sync-greeter": "无法将外观同步至 Noctalia Greeter。",
-      "sync-greeter-timeout": "Greeter 同步仍在等待授权。请检查 TTY 或控制台中的 polkit 提示，在“安全”设置中启用 polkit 代理，或手动运行 pkexec。",
-      "sync-greeter-timeout-manual": "通过身份验证的旧版同步仍需要管理员授权。请在终端运行接受位置参数的同步辅助程序；如果使用自定义路径，请保留 NOCTALIA_GREETER_STATE_DIR。",
-      "sync-greeter-timeout-manual-pkexec": "Greeter 同步仍需要授权。请在终端运行：pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
       "widget": {
         "rename": "无法重命名此具名小组件。"
       },
@@ -1218,7 +1204,6 @@
         "focus-styling": "焦点样式",
         "formats": "格式",
         "general": "常规",
-        "greeter": "Greeter",
         "grouping": "组合",
         "history": "历史",
         "home": "主页",
@@ -2870,14 +2855,6 @@
           "description": "解析当前连接的公网 WAN IP（通过 api.noctalia.dev），并显示在控制中心的网络选项卡中",
           "label": "显示 WAN IP"
         },
-        "greeter-sync-auto": {
-          "description": "每当壁纸、配色、主题模式或 Shell 字体改变时，自动同步 Greeter。授权仍由系统策略决定；此设置不会启用免密码同步。",
-          "label": "自动同步 Greeter"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "自定义 Greeter 同步使用的提权启动命令。旧版模式（使用旧版辅助程序或自定义 Greeter 状态目录）支持其他管理员提权工具。受限同步会追加 --sync，并要求命令前缀最终启动 pkexec（例如：ghostty -e pkexec）",
-          "label": "Greeter 同步提权命令"
-        },
         "keyboard-layout-custom-labels": {
           "description": "将键盘布局名称映射为 Shell 使用的标签",
           "label": "键盘布局标签"
@@ -3078,11 +3055,6 @@
         "show-location": {
           "description": "在天气小组件中显示位置",
           "label": "显示位置"
-        },
-        "sync-greeter": {
-          "button": "立即同步",
-          "description": "将当前外观和显示器布局同步到 Noctalia Greeter。除非系统策略允许当前用户免密码同步，否则需要管理员授权。",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "启动时发送匿名 Ping，包含版本、操作系统、合成器、屏幕分辨率、内存及 UI 缩放比例信息",
@@ -3410,10 +3382,6 @@
           "effects-profile-set": {
             "description": "设置 EasyEffects 输出或输入配置文件",
             "label": "设置 EasyEffects 配置文件"
-          },
-          "greeter-sync": {
-            "description": "将壁纸、配色和屏幕布局同步到 Noctalia Greeter",
-            "label": "同步 Greeter 外观"
           },
           "keyboard-backlight-down": {
             "description": "将所有键盘背光降低一级",

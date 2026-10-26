@@ -216,8 +216,6 @@ private:
   void syncClipboardService();
   void syncStorageKeyProvider();
   void syncScreenTimeService();
-  void performGreeterSync(bool quiet = false);
-  void scheduleGreeterAutoSync();
   // zynith: a wallpaper change decodes off the main thread first (startWallpaperPreload, false when there is
   // nothing to decode), then runs every consumer at once (runWallpaperChange)
   bool startWallpaperPreload();
@@ -402,8 +400,6 @@ private:
   Timer m_trayInitTimer;
   Timer m_polkitInitTimer;
   Timer m_polkitIdleCloseTimer;
-  Timer m_greeterSyncTimeoutTimer;
-  Timer m_greeterAutoSyncTimer;
   Timer m_clipboardAutoPasteTimer;
   Timer m_launcherAutoPasteTimer;
   // zynith: metrics the UI asked sysmon-stats for, held until a lease (renewed by each query) runs out
@@ -415,7 +411,6 @@ private:
   Timer m_pluginAutoUpdateStartTimer; // one-shot: the first background check, a few minutes after startup
   std::unordered_set<std::string> m_notifiedPluginUpdates; // "source:author/plugin version" already announced
   Timer m_graphicsRecoveryTimer;
-  std::uint64_t m_greeterSyncGeneration = 0;
   int m_graphicsRecoveryAttempts = 0;
   bool m_graphicsRecoveryScheduled = false;
   // zynith: last, so it is destroyed first (its worker thread delivers into the members above)

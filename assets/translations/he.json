@@ -769,13 +769,6 @@
       "dbus-disabled": "התראות DBus מושבתות",
       "desktop-widgets-editor": "עורך וידג'טים",
       "desktop-widgets-editor-enabled": "עורך הווידג'טים של שולחן העבודה מופעל. מומלץ לעבור לסביבת עבודה ריקה כדי שחלונות פתוחים לא יסתירו את העורך.",
-      "greeter-sync": "מקבל הפנים של Zynith",
-      "greeter-sync-pending": "ממתין לאישור מנהל כדי לכתוב ל-greeter.",
-      "greeter-sync-pending-console": "ממתין לאישור מנהל. יש לאשר את בקשת ה־polkit ב־Zynith, ב־TTY או במסוף, או להריץ את pkexec באופן ידני.",
-      "greeter-sync-pending-manual": "הקבצים מוכנים. הריצו במסוף: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". או הגדירו את shell.greeter_sync.privilege_command (לדוגמה ghostty -e pkexec) וסנכרנו שוב.",
-      "greeter-sync-success": "המראה סונכרן. השינויים יחולו במסך הכניסה הבא.",
-      "greeter-sync-timeout": "סנכרון ה-Greeter עדיין ממתין לאישור מנהל. בדוק ב-TTY או בקונסולה להנחיית polkit, הפעל את סוכן ה-polkit ב'הגדרות אבטחה', או הרץ את pkexec באופן ידני.",
-      "greeter-sync-timeout-manual": "סנכרון ה-Greeter עדיין דורש אישור מנהל. הרץ בטרמינל: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "קיצור דרך זה מקבל מקש בודד ללא מקשי צירוף.",
       "keybind-invalid-printable": "מקשים הניתנים להדפסה (אותיות, מספרים, סמלים) דורשים מקש שינוי כגון Ctrl או Alt.",
@@ -1137,9 +1130,6 @@
       },
       "reset-page": "איפוס חלק מההגדרות נכשל.",
       "support-report": "שמירת דוח התמיכה נכשלה.",
-      "sync-greeter": "לא ניתן היה לסנכרן את המראה עם Noctalia Greeter.",
-      "sync-greeter-timeout": "סנכרון Greeter עדיין ממתין לאישור מנהל. יש לבדוק ב־TTY או בקונסולה אם מופיעה בקשת polkit, להפעיל את סוכן ה־polkit בהגדרות האבטחה, או להריץ את pkexec באופן ידני.",
-      "sync-greeter-timeout-manual": "סנכרון ה-Greeter עדיין דורש אישור מנהל. יש להריץ בטרמינל: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "לא ניתן היה לשנות את שם הווידג'ט."
       },
@@ -1210,7 +1200,6 @@
         "focus-styling": "עיצוב מיקוד",
         "formats": "פורמטים",
         "general": "כללי",
-        "greeter": "ברכה",
         "grouping": "קיבוץ",
         "history": "היסטוריה",
         "home": "בית",
@@ -2845,14 +2834,6 @@
           "description": "בצע רזולוציה לכתובת ה-WAN הציבורית של החיבור (דרך api.noctalia.dev) והצג אותה בלשונית הרשת של ה-Control Center",
           "label": "הצג כתובת WAN IP"
         },
-        "greeter-sync-auto": {
-          "description": "סנכרן אוטומטית את מסך הכניסה בכל פעם שהטפט, הצבעים או מצב העיצוב משתנים",
-          "label": "סנכרון אוטומטי של מסך הכניסה"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "החלף את pkexec/run0 עבור ה-greeter ב-Sync Now; נתיב עזר ההחלה וספריית ה-staging מתווספים אוטומטית (דוגמה: ghostty -e pkexec)",
-          "label": "פקודת הרשאת סנכרון של ה-Greeter"
-        },
         "keyboard-layout-custom-labels": {
           "description": "מפה שמות של פריסות מקלדת לתוויות המשמשות ברחבי ה-shell",
           "label": "תוויות פריסת מקלדת"
@@ -3053,11 +3034,6 @@
         "show-location": {
           "description": "הצג את שם המיקום בווידג'טים של מזג האוויר",
           "label": "הצג מיקום"
-        },
-        "sync-greeter": {
-          "button": "סנכרן כעת",
-          "description": "העתק את הטפט והצבעים הנוכחיים ל-Noctalia Greeter (נדרש אישור מנהל)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "שולח פינג אנונימי קטן בעת ההפעלה עם הגרסה, מערכת ההפעלה, ה-compositor, רזולוציות המסך, ה-RAM וקנה המידה של ממשק המשתמש",

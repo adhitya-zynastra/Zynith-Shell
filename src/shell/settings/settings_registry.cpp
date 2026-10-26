@@ -1926,19 +1926,6 @@ namespace settings {
         TextSetting{.value = cfg.shell.privacy.screenFilterRegex, .placeholder = "", .browseFileExtensions = {}},
         "privacy screen share screenshare app process regex filter ignore"
     ));
-    if (env.greeterSyncAvailable) {
-      entries.push_back(makeEntry(
-          SettingsSection::Security, "greeter", tr("settings.schema.shell.greeter-sync-privilege-command.label"),
-          tr("settings.schema.shell.greeter-sync-privilege-command.description"),
-          {"shell", "greeter_sync", "privilege_command"},
-          TextSetting{
-              .value = cfg.shell.greeterSync.privilegeCommand,
-              .placeholder = "pkexec",
-              .browseFileExtensions = {},
-          },
-          "greeter sync pkexec run0 ghostty terminal sudo polkit wrapper"
-      ));
-    }
     // Shell
     entries.push_back(makeEntry(
         SettingsSection::Shell, "general", tr("settings.schema.shell.avatar-path.label"),

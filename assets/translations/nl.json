@@ -692,8 +692,6 @@
       "dbus-disabled": "D-Bus-meldingen uitgeschakeld",
       "desktop-widgets-editor": "Widget-editor",
       "desktop-widgets-editor-enabled": "Widget-editor voor bureaublad staat aan. Schakel over naar een lege werkruimte om de editor-overlay te zien.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-success": "Uiterlijk gesynchroniseerd. Wijzigingen worden toegepast bij het volgende aanmeldingsscherm.",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Deze sneltoets accepteert een enkele toets zonder modificatietoetsen.",
       "keybind-invalid-printable": "Drukbare toetsen (letters, cijfers, symbolen) vereisen een modificatietoets zoals Ctrl of Alt.",
@@ -960,7 +958,6 @@
       },
       "reset-page": "Herstellen van sommige instellingen mislukt.",
       "support-report": "Opslaan van ondersteuningsrapport mislukt.",
-      "sync-greeter": "Kon uiterlijk niet synchroniseren met Noctalia Greeter.",
       "widget": {
         "rename": "Kon benoemde widget niet hernoemen."
       },
@@ -2293,11 +2290,6 @@
         "show-location": {
           "description": "Toon locatienaam in weerwidgets",
           "label": "Locatie tonen"
-        },
-        "sync-greeter": {
-          "button": "Nu synchroniseren",
-          "description": "Kopiëer de huidige achtergrond en kleuren naar Noctalia Greeter (vereist beheerdersrechten)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Verzendt een kleine anonieme opstartping met versie, OS, compositor, monitorresoluties, RAM en UI-schaal",

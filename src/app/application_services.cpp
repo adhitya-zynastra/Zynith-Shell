@@ -72,7 +72,6 @@
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
-#include "shell/greeter/greeter_appearance_sync.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/panel/plugin_panel.h"
 #include "shell/polkit/polkit_panel.h"
@@ -973,7 +972,6 @@ void Application::initAuxServicesAndHooks() {
     m_trayMenu.onThemeChanged();
     m_backdrop.onThemeChanged();
     m_settingsWindow.onThemeChanged();
-    scheduleGreeterAutoSync();
   });
 
   if (const auto distro = DistroDetector::detect(); distro.has_value()) {
@@ -1073,7 +1071,6 @@ void Application::runWallpaperChange() {
   if (m_panelManager.isOpenPanel("control-center")) {
     m_panelManager.refresh();
   }
-  scheduleGreeterAutoSync();
   const auto fireWallpaperChangedHook = [this](const std::string& path, const std::string& connector) {
     m_hookManager.fire(
         HookKind::WallpaperChanged, {{"NOCTALIA_WALLPAPER_PATH", path}, {"NOCTALIA_WALLPAPER_CONNECTOR", connector}}

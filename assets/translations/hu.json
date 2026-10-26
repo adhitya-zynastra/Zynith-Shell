@@ -741,13 +741,6 @@
       "dbus-disabled": "D-Bus értesítések letiltva",
       "desktop-widgets-editor": "Widget-szerkesztő",
       "desktop-widgets-editor-enabled": "Az asztali widget-szerkesztő be van kapcsolva. Válts egy üres munkaterületre, hogy lásd a szerkesztőfelületet.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Várakozás a rendszergazda jóváhagyására a „greeter” fájlba történő íráshoz.",
-      "greeter-sync-pending-console": "A rendszergazda jóváhagyására vár. Hagyd jóvá a polkit felugró ablakot a Zynith-ban, TTY-n vagy konzolon, vagy futtasd manuálisan a pkexec parancsot.",
-      "greeter-sync-pending-manual": "A fájlok elő vannak készítve. Futtasd a terminálban: pkexec noctalia-greeter-apply-appearance „$XDG_RUNTIME_DIR/noctalia-greeter-sync” vagy állítsd be a shell.greeter_sync.privilege_command értéket (például ghostty -e pkexec), majd hajtsd végre újra a szinkronizálást.",
-      "greeter-sync-success": "Megjelenés szinkronizálva. A változások a következő bejelentkezési képernyőn lépnek érvénybe.",
-      "greeter-sync-timeout": "A Greeter szinkronizálása még mindig a rendszergazda jóváhagyására vár. Ellenőrizd, megjelenik-e a polkit parancssor a TTY-n vagy a konzolon, engedélyezd a polkit ügynököt a Biztonsági beállításokban, vagy futtasd manuálisan a pkexec parancsot.",
-      "greeter-sync-timeout-manual": "A Greeter szinkronizálásához továbbra is rendszergazdai jóváhagyás szükséges. Futtasd a terminálban: pkexec noctalia-greeter-apply-appearance „$XDG_RUNTIME_DIR/noctalia-greeter-sync”",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Ez a gyorsbillentyű egyetlen billentyűt fogad el módosítók nélkül.",
       "keybind-invalid-printable": "A nyomtatható billentyűk (betűk, számok, szimbólumok) módosító billentyűt igényelnek, mint például a Ctrl vagy az Alt.",
@@ -1097,9 +1090,6 @@
       },
       "reset-page": "Nem sikerült visszaállítani néhány beállítást.",
       "support-report": "Nem sikerült menteni a támogatási jelentést.",
-      "sync-greeter": "Nem sikerült szinkronizálni a megjelenést a Noctalia Greeterrel.",
-      "sync-greeter-timeout": "A Greeter szinkronizálása még mindig a rendszergazda jóváhagyására vár. Ellenőrizd, megjelenik-e a polkit parancssor a TTY-n vagy a konzolon, engedélyezd a polkit ügynököt a Biztonsági beállításokban, vagy futtasd manuálisan a pkexec parancsot.",
-      "sync-greeter-timeout-manual": "A Greeter szinkronizálásához továbbra is rendszergazdai jóváhagyás szükséges. Futtasd a terminálban: pkexec noctalia-greeter-apply-appearance „$XDG_RUNTIME_DIR/noctalia-greeter-sync”",
       "widget": {
         "rename": "Nem sikerült átnevezni az elnevezett widgetet."
       },
@@ -1169,7 +1159,6 @@
         "focus-styling": "Fókuszstílus",
         "formats": "Formátumok",
         "general": "Általános",
-        "greeter": "Greeter",
         "grouping": "Csoportosítás",
         "home": "Kezdőlap",
         "hot-corners": "Aktív sarkok",
@@ -2721,13 +2710,6 @@
           "description": "Határozza meg a kapcsolat nyilvános WAN-IP-címét (az api.noctalia.dev oldalon keresztül), és jelenítse meg azt a Vezérlőközpont Hálózat fülén",
           "label": "WAN-IP megjelenítése"
         },
-        "greeter-sync-auto": {
-          "description": "A háttérkép, a színek vagy a téma mód változásakor a greeter automatikusan szinkronizálódjon",
-          "label": "Automatikus szinkronizálás – Greeter"
-        },
-        "greeter-sync-privilege-command": {
-          "label": "Greeter szinkronizálási jogosultsági parancs"
-        },
         "launch-apps-as-systemd-services": {
           "description": "Alkalmazásokat indít külön systemd szolgáltatásokban, hogy ne osszák meg Zynith cgroupját",
           "label": "Alkalmazások indítása systemd szolgáltatásként",
@@ -2916,11 +2898,6 @@
         "show-location": {
           "description": "Hely nevének megjelenítése az időjárási widgetekben",
           "label": "Hely megjelenítése"
-        },
-        "sync-greeter": {
-          "button": "Szinkronizálás most",
-          "description": "Másold az aktuális háttérképet és színeket a Noctalia Greeterbe (rendszergazdai jóváhagyás szükséges)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Kis, anonim indítási pinget küld verzióval, OS-sel, kompozitorral, monitorfelbontásokkal, RAM-mal és UI skálával",

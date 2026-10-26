@@ -771,16 +771,6 @@
       "dbus-disabled": "Notifiche DBus disabilitate",
       "desktop-widgets-editor": "Editor widget",
       "desktop-widgets-editor-enabled": "L'editor dei widget desktop è attivo. Passa a un'area di lavoro vuota in modo che le finestre aperte non coprano l'editor.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Sincronizzazione dell'aspetto con il greeter. Se viene visualizzato un prompt amministratore, approvarlo; l'autorizzazione senza password segue le policy di sistema.",
-      "greeter-sync-pending-console": "Sincronizzazione dell'aspetto con il greeter. Se è richiesta l'autorizzazione, approvare la richiesta polkit in Zynith, su un TTY o su una console.",
-      "greeter-sync-pending-legacy": "Sincronizzazione tramite l'assistente legacy autenticato. È richiesta l'approvazione dell'amministratore.",
-      "greeter-sync-pending-manual": "I file vengono preparati per la sincronizzazione legacy autenticata. Eseguire l'helper di applicazione posizionale in un terminale, mantenendo NOCTALIA_GREETER_STATE_DIR se si utilizza un percorso personalizzato, oppure configurare shell.greeter_sync.privilege_command e sincronizzare di nuovo.",
-      "greeter-sync-pending-manual-pkexec": "Sincronizzazione dell'aspetto con il greeter. Se è richiesta l'autorizzazione dell'amministratore e non viene visualizzato alcun messaggio, eseguire in un terminale: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\".",
-      "greeter-sync-success": "Aspetto sincronizzato. Le modifiche si applicano alla prossima schermata di accesso.",
-      "greeter-sync-timeout": "La sincronizzazione del greeter è ancora in attesa di autorizzazione. Controlla un terminale TTY o una console per visualizzare il prompt del polkit, abilita l'agente polkit nelle impostazioni di sicurezza oppure esegui pkexec manualmente.",
-      "greeter-sync-timeout-manual": "La sincronizzazione legacy autenticata richiede comunque l'approvazione dell'amministratore. Eseguire lo strumento di supporto per l'applicazione posizionale in un terminale e mantenere NOCTALIA_GREETER_STATE_DIR se si utilizza un percorso personalizzato.",
-      "greeter-sync-timeout-manual-pkexec": "La sincronizzazione di Greeter richiede ancora l'autorizzazione. Esegui il comando in un terminale: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Questa scorciatoia accetta un singolo tasto senza modificatori.",
       "keybind-invalid-printable": "I tasti stampabili (lettere, numeri, simboli) richiedono un modificatore come Ctrl o Alt.",
@@ -1144,10 +1134,6 @@
       },
       "reset-page": "Ripristino di alcune impostazioni non riuscito.",
       "support-report": "Salvataggio report di supporto non riuscito.",
-      "sync-greeter": "Impossibile sincronizzare l'aspetto con Noctalia Greeter.",
-      "sync-greeter-timeout": "La sincronizzazione del greeter è ancora in attesa di autorizzazione. Controlla un terminale TTY o una console per visualizzare il prompt del polkit, abilita l'agente polkit nelle impostazioni di sicurezza oppure esegui pkexec manualmente.",
-      "sync-greeter-timeout-manual": "La sincronizzazione legacy autenticata richiede comunque l'approvazione dell'amministratore. Eseguire lo strumento di supporto per l'applicazione posizionale in un terminale e mantenere NOCTALIA_GREETER_STATE_DIR se si utilizza un percorso personalizzato.",
-      "sync-greeter-timeout-manual-pkexec": "La sincronizzazione di Greeter richiede ancora l'autorizzazione. Esegui il comando in un terminale: pkexec noctalia-greeter-apply-appearance --sync \"/run/user/$(id -u)/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Impossibile rinominare il widget con nome."
       },
@@ -1218,7 +1204,6 @@
         "focus-styling": "Stile focus",
         "formats": "Formati",
         "general": "Generale",
-        "greeter": "Greeter",
         "grouping": "Raggruppamento",
         "history": "Cronologia",
         "home": "Home",
@@ -2870,14 +2855,6 @@
           "description": "Risolvi l'IP WAN pubblico della connessione (tramite api.noctalia.dev) e mostralo nella scheda rete del Control Center",
           "label": "Mostra IP WAN"
         },
-        "greeter-sync-auto": {
-          "description": "Sincronizza automaticamente il greeter ogni volta che cambiano lo sfondo, i colori, la modalità del tema o il carattere della shell. L'autorizzazione segue comunque le policy di sistema; questa impostazione non abilita la sincronizzazione senza password.",
-          "label": "Sincronizza Greeter in automatico"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Sovrascrivi l'avvio dei privilegi per il greeter Sync Now. La modalità legacy (un helper precedente o una directory di stato del greeter personalizzata) accetta un altro escalation di amministratore. La sincronizzazione vincolata aggiunge --sync e richiede il prefisso per avviare infine pkexec (esempio: ghostty -e pkexec)",
-          "label": "Comando privilegiato per il sync del greeter"
-        },
         "keyboard-layout-custom-labels": {
           "description": "Mappa i nomi dei layout di tastiera sulle etichette utilizzate in tutta la shell",
           "label": "Etichette del layout della tastiera"
@@ -3078,11 +3055,6 @@
         "show-location": {
           "description": "Mostra il nome della posizione nei widget meteo",
           "label": "Mostra posizione"
-        },
-        "sync-greeter": {
-          "button": "Sincronizza ora",
-          "description": "Copia l'aspetto e la configurazione del monitor attuali in Noctalia Greeter. È richiesta l'approvazione dell'amministratore, a meno che le policy di sistema non autorizzino la sincronizzazione senza password per il tuo utente.",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Invia un piccolo ping anonimo all'avvio con versione, OS, compositor, risoluzioni monitor, RAM e scala UI",
@@ -3410,10 +3382,6 @@
           "effects-profile-set": {
             "description": "Imposta il profilo di output o di input di EasyEffects",
             "label": "Imposta il profilo EasyEffects"
-          },
-          "greeter-sync": {
-            "description": "Sincronizza lo sfondo, i colori e il layout del monitor con Noctalia Greeter.",
-            "label": "Sincronizza l'aspetto del greeter"
           },
           "keyboard-backlight-down": {
             "description": "Riduci di un livello la retroilluminazione della tastiera",

@@ -2265,29 +2265,6 @@ void ConfigService::setPaletteSourceOverride(const std::string& path) {
   }
 }
 
-std::string ConfigService::getGreeterSyncWallpaperPath() const {
-  // The greeter gets the real (static) wallpaper image, never a live wallpaper's small preview.
-  std::string palettePath = firstRunWallpaperPath();
-  if (palettePath.empty()) {
-    palettePath = !m_lastWallpaperPath.empty() ? m_lastWallpaperPath : m_defaultWallpaperPath;
-  }
-  if (!palettePath.empty()) {
-    return palettePath;
-  }
-
-  std::vector<std::string> connectors;
-  connectors.reserve(m_monitorWallpaperPaths.size());
-  for (const auto& [connector, path] : m_monitorWallpaperPaths) {
-    if (!path.empty()) {
-      connectors.push_back(connector);
-    }
-  }
-  std::ranges::sort(connectors);
-  for (const std::string& connector : connectors) {
-    return m_monitorWallpaperPaths.at(connector);
-  }
-  return {};
-}
 
 void ConfigService::setWallpaperChangeCallback(ChangeCallback callback) {
   m_wallpaperChangeCallback = std::move(callback);

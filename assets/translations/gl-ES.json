@@ -688,13 +688,6 @@
       "dbus-disabled": "Notificacións DBus desactivadas",
       "desktop-widgets-editor": "Editor de widgets do escritorio",
       "desktop-widgets-editor-enabled": "O editor de widgets do escritorio está activado. Cambia a un espazo de traballo baleiro para ver a capa do editor.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Agardando pola aprobación do administrador para escribir no Greeter.",
-      "greeter-sync-pending-console": "Agardando pola aprobación do administrador. Aproba a solicitude de polkit en Zynith, nunha TTY ou consola, ou executa pkexec manualmente.",
-      "greeter-sync-pending-manual": "Os ficheiros están preparados. Executa nun terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Ou configura shell.greeter_sync.privilege_command (por exemplo ghostty -e pkexec) e sincroniza de novo.",
-      "greeter-sync-success": "A aparencia sincronizouse. Os cambios aplicaranse na próxima pantalla de inicio de sesión.",
-      "greeter-sync-timeout": "A sincronización do Greeter segue agardando pola aprobación do administrador. Revisa se hai unha solicitude de polkit nunha TTY ou consola, activa o axente de polkit nos axustes de Seguridade ou executa pkexec manualmente.",
-      "greeter-sync-timeout-manual": "A sincronización do Greeter segue precisando aprobación do administrador. Executa nun terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Este atallo acepta unha soa tecla sen modificadores.",
       "keybind-invalid-printable": "As teclas imprimibles (letras, números e símbolos) requiren un modificador como Ctrl ou Alt.",
@@ -1026,9 +1019,6 @@
       },
       "reset-page": "Non se puideron restablecer algúns axustes.",
       "support-report": "Non se puido gardar o informe de asistencia.",
-      "sync-greeter": "Non se puido sincronizar a aparencia co Noctalia Greeter.",
-      "sync-greeter-timeout": "A sincronización do Greeter segue agardando pola aprobación do administrador. Revisa se hai unha solicitude de polkit nunha TTY ou consola, activa o axente de polkit nos axustes de Seguridade ou executa pkexec manualmente.",
-      "sync-greeter-timeout-manual": "A sincronización do Greeter segue precisando aprobación do administrador. Executa nun terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Non se puido renomear o widget con nome."
       },
@@ -1097,7 +1087,6 @@
         "focus-styling": "Estilo do foco",
         "formats": "Formatos",
         "general": "Xeral",
-        "greeter": "Greeter",
         "grouping": "Agrupación",
         "home": "Inicio",
         "hot-corners": "Cantos activos",
@@ -2480,14 +2469,6 @@
           "description": "Resolver o IP WAN público da conexión (mediante api.noctalia.dev) e mostralo na pestana de rede do Centro de control",
           "label": "Mostrar IP WAN"
         },
-        "greeter-sync-auto": {
-          "description": "Sincroniza automaticamente o Greeter cando cambien o fondo de pantalla, as cores ou o modo do tema",
-          "label": "Sincronización automática do Greeter"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Substitúe pkexec/run0 para sincronizar agora o Greeter. A ruta do asistente de aplicación e o directorio temporal engádense automaticamente. Exemplo: ghostty -e pkexec",
-          "label": "Comando privilexiado de sincronización do Greeter"
-        },
         "launch-apps-as-systemd-services": {
           "description": "Lanza aplicacións en servizos systemd separados para que non compartan o cgroup de Zynith",
           "label": "Lanzar aplicacións como servizos systemd"
@@ -2659,11 +2640,6 @@
         "show-location": {
           "description": "Mostra o nome da localización nos widgets do tempo",
           "label": "Mostrar localización"
-        },
-        "sync-greeter": {
-          "button": "Sincronizar agora",
-          "description": "Copia o fondo de pantalla e as cores actuais ao Noctalia Greeter (require aprobación do administrador)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Envía un pequeno ping anónimo ao iniciar con versión, SO, compositor, resolucións dos monitores, RAM e escala da interface",

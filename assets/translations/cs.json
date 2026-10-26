@@ -682,13 +682,6 @@
       "dbus-disabled": "DBus oznámení jsou vypnuta",
       "desktop-widgets-editor": "Editor widgetů",
       "desktop-widgets-editor-enabled": "Editor desktopových widgetů je zapnutý. Přepněte na prázdnou plochu pro zobrazení překryvu editoru.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending": "Čeká se na schválení administrátorem pro zápis do greetera.",
-      "greeter-sync-pending-console": "Čeká se na schválení administrátorem. Potvrď polkit výzvu v Zynith, na TTY nebo konzoli, nebo spusť pkexec ručně.",
-      "greeter-sync-pending-manual": "Claude responded: Soubory jsou připraveny.Soubory jsou připraveny. Spusť v terminálu: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Nebo nastav shell.greeter_sync.privilege_command (např. ghostty -e pkexec) a synchronizuj znovu.",
-      "greeter-sync-success": "Vzhled synchronizován. Změny se projeví při příští přihlašovací obrazovce.",
-      "greeter-sync-timeout": "Claude responded: Synchronizace greetera stále čeká na schválení administrátorem.Synchronizace greetera stále čeká na schválení administrátorem. Zkontroluj TTY nebo konzoli pro polkit výzvu, povol polkit agenta v nastavení Zabezpečení, nebo spusť pkexec ručně.",
-      "greeter-sync-timeout-manual": "Synchronizace greetera stále vyžaduje schválení administrátorem. Spusť v terminálu: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Tato zkratka přijímá pouze jednu klávesu bez modifikátorů.",
       "keybind-invalid-printable": "Tisknutelné klávesy (písmena, čísla, symboly) vyžadují modifikátor jako Ctrl nebo Alt.",
@@ -988,9 +981,6 @@
       },
       "reset-page": "Nepodařilo se resetovat některá nastavení.",
       "support-report": "Nepodařilo se uložit podpůrnou zprávu.",
-      "sync-greeter": "Nepodařilo se synchronizovat vzhled s Noctalia Greeter.",
-      "sync-greeter-timeout": "Synchronizace uvítací obrazovky stále čeká na schválení správcem. Zkontrolujte TTY nebo konzoli, zda se nezobrazila výzva polkit, povolte agenta polkit v nastavení Zabezpečení, nebo spusťte pkexec ručně.",
-      "sync-greeter-timeout-manual": "Synchronizace uvítací obrazovky stále vyžaduje schválení správcem. Spusťte v terminálu: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Nepodařilo se přejmenovat pojmenovaný widget."
       },
@@ -2366,14 +2356,6 @@
           "description": "Výchozí formát data pro rozhraní shellu bez vlastního nastavení",
           "label": "Formát data"
         },
-        "greeter-sync-auto": {
-          "description": "Automaticky synchronizovat uvítací obrazovku při každé změně tapety, barev nebo režimu motivu",
-          "label": "Automatická synchronizace uvítací obrazovky"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Nahradit pkexec/run0 pro Synchronizovat nyní uvítací obrazovky. Cesta pomocníka pro aplikaci a staging adresář se přidají automaticky. Příklad: ghostty -e pkexec",
-          "label": "Příkaz oprávnění pro synchronizaci uvítací obrazovky"
-        },
         "launch-apps-as-systemd-services": {
           "description": "Spouští aplikace v samostatných službách systemd, aby nesdílely cgroup Noctalie",
           "label": "Spouštět aplikace jako služby systemd"
@@ -2541,11 +2523,6 @@
         "show-location": {
           "description": "Zobrazit název polohy ve widgetech počasí",
           "label": "Zobrazit polohu"
-        },
-        "sync-greeter": {
-          "button": "Synchronizovat nyní",
-          "description": "Zkopírovat aktuální tapetu a barvy do Noctalia Greeter (vyžaduje schválení správcem)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Odešle malý anonymní ping při spuštění s verzí, OS, kompozitorem, rozlišeními monitorů, RAM a měřítkem rozhraní",

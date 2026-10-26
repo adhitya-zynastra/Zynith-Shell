@@ -64,7 +64,6 @@
 #include "shell/clipboard/clipboard_panel.h"
 #include "shell/clipboard/clipboard_paste.h"
 #include "shell/control_center/control_center_panel.h"
-#include "shell/greeter/greeter_appearance_sync.h"
 #include "shell/launcher/launcher_panel.h"
 #include "shell/panel/plugin_panel.h"
 #include "shell/polkit/polkit_panel.h"
@@ -186,7 +185,6 @@ void Application::initUiRenderSurfacesAndSettings() {
       );
     }
   });
-  m_settingsWindow.setSyncGreeterAppearance([this]() { performGreeterSync(); });
   m_settingsWindow.setSaveWallpaperPaletteAsCustom([this]() {
     std::string paletteName;
     std::string error;
@@ -203,130 +201,6 @@ void Application::initUiRenderSurfacesAndSettings() {
         i18n::tr("notifications.internal.wallpaper-palette-export-success", "name", paletteName)
     );
   });
-}
-
-void Application::performGreeterSync(bool quiet) {
-  if (!greeter::appearanceSyncAvailable(m_configService.config().shell.greeterSync)) {
-    return;
-  }
-
-  const std::uint64_t generation = m_greeterSyncGeneration + 1;
-
-  const auto complete = [this, generation, quiet](bool success) {
-    DeferredCall::callLater([this, generation, quiet, success]() {
-      if (generation != m_greeterSyncGeneration) {
-        return;
-      }
-      m_greeterSyncTimeoutTimer.stop();
-      if (success) {
-        if (!quiet) {
-          notify::info(
-              noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-              i18n::tr("notifications.internal.greeter-sync-success")
-          );
-        }
-        return;
-      }
-      if (quiet) {
-        notify::error(
-            noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-            i18n::tr("settings.errors.sync-greeter")
-        );
-      } else {
-        m_settingsWindow.markSettingsWriteError(i18n::tr("settings.errors.sync-greeter"));
-      }
-    });
-  };
-
-  const auto launch = greeter::syncAppearanceToGreeterAsync(
-      m_configService, m_themeService.resolvedShellMode(), complete, &m_compositorPlatform, m_logindService != nullptr
-  );
-  if (launch == greeter::GreeterSyncLaunch::Busy) {
-    return;
-  }
-
-  m_greeterSyncGeneration = generation;
-  m_greeterSyncTimeoutTimer.stop();
-  if (launch == greeter::GreeterSyncLaunch::Failed) {
-    if (quiet) {
-      notify::error(
-          noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-          i18n::tr("settings.errors.sync-greeter")
-      );
-    } else {
-      m_settingsWindow.markSettingsWriteError(i18n::tr("settings.errors.sync-greeter"));
-    }
-    return;
-  }
-  if (launch == greeter::GreeterSyncLaunch::StagedOnly) {
-    if (quiet) {
-      notify::error(
-          noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-          i18n::tr("settings.errors.sync-greeter")
-      );
-    } else {
-      notify::info(
-          noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-          i18n::tr("notifications.internal.greeter-sync-pending-manual")
-      );
-    }
-    return;
-  }
-  const bool legacySync = launch == greeter::GreeterSyncLaunch::LaunchedLegacy;
-  if (!quiet) {
-    const bool customPrivilege =
-        !StringUtils::trim(m_configService.config().shell.greeterSync.privilegeCommand).empty();
-    const bool polkitAgentActive = m_configService.config().shell.polkitAgent && m_polkitAgent != nullptr;
-    const bool inSessionPolkit = likelySupportsInSessionPolkit();
-    const char* pendingBodyKey = legacySync ? "notifications.internal.greeter-sync-pending-legacy"
-                                            : "notifications.internal.greeter-sync-pending";
-    if (!legacySync && !customPrivilege && !polkitAgentActive && !inSessionPolkit) {
-      pendingBodyKey = "notifications.internal.greeter-sync-pending-manual-pkexec";
-    } else if (!legacySync && !customPrivilege && !polkitAgentActive) {
-      pendingBodyKey = "notifications.internal.greeter-sync-pending-console";
-    }
-    notify::info(
-        noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"), i18n::tr(pendingBodyKey)
-    );
-  }
-
-  if (!quiet) {
-    const bool inSessionPolkit = likelySupportsInSessionPolkit();
-    m_greeterSyncTimeoutTimer.start(std::chrono::seconds(90), [this, generation, inSessionPolkit, legacySync]() {
-      if (generation != m_greeterSyncGeneration) {
-        return;
-      }
-      DeferredCall::callLater([this, generation, inSessionPolkit, legacySync]() {
-        if (generation != m_greeterSyncGeneration) {
-          return;
-        }
-        notify::error(
-            noctalia::build_info::kProductName, i18n::tr("notifications.internal.greeter-sync"),
-            i18n::tr(
-                inSessionPolkit  ? "notifications.internal.greeter-sync-timeout"
-                    : legacySync ? "notifications.internal.greeter-sync-timeout-manual"
-                                 : "notifications.internal.greeter-sync-timeout-manual-pkexec"
-            )
-        );
-        m_settingsWindow.markSettingsWriteError(
-            i18n::tr(
-                inSessionPolkit  ? "settings.errors.sync-greeter-timeout"
-                    : legacySync ? "settings.errors.sync-greeter-timeout-manual"
-                                 : "settings.errors.sync-greeter-timeout-manual-pkexec"
-            )
-        );
-      });
-    });
-  }
-}
-
-void Application::scheduleGreeterAutoSync() {
-  if (!m_configService.config().shell.greeterSync.autoSync
-      || !greeter::appearanceSyncAvailable(m_configService.config().shell.greeterSync)) {
-    return;
-  }
-  m_greeterAutoSyncTimer.stop();
-  m_greeterAutoSyncTimer.start(std::chrono::milliseconds(1000), [this]() { performGreeterSync(true); });
 }
 
 void Application::initLockScreenAndSession() {
@@ -1069,7 +943,6 @@ void Application::initWidgetControllersAndCallbacks() {
         m_colorPickerDialogPopup.requestLayout();
         m_glyphPickerDialogPopup.requestLayout();
         m_fileDialogPopup.requestLayout();
-        scheduleGreeterAutoSync();
       },
       "shell-font-family"
   );
@@ -1099,7 +972,6 @@ void Application::initWidgetControllersAndCallbacks() {
         m_colorPickerDialogPopup.requestLayout();
         m_glyphPickerDialogPopup.requestLayout();
         m_fileDialogPopup.requestLayout();
-        scheduleGreeterAutoSync();
       },
       "shell-language-direction"
   );

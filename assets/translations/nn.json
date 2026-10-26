@@ -750,13 +750,6 @@
       "dbus-disabled": "DBus-varsel avslegne",
       "desktop-widgets-editor": "Nøytelbrigdar",
       "desktop-widgets-editor-enabled": "Skrivebordsnøytelbrigdaren er på. Gå til eit tomt arbeidsrom slik at opne ruter ikkje ligg over brigdaren.",
-      "greeter-sync": "Zynithhelsar",
-      "greeter-sync-pending": "Ventar på stjornargodkjenning for å skriva til helsaren.",
-      "greeter-sync-pending-console": "Ventar på stjornargodkjenning. Godkjenn polkit-meldinga i Zynith, i ein TTY eller konsoll, eller køyr pkexec sjølv.",
-      "greeter-sync-pending-manual": "Filene ventar. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Eller set shell.greeter_sync.privilege_command (til dømes ghostty -e pkexec) og synkroniser å nyo.",
-      "greeter-sync-success": "Utsjånad synkronisert. Brigde viser neste gong du skriv deg inn.",
-      "greeter-sync-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
-      "greeter-sync-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Snarvegen godtek éin knapp utan hjelpeknappar.",
       "keybind-invalid-printable": "Skrivande knappar (bokstavar, tal, teikn) krev ein hjelpeknapp som Ctrl eller Alt.",
@@ -1118,9 +1111,6 @@
       },
       "reset-page": "Kunne ikkje nullstille sume innstillingar.",
       "support-report": "Kunne ikkje lagra støtterapport.",
-      "sync-greeter": "Kunne ikkje synkronisera utsjånad med Zynithhelsaren.",
-      "sync-greeter-timeout": "Helsarsynkroniseringa ventar enno på stjornargodkjenning. Sjå i ein TTY eller konsoll for polkit-leietekst, slå på polkitagenten i Tryggleiksinnstillingane, eller køyr pkexec sjølv.",
-      "sync-greeter-timeout-manual": "Helsarsynkroniseringa tarv enno stjornargodkjenning. Køyr i terminal: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Kunne ikkje gjeva eit nytt namn til nøytelen."
       },
@@ -1191,7 +1181,6 @@
         "focus-styling": "Åtgaumstil",
         "formats": "Format",
         "general": "Ålmenn",
-        "greeter": "Helsar",
         "grouping": "Gruppering",
         "history": "Soge",
         "home": "Heim",
@@ -2805,14 +2794,6 @@
           "description": "Finn den offentlege WAN IP-adressa til oppkoplinga (med api.noctalia.dev) og vis henne i nettverksfana i Styreromet",
           "label": "Vis WAN IP"
         },
-        "greeter-sync-auto": {
-          "description": "Synkorniser helsaren automatisk når bakgrunn, leter eller ham vert brigda",
-          "label": "Synkroniser Helsaren automatisk"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Byt ut pkexec/run0 med Synkro no i helsaren; banen for godkjenningshjelparen og ventemappa vert lagt til automatisk. (døme: ghostty -e pkexec)",
-          "label": "Helsarsynkro rettskommando"
-        },
         "keyboard-layout-custom-labels": {
           "description": "Gjev merkelappar til knappefjøloppsett som vert bruka gjennom skalet",
           "label": "Knappefjøloppsettsnamn"
@@ -3013,11 +2994,6 @@
         "show-location": {
           "description": "Vis stadnamn i vêrnøytlane",
           "label": "Vis stad"
-        },
-        "sync-greeter": {
-          "button": "Synkroniser no",
-          "description": "Rita av bakgrunnsbiletet og leter til Zynithhelsar (krev stjornargodkjenning)",
-          "label": "Zynithhelsar"
         },
         "telemetry": {
           "description": "Sender ein liten anonym oppstartsping med utgåve, OS, kompositor, skjermoppløysingar, minne og grensesnitttilhøve",

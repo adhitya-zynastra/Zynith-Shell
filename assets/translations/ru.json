@@ -737,9 +737,6 @@
       "dbus-disabled": "DBus-уведомления отключены",
       "desktop-widgets-editor": "Редактор виджетов",
       "desktop-widgets-editor-enabled": "Редактор виджетов рабочего стола включён. Переключитесь на пустое рабочее пространство, чтобы увидеть оверлей редактора.",
-      "greeter-sync": "Noctalia Greeter",
-      "greeter-sync-pending-manual": "Файлы подготовлены. Запустите в терминале: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Или задайте shell.greeter_sync.privilege_command (например, ghostty -e pkexec) и повторите синхронизацию.",
-      "greeter-sync-success": "Внешний вид синхронизирован. Изменения вступят в силу на следующем экране входа.",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Это сочетание клавиш принимает одну клавишу без модификаторов.",
       "keybind-invalid-printable": "Печатные клавиши (буквы, цифры, символы) требуют модификатор, например Ctrl или Alt.",
@@ -1046,8 +1043,6 @@
       },
       "reset-page": "Не удалось сбросить некоторые настройки.",
       "support-report": "Не удалось сохранить отчёт поддержки.",
-      "sync-greeter": "Не удалось синхронизировать внешний вид с Noctalia Greeter.",
-      "sync-greeter-timeout-manual": "Для синхронизации Greeter всё ещё требуется подтверждение администратора. Запустите в терминале: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "Не удалось переименовать виджет."
       },
@@ -1115,7 +1110,6 @@
         "focus-styling": "Стиль фокуса",
         "formats": "Форматы",
         "general": "Основное",
-        "greeter": "Greeter",
         "grouping": "Группировка",
         "home": "Главная",
         "hot-corners": "Активные углы",
@@ -2445,10 +2439,6 @@
           "description": "Формат даты по умолчанию для интерфейса оболочки, если нет отдельной настройки",
           "label": "Формат даты"
         },
-        "greeter-sync-auto": {
-          "description": "Автоматическая синхронизировать Greeter при каждом изменении обоев, цветов или режима темы.",
-          "label": "Авто-Синхронизация Greeter"
-        },
         "launch-apps-as-systemd-services": {
           "description": "Запускать приложения в отдельных службах systemd, чтобы они не использовали cgroup Zynith",
           "label": "Запускать приложения как службы systemd"
@@ -2594,11 +2584,6 @@
         "show-location": {
           "description": "Показывать название местоположения в виджетах погоды",
           "label": "Показать местоположение"
-        },
-        "sync-greeter": {
-          "button": "Синхронизировать Cейчас",
-          "description": "Скопировать текущие обои и цвета в Noctalia Greeter (требуется одобрение администратора)",
-          "label": "Noctalia Greeter"
         },
         "telemetry": {
           "description": "Отправлять небольшой анонимный ping при запуске с версией, ОС, композитором, разрешениями мониторов, RAM и масштабом UI",

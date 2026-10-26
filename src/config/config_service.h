@@ -96,8 +96,6 @@ public:
   // wallpaper change, so every palette consumer updates through its usual path.
   void setPaletteSourceOverride(const std::string& path);
   [[nodiscard]] const std::string& paletteSourceOverride() const noexcept { return m_paletteSourceOverride; }
-  // Greeter sync fallback when no monitor-specific path is chosen.
-  [[nodiscard]] std::string getGreeterSyncWallpaperPath() const;
   void setWallpaperPath(const std::optional<std::string>& connectorName, const std::string& path);
   void setWallpaperChangeCallback(ChangeCallback callback);
 

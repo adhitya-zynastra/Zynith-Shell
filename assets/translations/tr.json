@@ -751,13 +751,6 @@
       "dbus-disabled": "DBus bildirimleri devre dışı",
       "desktop-widgets-editor": "Bileşen düzenleyici",
       "desktop-widgets-editor-enabled": "Masaüstü bileşen düzenleyicisi açık. Açık pencerelerin düzenleyiciyi kapatmaması için boş bir çalışma alanına geçin.",
-      "greeter-sync": "Zynith Karşılama Ekranı",
-      "greeter-sync-pending": "Karşılama ekranına yazmak için yönetici onayı bekleniyor.",
-      "greeter-sync-pending-console": "Yönetici onayı bekleniyor. Zynith içindeki, bir TTY veya konsoldaki polkit istemini onaylayın ya da pkexec'i manuel olarak çalıştırın.",
-      "greeter-sync-pending-manual": "Dosyalar hazırlandı. Terminalde çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\". Veya shell.greeter_sync.privilege_command (örneğin ghostty -e pkexec) ayarlayıp tekrar senkronize edin.",
-      "greeter-sync-success": "Görünüm senkronize edildi. Değişiklikler bir sonraki giriş ekranında uygulanacak.",
-      "greeter-sync-timeout": "Karşılama ekranı senkronizasyonu hâlâ yönetici onayı bekliyor. Polkit istemi için bir TTY veya konsolu kontrol edin, Güvenlik ayarlarında polkit aracısını etkinleştirin veya pkexec'i manuel olarak çalıştırın.",
-      "greeter-sync-timeout-manual": "Karşılama ekranı senkronizasyonu hâlâ yönetici onayı gerektiriyor. Terminalde şunu çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "keybind-app": "Zynith",
       "keybind-invalid-modifier": "Bu kısayol, değiştirici olmadan yalnızca tek bir tuş kabul eder.",
       "keybind-invalid-printable": "Yazdırılabilir tuşlar (harfler, sayılar, semboller) Ctrl veya Alt gibi bir değiştirici tuş gerektirir.",
@@ -1119,9 +1112,6 @@
       },
       "reset-page": "Bazı ayarlar sıfırlanamadı.",
       "support-report": "Destek raporu kaydedilemedi.",
-      "sync-greeter": "Görünüm, Zynith Karşılama Ekranı ile senkronize edilemedi.",
-      "sync-greeter-timeout": "Karşılama ekranı senkronizasyonu hala yönetici onayı bekliyor. TTY veya konsoldaki polkit onayını kontrol edin, Güvenlik ayarlarından polkit aracını etkinleştirin veya pkexec komutunu manuel olarak çalıştırın.",
-      "sync-greeter-timeout-manual": "Karşılama ekranı senkronizasyonu hala yönetici onayına ihtiyaç duyuyor. Terminalde şu komutu çalıştırın: pkexec noctalia-greeter-apply-appearance \"$XDG_RUNTIME_DIR/noctalia-greeter-sync\"",
       "widget": {
         "rename": "İsimlendirilmiş araç yeniden adlandırılamadı."
       },
@@ -1192,7 +1182,6 @@
         "focus-styling": "Odak Stili",
         "formats": "Formatlar",
         "general": "Genel",
-        "greeter": "Karşılama Ekranı",
         "grouping": "Gruplama",
         "history": "Geçmiş",
         "home": "Ana Sayfa",
@@ -2810,14 +2799,6 @@
           "description": "Bağlantının genel WAN IP adresini çözümle (api.noctalia.dev üzerinden) ve Kontrol Merkezi ağ sekmesinde göster",
           "label": "WAN IP'yi Göster"
         },
-        "greeter-sync-auto": {
-          "description": "Duvar kağıdı, renkler, veya tema modu değiştiğinde otomatikman karşılayıcı ekranını senkronize et",
-          "label": "Karşılayıcıyı Otomatik Senkronize Et"
-        },
-        "greeter-sync-privilege-command": {
-          "description": "Karşılayıcı (greeter) 'Şimdi Senkronize Et' için pkexec/run0 komutunu değiştirin; uygulama yardımcısı yolu ve hazırlama dizini otomatik olarak eklenir (örnek: ghostty -e pkexec)",
-          "label": "Karşılayıcı Senkronizasyon Yetki Komutu"
-        },
         "keyboard-layout-custom-labels": {
           "description": "Klavye düzeni isimlerini arayüzde kullanılacak etiketlerle eşleştir",
           "label": "Klavye Düzeni Etiketleri"
@@ -3018,11 +2999,6 @@
         "show-location": {
           "description": "Konum ismini hava durumu bileşenlerinde göster",
           "label": "Konumu Göster"
-        },
-        "sync-greeter": {
-          "button": "Şimdi Senkronize Et",
-          "description": "Geçerli duvar kağıdını ve renkleri Zynith Karşılayıcısına (Greeter) kopyala (yönetici izni gerektirir)",
-          "label": "Zynith Karşılayıcısı"
         },
         "telemetry": {
           "description": "Sürüm, işletim sistemi, görüntü sunucusu, monitör çözünürlükleri, RAM ve arayüz ölçeği bilgilerini içeren küçük bir anonim başlangıç isteği gönderir",

@@ -15,7 +15,6 @@
 #include "render/scene/input_area.h"
 #include "render/scene/node.h"
 #include "shell/bar/widget_action.h"
-#include "shell/greeter/greeter_appearance_sync.h"
 #include "shell/profile/avatar_path.h"
 #include "shell/settings/font_family_catalog.h"
 #include "shell/settings/settings_bar_management.h"
@@ -151,9 +150,6 @@ namespace {
       return true;
     }
     if (path.size() >= 2 && path[0] == "calendar" && path[1] == "account") {
-      return true;
-    }
-    if (path.size() >= 2 && path[0] == "shell" && path[1] == "greeter_sync") {
       return true;
     }
     return false;
@@ -756,8 +752,6 @@ settings::RegistryEnvironment SettingsWindow::buildRegistryEnvironment() const {
   env.ddcutilAvailable = (m_dependencies != nullptr && m_dependencies->hasDdcutil());
   env.systemdUserManaged = process::runningUnderSystemdUserManager();
   env.gammaControlAvailable = (m_wayland != nullptr && m_wayland->hasGammaControl());
-  env.greeterSyncAvailable =
-      m_config != nullptr && greeter::appearanceSyncAvailable(m_config->config().shell.greeterSync);
   const ThemeMode previewMode = m_config != nullptr ? shellThemeMode(m_config->config().theme) : ThemeMode::Dark;
   for (const auto& paletteInfo : noctalia::theme::availableCommunityPalettes()) {
     env.communityPalettes.push_back(
@@ -1738,40 +1732,6 @@ void SettingsWindow::refreshSettingsRegistry(const Config& cfg) {
   }
   if (clipboardStorageRecovery && m_resetEncryptedStorage) {
     insertStorageRecovery(settings::SettingsSection::Shell, "clipboard");
-  }
-
-  if (m_syncGreeterAppearance && env.greeterSyncAvailable) {
-    auto it = std::ranges::find_if(m_settingsRegistry, [](const settings::SettingEntry& e) {
-      return e.section == settings::SettingsSection::Security
-          && e.group == "greeter"
-          && e.path == std::vector<std::string>{"shell", "greeter_sync", "privilege_command"};
-    });
-    settings::SettingEntry btn{
-        .section = settings::SettingsSection::Security,
-        .group = "greeter",
-        .title = i18n::tr("settings.schema.shell.sync-greeter.label"),
-        .subtitle = i18n::tr("settings.schema.shell.sync-greeter.description"),
-        .path = {},
-        .control =
-            settings::ButtonSetting{
-                .label = i18n::tr("settings.schema.shell.sync-greeter.button"),
-                .action = m_syncGreeterAppearance,
-                .glyph = {},
-            },
-        .searchText = "greeter login sync appearance wallpaper colors security",
-    };
-    auto insertedIt = m_settingsRegistry.insert(it, std::move(btn));
-    ++insertedIt;
-    settings::SettingEntry toggle{
-        .section = settings::SettingsSection::Security,
-        .group = "greeter",
-        .title = i18n::tr("settings.schema.shell.greeter-sync-auto.label"),
-        .subtitle = i18n::tr("settings.schema.shell.greeter-sync-auto.description"),
-        .path = {"shell", "greeter_sync", "auto_sync"},
-        .control = settings::ToggleSetting{cfg.shell.greeterSync.autoSync},
-        .searchText = "greeter sync auto automatic",
-    };
-    m_settingsRegistry.insert(insertedIt, std::move(toggle));
   }
 
   if (m_resetLauncherUsage) {
