@@ -44,7 +44,7 @@ namespace zynith::cli {
       "A sleek, customizable desktop shell crafted for Wayland",
       {},
       "For more information and documentation, visit:\n  "
-      "https://github.com/adhitya-zynastra/Zynith-Shell/tree/master/docs",
+      "https://github.com/adhitya-zynastra/Zynith-Shell/tree/main/docs",
       kRootFlags,
       {},
       kRootSubcommands,

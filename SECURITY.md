@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Zynith has no stable release yet. Security fixes go to the development branch (`master`), and the next build
+Zynith has no stable release yet. Security fixes go to the development branch (`main`), and the next build
 includes them. Once releases exist, the latest release will be supported.
 
 ## Reporting a vulnerability

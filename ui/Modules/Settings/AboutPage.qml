@@ -86,7 +86,7 @@ Column {
         Repeater {
             model: [
                 ["Source", "github.com/adhitya-zynastra/Zynith-Shell", "https://github.com/adhitya-zynastra/Zynith-Shell"],
-                ["Documentation", "github.com/adhitya-zynastra/Zynith-Shell/docs", "https://github.com/adhitya-zynastra/Zynith-Shell/tree/master/docs"],
+                ["Documentation", "github.com/adhitya-zynastra/Zynith-Shell/docs", "https://github.com/adhitya-zynastra/Zynith-Shell/tree/main/docs"],
                 ["License", "GNU GPL v3.0", "https://www.gnu.org/licenses/gpl-3.0.html"]
             ]
             delegate: Item {

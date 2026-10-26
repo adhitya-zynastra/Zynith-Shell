@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://github.com/adhitya-zynastra/Zynith-Shell/tree/master/docs
+    url: https://github.com/adhitya-zynastra/Zynith-Shell/tree/main/docs
     about: Installing, using, configuring and troubleshooting Zynith, and how it is built.
   - name: Security issue
-    url: https://github.com/adhitya-zynastra/Zynith-Shell/blob/master/SECURITY.md
+    url: https://github.com/adhitya-zynastra/Zynith-Shell/blob/main/SECURITY.md
     about: Please do not report security problems in a public issue; see SECURITY.md.
